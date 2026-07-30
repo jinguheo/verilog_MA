@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["requirement_id", "text", "type", "acceptance_criteria", "verification_methods"],
+  "properties": {
+    "requirement_id": {"type": "string", "pattern": "^REQ-[0-9]+$"},
+    "text": {"type": "string", "minLength": 1},
+    "type": {"enum": ["functional", "non_functional", "interface", "constraint"]},
+    "acceptance_criteria": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "verification_methods": {"type": "array", "items": {"type": "string"}},
+    "source": {"type": "string"}
+  }
+}

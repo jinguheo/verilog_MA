@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["issue_id", "category", "severity", "finding", "status"],
+  "properties": {
+    "issue_id": {"type": "string"},
+    "category": {"type": "string"},
+    "severity": {"enum": ["critical", "high", "medium", "low"]},
+    "finding": {"type": "string"},
+    "status": {"enum": ["open", "accepted", "fixed", "waived"]}
+  }
+}

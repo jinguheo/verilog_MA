@@ -1,0 +1,34 @@
+{
+  "profile": "windows-native",
+  "control_plane": "windows",
+  "primary": true,
+  "local_capabilities": [
+    "requirements-analysis",
+    "architecture-planning",
+    "rtl-generation",
+    "tree-sitter-parse",
+    "pyslang-elaboration",
+    "knowledge-db-retrieval",
+    "verification-plan",
+    "sva-generation",
+    "review-and-triage",
+    "dashboard",
+    "verilator-when-installed",
+    "iverilog-when-installed",
+    "cocotb-when-installed"
+    ,"verible-when-installed"
+    ,"pyslang-when-installed"
+  ],
+  "remote_capabilities": [
+    "openlane",
+    "openroad",
+    "pdk-management",
+    "drc-lvs-signoff",
+    "gdsii-manufacturing-signoff"
+  ],
+  "remote_worker": {
+    "enabled": false,
+    "protocol": "job-manifest",
+    "future_target": "ubuntu"
+  }
+}

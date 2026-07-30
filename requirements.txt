@@ -1,0 +1,2 @@
+# Phase 1 uses only the Python standard library.
+# Add LangGraph/OpenAI adapters after the deterministic contracts are stable.
