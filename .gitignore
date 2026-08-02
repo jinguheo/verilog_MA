@@ -5,5 +5,16 @@ __pycache__/
 node_modules/
 my_dashboard/dist/
 
+# Generated verification artifacts and local operational files
+logs/
+*.lnk
+sidebar-*.png
+samples/**/obj_*/
+samples/**/obj_dir/
+samples/**/tmp_*/
+samples/**/formal/*/
+samples/**/*.out
+samples/**/uvm/uvm-regression*
+
 oss-cad-suite/
 third_party/installers/

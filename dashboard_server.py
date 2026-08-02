@@ -4,7 +4,7 @@ import argparse
 import json
 import os
 from datetime import datetime, timezone
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -14,17 +14,36 @@ from adapters.verilog_kb import VerilogKnowledgeBase
 from design_flow import readiness
 
 
+MAX_SCAN_FILES = 5_000
+
+
+def _matching_files(path: Path, suffixes=None, limit=MAX_SCAN_FILES):
+    """Yield matching files quickly, avoiding an unbounded walk of vendor trees."""
+    if not path.exists():
+        return
+    suffixes = set(suffixes or [])
+    skipped = {'.git', 'node_modules', '.venv', '.venv-graphify', '.venv-openkb', '__pycache__'}
+    found = 0
+    for current, directories, filenames in os.walk(path):
+        directories[:] = [name for name in directories if name not in skipped]
+        for filename in filenames:
+            item = Path(current) / filename
+            if suffixes and item.suffix.lower() not in suffixes:
+                continue
+            yield item
+            found += 1
+            if found >= limit:
+                return
+
+
 def count_files(path: Path, suffixes=None):
     if not path.exists():
         return 0
-    suffixes = set(suffixes or [])
-    return sum(1 for p in path.rglob('*') if p.is_file() and (not suffixes or p.suffix.lower() in suffixes))
+    return sum(1 for _ in _matching_files(path, suffixes))
 
 
 def samples(path: Path, suffixes=None, limit=8):
-    if not path.exists(): return []
-    suffixes = set(suffixes or [])
-    return [{"name": p.name, "detail": str(p)} for p in list(p for p in path.rglob('*') if p.is_file() and (not suffixes or p.suffix.lower() in suffixes))[:limit]]
+    return [{"name": p.name, "detail": str(p)} for p in _matching_files(path, suffixes, limit=limit)]
 
 
 def source(source_id, name, kind, path, description, icon, color='', suffixes=None, extra=None, connection='artifact'):
@@ -57,10 +76,10 @@ def overview(root: Path):
             'design_flow': readiness([{'agent': k} for k in CAPABILITIES], detect_toolchain())}
 
 
-class Handler(SimpleHTTPRequestHandler):
-    def __init__(self, *args, dashboard_dir: Path, knowledge_root: Path, **kwargs):
-        self.dashboard_dir, self.knowledge_root = dashboard_dir, knowledge_root
-        super().__init__(*args, directory=str(dashboard_dir), **kwargs)
+class Handler(BaseHTTPRequestHandler):
+    def __init__(self, *args, knowledge_root: Path, **kwargs):
+        self.knowledge_root = knowledge_root
+        super().__init__(*args, **kwargs)
 
     def do_GET(self):
         route = urlparse(self.path).path
@@ -75,7 +94,11 @@ class Handler(SimpleHTTPRequestHandler):
             query = parse_qs(urlparse(self.path).query).get('q', [''])[0]
             payload = json.dumps({'query': query, 'results': VerilogKnowledgeBase(str(self.knowledge_root)).search(query)}, ensure_ascii=False).encode('utf-8')
             self.send_response(200); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
-        super().do_GET()
+        self.send_error(404, 'Not Found')
+
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', 'http://127.0.0.1:5173')
+        super().end_headers()
 
     def log_message(self, fmt, *args):
         pass
@@ -86,9 +109,8 @@ def main():
     parser.add_argument('--port', type=int, default=8787)
     parser.add_argument('--knowledge-root', default=r'D:\MyWork\verilog')
     args = parser.parse_args()
-    dashboard_dir = Path(__file__).parent / 'dashboard'
     root = Path(args.knowledge_root)
-    factory = lambda *a, **kw: Handler(*a, dashboard_dir=dashboard_dir, knowledge_root=root, **kw)
+    factory = lambda *a, **kw: Handler(*a, knowledge_root=root, **kw)
     server = ThreadingHTTPServer(('127.0.0.1', args.port), factory)
     print(f'Veriolg_MA dashboard: http://127.0.0.1:{args.port}/')
     print(f'Knowledge root: {root}')

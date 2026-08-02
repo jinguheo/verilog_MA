@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /c/Python314/python.exe "$@"

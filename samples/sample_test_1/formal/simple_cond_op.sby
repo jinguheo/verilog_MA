@@ -1,0 +1,14 @@
+[options]
+mode prove
+depth 2
+
+[engines]
+smtbmc
+
+[script]
+read -formal -sv rtl/top.sv formal/simple_cond_op_formal.sv
+prep -top formal_top
+
+[files]
+rtl/top.sv
+formal/simple_cond_op_formal.sv

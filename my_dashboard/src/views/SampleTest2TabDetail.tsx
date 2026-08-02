@@ -1,0 +1,27 @@
+export type SampleTest2Tab = 'overview' | 'design' | 'verification' | 'uvm' | 'implementation' | 'documents'
+
+const tests = [
+  ['FIFO-001', 'Reset / clear', 'reset 후 empty, depth=0, rvalid=0을 확인합니다.', 'planned'],
+  ['FIFO-002', 'Fill / full', '4개 write 후 full_o와 depth=4를 확인합니다.', 'planned'],
+  ['FIFO-003', 'Ordering', 'push한 데이터가 FIFO 순서대로 pop되는지 scoreboard로 확인합니다.', 'planned'],
+  ['FIFO-004', 'Drain / empty', 'read마다 depth가 감소하고 마지막 read 후 empty가 되는지 확인합니다.', 'planned'],
+] as const
+
+export default function SampleTest2TabDetail({ tab }: { tab: SampleTest2Tab }) {
+  if (tab === 'design') return <>
+    <section className="card sample-design"><div className="card-title"><div><small className="kicker">MODULE HIERARCHY</small><h2>FIFO 구조와 연결</h2></div><span className="connection">Width=8 · Depth=4</span></div>
+      <div className="fifo-tree"><div><b>prim_fifo_sync</b><span>write/read handshake, storage, output path</span><i>top module</i></div><div className="tree-line">└─</div><div><b>prim_fifo_sync_cnt</b><span>read/write pointer, wrap, full/empty, depth</span><i>submodule</i></div><div className="tree-line">└─</div><div><b>prim_util_pkg</b><span>vbits(Depth), pointer/depth width calculation</span><i>package</i></div></div>
+    </section>
+    <section className="card"><div className="card-title"><div><small className="kicker">PORT CONTRACT</small><h2>Top module ports</h2></div></div><div className="check-list"><p><b>Write side</b><span>wvalid_i, wready_o, wdata_i</span></p><p><b>Read side</b><span>rvalid_o, rready_i, rdata_o</span></p><p><b>Control</b><span>clk_i, rst_ni, clr_i</span></p><p><b>Status</b><span>full_o, depth_o, err_o</span></p></div></section>
+  </>
+
+  if (tab === 'verification') return <section className="card"><div className="card-title"><div><small className="kicker">TEST BREAKDOWN</small><h2>테스트별 검증 항목</h2></div><span className="warning-badge">PLANNED · NOT RUN</span></div><div className="run-list">{tests.map(([id, title, detail, status]) => <article className="run-item" key={id}><button type="button"><i>○</i><div><b>{id} · {title}</b><span>{detail}</span></div><em className={status === 'planned' ? 'needs' : 'ready'}>{status.toUpperCase()}</em></button></article>)}</div><p className="not-run">각 항목은 UVM driver와 scoreboard에 구현되어 있으나, UVM 지원 시뮬레이터가 연결되지 않아 아직 실행 결과는 없습니다.</p></section>
+
+  if (tab === 'uvm') return <section className="card"><div className="card-title"><div><small className="kicker">UVM VERIFICATION PLAN</small><h2>구현된 테스트 구성</h2></div><span className="connection">OSS CAD READY</span></div><div className="uvm-stack"><b>fifo_smoke_test</b><span>push 3회 → pop 3회: 기본 FIFO 순서 검증</span><b>fifo_requirements_test</b><span>smoke sequence + fill/drain sequence로 요구사항 검증</span><b>fifo_driver</b><span>reset, push, pop 동작과 depth/full 상태를 검사</span><b>fifo_scoreboard</b><span>reference queue로 데이터 순서와 잔여 항목을 비교</span><b>fifo_monitor</b><span>write/read handshake 횟수를 관찰</span></div><p className="not-run">번들된 Verilator 기반 실행 경로를 추가했습니다. <code>run_verilator_uvm.ps1 -LintOnly</code>로 빠른 UVM lint를, 옵션 없이 실행하면 네이티브 모델을 빌드한 뒤 regression을 실행합니다. 첫 빌드는 수 분 걸릴 수 있습니다.</p></section>
+
+  if (tab === 'implementation') return <section className="detail-split"><section className="card"><div className="card-title"><div><small className="kicker">ELABORATION</small><h2>구조 검증</h2></div><span className="warning-badge">PENDING</span></div><div className="check-list"><p><b>Target</b><span>prim_fifo_sync + prim_fifo_sync_cnt + prim_util_pkg</span></p><p><b>Parameters</b><span>Width=8, Depth=4, Pass=0, Secure=0</span></p><p><b>Next step</b><span>Verilator 또는 UVM 지원 simulator로 hierarchy elaboration</span></p></div></section><section className="card"><div className="card-title"><div><small className="kicker">PHYSICAL SIGNOFF</small><h2>Layout / P&amp;R 상태</h2></div><span className="warning-badge">BLOCKED</span></div><div className="check-list"><p><b>미실행 항목</b><span>STA, floorplan, placement, CTS, routing, DRC/LVS</span></p><p><b>차단 요인</b><span>Target PDK, standard-cell library, timing constraints가 없습니다.</span></p><p><b>Required input</b><span>공정/PDK와 SDC constraints를 결정한 뒤 OpenLane/OpenROAD flow를 연결합니다.</span></p></div></section></section>
+
+  if (tab === 'documents') return <section className="card"><div className="card-title"><div><small className="kicker">ARTIFACT LIBRARY</small><h2>준비된 UVM 파일</h2></div><span className="connection">5 files</span></div><div className="sample-list"><div><b>prim_fifo_sync_if.sv</b><span>FIFO DUT 신호를 묶는 virtual interface</span></div><div><b>prim_fifo_sync_uvm_pkg.sv</b><span>sequence, driver, monitor, scoreboard, test classes</span></div><div><b>prim_fifo_sync_uvm_tb.sv</b><span>DUT 인스턴스와 UVM testbench top</span></div><div><b>run_verilator_uvm.ps1</b><span>번들 OSS CAD Suite 기반 UVM lint / build / regression 실행</span></div><div><b>run_questa.ps1</b><span>Questa/ModelSim 컴파일 및 batch simulation 실행 스크립트</span></div></div><p className="not-run">작업 파일 위치: <code>samples/sample_test_2/uvm</code></p></section>
+
+  return <section className="card"><div className="card-title"><div><small className="kicker">OVERVIEW</small><h2>테스트 준비 상태</h2></div><span className="connection">4 PLANNED · 0 RUN</span></div><div className="decision-grid"><div><b>설계 범위</b><p>top, counter submodule, utility package까지 포함한 계층형 FIFO입니다.</p></div><div><b>테스트 구성</b><p>reset, fill/full, ordering, drain/empty의 4개 요구사항 테스트를 분리했습니다.</p></div><div><b>실행 차단</b><p>UVM-compatible simulator가 없어 결과를 아직 생성하지 않았습니다. 기존 샘플 테스트 1 결과에는 영향을 주지 않습니다.</p></div></div></section>
+}
