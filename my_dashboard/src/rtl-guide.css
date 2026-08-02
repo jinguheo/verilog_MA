@@ -1,1 +1,22 @@
-.rtl-guide{display:grid;gap:16px;margin:0 0 16px}.rtl-guide-intro{margin:0 0 18px;color:#4d5e74;font-size:14px;line-height:1.65}.rtl-concept-grid,.rtl-tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.rtl-concept-grid article,.rtl-tool-grid article{border:1px solid #dfe7f1;border-radius:12px;padding:16px;background:#fbfdff}.rtl-concept-grid article>b{color:#145db9;font-size:16px}.rtl-concept-grid article p{font-size:13px;line-height:1.6;color:#344960;margin:8px 0 12px}.rtl-concept-grid article small{display:block;padding:10px;border-radius:8px;background:#eef5ff;color:#50657b;font-size:12px;line-height:1.55}.rtl-concept-grid strong,.rtl-tool-grid strong{display:block;color:#304765;font-size:11px;margin-bottom:3px}.rtl-tool-grid article{background:#fff}.rtl-tool-grid header{display:block;margin:0 0 12px;padding:0 0 11px;border-bottom:1px solid #e9eef4}.rtl-tool-grid header b,.rtl-tool-grid header span{display:block}.rtl-tool-grid header b{font-size:16px;color:#1b3659}.rtl-tool-grid header span{font-size:12px;color:#657a91;margin-top:3px}.rtl-tool-grid p{margin:10px 0;font-size:12px;line-height:1.55;color:#506278}.rtl-guide-note{margin:18px 0 0;padding:13px 15px;border-radius:9px;background:#f2f7fd;color:#50657a;font-size:13px;line-height:1.6}@media(max-width:720px){.rtl-concept-grid,.rtl-tool-grid{grid-template-columns:1fr}}
+/* RTL Design guide: concept explanations + tool comparison grid. */
+
+.rtl-guide { display: grid; gap: var(--sp-4); margin: 0 0 var(--sp-4); }
+.rtl-guide-intro { margin: 0 0 var(--sp-4); color: var(--text-secondary); font-size: var(--text-md); line-height: 1.65; }
+
+.rtl-concept-grid, .rtl-tool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+.rtl-concept-grid article, .rtl-tool-grid article { border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--sp-4); background: var(--surface); }
+.rtl-concept-grid article > b { color: var(--accent-strong); font-size: var(--text-lg); }
+.rtl-concept-grid article p { font-size: var(--text-base); line-height: 1.6; color: var(--text-secondary); margin: var(--sp-2) 0 var(--sp-3); }
+.rtl-concept-grid article small { display: block; padding: var(--sp-2); border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.5; }
+.rtl-concept-grid strong, .rtl-tool-grid strong { display: block; color: var(--text); font-size: var(--text-sm); margin-bottom: 3px; }
+
+.rtl-tool-grid header { display: block; margin: 0 0 var(--sp-3); padding: 0 0 var(--sp-3); border-bottom: 1px solid var(--border); }
+.rtl-tool-grid header b { display: block; font-size: var(--text-lg); color: var(--text); }
+.rtl-tool-grid header span { display: block; font-size: var(--text-sm); color: var(--text-muted); margin-top: 3px; }
+.rtl-tool-grid p { margin: var(--sp-2) 0; font-size: var(--text-sm); line-height: 1.55; color: var(--text-secondary); }
+
+.rtl-guide-note { margin: var(--sp-4) 0 0; padding: var(--sp-3) var(--sp-4); border-radius: var(--radius-sm); background: var(--surface-muted); color: var(--text-secondary); font-size: var(--text-base); line-height: 1.6; }
+
+@media (max-width: 720px) {
+  .rtl-concept-grid, .rtl-tool-grid { grid-template-columns: 1fr; }
+}

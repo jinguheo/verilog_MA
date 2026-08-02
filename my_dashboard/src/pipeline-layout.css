@@ -1,2 +1,0 @@
-/* Keep the RTL development stages within the available page width. */
-.pipeline-flow{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;overflow:visible!important}.pipeline-section{display:none!important}@media(max-width:1000px){.pipeline-flow{grid-template-columns:repeat(2,minmax(0,1fr))!important}}@media(max-width:600px){.pipeline-flow{grid-template-columns:1fr!important}}

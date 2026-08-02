@@ -1,1 +1,18 @@
-.sample-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}.sample-summary span{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;font-size:11px;color:#718096}.sample-summary b{font-size:18px;color:#1e3048;margin-right:4px}.sample-tabs{display:flex;gap:3px;border-bottom:1px solid #dfe6ef;margin-bottom:18px;overflow:auto}.sample-tabs button{border:0;background:transparent;padding:10px 14px;color:#738197;font-size:12px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent}.sample-tabs button:hover{color:#1b4f91}.sample-tabs button.active{color:#1769d1;font-weight:700;border-bottom-color:#1769d1}.sample-tab-panel{min-height:360px}.sample-tab-panel .card{margin-bottom:16px}@media(max-width:650px){.sample-summary{grid-template-columns:repeat(2,1fr)}.sample-tabs button{padding:9px 11px}}
+/* Summary strip + internal tab bar shared by Sample Test 1 and 2. */
+
+.sample-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); margin-bottom: var(--sp-5); }
+.sample-summary span { display: block; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--sp-3) var(--sp-4); font-size: var(--text-sm); color: var(--text-muted); }
+.sample-summary b { font-size: var(--text-xl); color: var(--text); margin-right: 4px; }
+
+.sample-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: var(--sp-5); overflow-x: auto; }
+.sample-tabs button { border: 0; background: transparent; padding: var(--sp-3) var(--sp-4); color: var(--text-muted); font-size: var(--text-md); font-weight: 600; white-space: nowrap; border-bottom: 2px solid transparent; }
+.sample-tabs button:hover { color: var(--accent-strong); }
+.sample-tabs button.active { color: var(--accent-strong); font-weight: 700; border-bottom-color: var(--accent); }
+
+.sample-tab-panel { min-height: 360px; }
+.sample-tab-panel .card { margin-bottom: var(--sp-4); }
+
+@media (max-width: 650px) {
+  .sample-summary { grid-template-columns: repeat(2, 1fr); }
+  .sample-tabs button { padding: var(--sp-2) var(--sp-3); }
+}

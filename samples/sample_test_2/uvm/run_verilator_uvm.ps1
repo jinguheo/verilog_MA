@@ -2,7 +2,8 @@
 [CmdletBinding()]
 param(
     [switch]$LintOnly,
-    [int]$Jobs = 4
+    [int]$Jobs = 4,
+    [string]$OutDirName = 'obj_uvm'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -10,12 +11,42 @@ $workspace = Split-Path -Parent (Split-Path -Parent (Split-Path $PSScriptRoot))
 $toolRoot = Join-Path $workspace 'oss-cad-suite'
 $rtl = 'D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl'
 $uvm = Join-Path $workspace 'third_party\uvm-core\src'
-$out = Join-Path (Split-Path $PSScriptRoot) 'obj_uvm'
+$out = Join-Path (Split-Path $PSScriptRoot) $OutDirName
+
+# This machine's installed MinGW-w64 g++ 16.1.0 mis-links std::string's move
+# constructor (undefined reference) specifically under -Os. Verilator's generated
+# Makefile compiles its runtime + generated classes with -Os by default via the
+# OPT_GLOBAL/OPT_FAST/OPT_SLOW make variables. Force -O2 instead through MAKEFLAGS
+# so the override reaches every object make compiles, including nested invocations.
+$env:MAKEFLAGS = 'OPT_GLOBAL=-O2 OPT_FAST=-O2 OPT_SLOW=-O2'
 
 if (-not (Test-Path "$toolRoot\bin\verilator_bin.exe")) { throw "Bundled Verilator is missing: $toolRoot" }
 if (-not (Test-Path "$rtl\prim_fifo_sync.sv")) { throw "OpenTitan prim RTL source is missing: $rtl" }
 
-$env:PATH = "$toolRoot\bin;$toolRoot\lib;$env:PATH"
+# oss-cad-suite does not bundle GNU Make. Without this, PATH resolves "make" to an
+# unrelated legacy C:\Windows\System32\make.exe, which cannot parse Verilator's
+# generated Makefiles ("0 was unexpected at this time."). Shim a real GNU Make
+# (mingw32-make, already on this machine) in ahead of it via a %TEMP% copy so
+# nothing in the repo or in oss-cad-suite needs to change.
+$makeShimDir = Join-Path $env:TEMP 'veriolg-make-shim'
+$makeShimExe = Join-Path $makeShimDir 'make.exe'
+if (-not (Test-Path $makeShimExe)) {
+    $gnuMake = Get-Command mingw32-make.exe -ErrorAction SilentlyContinue
+    if (-not $gnuMake) { throw "GNU Make (mingw32-make.exe) not found on PATH; required to drive Verilator's generated Makefile." }
+    New-Item -ItemType Directory -Force -Path $makeShimDir | Out-Null
+    Copy-Item $gnuMake.Source $makeShimExe -Force
+}
+
+# oss-cad-suite\lib ships its own (older) libstdc++-6.dll / libgcc_s_seh-1.dll /
+# libwinpthread-1.dll. If those shadow the mingw64 runtime that actually compiled
+# Vprim_fifo_sync_uvm_tb.exe, the binary fails at load time with
+# STATUS_ENTRYPOINT_NOT_FOUND (0xC0000139). Put the compiler's own bin dir first
+# so its matching runtime DLLs win DLL search order for both build and run.
+$gccCmd = Get-Command g++.exe -ErrorAction SilentlyContinue
+if (-not $gccCmd) { throw "g++.exe not found on PATH; required to link Verilator's generated C++." }
+$gccBin = Split-Path $gccCmd.Source -Parent
+
+$env:PATH = "$makeShimDir;$gccBin;$toolRoot\bin;$toolRoot\lib;$env:PATH"
 $env:VERILATOR_ROOT = "$toolRoot\share\verilator"
 $gitUnix = 'C:\Program Files\Git\usr\bin'
 if (Test-Path "$gitUnix\sh.exe") {

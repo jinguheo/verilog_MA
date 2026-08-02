@@ -19,3 +19,4 @@
 | REQ-FIFO-003 | Accepted reads return data in FIFO order and decrement occupancy. | Scoreboard observes `3c/a5/5a` in insertion order. |
 | REQ-FIFO-004 | Empty/full and `depth_o` remain consistent with the pointer submodule. | Every accepted transfer matches expected depth; end state is empty. |
 | REQ-FIFO-005 | The top and its required submodule/package elaborate together. | Hierarchical Verilator elaboration exits with code 0. |
+| REQ-FIFO-006 | The FIFO never silently overflows or underflows, for all reachable states, not just the stimulus a directed/UVM test happens to apply. | Formal (SymbiYosys, `smtbmc`, k-induction depth 12) proves `depth_o<=4`, `full_o==(depth_o==4)`, `rvalid_o==(depth_o!=0)`, no accepted write while full, no valid read while empty. See `formal/prim_fifo_sync.sby`. |

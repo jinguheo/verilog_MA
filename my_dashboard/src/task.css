@@ -1,1 +1,39 @@
-.task-hero{padding:26px 28px;border-radius:16px;background:linear-gradient(135deg,#eaf2ff,#f7fbff);border:1px solid #d9e6fa;margin-bottom:16px}.task-hero h2{font-size:28px;margin:5px 0}.task-hero p{margin:0;color:#65748a}.task-hero>b{display:block;margin-top:16px;font-size:14px;color:#26384f}.task-layout{display:grid;grid-template-columns:1.25fr .75fr;gap:15px;margin-bottom:15px}.work-list{margin:0;padding-left:24px}.work-list li{padding:10px 0 10px 5px;border-bottom:1px solid #edf0f4;font-size:13px;line-height:1.5}.work-list li:last-child,.deliverable-list li:last-child{border-bottom:0}.deliverable-list{padding:0;margin:0;list-style:none}.deliverable-list li{padding:11px 0;border-bottom:1px solid #edf0f4;font-size:13px}.deliverable-list li:before{content:'✓';color:#159c62;font-weight:800;margin-right:9px}.software-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.software-list article{border:1px solid #e6ebf1;border-radius:11px;padding:14px;position:relative}.software-list article>div{padding-right:94px}.software-list b{font-size:13px}.software-list p{font-size:11px;color:#8290a1;margin:4px 0 10px;line-height:1.45}.software-list article>span{position:absolute;right:12px;top:12px;font-size:10px;border-radius:10px;padding:4px 7px}.software-list .ready{color:#168d5b;background:#e9f8f0}.software-list .needs{color:#a66a1b;background:#fff5e4}.software-list small{display:block;border-top:1px solid #edf0f4;padding-top:9px;color:#637287;font-size:11px;line-height:1.45}.software-list code{display:block;margin-top:7px;padding:6px;background:#f6f8fa;border-radius:5px;color:#68778b;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@media(max-width:700px){.task-layout,.software-list{grid-template-columns:1fr}}
+/* Task workspace: hero summary, work/deliverable lists, software detail cards. */
+
+.task-hero {
+  padding: var(--sp-6) var(--sp-6); border-radius: var(--radius-lg);
+  background: var(--surface); border: 1px solid var(--border); margin-bottom: var(--sp-5);
+}
+.task-hero h2 { font-size: var(--text-2xl); margin: 4px 0; }
+.task-hero p { margin: 0; color: var(--text-muted); font-size: var(--text-md); }
+.task-hero > b { display: block; margin-top: var(--sp-4); font-size: var(--text-md); color: var(--text); font-weight: 700; }
+
+.task-layout { display: grid; grid-template-columns: 1.25fr .75fr; gap: var(--sp-4); margin-bottom: var(--sp-4); }
+
+.work-list { margin: 0; padding-left: var(--sp-6); }
+.work-list li { padding: var(--sp-2) 0 var(--sp-2) 4px; border-bottom: 1px solid var(--border); font-size: var(--text-base); line-height: 1.55; color: var(--text-secondary); }
+.work-list li:last-child, .deliverable-list li:last-child { border-bottom: 0; }
+
+.deliverable-list { padding: 0; margin: 0; list-style: none; }
+.deliverable-list li { padding: var(--sp-3) 0; border-bottom: 1px solid var(--border); font-size: var(--text-base); color: var(--text-secondary); }
+.deliverable-list li:before { content: '✓'; color: var(--success); font-weight: 800; margin-right: var(--sp-2); }
+
+.software-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+.software-list article { border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--sp-4); position: relative; }
+.software-list article > div { padding-right: 92px; }
+.software-list b { font-size: var(--text-base); }
+.software-list p { font-size: var(--text-sm); color: var(--text-muted); margin: 4px 0 var(--sp-3); line-height: 1.5; }
+.software-list article > span { position: absolute; right: var(--sp-3); top: var(--sp-3); font-size: var(--text-xs); font-weight: 700; border-radius: 999px; padding: 3px 8px; }
+.software-list .ready { color: var(--success); background: var(--success-soft); }
+.software-list .needs { color: var(--warning); background: var(--warning-soft); }
+.software-list small { display: block; border-top: 1px solid var(--border); padding-top: var(--sp-2); color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.5; }
+.software-list code {
+  display: block; margin-top: var(--sp-2); padding: var(--sp-2);
+  background: var(--surface-muted); border-radius: 6px;
+  color: var(--text-muted); font-family: var(--font-mono); font-size: var(--text-xs);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .task-layout, .software-list { grid-template-columns: 1fr; }
+}

@@ -45,6 +45,25 @@ package prim_fifo_sync_uvm_pkg;
     virtual prim_fifo_sync_if vif;
     uvm_analysis_port #(fifo_item) result_ap;
     int unsigned expected_depth;
+
+    // Functional coverage: op type crossed with the resulting depth bucket
+    // (empty / mid / full). Verilator 5.051 cannot parse a `covergroup`
+    // declared inside a class when referenced as another member's data type
+    // ("Expecting a data type" — confirmed with a minimal standalone repro;
+    // the same covergroup works fine at module scope). A plain hit-count
+    // matrix gives the same bin-coverage information without hitting that
+    // limitation.
+    typedef enum { DEPTH_EMPTY, DEPTH_MID, DEPTH_FULL } depth_bucket_e;
+    int unsigned cov_hits[fifo_op_e][depth_bucket_e];
+    function depth_bucket_e depth_bucket(int unsigned depth_after);
+      if (depth_after == 0) return DEPTH_EMPTY;
+      if (depth_after == 4) return DEPTH_FULL;
+      return DEPTH_MID;
+    endfunction
+    function void cov_sample(fifo_op_e op, int unsigned depth_after);
+      cov_hits[op][depth_bucket(depth_after)] = cov_hits[op][depth_bucket(depth_after)] + 1;
+    endfunction
+
     `uvm_component_utils(fifo_driver)
     function new(string name, uvm_component parent); super.new(name,parent); result_ap=new("result_ap",this); endfunction
     function void build_phase(uvm_phase phase);
@@ -68,6 +87,7 @@ package prim_fifo_sync_uvm_pkg;
             @(posedge vif.clk_i); if(!vif.wready_o) `uvm_error("FIFO_DRV","write rejected"); #1; expected_depth++;
             if(vif.depth_o!==expected_depth) `uvm_error("REQ-FIFO-002","write did not increment depth")
             if(expected_depth==4 && !vif.full_o) `uvm_error("REQ-FIFO-002","full_o not asserted at depth 4")
+            cov_sample(req.op, expected_depth);
             @(negedge vif.clk_i); vif.wvalid_i<=0;
             observed=fifo_item::type_id::create("observed_push");
             observed.op=req.op;
@@ -82,6 +102,7 @@ package prim_fifo_sync_uvm_pkg;
             observed.data=vif.rdata_o;
             vif.rready_i<=1; @(posedge vif.clk_i); #1; expected_depth--;
             if(vif.depth_o!==expected_depth) `uvm_error("REQ-FIFO-004","read did not decrement depth")
+            cov_sample(req.op, expected_depth);
             @(negedge vif.clk_i); vif.rready_i<=0;
             result_ap.write(observed);
           end
@@ -90,6 +111,22 @@ package prim_fifo_sync_uvm_pkg;
         seq_item_port.item_done();
       end
     endtask
+    function void report_phase(uvm_phase phase);
+      fifo_op_e ops[2] = '{FIFO_PUSH, FIFO_POP};
+      depth_bucket_e buckets[3] = '{DEPTH_EMPTY, DEPTH_MID, DEPTH_FULL};
+      string bucket_name[3] = '{"empty", "mid", "full"};
+      int unsigned hit_bins = 0;
+      string line = "";
+      foreach (ops[i]) begin
+        foreach (buckets[j]) begin
+          int unsigned n = cov_hits[ops[i]][buckets[j]];
+          if (n > 0) hit_bins++;
+          line = {line, $sformatf(" %0s.%0s=%0d", ops[i].name(), bucket_name[j], n)};
+        end
+      end
+      `uvm_info("FIFO_COV", $sformatf("op x depth bins hit: %0d/6 (%0.1f%%) —%0s",
+                hit_bins, 100.0*hit_bins/6.0, line), UVM_NONE)
+    endfunction
   endclass
 
   class fifo_monitor extends uvm_component;

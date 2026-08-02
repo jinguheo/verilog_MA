@@ -1,0 +1,19 @@
+[options]
+mode prove
+depth 12
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+read_slang --top formal_top -ID:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl prim_fifo_sync.sv prim_fifo_sync_cnt.sv prim_count.sv prim_count_pkg.sv prim_util_pkg.sv prim_fifo_sync_formal.sv
+prep -top formal_top
+
+[files]
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_fifo_sync.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_fifo_sync_cnt.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_count.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_count_pkg.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_util_pkg.sv
+formal\prim_fifo_sync_formal.sv

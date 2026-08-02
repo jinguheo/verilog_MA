@@ -22,9 +22,9 @@ export default function SampleTest2() {
     </section>
     <section className="sample-summary">
       <span><b>3</b> design units</span>
-      <span><b>2</b> UVM sequences</span>
-      <span><b>4</b> planned scenarios</span>
-      <span><b>1</b> simulator blocker</span>
+      <span><b>4</b> UVM requirements — PASS</span>
+      <span><b>5</b> formal properties — PASS</span>
+      <span><b>4/4</b> reachable coverage bins</span>
     </section>
     <div className="sample-tabs" role="tablist">
       {tabs.map(item => <button key={item.id} role="tab" aria-selected={tab === item.id} className={tab === item.id ? 'active' : ''} onClick={() => setTab(item.id)}>{item.label}</button>)}

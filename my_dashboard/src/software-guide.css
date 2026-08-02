@@ -1,1 +1,12 @@
-.software-guide{margin-top:14px}.software-guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.software-guide-grid article{border:1px solid #dfe7f1;border-radius:12px;padding:16px;background:#fbfdff}.software-guide-grid article>b{display:block;color:#1e4f89;font-size:16px;margin-bottom:10px}.software-guide-grid p{margin:9px 0;color:#53657b;font-size:13px;line-height:1.6}.software-guide-grid strong{display:block;color:#293f5e;font-size:11px;margin-bottom:2px}@media(max-width:700px){.software-guide-grid{grid-template-columns:1fr}}
+/* Per-task software guide grid (purpose / strength / difference explanations). */
+
+.software-guide { margin-top: var(--sp-4); }
+.software-guide-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+.software-guide-grid article { border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--sp-4); background: var(--surface); }
+.software-guide-grid article > b { display: block; color: var(--accent-strong); font-size: var(--text-lg); margin-bottom: var(--sp-2); }
+.software-guide-grid p { margin: var(--sp-2) 0; color: var(--text-secondary); font-size: var(--text-base); line-height: 1.6; }
+.software-guide-grid strong { display: block; color: var(--text); font-size: var(--text-sm); margin-bottom: 2px; }
+
+@media (max-width: 700px) {
+  .software-guide-grid { grid-template-columns: 1fr; }
+}
