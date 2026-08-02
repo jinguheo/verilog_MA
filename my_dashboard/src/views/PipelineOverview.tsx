@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Overview } from '../types'
 import GeneralRtlPipeline from './GeneralRtlPipeline'
 
@@ -16,7 +17,8 @@ const stageOrder = ['요구 사항', '설계 / 스펙', 'RTL 설계', '검증', 
 const statusText = (status: string) => status === 'implemented' ? '준비 완료' : status === 'external-required' ? '외부 환경 필요' : '진행 준비'
 
 export default function PipelineOverview({ data }: { data: Overview }) {
-  return <><PipelineOverviewBase data={data}/><GeneralRtlPipeline data={data}/></>
+  const [page, setPage] = useState<'overview' | 'tasks'>('overview')
+  return <><div className="pipeline-pages" data-page={page} role="tablist"><button role="tab" aria-selected={page === 'overview'} className={page === 'overview' ? 'active' : ''} onClick={() => setPage('overview')}>Overview</button><button role="tab" aria-selected={page === 'tasks'} className={page === 'tasks' ? 'active' : ''} onClick={() => setPage('tasks')}>단계별 Task</button></div>{page === 'overview' ? <PipelineOverviewBase data={data}/> : <GeneralRtlPipeline data={data}/>}</>
 }
 
 function PipelineOverviewBase({ data }: { data: Overview }) {
