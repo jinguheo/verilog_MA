@@ -50,6 +50,37 @@ package daq_pkg;
   localparam int unsigned ChIdxW   = (NumCh > 1) ? $clog2(NumCh) : 1;
   localparam int unsigned BeatCntW = $clog2(MaxBurst + 1);
 
+  // ------------------------------------------------------------- stream path
+
+  // Sanity ceiling on a single packet's payload length, checked by
+  // pkt_check.sv. Distinct from DescMaxLength even though both currently
+  // equal 1 MiB: one bounds what a DMA descriptor may claim to move, the
+  // other bounds what a single source packet may claim to be - conflating
+  // them would make a future change to either limit silently change both.
+  localparam int unsigned MaxPacketBytes = 32'h0010_0000;
+
+  // Packed beat layout shared across pkt_align's output, the per-channel
+  // async CDC FIFO, and pkt_check's input - one flat bit-offset convention so
+  // those three cannot silently disagree about field order. Fields, LSB to
+  // MSB: data, strb, crc_expect (valid only when eop), eop, sop.
+  //
+  // crc_expect rides alongside the data rather than being embedded as
+  // trailing bytes in the source stream. A CRC-32 trailer spans multiple
+  // bytes; once packed into AxiDw-wide beats those bytes can straddle a beat
+  // boundary, which would force pkt_check to buffer and look ahead before it
+  // knows which bytes are payload versus trailer. Carrying the expected value
+  // out-of-band on the eop beat sidesteps that lookahead entirely, and Sample
+  // Test 3's own RTL guidance already calls for exactly this ("carry sop/eop,
+  // byte-enable, sequence, expected CRC ... with data; never regenerate
+  // boundaries after a stall") - this is that rule applied to a 4-byte
+  // trailer instead of the 1-byte one Sample Test 3 had.
+  localparam int unsigned PktBeatDataLsb = 0;
+  localparam int unsigned PktBeatStrbLsb = AxiDw;
+  localparam int unsigned PktBeatCrcLsb  = AxiDw + AxiBw;
+  localparam int unsigned PktBeatEopBit  = AxiDw + AxiBw + 32;
+  localparam int unsigned PktBeatSopBit  = AxiDw + AxiBw + 33;
+  localparam int unsigned PktBeatBits    = AxiDw + AxiBw + 34;
+
   // ---------------------------------------------------------------- descriptor
 
   typedef struct packed {
