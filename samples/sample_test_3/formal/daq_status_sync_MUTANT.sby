@@ -1,0 +1,21 @@
+[options]
+# Checker sanity. Identical to daq_status_sync.sby except the mutant copy of
+# daq_top.sv is read with MUTANT_POP_IGNORES_READY defined, so the FIFO is
+# popped on dma_wvalid alone and a stalled memory silently loses data.
+#
+# Expected outcome: FAIL, not PASS. If this passes, the no-pop-without-ready
+# and stalled-request-stability properties are vacuous.
+mode prove
+depth 20
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+read_slang --top status_sync_formal_top -DMUTANT_POP_IGNORES_READY daq_top_MUTANT.sv daq_status_formal.sv
+prep -top status_sync_formal_top
+
+[files]
+mutants\daq_top_MUTANT.sv
+formal\daq_status_formal.sv

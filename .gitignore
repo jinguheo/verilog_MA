@@ -15,6 +15,7 @@ samples/**/tmp_*/
 samples/**/formal/*/
 samples/**/*.out
 samples/**/uvm/uvm-regression*
+.local-cache/
 
 oss-cad-suite/
 third_party/installers/

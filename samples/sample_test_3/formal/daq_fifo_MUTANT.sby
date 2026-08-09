@@ -1,0 +1,22 @@
+[options]
+# Checker sanity. Identical to daq_fifo.sby except the mutant copy of
+# daq_top.sv is read with MUTANT_FIFO_FULL_STUCK_LOW defined, so the async
+# FIFO never reports full and silently overwrites unread entries.
+#
+# Expected outcome: FAIL, not PASS. If this passes, the occupancy and
+# overflow properties in daq_fifo_formal.sv are vacuous and prove nothing.
+mode bmc
+depth 40
+multiclock on
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+read_slang --top fifo_formal_top -DMUTANT_FIFO_FULL_STUCK_LOW daq_top_MUTANT.sv daq_fifo_formal.sv
+prep -top fifo_formal_top
+
+[files]
+mutants\daq_top_MUTANT.sv
+formal\daq_fifo_formal.sv

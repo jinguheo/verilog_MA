@@ -7,6 +7,17 @@ smtbmc
 
 [script]
 plugin -i slang
+# Tried enabling prim_fifo_sync's own built-in assertions here via
+# --no-synthesis-define (read_slang implicitly defines `SYNTHESIS`, which
+# routes prim_assert.sv to the no-op dummy macros). Both alternatives fail on
+# this oss-cad-suite slang plugin build: `YOSYS macros can't parse prim_count's
+# temporal operators (|=>, $past, $stable - "expected ';'"), and the standard
+# (real SVA) macros hit "encountered unsupported SVA feature" on
+# `assert property (@(posedge clk) disable iff (...) ...)` plus an unsupported
+# `$isunknown` system task. This is a tooling gap in the bundled slang
+# frontend, not something fixable from this repo - left as-is (implicit
+# `SYNTHESIS`, dummy macros) so the proof keeps passing on the 5 explicit
+# properties below.
 read_slang --top formal_top -ID:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl prim_fifo_sync.sv prim_fifo_sync_cnt.sv prim_count.sv prim_count_pkg.sv prim_util_pkg.sv prim_fifo_sync_formal.sv
 prep -top formal_top
 

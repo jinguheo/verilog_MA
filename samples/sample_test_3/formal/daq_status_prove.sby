@@ -1,0 +1,28 @@
+[options]
+# Opt-in variant of daq_status.sby that attempts the unbounded proof. It is
+# NOT run by run_formal.ps1 and is NOT expected to pass: the base case passes
+# but temporal induction reports a counterexample on the write-to-clear
+# property. It is kept so the open item stays reproducible in one command
+# instead of living only in prose.
+#
+#   sby -f formal\daq_status_prove.sby      (from samples\sample_test_3)
+#
+# Read the result alongside the tick/p_tick self-check in daq_status_formal.sv:
+# if that self-check is among the failures, the one-edge-history model the
+# other properties rely on is unsound under clk2fflogic and the write-to-clear
+# counterexample says nothing about the DUT.
+mode prove
+depth 20
+multiclock on
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+read_slang --top status_formal_top daq_top.sv daq_status_formal.sv
+prep -top status_formal_top
+
+[files]
+rtl\daq_top.sv
+formal\daq_status_formal.sv

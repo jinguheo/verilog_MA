@@ -1,0 +1,26 @@
+[options]
+# `mode prove` was tried first: the base case passes, but temporal induction
+# reports a counterexample on the write-to-clear property in which p_clear is
+# high, no beat completed, and bus_error is still set. From a real reset that
+# state is unreachable (the base case says so), and it could not be pinned
+# down within this session whether it is a genuine deep-state violation or an
+# artifact of how clk2fflogic orders the assertion's register reads against
+# the DUT's. Rather than claim an unbounded proof that has not been closed,
+# this runs bounded - see RESULTS.md, where it is listed as an open item.
+mode bmc
+depth 40
+# ctrl_clk, src_clk and dma_clk are independent free inputs, so the design is
+# lowered with clk2fflogic instead of assuming a single clock.
+multiclock on
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+read_slang --top status_formal_top daq_top.sv daq_status_formal.sv
+prep -top status_formal_top
+
+[files]
+rtl\daq_top.sv
+formal\daq_status_formal.sv

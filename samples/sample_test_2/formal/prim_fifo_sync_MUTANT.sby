@@ -1,0 +1,24 @@
+[options]
+mode prove
+depth 12
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+# Checker-sanity demo: identical to prim_fifo_sync.sby except
+# prim_fifo_sync_cnt.sv is replaced by the mutant copy (full_o stuck at 0).
+# Expected outcome: FAIL, not PASS - `full_o == (depth_o == 4)` and the
+# no-silent-overflow property in prim_fifo_sync_formal.sv should both break
+# with a concrete counterexample, proving these properties are not vacuous.
+read_slang --top formal_top -ID:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl prim_fifo_sync.sv prim_fifo_sync_cnt_MUTANT_full_stuck_low.sv prim_count.sv prim_count_pkg.sv prim_util_pkg.sv prim_fifo_sync_formal.sv
+prep -top formal_top
+
+[files]
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_fifo_sync.sv
+mutants\prim_fifo_sync_cnt_MUTANT_full_stuck_low.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_count.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_count_pkg.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_util_pkg.sv
+formal\prim_fifo_sync_formal.sv

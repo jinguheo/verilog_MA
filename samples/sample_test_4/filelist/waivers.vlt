@@ -1,0 +1,56 @@
+`verilator_config
+
+// Path patterns here are matched against the filename as Verilator received
+// it, which on Windows means backslashes for anything given as an absolute
+// path. "*opentitan*" avoids depending on the separator entirely.
+
+// The OpenTitan prim tree is a third-party dependency consumed read-only from
+// D:\MyWork\verilog. It has its own lint sign-off (hw/ip/prim/lint) against a
+// different tool, and warnings raised here are not actionable in this
+// repository. Silencing it by path is what lets the rest of the build run with
+// -Wall, so that warnings on Sample Test 4's own code stay visible.
+lint_off -file "*opentitan*"
+
+// Register-map and encoding constants are declared once, in one package, and
+// consumed by blocks that arrive over several phases. UNUSEDPARAM on a
+// constants package therefore reports "this phase has not been written yet",
+// which is not a defect and would otherwise have to be re-waived every phase.
+// Scoped to the package directory so it cannot hide an unused parameter on a
+// real module.
+lint_off -rule UNUSEDPARAM -file "*rtl?pkg?*"
+
+// Testbench idioms that -Wall flags but that are correct in a TB:
+//   PROCASSINIT   a clock/counter declared with an initialiser and then driven
+//                 procedurally - the normal way to write a free-running TB
+//                 clock, and there is no reset to initialise it from
+//   SYNCASYNCNET  the TB reference model samples rst_n synchronously while the
+//                 DUT uses it asynchronously; that asymmetry is the point,
+//                 since the model must not depend on the DUT's reset style
+// Scoped to tb/tb_*.sv so RTL never inherits them.
+//   BLKSEQ        scoreboard bookkeeping (error counts, queues, occupancy)
+//                 written with '=' inside a posedge process; these are
+//                 testbench variables read by other testbench code in the same
+//                 region, not signals feeding logic, so the NBA discipline
+//                 that BLKSEQ enforces does not apply
+lint_off -rule PROCASSINIT  -file "*tb?tb_*.sv"
+lint_off -rule SYNCASYNCNET -file "*tb?tb_*.sv"
+lint_off -rule BLKSEQ       -file "*tb?tb_*.sv"
+
+// Mutant copies deliberately carry the golden module's name in a *_MUTANT.sv
+// file (DECLFILENAME), and a defect is often exactly "this signal is no longer
+// used" - MUT_CNT_WRAP discards the carry bit, which is the whole mutation.
+// Linting a mutant to the same standard as the golden RTL would mean fixing
+// the defect.
+lint_off -rule DECLFILENAME -file "*mutants?*"
+lint_off -rule UNUSEDSIGNAL -file "*mutants?*"
+
+// prim_reuse_smoke exists only to prove the prim mapping elaborates. Every
+// output is deliberately dangling from the point of view of a design, and the
+// unused-signal warnings that produces would drown the real ones.
+// Unused prim outputs (fifo depth/full/err, arbiter idx, ECC syndrome) are
+// left dangling on purpose: the point is to prove the port lists match, not to
+// consume every signal. Real instantiations in later phases are NOT covered by
+// this waiver, so a dangling err_o there will still be reported.
+lint_off -rule UNUSEDSIGNAL     -file "*prim_reuse_smoke.sv"
+lint_off -rule UNDRIVEN         -file "*prim_reuse_smoke.sv"
+lint_off -rule PINCONNECTEMPTY  -file "*prim_reuse_smoke.sv"

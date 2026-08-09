@@ -1,0 +1,19 @@
+[options]
+# Unbounded proof of the status / DMA-protocol properties under a single-clock
+# abstraction (all three domains tied together). See the comment on
+# status_sync_formal_top in daq_status_formal.sv for why the multiclock variant
+# cannot close induction and what this run does and does not claim.
+mode prove
+depth 20
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+read_slang --top status_sync_formal_top daq_top.sv daq_status_formal.sv
+prep -top status_sync_formal_top
+
+[files]
+rtl\daq_top.sv
+formal\daq_status_formal.sv

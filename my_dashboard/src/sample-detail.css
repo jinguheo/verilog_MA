@@ -24,6 +24,7 @@
 .check-list span { display: block; margin-top: 4px; color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.5; }
 
 .warning-badge { font-size: var(--text-xs); font-weight: 700; color: var(--warning); background: var(--warning-soft); padding: 5px 9px; border-radius: 999px; }
+.ok-badge { font-size: var(--text-xs); font-weight: 700; color: var(--success); background: var(--success-soft); padding: 5px 9px; border-radius: 999px; }
 
 .uvm-stack { display: grid; gap: 4px; }
 .uvm-stack b { font: 600 var(--text-sm) var(--font-mono); color: var(--accent-strong); }
@@ -35,6 +36,24 @@
 .work-status div { padding: var(--sp-3); border-radius: var(--radius-sm); background: var(--surface-muted); }
 .work-status b { display: block; font-size: var(--text-base); color: var(--text); }
 .work-status span { display: block; font-size: var(--text-sm); color: var(--text-muted); margin-top: var(--sp-1); line-height: 1.45; }
+
+/* ASCII block/port and sequence-flow diagrams (used across all sample test
+   Architecture/Design tabs). Pre-existing class name (`rtl-code`) that had no
+   rule anywhere — every diagram using it rendered as an unstyled browser
+   <pre>. Fixed here rather than introduced under a new name so Sample Test 3's
+   existing diagrams pick it up too. */
+.rtl-code {
+  margin: var(--sp-4) 0 0;
+  padding: var(--sp-4);
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font: 400 var(--text-sm) / 1.55 var(--font-mono);
+  white-space: pre;
+  overflow-x: auto;
+}
+.rtl-code b, .rtl-code strong { color: var(--accent-strong); font-weight: 700; }
 
 /* Module hierarchy tree (Sample Test 2 — prim_fifo_sync composition). */
 .fifo-tree { display: grid; gap: 4px; margin: var(--sp-4) 0; }

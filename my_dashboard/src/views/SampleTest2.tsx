@@ -22,7 +22,7 @@ export default function SampleTest2() {
     </section>
     <section className="sample-summary">
       <span><b>3</b> design units</span>
-      <span><b>4</b> UVM requirements — PASS</span>
+      <span><b>5</b> UVM requirements — PASS</span>
       <span><b>5</b> formal properties — PASS</span>
       <span><b>4/4</b> reachable coverage bins</span>
     </section>

@@ -1,0 +1,37 @@
+[options]
+# Bounded, not unbounded. `mode prove` was tried first and its base case
+# passes, but temporal induction does not close: `occ <= DEPTH` is not
+# inductive on its own, and closing it needs a hand-crafted invariant relating
+# each pointer to what the opposite domain's synchronizer stages currently
+# hold. Speculative lag bounds were tried as helpers and removed again rather
+# than assert something unjustified to make the proof look stronger than it
+# is. Everything below is therefore proved for all interleavings up to the
+# depth bound, which is the honest claim.
+mode bmc
+# Depth is a deliberate cost/coverage trade-off, not an arbitrary number.
+# clk2fflogic timesteps are finer-grained than clock cycles, and solve time
+# grows sharply: step 50 took ~9 minutes on this machine, so a 120-step run is
+# impractical here. 40 steps still covers enough wclk/rclk interleavings to
+# fill and drain the 8-entry buffer several times over.
+depth 40
+# The two FIFO domains are genuinely asynchronous, so the design must be
+# lowered with clk2fflogic rather than assuming a single clock. The engine is
+# then free to interleave wclk and rclk edges any way it likes, including the
+# pathological orderings a directed simulation would never produce.
+multiclock on
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+# daq_top.sv is read for the daq_async_fifo module it defines. Its
+# `ifndef SYNTHESIS` block keeps the simulation-only SVA (disable iff, |=>,
+# $stable) out of this build - the bundled slang frontend rejects those
+# constructs, see samples/sample_test_2/formal/prim_fifo_sync.sby.
+read_slang --top fifo_formal_top daq_top.sv daq_fifo_formal.sv
+prep -top fifo_formal_top
+
+[files]
+rtl\daq_top.sv
+formal\daq_fifo_formal.sv
