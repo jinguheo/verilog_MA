@@ -353,7 +353,7 @@ absence of `beat_valid_i` on a given cycle.
 
 ## Phase 4 (in progress) — DMA engine
 
-Only `dma_sched.sv` so far; `desc_fetch.sv`, `axi_rd_master.sv`,
+`dma_sched.sv` and `desc_fetch.sv` done; `axi_rd_master.sv`,
 `axi_wr_master.sv`, `wr_track.sv` are not started.
 
 Delivered:
@@ -417,6 +417,76 @@ a width cast over the mismatch.
 | `MUT_SCHED_EARLYUNLOCK` | killed |
 | `MUT_SCHED_DBLREADY` | killed |
 
+### `desc_fetch.sv` — descriptor ring walker
+
+Delivered:
+- [`rtl/dma/desc_fetch.sv`](rtl/dma/desc_fetch.sv) - one shared ring-walk
+  engine for all `NumCh` channels (per PLAN.md's architecture diagram:
+  `dma_sched -> desc_fetch -> axi_rd_master -> AXI4`, not a raw AXI port of
+  its own). Only one descriptor fetch is ever outstanding across every
+  channel - a second `prim_arbiter_tree` instance (this module's own, after
+  `dma_sched`'s) picks which enabled, not-yet-loaded channel gets the shared
+  fetch path next, with the same "gate the arbiter's request input to zero
+  while busy, don't just ignore its output" discipline `dma_sched.sv`
+  established. `daq_pkg::desc_check()` is reused as-is; `ch_desc_go_i`
+  restarts a channel's ring from `ch_desc_base_i` and clears any halted/
+  error state, and from there the walk is autonomous - `ctrl.last` halts it,
+  `ctrl.link` redirects to `next_ptr` instead of the linear `+DescBytes`
+  advance, and `ch_abort_i` halts and clears the error but requires a fresh
+  go to actually resume (no silent restart from a stale pointer). The
+  request/response protocol to `axi_rd_master` (not built yet) is
+  deliberately a small abstraction, not raw AXI AR/R, matching the pkt_check/
+  chan_ctrl split from phase 3 - one layer computes/validates, the next acts.
+- Block testbench: [`tb/tb_desc_fetch.sv`](tb/tb_desc_fetch.sv), built at
+  `NumCh=4`, standing in for `axi_rd_master` with an associative-array
+  "memory" model. Six phases: one descriptor, a two-descriptor linear ring
+  walk, a `ctrl.link` jump to a non-contiguous `next_ptr`, all four
+  `desc_check()` failure modes plus an AXI-read-error injection (five error
+  paths total, each checked for the right `err_e` code and that a failed
+  fetch never presents as valid), abort mid-ring followed by a clean restart
+  from the ring's own base (not wherever the abort caught it), and two
+  channels contending for the single shared fetch path.
+- Mutant: [`mutants/desc_fetch_MUTANT.sv`](mutants/desc_fetch_MUTANT.sv)
+  (`MUT_DESC_NOLINK`, `MUT_DESC_NOHALT`, `MUT_DESC_NOCHECK`).
+
+#### Lint gate — parameter sweep
+
+Clean across all 6 configurations - same `NumCh==1` zero-width-arbiter-port
+workaround as `dma_sched.sv` needed, caught by the sweep the same way. A
+second, unrelated `NumCh==1` issue also surfaced: this module's own
+`BeatCntW` local param name collided with an unrelated same-named `localparam`
+already in `daq_pkg.sv` (AXI burst-length counting), a `VARHIDDEN` warning
+under `-Wall` - renamed to `DescBeatCntW`.
+
+#### Two real bugs found and fixed while closing this module's own gate
+
+1. **A same-cycle stale-pointer race, in the RTL itself.** The first version
+   computed `need_fetch` from `ch_enable_i` alone; on the very cycle
+   `ch_desc_go_i` pulses, `ch_enable_i` is already high but `cur_ptr_q` has
+   not yet been loaded with `ch_desc_base_i` (that load is itself registered,
+   committing on this same edge, not before it) - so a fetch could be
+   arbitrated and issued using the *previous* (at reset, zero) pointer, one
+   cycle too early. `tb_desc_fetch.sv` caught it immediately: every single
+   `go` produced a fetch to address zero. Fixed by also gating `need_fetch`
+   on `~ch_desc_go_i`, deferring arbitration by exactly the one cycle the
+   pointer load needs.
+2. **A valid/ready handshake bug in the testbench's own memory-model stub**,
+   the same class of mistake phase 2's `tb_axil_slave.sv`/`tb_daq_csr.sv`
+   made and phase 3's `tb_chan_top.sv` avoided: the stub asserted a response
+   beat's `valid`, waited one `negedge`, then checked `ready`'s *level* to
+   decide whether that beat was accepted - but `rd_resp_ready_o` drops the
+   same edge it accepts the *last* beat of a fetch, so checking it one
+   negedge later routinely observed 0 and spun in `while (!ready)` waiting
+   for a level that would never return on its own. It eventually "recovered"
+   only because a *later, unrelated* fetch happened to drive `ready` back to
+   1 again - by which point the stub had been holding `valid` (and stale
+   data) asserted for many cycles, corrupting whatever fetch came next.
+   Fixed with the same posedge-monitor acceptance pattern (`resp_taken =
+   valid & ready`, latched at the posedge the DUT itself uses to decide
+   acceptance) already used everywhere else in this project's testbenches -
+   the module header on `tb_chan_top.sv`'s `offer_taken` explains why the
+   pattern exists at all.
+
 ## Toolchain notes (new, on top of what Sample Test 2/3 already documented)
 
 A fourth Windows toolchain issue, distinct from the three
@@ -438,11 +508,14 @@ reusing the same long-lived session for the build/run commands.
 
 ## Not done yet
 
-Phase 4 is only `dma_sched.sv` so far; `desc_fetch.sv`, `axi_rd_master.sv`,
-`axi_wr_master.sv`, `wr_track.sv` remain. Phases 5-6 (IRQ/perf/top
-integration, integration UVM + formal + regression) are unstarted.
-`rtl/irq`, `rtl/stat` do not exist yet. `daq_csr.sv`'s per-channel status,
-counter, and cause inputs are currently driven directly by its block
-testbench; nothing downstream consumes `ch_enable_o`/`ch_desc_base_o`/
-`ch_desc_go_o` yet - `dma_sched.sv` does not touch descriptors at all, only
-the already-gated beat streams past `chan_top`.
+Phase 4 has `dma_sched.sv` and `desc_fetch.sv`; `axi_rd_master.sv`,
+`axi_wr_master.sv`, `wr_track.sv` remain - and until they exist,
+`desc_fetch.sv`'s `rd_req_*`/`rd_resp_*` ports and its `ch_desc_valid_o`/
+`ch_desc_addr_o`/`ch_desc_maxlen_o` outputs have no real consumer, only its
+own block testbench's stand-ins. Phases 5-6 (IRQ/perf/top integration,
+integration UVM + formal + regression) are unstarted. `rtl/irq`, `rtl/stat`
+do not exist yet. `daq_csr.sv`'s per-channel status, counter, and cause
+inputs are currently driven directly by its block testbench; nothing
+downstream consumes `ch_enable_o` yet, though `ch_desc_base_o`/
+`ch_desc_go_o` now have a real (if not yet wired-up) consumer in
+`desc_fetch.sv`'s `ch_desc_base_i`/`ch_desc_go_i`.

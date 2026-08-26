@@ -134,5 +134,31 @@ mutation 3/3 killed. 상세 근거는 RESULTS.md의 "Phase 4" 절 참고.
   `[$clog2(1)-1:0]` = 0폭이 되는 경우를 lint 스윕이 즉시 잡아냄 —
   `generate if (NumCh > 1)`로 단일 채널 케이스를 아예 우회해서 해결.
 
-다음: phase 4 나머지 (`desc_fetch.sv`, `axi_rd_master.sv`,
-`axi_wr_master.sv`, `wr_track.sv`).
+**`desc_fetch.sv` 완료 및 검증됨** — 전 채널 공유 descriptor ring walker
+(PLAN.md 아키텍처: `dma_sched -> desc_fetch -> axi_rd_master -> AXI4`, AXI를
+직접 만지지 않고 axi_rd_master에 작은 request/response 프로토콜만 요청).
+`prim_arbiter_tree`를 이번 모듈에서 두 번째로 재사용 (한 번에 채널 하나씩만
+fetch). lint clean(6 configuration, NumCh=1은 dma_sched와 동일한 우회 재사용
++ `daq_pkg.sv`와 이름 충돌한 `BeatCntW`를 `DescBeatCntW`로 리네임), block TB
+PASS(6 phase: 단일 descriptor / linear ring walk / link jump / 5가지 에러
+경로 / abort 후 clean restart / 2채널 경합), mutation 3/3 killed
+(`MUT_DESC_NOLINK`, `MUT_DESC_NOHALT`, `MUT_DESC_NOCHECK`). 상세 근거는
+RESULTS.md의 "desc_fetch.sv" 절 참고.
+
+- RTL 실버그 1건: `ch_desc_go_i`가 pulse되는 그 사이클에는 `cur_ptr_q`가
+  아직 새 base로 로드되기 전(레지스터 업데이트는 그 edge에 커밋)인데,
+  `need_fetch`가 `ch_enable_i`만 보고 계산되어 있어서 매 go마다 주소 0으로
+  fetch가 나가버림. `need_fetch`에 `~ch_desc_go_i` 게이팅 추가해서 해결 —
+  `tb_desc_fetch.sv`가 즉시 잡아냄.
+- TB 버그 1건 (axi_rd_master 대역 memory 모델 stub): 응답 beat의
+  valid를 세운 뒤 negedge 하나 대기하고 `ready`의 **레벨**을 확인하는
+  방식으로 짰는데, fetch의 마지막 beat가 accept되는 바로 그 edge에
+  `rd_resp_ready_o`가 떨어지는 걸 못 보고 `while(!ready)`에 갇힘 — 나중에
+  무관한 다른 fetch가 ready를 다시 세워줄 때까지 우연히 안 풀림 (그 사이
+  valid/데이터를 계속 잘못 세워놓고 있었음). tb_chan_top.sv의
+  `offer_taken`과 동일한 posedge-monitor acceptance 패턴(`resp_taken =
+  valid & ready`, DUT가 실제로 accept를 결정하는 그 posedge에 latch)으로
+  고침.
+
+다음: phase 4 나머지 (`axi_rd_master.sv`, `axi_wr_master.sv`,
+`wr_track.sv`).

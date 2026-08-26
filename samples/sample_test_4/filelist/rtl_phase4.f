@@ -5,3 +5,4 @@
 -f $DAQ_ROOT/filelist/rtl_phase3.f
 
 $DAQ_ROOT/rtl/dma/dma_sched.sv
+$DAQ_ROOT/rtl/dma/desc_fetch.sv

@@ -205,12 +205,39 @@ mutation 3/3 killed. Evidence in `samples/sample_test_4/RESULTS.md`'s "Phase
   genuinely zero-width - a real mismatch against this module's own
   always-≥1-bit `ChIdxW` convention, caught immediately by the lint sweep.
 
-**Next up**: the rest of phase 4 (`desc_fetch.sv`, `axi_rd_master.sv`,
-`axi_wr_master.sv`, `wr_track.sv`), per
-`samples/sample_test_4/PHASE_3_6_PLAN.md`. The AXI read master's scope beyond
-descriptor fetch is deferred until `desc_fetch.sv` exists to make it concrete.
-Whether to run graphify over this repository (so Sample Test 2/3/4 assets
-become searchable) is still open.
+## Session 2026-08-26 (later still) — Sample Test 4 phase 4: desc_fetch.sv
+
+`rtl/dma/desc_fetch.sv` delivered and verified: one shared descriptor
+ring-walk engine for all `NumCh` channels, sitting between `dma_sched` and
+the not-yet-built `axi_rd_master` (per PLAN.md's diagram - it issues a small
+request/response protocol, not raw AXI AR/R). Second use of
+`prim_arbiter_tree` in this project, arbitrating which channel gets the one
+shared fetch path next. Lint clean (6-config sweep), block TB pass (6
+phases), mutation 3/3 killed (`MUT_DESC_NOLINK`, `MUT_DESC_NOHALT`,
+`MUT_DESC_NOCHECK`). Evidence in `samples/sample_test_4/RESULTS.md`.
+
+- **A real same-cycle RTL race, caught immediately by the block TB**: the
+  first version computed `need_fetch` from `ch_enable_i` alone. On the exact
+  cycle `ch_desc_go_i` pulses, `ch_enable_i` is already high but `cur_ptr_q`
+  has not yet been loaded with the new base address (that load commits on
+  this same edge, not before it) - so every single `go` issued a bogus fetch
+  to address zero, one cycle too early. Fixed by also gating `need_fetch` on
+  `~ch_desc_go_i`.
+- **A valid/ready handshake bug in the TB's own memory-model stub** (the same
+  class of mistake phase 2's AXI-style testbenches made): the stub asserted
+  a response beat's `valid`, waited one negedge, then checked `ready`'s
+  level - but `rd_resp_ready_o` drops the same edge it accepts the fetch's
+  *last* beat, so a level check one negedge later routinely missed it and
+  spun in `while (!ready)`, only "recovering" once some later, unrelated
+  fetch happened to drive `ready` high again - corrupting whatever came next
+  in the meantime. Fixed with the project's standard posedge-monitor
+  acceptance pattern (`resp_taken = valid & ready`, latched at the same edge
+  the DUT itself uses to decide acceptance).
+
+**Next up**: the rest of phase 4 (`axi_rd_master.sv`, `axi_wr_master.sv`,
+`wr_track.sv`), per `samples/sample_test_4/PHASE_3_6_PLAN.md`. Whether to run
+graphify over this repository (so Sample Test 2/3/4 assets become
+searchable) is still open.
 
 ## Git state
 
