@@ -39,7 +39,8 @@ param(
                  'MUT_AXIL_WPRIO','MUT_AXIL_NODECERR','MUT_CSR_IRQNOHW','MUT_CSR_NODECERR','MUT_CSR_GOALL',
                  'MUT_ALIGN_NOEOP','MUT_ALIGN_SOPFROZEN','MUT_ALIGN_NOCRC',
                  'MUT_CHECK_WRONGIDX','MUT_CHECK_NOSOPRESET','MUT_CHECK_NOLENERR',
-                 'MUT_CTRL_NODRAIN','MUT_CTRL_NOABORT','MUT_CTRL_BUSYWRONG')]
+                 'MUT_CTRL_NODRAIN','MUT_CTRL_NOABORT','MUT_CTRL_BUSYWRONG',
+                 'MUT_SCHED_STICKYLOCK','MUT_SCHED_EARLYUNLOCK','MUT_SCHED_DBLREADY')]
     [string]$Mutant
 )
 $ErrorActionPreference = 'Stop'
@@ -96,6 +97,9 @@ $mutantOwner = @{
     'MUT_CTRL_NODRAIN'      = 'chan_ctrl'
     'MUT_CTRL_NOABORT'      = 'chan_ctrl'
     'MUT_CTRL_BUSYWRONG'    = 'chan_ctrl'
+    'MUT_SCHED_STICKYLOCK'  = 'dma_sched'
+    'MUT_SCHED_EARLYUNLOCK' = 'dma_sched'
+    'MUT_SCHED_DBLREADY'    = 'dma_sched'
 }
 
 # Each TB's RTL dependencies beyond pkg.f, as paths relative to rtl/. Mutant
@@ -110,15 +114,17 @@ $tbModules = @{
     'tb_pkt_check'   = @('stream/pkt_check')
     'tb_chan_ctrl'   = @('stream/chan_ctrl')
     'tb_chan_top'    = @('stream/pkt_align', 'stream/pkt_check', 'stream/chan_ctrl', 'stream/chan_top', 'common/skid_buffer')
+    'tb_dma_sched'   = @('dma/dma_sched')
 }
-# Extra +define+ args a TB needs beyond the sweep default. tb_daq_csr is built
-# at NumCh=4 - a value the phase-2 lint sweep already proved elaborates but no
-# block TB had exercised at runtime before this.
+# Extra +define+ args a TB needs beyond the sweep default. tb_daq_csr and
+# tb_dma_sched are built at NumCh=4 - a value the lint sweep already proves
+# elaborates but no block TB exercises at runtime otherwise.
 $tbDefines = @{
-    'tb_daq_csr' = @('+define+DAQ_NUM_CH=4')
+    'tb_daq_csr'   = @('+define+DAQ_NUM_CH=4')
+    'tb_dma_sched' = @('+define+DAQ_NUM_CH=4')
 }
 
-$tbs = @('tb_skid_buffer', 'tb_cnt_sat', 'tb_axil_slave', 'tb_daq_csr', 'tb_pkt_align', 'tb_pkt_check', 'tb_chan_ctrl', 'tb_chan_top')
+$tbs = @('tb_skid_buffer', 'tb_cnt_sat', 'tb_axil_slave', 'tb_daq_csr', 'tb_pkt_align', 'tb_pkt_check', 'tb_chan_ctrl', 'tb_chan_top', 'tb_dma_sched')
 if ($Mutant) { $tbs = @("tb_$($mutantOwner[$Mutant])") }
 if ($Only)   { $tbs = $tbs | Where-Object { $Only -contains $_ } }
 

@@ -173,8 +173,40 @@ done and verified; evidence lives in `samples/sample_test_4/RESULTS.md`.
   Workaround: spawn a fresh one-off `powershell.exe` process per build/run
   instead of reusing one long-lived session.
 
-**Next up**: phase 4 (DMA engine — `desc_fetch.sv`, `axi_rd_master.sv`,
-`axi_wr_master.sv`, `wr_track.sv`, `dma_sched.sv`), per
+## Session 2026-08-26 (later) — Sample Test 4 phase 4 started (dma_sched)
+
+`rtl/dma/dma_sched.sv` delivered and verified: packet-granularity round-robin
+arbiter across all `NumCh` channels' gated beat streams (each channel's
+`chan_top` output), merging them into the one stream the not-yet-built
+`axi_wr_master` will write. First use of `prim_arbiter_tree` in this project.
+Lint clean (6-config sweep), block TB pass (6 phases + 5 extra `-Seed` runs),
+mutation 3/3 killed. Evidence in `samples/sample_test_4/RESULTS.md`'s "Phase
+4" section.
+
+- **Arbitrates only at packet boundaries, not per beat** - a channel's sop
+  beat wins the shared output and every other channel is excluded from
+  arbitration entirely (not just deprioritised) until that same channel's
+  own eop beat is accepted. Beat-level round-robin was the obvious first
+  design and was rejected before being built: it would let the winner
+  change mid-packet, interleaving two channels' bytes into what downstream
+  (axi_wr_master/wr_track's outstanding-write bookkeeping, scoped to "the
+  packet currently being written") believes is one contiguous transfer.
+- **A second stale-mutant-file problem found and fixed**, distinct from
+  phase 3's chan_top TB bug: `mutants/chan_ctrl_MUTANT.sv` had been copied
+  from `chan_ctrl.sv` before the `idle_drain`/`drain_pending_q` feature
+  existed. All three `MUT_CTRL_*` mutants were reported "killed" in the
+  phase-3 close-out, but only because every run also failed an unrelated
+  idle-drain check the stale copy didn't have at all - not proof any of the
+  three named defects were actually being caught. Regenerated the mutant
+  file from current golden RTL with the same three defects re-applied;
+  each now fails only its own named check.
+- `dma_sched.sv` needed its own `NumCh==1` guard: `prim_arbiter_tree`'s
+  `idx_o` is `[$clog2(N)-1:0]` with no `N==1` guard, so at `N=1` it is
+  genuinely zero-width - a real mismatch against this module's own
+  always-≥1-bit `ChIdxW` convention, caught immediately by the lint sweep.
+
+**Next up**: the rest of phase 4 (`desc_fetch.sv`, `axi_rd_master.sv`,
+`axi_wr_master.sv`, `wr_track.sv`), per
 `samples/sample_test_4/PHASE_3_6_PLAN.md`. The AXI read master's scope beyond
 descriptor fetch is deferred until `desc_fetch.sv` exists to make it concrete.
 Whether to run graphify over this repository (so Sample Test 2/3/4 assets

@@ -1,8 +1,9 @@
 # Sample Test 4 — Results
 
-Phases 1-3. See [PLAN.md](PLAN.md) for the full six-phase plan and
-[PHASE_3_6_PLAN.md](PHASE_3_6_PLAN.md) for phases 3-6's own detail; phases
-4-6 are not started.
+Phases 1-3 done; phase 4 in progress (`dma_sched.sv` delivered and verified,
+the rest of the DMA engine not started yet). See [PLAN.md](PLAN.md) for the
+full six-phase plan and [PHASE_3_6_PLAN.md](PHASE_3_6_PLAN.md) for phases
+3-6's own detail.
 
 ## Decisions settled this session (2026-08-09)
 
@@ -293,7 +294,27 @@ Delivered:
 
 The `chan_ctrl` mutants were re-run against the final RTL after three
 same-session bugfixes to `chan_ctrl.sv` (see below) rather than trusted
-stale from before those fixes; still 3/3.
+stale from before those fixes; still 3/3 - but re-running them surfaced a
+second, more subtle problem than "did the mutant file exist": the mutant
+file itself was stale. `mutants/chan_ctrl_MUTANT.sv` had been copied from
+`chan_ctrl.sv` *before* the `idle_drain`/`drain_pending_q` ChIdle
+drain-and-discard feature existed, so it was missing that entire feature,
+not just carrying the one named defect each `MUT_CTRL_*` claims to inject.
+Every one of the three mutant runs was therefore also failing
+`tb_chan_ctrl`'s own idle-drain check (`phase8: Idle drains (accepts) a
+stale beat`) for a reason that had nothing to do with the mutation being
+tested - a "kill" that does not actually prove the intended defect was
+caught, only that *some* difference from golden was caught. Regenerated
+`mutants/chan_ctrl_MUTANT.sv` from the current golden file with the same
+three defects re-applied as `ifdef` blocks at the corresponding lines, and
+re-ran: each mutant now fails only the check(s) that name its own specific
+defect (`MUT_CTRL_NODRAIN` → the Draining-path phases; `MUT_CTRL_NOABORT` →
+the abort-from-Error phase; `MUT_CTRL_BUSYWRONG` → the busy-in-Armed check),
+with no more spurious phase-8 failure riding along. The general lesson: a
+mutant file is itself part of the golden RTL's dependency surface and goes
+stale exactly like anything else copy-derived from a file that keeps
+changing - "the mutant still gets killed" is not sufficient evidence that a
+stale mutant file is still testing what its name says.
 
 ### `tb_chan_top.sv` bug found while closing the gate — a scoreboard gap, not an RTL bug
 
@@ -330,6 +351,72 @@ a momentary gap mid-packet. Fixed with a sticky `drain_pending_q` bit that
 only clears on the drained packet's own observed eop, not on the mere
 absence of `beat_valid_i` on a given cycle.
 
+## Phase 4 (in progress) — DMA engine
+
+Only `dma_sched.sv` so far; `desc_fetch.sv`, `axi_rd_master.sv`,
+`axi_wr_master.sv`, `wr_track.sv` are not started.
+
+Delivered:
+- [`rtl/dma/dma_sched.sv`](rtl/dma/dma_sched.sv) - packet-granularity
+  round-robin arbiter across all `NumCh` channels' gated beat streams
+  (each channel's `chan_top` output), merging them into the one beat stream
+  the not-yet-built `axi_wr_master` will issue AXI writes for. Arbitrates
+  only at packet boundaries, not per beat: once a channel's sop beat is
+  won, every other channel is excluded from arbitration - not merely
+  deprioritised - until that same channel's own eop beat is accepted. Beat-
+  level round-robin was the obvious first design and was rejected before
+  being built: axi_wr_master/wr_track's outstanding-write bookkeeping is
+  scoped to "the packet currently being written," and letting the winner
+  change mid-packet would interleave two channels' bytes into what
+  downstream believes is one contiguous transfer. Full tradeoff (one long
+  packet can hold the shared write path while others with short packets
+  wait) is in the file's own header, along with why idle-time arbitration
+  itself (`prim_arbiter_tree`, reused - first use of it in this project)
+  requests only on a channel's sop beat and is explicitly excluded from
+  updating its own internal round-robin state while a channel is locked, so
+  a locked-out channel's requests are not silently counted as "already had
+  its turn" once idle arbitration resumes.
+- [`filelist/rtl_phase4.f`](filelist/rtl_phase4.f).
+- Block testbench: [`tb/tb_dma_sched.sv`](tb/tb_dma_sched.sv), built at
+  `NumCh=4`. Six phases: single channel alone, two channels contending for
+  sop the same cycle (a real tie), mid-packet contention (a second
+  channel's sop appears while another is already locked several beats in),
+  backpressure through a locked multi-beat packet, a single-beat packet's
+  lock releasing the same cycle it is won (not lingering an idle cycle),
+  and a randomised four-channel stress run. A continuously-running
+  invariant (checked on every accepted output beat, not just in the phases
+  aimed at it) asserts the merged output never switches channel between a
+  channel's own sop and eop, and that `ch_ready_o` is never onehot0-
+  violating. Run 5 additional times at fixed `-Seed` values to check phase
+  6's randomised stress wasn't a lucky single run.
+- Mutant: [`mutants/dma_sched_MUTANT.sv`](mutants/dma_sched_MUTANT.sv)
+  (`MUT_SCHED_STICKYLOCK`, `MUT_SCHED_EARLYUNLOCK`, `MUT_SCHED_DBLREADY`).
+
+### Lint gate — parameter sweep
+
+`powershell -File scripts\run_lint.ps1` - `dma_sched` clean across all 6
+configurations. `NumCh=1` needed its own guarded code path (see the file):
+`prim_arbiter_tree`'s own `idx_o` is `[$clog2(N)-1:0]` with no `N==1` guard,
+so at `N=1` that port is genuinely zero-width - a real width mismatch
+against this module's own always-at-least-1-bit `ChIdxW` convention, caught
+immediately by the sweep rather than only at `NumCh=8` (the phase-1 lesson
+- "a module that only elaborates at the common case is not parameterised" -
+holding again). Fixed by bypassing the tree entirely in a
+`generate if (NumCh > 1)` for the single-channel case, rather than forcing
+a width cast over the mismatch.
+
+### Block testbench and mutation
+
+```
+[DMA_SCHED_TB] PASS
+```
+
+| Defect | Result |
+| --- | --- |
+| `MUT_SCHED_STICKYLOCK` | killed |
+| `MUT_SCHED_EARLYUNLOCK` | killed |
+| `MUT_SCHED_DBLREADY` | killed |
+
 ## Toolchain notes (new, on top of what Sample Test 2/3 already documented)
 
 A fourth Windows toolchain issue, distinct from the three
@@ -351,9 +438,11 @@ reusing the same long-lived session for the build/run commands.
 
 ## Not done yet
 
-Phases 4-6 (DMA engine, IRQ/perf/top integration, integration UVM + formal +
-regression) are unstarted. `rtl/dma`, `rtl/irq`, `rtl/stat` do not exist
-yet. `daq_csr.sv`'s per-channel status, counter, and cause inputs are
-currently driven directly by its block testbench; nothing downstream
-consumes `ch_enable_o`/`ch_desc_base_o`/
-`ch_desc_go_o` yet.
+Phase 4 is only `dma_sched.sv` so far; `desc_fetch.sv`, `axi_rd_master.sv`,
+`axi_wr_master.sv`, `wr_track.sv` remain. Phases 5-6 (IRQ/perf/top
+integration, integration UVM + formal + regression) are unstarted.
+`rtl/irq`, `rtl/stat` do not exist yet. `daq_csr.sv`'s per-channel status,
+counter, and cause inputs are currently driven directly by its block
+testbench; nothing downstream consumes `ch_enable_o`/`ch_desc_base_o`/
+`ch_desc_go_o` yet - `dma_sched.sv` does not touch descriptors at all, only
+the already-gated beat streams past `chan_top`.

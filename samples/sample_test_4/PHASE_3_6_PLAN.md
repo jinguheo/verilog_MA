@@ -121,5 +121,18 @@ Phase 1+2가 이번 세션의 대부분을 차지했고(특히 phase 2는 AXI �
   확인.
 - phase 1-3 전체 block TB regression 재실행, 전부 PASS.
 
-다음: phase 4 (DMA 엔진 — `desc_fetch.sv`, `axi_rd_master.sv`,
-`axi_wr_master.sv`, `wr_track.sv`, `dma_sched.sv`).
+**Phase 4 착수, `dma_sched.sv` 완료 및 검증됨** — 채널 간 packet-granularity
+round-robin arbiter(`prim_arbiter_tree` 재사용, 이 프로젝트에서 첫 사용).
+lint clean(6 configuration), block TB PASS(6 phase + seed 5회 추가 검증),
+mutation 3/3 killed. 상세 근거는 RESULTS.md의 "Phase 4" 절 참고.
+
+- `chan_ctrl.sv`의 mutant 파일이 이번 세션 idle-drain 기능 추가 이전 버전
+  으로 stale했던 것을 뒤늦게 발견 — "3/3 killed"였지만 전부 무관한
+  `phase8` 실패에 편승한 결과였음. 최신 golden RTL 기준으로 mutant 파일을
+  재생성해서 각자 자기 결함에 해당하는 체크에서만 실패하는 것 확인 후 재검증.
+- `dma_sched.sv`는 NumCh=1에서 `prim_arbiter_tree`의 `idx_o`가
+  `[$clog2(1)-1:0]` = 0폭이 되는 경우를 lint 스윕이 즉시 잡아냄 —
+  `generate if (NumCh > 1)`로 단일 채널 케이스를 아예 우회해서 해결.
+
+다음: phase 4 나머지 (`desc_fetch.sv`, `axi_rd_master.sv`,
+`axi_wr_master.sv`, `wr_track.sv`).
