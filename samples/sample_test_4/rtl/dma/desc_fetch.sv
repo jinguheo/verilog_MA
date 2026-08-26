@@ -8,6 +8,21 @@
 // split mirrors the pkt_check/chan_ctrl one from phase 3: pkt_check computes
 // a result, chan_ctrl acts on it, each doing one job.
 //
+// Ring-pointer alignment is assumed, not validated
+// -----------------------------------------------------------------------
+// axi_rd_master always issues full-bus-width (AxiDw) AXI reads - no narrow/
+// sub-bus-width transfers - which only works cleanly for an address already
+// aligned to AxiDw's own byte width. daq_pkg::desc_check() enforces exactly
+// that alignment (daq_pkg::DescAlignBytes = AxiDw/8) on a descriptor's own
+// addr/length fields, but NOT on the ring pointers this module itself reads
+// descriptors FROM (ch_desc_base_i, and a fetched descriptor's own
+// next_ptr) - daq_pkg.sv's own header notes next_ptr is deliberately
+// unvalidated. Ring pointers are therefore a software/test convention, the
+// same trust boundary pkt_align.sv's header already documents for
+// src_sop_i placement: this module does not police it, and an
+// axi_rd_master fed a genuinely misaligned pointer is not this project's
+// problem to solve until something needs it to be.
+//
 // One request in flight at a time, across ALL channels, not one per channel
 // -----------------------------------------------------------------------
 // Only one descriptor fetch is ever outstanding, shared by every channel via

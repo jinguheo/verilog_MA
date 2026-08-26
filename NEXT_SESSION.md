@@ -234,10 +234,111 @@ phases), mutation 3/3 killed (`MUT_DESC_NOLINK`, `MUT_DESC_NOHALT`,
   acceptance pattern (`resp_taken = valid & ready`, latched at the same edge
   the DUT itself uses to decide acceptance).
 
-**Next up**: the rest of phase 4 (`axi_rd_master.sv`, `axi_wr_master.sv`,
-`wr_track.sv`), per `samples/sample_test_4/PHASE_3_6_PLAN.md`. Whether to run
-graphify over this repository (so Sample Test 2/3/4 assets become
-searchable) is still open.
+## Session 2026-08-26 (yet later) — Sample Test 4 phase 4: axi_rd_master.sv
+
+`rtl/dma/axi_rd_master.sv` delivered and verified: the actual AXI4 AR/R
+master, deliberately scoped to exactly what `desc_fetch.sv` needs (its only
+consumer, and it only ever has one fetch outstanding) - single-outstanding,
+fixed ARID=0, always full-bus-width bursts (no narrow transfers), splitting
+into two back-to-back bursts only when a fetch would straddle a 4 KB
+boundary. Lint clean, block TB pass (5 phases + 5 extra `-Seed` runs),
+mutation 3/3 killed (`MUT_RDM_NOSPLIT`, `MUT_RDM_LASTWRONG`,
+`MUT_RDM_ERRDROP`). Evidence in `samples/sample_test_4/RESULTS.md`.
+
+- **Settled a deferred design decision**: `daq_pkg::DescAlignBytes` changed
+  from a fixed 4 bytes to `AxiDw/8` (bus-width-aligned), since always-full-
+  width transfers only work cleanly for an address aligned to the bus
+  width. Only changes behaviour at the default `AxiDw=64`; needed a one-line
+  fix to `tb_desc_fetch.sv`'s over-max-length test case to stay alignment-
+  legal after the change.
+- **Two more TB races, same class as desc_fetch's own gate already hit**:
+  a live negedge-read of `ready`'s level instead of a posedge-latched
+  `*_taken` signal, in both the memory-stub's R-beat driver and a
+  backpressure loop that read `rd_resp_valid` directly. Fixed both with the
+  posedge-monitor pattern (the second one by just reusing the already-
+  correct `collect_resp` helper instead of adding a third latch).
+
+**Next up**: the rest of phase 4 (`axi_wr_master.sv`, `wr_track.sv`), per
+`samples/sample_test_4/PHASE_3_6_PLAN.md`. Whether to run graphify over this
+repository (so Sample Test 2/3/4 assets become searchable) is still open.
+
+## Session 2026-08-26 (later still) — Sample Test 4 ASIC synthesis track started (sky130)
+
+Separate track from the phase 1-6 RTL plan, run in parallel once a block
+clears its own lint/TB/mutation gate: real synthesis-to-GDS against the open
+**SkyWater sky130** PDK via **OpenLane2**, not FPGA. Not yet committed —
+lives in `samples/sample_test_4/asic/` (untracked) plus dashboard changes in
+`my_dashboard/`.
+
+- **Toolchain installed in WSL Ubuntu, not native Windows** (OpenLane has no
+  native Windows support): Docker Desktop + its existing WSL integration,
+  `uv`-managed **Python 3.11** venv at `~/openlane_venv_311` (the distro's
+  system Python is 3.14 - too new for klayout's prebuilt PyPI wheels, which
+  made `pip install openlane` try and fail a from-source build), then
+  `pip install openlane` (`openlane==2.3.10`) with `click<8.2 cloup<3.1`
+  pinned down from whatever pip resolved by default (newer `click`'s
+  `get_metavar()` signature broke every CLI invocation with a `TypeError`).
+  Real tool execution goes through `openlane --docker-no-tty --dockerized
+  ...` - `--docker-no-tty` because non-interactive scripts have no stdin TTY
+  for Docker to attach to. `sky130A` itself downloads automatically via
+  `volare` (a dependency of the pip package) on first flow run.
+- **A Nix-based install was tried first and abandoned.** Determinate Nix
+  installer, cloned `efabless/openlane2`, worked through two real problems
+  (untrusted flake substituter → added the WSL user to `trusted-users` in
+  `/etc/nix/nix.custom.conf`; then tried `sandbox = false`) but `nix develop`
+  still failed building the `python3.11-openlane-*` derivation itself with
+  `genericBuild: command not found`, even though every binary-cache
+  dependency (openroad/yosys/magic/klayout) downloaded fine from
+  `openlane.cachix.org`. Root cause not identified. The pip+Docker path
+  above worked on the first clean attempt once tried, so no further time
+  went into Nix.
+- **Smoke test passed**: `openlane --dockerized --smoke-test` runs OpenLane's
+  own built-in example through all 78 flow stages (synthesis → floorplan →
+  placement → CTS → routing → STA → DRC/LVS/Antenna) in under two minutes,
+  confirming the toolchain itself before trusting it on real RTL.
+- **Three of this project's own already-verified blocks synthesized clean**
+  at a 10ns (100MHz) clock target, `DIE_AREA`/`FP_SIZING` per-design (see
+  each `asic/<design>/config.json`): `skid_buffer` (443 cells, setup slack
+  +4.80ns), `cnt_sat` (297 cells, +3.77ns), `chan_ctrl` (1360 cells, +4.22ns
+  - the first with real 5-state FSM logic, not just wiring). All three:
+  0 DRC errors, LVS/Antenna both passed. Full GDS/LEF/netlist/SPEF/SDF/lib
+  outputs under each `asic/<design>/runs/RUN_*/final/`.
+- **`chan_ctrl` needed two config fixes skid_buffer/cnt_sat never hit**,
+  both because it's the first design that imports `daq_pkg.sv` (which
+  imports `axi_pkg.sv`) and has several full 64-bit-wide ports: (1) Yosys's
+  plain Verilog-2005 reader can't parse `axi_pkg.sv`'s `'{...}` SV
+  assignment-pattern struct cast (`unexpected OP_CAST`) - fixed with
+  `"USE_SYNLIG": true` to switch to the Synlig SV frontend; (2) 165 IO pins
+  didn't fit the die's default cell-area-sized perimeter (`PPL-0024`, 80
+  slots available) - fixed with `"FP_SIZING": "absolute"` plus an explicit
+  `"DIE_AREA": [0,0,300,300]`. Any future design importing `daq_pkg.sv` or
+  carrying multiple wide ports will likely need both again.
+- **A separate config-path gotcha, hit once and then avoided**: OpenLane's
+  dockerized mode refuses to read any file outside the *current working
+  directory's* tree at invocation time, regardless of what a config's own
+  `dir::`-relative path resolves to on disk. A config under
+  `asic/<design>/config.json` referencing `dir::../../rtl/...` fails with
+  `PermissionError: ... is not located any path readable to OpenLane` even
+  though the resolved path is correct. Fix used throughout: invoke
+  `openlane` with cwd at `sample_test_4/` (not inside `asic/<design>/`),
+  passing the config as `asic/<design>/config.json` with all
+  `VERILOG_FILES` as downward-only `dir::rtl/...` paths.
+- **Dashboard updated to match**: `my_dashboard/src/views/SampleTest4.tsx`
+  gained a new "Synthesis" tab (toolchain story, issues hit and fixed, the
+  three-block results table) and the Overview/pipeline sections now show
+  phase 3 done, phase 4 in-progress, and the ASIC track as a parallel
+  pipeline step. A `git status` snapshot on disk after this session also
+  showed a "Layout" tab already added independently (rendered GDS images via
+  KLayout, `tools/wsl/63_render_all.sh` → `my_dashboard/public/layout/`) -
+  from a separate concurrent session working the same area; left as-is per
+  the standing rule not to revert another session's deliberate changes.
+- **Next candidates once picked back up**: `dma_sched.sv` (pulls in
+  `prim_arbiter_tree` from the external OpenTitan prim tree outside
+  `sample_test_4/` - will likely need `--docker-mount` or a copied-in prim
+  file, not just a cwd change, to get past the same readable-path
+  restriction), then `chan_top.sv` (first CDC/multi-clock synthesis target -
+  `CLOCK_PORT` only takes one clock name in a single-clock config; multi-
+  clock SDC handling not yet investigated).
 
 ## Git state
 

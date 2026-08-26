@@ -237,7 +237,10 @@ module tb_desc_fetch;
     check(ch_err[3] && ch_err_code[3] == ErrDescLength, "phase4b expected ErrDescLength (zero)");
     ch_abort[3] = 1'b1; @(negedge clk); ch_abort[3] = 1'b0;
 
-    mem[32'hC000] = mk_desc(32'hC100, DescMaxLength + 32'd4, 1'b1, 1'b1, 1'b0, 32'h0);  // over max
+    // +DescAlignBytes (not a bare +4): must itself stay alignment-legal so
+    // this exercises the length-range check, not a coincidental alignment
+    // failure - DescMaxLength is already a round, aligned value.
+    mem[32'hC000] = mk_desc(32'hC100, DescMaxLength + 32'(DescAlignBytes), 1'b1, 1'b1, 1'b0, 32'h0);  // over max
     go(3, 32'hC000);
     wait_valid(3);
     check(ch_err[3] && ch_err_code[3] == ErrDescLength, "phase4c expected ErrDescLength (over-max)");

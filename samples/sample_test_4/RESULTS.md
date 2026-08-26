@@ -353,8 +353,8 @@ absence of `beat_valid_i` on a given cycle.
 
 ## Phase 4 (in progress) — DMA engine
 
-`dma_sched.sv` and `desc_fetch.sv` done; `axi_rd_master.sv`,
-`axi_wr_master.sv`, `wr_track.sv` are not started.
+`dma_sched.sv`, `desc_fetch.sv`, and `axi_rd_master.sv` done; `axi_wr_master.sv`
+and `wr_track.sv` are not started.
 
 Delivered:
 - [`rtl/dma/dma_sched.sv`](rtl/dma/dma_sched.sv) - packet-granularity
@@ -487,6 +487,80 @@ under `-Wall` - renamed to `DescBeatCntW`.
    the module header on `tb_chan_top.sv`'s `offer_taken` explains why the
    pattern exists at all.
 
+### `axi_rd_master.sv` — AXI4 read master
+
+Delivered:
+- [`rtl/dma/axi_rd_master.sv`](rtl/dma/axi_rd_master.sv) - the actual AXI4
+  AR/R master, deliberately scoped to exactly what `desc_fetch.sv` needs and
+  nothing more, answering PLAN.md's own open question about this module's
+  scope now that `desc_fetch.sv` exists to make it concrete: `desc_fetch` is
+  the only consumer, and it only ever has one fetch outstanding (a single
+  shared request path across all channels - see `desc_fetch.sv`'s header),
+  so this master is single-outstanding too, with a fixed ARID=0, not a
+  general multi-ID design. Always issues full-`AxiDw`-width INCR bursts,
+  never a narrow (sub-bus-width) transfer - the reason
+  `daq_pkg::DescAlignBytes` was changed from a fixed 4 to `AxiDw/8` (see its
+  own header): a request address aligned only to 4 bytes but read over a
+  wider bus would force byte-lane extraction this module does not
+  implement. It still has to split a fetch into two back-to-back bursts
+  when the (small, fixed-size) read would straddle a 4 KB boundary -
+  `axi_pkg::bytes_to_boundary()` (reused, the same helper `axi_wr_master`
+  will need for its own, much larger splits) decides whether and where.
+- **`daq_pkg::DescAlignBytes` changed from a fixed 4 to `AxiDw/8`** - a
+  decision this module made concrete, not `desc_fetch.sv`'s to make on its
+  own. Only actually changes behaviour at `AxiDw=64` (the default every
+  block TB in this project builds at); `AxiDw=32` already had
+  `DescAlignBytes=4`, unaffected. `tb_desc_fetch.sv`'s over-max-length error
+  case needed a one-line fix to stay alignment-legal after this (it was
+  adding a bare `+4` to an already-8-byte-aligned `DescMaxLength`, which at
+  the new alignment tripped `ErrDescAlign` instead of the `ErrDescLength` it
+  was meant to test) - fixed to add `DescAlignBytes` itself instead of a
+  literal.
+- Block testbench: [`tb/tb_axi_rd_master.sv`](tb/tb_axi_rd_master.sv),
+  standing in for both desc_fetch (the request/response side) and memory (a
+  small AXI4 slave stub) at once. Five phases: a single fetch comfortably
+  inside a page (no split), a fetch straddling a 4 KB boundary (two ARs,
+  `rd_resp_last_o` only on the overall final beat, not the first burst's own
+  `rlast`), an RRESP error aligned to the specific beat that carried it,
+  backpressure on both AXI `ready` signals and on the desc_fetch-side
+  `rd_resp_ready_i` through a split fetch, and back-to-back fetches
+  confirming `rd_req_ready_o` drops while one is active. Every AR is also
+  checked for ARSIZE/ARBURST/ARID/ARCACHE/ARPROT correctness, not just
+  address/length. Run 5 additional times at fixed `-Seed` values.
+- Mutant: [`mutants/axi_rd_master_MUTANT.sv`](mutants/axi_rd_master_MUTANT.sv)
+  (`MUT_RDM_NOSPLIT`, `MUT_RDM_LASTWRONG`, `MUT_RDM_ERRDROP`).
+
+#### Lint gate — parameter sweep
+
+Clean across all 6 configurations on the first attempt - no new pitfall this
+time, just confirmation that the `DescAlignBytes` change and the reused
+`bytes_to_boundary()` helper elaborate correctly across the sweep.
+
+#### Two testbench races found and fixed while closing this module's own gate
+
+Both the same class of bug the `desc_fetch.sv` gate had already found once
+this session - a level-check of a DUT-driven `ready`/`valid` signal at a
+negedge that can race a *different* negedge-triggered process's own update
+of that same cycle, rather than latching the decision at the posedge the
+DUT itself used to make it:
+
+1. The AR/R memory-model stub's own R-beat driver waited a negedge after
+   asserting `rvalid` then checked `rready`'s level, the exact same mistake
+   `tb_desc_fetch.sv`'s stub made - fixed the same way, with a posedge-
+   latched `r_taken`.
+2. Phase 4 (backpressure through a split fetch) read `rd_resp_valid` live in
+   its own negedge-driven backpressure loop, racing the AR/R responder
+   task's own negedge-driven `rvalid` updates the same way. Rather than add
+   a third latched monitor for this one site, the phase was rewritten to
+   reuse `collect_resp` (which already uses the correctly-latched
+   `resp_taken`) and confine the backpressure loop to *only* toggling
+   `rd_resp_ready`, not also reading `rd_resp_valid` itself.
+
+The general lesson repeating across two modules' gates in one session: in
+this project's testbenches, a `valid`/`ready` pair should always be turned
+into a posedge-latched `*_taken` signal before any negedge-driven code
+branches on whether a beat was accepted - never read live at a negedge.
+
 ## Toolchain notes (new, on top of what Sample Test 2/3 already documented)
 
 A fourth Windows toolchain issue, distinct from the three
@@ -508,11 +582,12 @@ reusing the same long-lived session for the build/run commands.
 
 ## Not done yet
 
-Phase 4 has `dma_sched.sv` and `desc_fetch.sv`; `axi_rd_master.sv`,
-`axi_wr_master.sv`, `wr_track.sv` remain - and until they exist,
-`desc_fetch.sv`'s `rd_req_*`/`rd_resp_*` ports and its `ch_desc_valid_o`/
-`ch_desc_addr_o`/`ch_desc_maxlen_o` outputs have no real consumer, only its
-own block testbench's stand-ins. Phases 5-6 (IRQ/perf/top integration,
+Phase 4 has `dma_sched.sv`, `desc_fetch.sv`, and `axi_rd_master.sv`;
+`axi_wr_master.sv` and `wr_track.sv` remain - and until they exist,
+`desc_fetch.sv`'s `ch_desc_valid_o`/`ch_desc_addr_o`/`ch_desc_maxlen_o`
+outputs still have no real consumer, only block testbenches' stand-ins
+(`axi_rd_master.sv` is now that real consumer for `desc_fetch.sv`'s
+`rd_req_*`/`rd_resp_*` side, at least). Phases 5-6 (IRQ/perf/top integration,
 integration UVM + formal + regression) are unstarted. `rtl/irq`, `rtl/stat`
 do not exist yet. `daq_csr.sv`'s per-channel status, counter, and cause
 inputs are currently driven directly by its block testbench; nothing

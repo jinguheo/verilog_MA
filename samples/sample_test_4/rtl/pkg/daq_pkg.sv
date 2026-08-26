@@ -115,7 +115,20 @@ package daq_pkg;
 
   // A descriptor is rejected before any AXI traffic is issued if it fails any
   // of these. desc_fetch reports the first failure as the channel error code.
-  localparam int unsigned DescAlignBytes = 4;   // addr and length granularity
+  //
+  // DescAlignBytes tracks AxiDw (not a fixed 4), settled once axi_rd_master
+  // made the tradeoff concrete: a destination `addr`/`length` aligned only
+  // to 4 bytes but read/written over a wider AXI bus would force every AXI
+  // master to do narrow (sub-bus-width) transfers - byte-lane extraction on
+  // the read side, read-modify-write-style strobing on the write side - for
+  // what is otherwise an ordinary full-width burst. Requiring bus-width
+  // alignment here is the same tradeoff many real DMA engines make for
+  // exactly this reason, and is free to make here since the ring's own
+  // layout is entirely under software/test control. Ring *pointers*
+  // themselves (ch_desc_base_i, a descriptor's own next_ptr) are NOT
+  // covered by this - see desc_fetch.sv's header on why they are assumed
+  // pre-aligned by convention rather than hardware-validated.
+  localparam int unsigned DescAlignBytes = AxiDw / 8;
   localparam int unsigned DescMaxLength  = 32'h0010_0000;  // 1 MiB per descriptor
 
   // ------------------------------------------------------------- channel state

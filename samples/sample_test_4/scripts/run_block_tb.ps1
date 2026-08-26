@@ -41,7 +41,8 @@ param(
                  'MUT_CHECK_WRONGIDX','MUT_CHECK_NOSOPRESET','MUT_CHECK_NOLENERR',
                  'MUT_CTRL_NODRAIN','MUT_CTRL_NOABORT','MUT_CTRL_BUSYWRONG',
                  'MUT_SCHED_STICKYLOCK','MUT_SCHED_EARLYUNLOCK','MUT_SCHED_DBLREADY',
-                 'MUT_DESC_NOLINK','MUT_DESC_NOHALT','MUT_DESC_NOCHECK')]
+                 'MUT_DESC_NOLINK','MUT_DESC_NOHALT','MUT_DESC_NOCHECK',
+                 'MUT_RDM_NOSPLIT','MUT_RDM_LASTWRONG','MUT_RDM_ERRDROP')]
     [string]$Mutant
 )
 $ErrorActionPreference = 'Stop'
@@ -104,6 +105,9 @@ $mutantOwner = @{
     'MUT_DESC_NOLINK'       = 'desc_fetch'
     'MUT_DESC_NOHALT'       = 'desc_fetch'
     'MUT_DESC_NOCHECK'      = 'desc_fetch'
+    'MUT_RDM_NOSPLIT'       = 'axi_rd_master'
+    'MUT_RDM_LASTWRONG'     = 'axi_rd_master'
+    'MUT_RDM_ERRDROP'       = 'axi_rd_master'
 }
 
 # Each TB's RTL dependencies beyond pkg.f, as paths relative to rtl/. Mutant
@@ -120,6 +124,7 @@ $tbModules = @{
     'tb_chan_top'    = @('stream/pkt_align', 'stream/pkt_check', 'stream/chan_ctrl', 'stream/chan_top', 'common/skid_buffer')
     'tb_dma_sched'   = @('dma/dma_sched')
     'tb_desc_fetch'  = @('dma/desc_fetch')
+    'tb_axi_rd_master' = @('dma/axi_rd_master')
 }
 # Extra +define+ args a TB needs beyond the sweep default. tb_daq_csr,
 # tb_dma_sched and tb_desc_fetch are built at NumCh=4 - a value the lint
@@ -131,7 +136,7 @@ $tbDefines = @{
     'tb_desc_fetch' = @('+define+DAQ_NUM_CH=4')
 }
 
-$tbs = @('tb_skid_buffer', 'tb_cnt_sat', 'tb_axil_slave', 'tb_daq_csr', 'tb_pkt_align', 'tb_pkt_check', 'tb_chan_ctrl', 'tb_chan_top', 'tb_dma_sched', 'tb_desc_fetch')
+$tbs = @('tb_skid_buffer', 'tb_cnt_sat', 'tb_axil_slave', 'tb_daq_csr', 'tb_pkt_align', 'tb_pkt_check', 'tb_chan_ctrl', 'tb_chan_top', 'tb_dma_sched', 'tb_desc_fetch', 'tb_axi_rd_master')
 if ($Mutant) { $tbs = @("tb_$($mutantOwner[$Mutant])") }
 if ($Only)   { $tbs = $tbs | Where-Object { $Only -contains $_ } }
 

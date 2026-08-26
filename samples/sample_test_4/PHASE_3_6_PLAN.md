@@ -160,5 +160,25 @@ RESULTS.md의 "desc_fetch.sv" 절 참고.
   valid & ready`, DUT가 실제로 accept를 결정하는 그 posedge에 latch)으로
   고침.
 
-다음: phase 4 나머지 (`axi_rd_master.sv`, `axi_wr_master.sv`,
-`wr_track.sv`).
+**`axi_rd_master.sv` 완료 및 검증됨** — 실제 AXI4 AR/R 마스터. desc_fetch가
+유일한 소비자이고 항상 fetch 하나만 outstanding이라는 게 확정됐으므로
+(PLAN.md의 미정 사항이었음), single-outstanding·고정 ARID=0으로 스코프를
+좁힘. 항상 full-bus-width burst만 사용(narrow transfer 없음) — 이 결정
+때문에 `daq_pkg::DescAlignBytes`를 고정 4에서 `AxiDw/8`로 변경(AxiDw=64
+기본값에서만 실제로 영향, tb_desc_fetch.sv의 length-overflow 테스트 케이스
+하나만 정렬 유지하도록 수정 필요했음). 4KB 경계를 넘는 fetch는
+`axi_pkg::bytes_to_boundary()`로 2-burst 분할. lint clean(6 configuration),
+block TB PASS(5 phase: 비분할 fetch / 경계 분할 fetch / RRESP 에러 /
+분할 fetch 중 양방향 backpressure / 연속 fetch, + ARSIZE/ARBURST/ARID/
+ARCACHE/ARPROT 검증 + seed 5회 추가), mutation 3/3 killed
+(`MUT_RDM_NOSPLIT`, `MUT_RDM_LASTWRONG`, `MUT_RDM_ERRDROP`). 상세 근거는
+RESULTS.md의 "axi_rd_master.sv" 절 참고.
+
+- TB 레이스 버그 2건, 전부 desc_fetch 게이트에서 이미 겪은 것과 같은
+  종류(`ready`/`valid`를 negedge에서 라이브로 읽어서 다른 negedge 프로세스와
+  경쟁): (1) AXI 메모리 stub의 R-beat 드라이버가 `rready` 레벨 체크 —
+  posedge-latch된 `r_taken`으로 수정. (2) phase 4의 backpressure 루프가
+  `rd_resp_valid`를 직접 읽음 — 이미 올바른 `collect_resp`(latched
+  `resp_taken` 사용)를 재사용하도록 재작성.
+
+다음: phase 4 나머지 (`axi_wr_master.sv`, `wr_track.sv`).
