@@ -1,7 +1,8 @@
 # Sample Test 4 — Results
 
-Phases 1-2. See [PLAN.md](PLAN.md) for the full six-phase plan; phases 3-6 are
-not started.
+Phases 1-3. See [PLAN.md](PLAN.md) for the full six-phase plan and
+[PHASE_3_6_PLAN.md](PHASE_3_6_PLAN.md) for phases 3-6's own detail; phases
+4-6 are not started.
 
 ## Decisions settled this session (2026-08-09)
 
@@ -217,6 +218,118 @@ exact edge, that it claims to cover will pass right alongside a broken
 design. Every one of these three bugs produced a clean PASS until the
 specific mutant it was supposed to catch was run through it.
 
+## Phase 3 — per-channel stream path (pkt_align, pkt_check, chan_ctrl, chan_top)
+
+Delivered:
+- [`rtl/stream/pkt_align.sv`](rtl/stream/pkt_align.sv) — packs the 8-bit
+  source byte stream into `AxiDw`-wide beats with byte strobes for the
+  partial last beat. Accumulation and output backpressure are deliberately
+  separate (`skid_buffer` reused from phase 1), so a stalled downstream never
+  blocks accepting bytes for the beat still being assembled.
+- [`rtl/stream/pkt_check.sv`](rtl/stream/pkt_check.sv) — byte-enable-aware
+  CRC-32 (a small hand-written bit-serial chain, not `prim_crc32` — see the
+  file header for why `prim_crc32`'s fixed-width, padding-inclusive model
+  gets a partial last beat's CRC wrong) plus length checking. Pure
+  monitor: a packet's beats, including its own eop beat, are forwarded
+  before the CRC/length result is known (documented store-and-forward
+  tradeoff — this project has no bound on packet length to size a holding
+  buffer against).
+- [`rtl/stream/chan_ctrl.sv`](rtl/stream/chan_ctrl.sv) — per-channel FSM
+  (`ChIdle`/`ChArmed`/`ChRunning`/`ChDraining`/`ChError`) gating whether the
+  beat stream flows and turning `pkt_check`'s per-packet pulses into the
+  cause bits `daq_csr` expects. `ChIdle` unconditionally drains and discards
+  anything still in the pipe from a previous, since-disabled session — see
+  the file header for the two-attempt history of getting that drain
+  provably complete rather than racy.
+- [`rtl/stream/chan_top.sv`](rtl/stream/chan_top.sv) — the per-channel
+  wrapper and the one place in phase 3 that actually crosses a clock domain:
+  `pkt_align` (`src_clk`) → async CDC FIFO (`prim_fifo_async`, reused) →
+  `pkt_check`/`chan_ctrl` (`axi_clk`), with a `prim_rst_sync` per domain.
+  The packed-beat layout (`daq_pkg::PktBeat*`) lets the CDC FIFO carry all
+  five beat fields through one port instead of five.
+- [`filelist/rtl_phase3.f`](filelist/rtl_phase3.f).
+- Block testbenches: [`tb/tb_pkt_align.sv`](tb/tb_pkt_align.sv),
+  [`tb/tb_pkt_check.sv`](tb/tb_pkt_check.sv),
+  [`tb/tb_chan_ctrl.sv`](tb/tb_chan_ctrl.sv) (same-clock),
+  [`tb/tb_chan_top.sv`](tb/tb_chan_top.sv) (the cross-clock integration of
+  all four — non-integer `src_clk`/`axi_clk` ratio so nothing passes by
+  accidentally aligning; independent posedge-monitor acceptance tracking on
+  each domain's own clock).
+- Mutants: [`mutants/pkt_align_MUTANT.sv`](mutants/pkt_align_MUTANT.sv)
+  (`MUT_ALIGN_NOEOP`, `MUT_ALIGN_SOPFROZEN`, `MUT_ALIGN_NOCRC`),
+  [`mutants/pkt_check_MUTANT.sv`](mutants/pkt_check_MUTANT.sv)
+  (`MUT_CHECK_WRONGIDX`, `MUT_CHECK_NOSOPRESET`, `MUT_CHECK_NOLENERR`),
+  [`mutants/chan_ctrl_MUTANT.sv`](mutants/chan_ctrl_MUTANT.sv)
+  (`MUT_CTRL_NODRAIN`, `MUT_CTRL_NOABORT`, `MUT_CTRL_BUSYWRONG`).
+
+### Lint gate — parameter sweep
+
+`powershell -File scripts\run_lint.ps1` — `pkt_align`, `pkt_check`,
+`chan_ctrl`, `chan_top` all clean across all 6 configurations
+(`NUM_CH` ∈ {1,2,8} × `AXI_DW` ∈ {32,64}) under `-Wall`.
+
+### Block testbenches
+
+```
+[PKT_ALIGN_TB] PASS
+[PKT_CHECK_TB] PASS
+[CHAN_CTRL_TB] PASS
+[CHAN_TOP_TB] PASS
+```
+
+### Mutation — non-vacuous, 9/9 defects killed
+
+| Defect | Module | Result |
+| --- | --- | --- |
+| `MUT_ALIGN_NOEOP` | pkt_align | killed |
+| `MUT_ALIGN_SOPFROZEN` | pkt_align | killed |
+| `MUT_ALIGN_NOCRC` | pkt_align | killed |
+| `MUT_CHECK_WRONGIDX` | pkt_check | killed |
+| `MUT_CHECK_NOSOPRESET` | pkt_check | killed |
+| `MUT_CHECK_NOLENERR` | pkt_check | killed |
+| `MUT_CTRL_NODRAIN` | chan_ctrl | killed |
+| `MUT_CTRL_NOABORT` | chan_ctrl | killed |
+| `MUT_CTRL_BUSYWRONG` | chan_ctrl | killed |
+
+The `chan_ctrl` mutants were re-run against the final RTL after three
+same-session bugfixes to `chan_ctrl.sv` (see below) rather than trusted
+stale from before those fixes; still 3/3.
+
+### `tb_chan_top.sv` bug found while closing the gate — a scoreboard gap, not an RTL bug
+
+`tb_chan_top`'s phase 4 (randomised multi-packet, randomised backpressure on
+both clocks) initially failed with packets reported as delivered several
+bytes short — e.g. a 16-byte/2-beat packet "done" after what looked like
+one beat. The RTL was not dropping data.
+
+Root cause: phase 2's corrupted-CRC packet is sent with `track=1'b0` (not
+added to the scoreboard's `exp_bytes`/`exp_pkt_count`), but `pkt_check.sv`
+and `chan_ctrl.sv` both document, deliberately, that a packet's beats —
+including its own eop beat — are forwarded to `beat_valid_o` *before* the
+CRC result is known (store-and-forward would need unbounded buffering to
+avoid this, which phase 3 does not build). So that untracked packet's 9
+bytes and one `eop` really do land in `got_bytes`/`got_pkt_count`. From
+that point on `got_pkt_count` sits one packet ahead of `exp_pkt_count`, and
+every later `while (got_pkt_count < exp_pkt_count) @(negedge axi_clk);`
+wait (phase 3b, then every phase-4 packet) is unreliable: several of them
+found the condition already coincidentally true and moved on before the
+packet actually being waited for had finished draining through the
+pipeline, corrupting the next packet's byte-count comparison.
+
+Fixed by tracking phase 2's packet too (`track=1'b1`) — its data bytes are
+correct (only the CRC trailer is deliberately corrupted), and they really
+are delivered, so the scoreboard should expect them. `tb_chan_top.sv`'s
+phase 2 comment explains why. No RTL change was needed.
+
+### Bugs found and fixed in `chan_ctrl.sv` itself this session
+
+Three, all around the `ChIdle` drain-and-discard logic (see the file's own
+header for the full narrative): a stale abandoned packet's tail beat could
+be mistaken for a new session's sop when the CDC FIFO's read side presented
+a momentary gap mid-packet. Fixed with a sticky `drain_pending_q` bit that
+only clears on the drained packet's own observed eop, not on the mere
+absence of `beat_valid_i` on a given cycle.
+
 ## Toolchain notes (new, on top of what Sample Test 2/3 already documented)
 
 A fourth Windows toolchain issue, distinct from the three
@@ -229,11 +342,18 @@ setting `VERILATOR_ROOT` (and the file-list paths passed to Verilator) with
 forward slashes throughout `scripts/run_lint.ps1` and
 `scripts/run_block_tb.ps1`.
 
+A fifth Windows toolchain issue, found during phase 3's `tb_chan_top`
+debugging: a long-running sandboxed PowerShell tool session accumulates
+memory pressure over many Verilator/g++ builds, eventually causing
+`cc1plus.exe: out of memory` even with adequate OS-level free memory.
+Workaround: spawn a fresh one-off `powershell.exe` process instead of
+reusing the same long-lived session for the build/run commands.
+
 ## Not done yet
 
-Phases 3-6 (per-channel stream path, DMA engine, IRQ/perf/top, integration
-UVM + formal + regression) are unstarted. `rtl/dma`, `rtl/stream`,
-`rtl/irq`, `rtl/stat` do not exist yet. `daq_csr.sv`'s per-channel status,
-counter, and cause inputs are currently driven directly by its block
-testbench; nothing downstream consumes `ch_enable_o`/`ch_desc_base_o`/
+Phases 4-6 (DMA engine, IRQ/perf/top integration, integration UVM + formal +
+regression) are unstarted. `rtl/dma`, `rtl/irq`, `rtl/stat` do not exist
+yet. `daq_csr.sv`'s per-channel status, counter, and cause inputs are
+currently driven directly by its block testbench; nothing downstream
+consumes `ch_enable_o`/`ch_desc_base_o`/
 `ch_desc_go_o` yet.

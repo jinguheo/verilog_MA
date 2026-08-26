@@ -146,10 +146,38 @@ Phase 2 of 6 is done and verified; evidence lives in `samples/sample_test_4/RESU
   writeup of all three fixes (this one plus two narrower mutant-driven gaps) in RESULTS.md.
 - Same toolchain fixes as phase 1 (forward-slash `VERILATOR_ROOT`) carried over unchanged.
 
-**Next up**: phase 3 (`pkt_align.sv`, `pkt_check.sv`, `chan_ctrl.sv`, `chan_top.sv` — per-block
-TBs, byte-enable and partial-beat coverage), per PLAN.md's phase table. The AXI read
-master's scope beyond descriptor fetch is deferred to phase 4, once `desc_fetch.sv` exists to
-make it concrete. Whether to run graphify over this repository (so Sample Test 2/3/4 assets
+## Session 2026-08-26 — Sample Test 4 phase 3 (per-channel stream path) complete
+
+Phase 3 of 6 (`pkt_align.sv`, `pkt_check.sv`, `chan_ctrl.sv`, `chan_top.sv`) is
+done and verified; evidence lives in `samples/sample_test_4/RESULTS.md`.
+
+- **Lint gate**: all 4 new tops clean across the 6-configuration sweep.
+- **Block TBs pass, mutation 9/9 killed** (3 each for pkt_align/pkt_check/chan_ctrl).
+- **`chan_top`'s block TB had a real bug to chase down**, but it was in the
+  testbench's scoreboard, not the RTL: phase 2's corrupted-CRC packet was sent
+  untracked (`track=1'b0`), while `pkt_check.sv`/`chan_ctrl.sv` both
+  deliberately forward a packet's beats — including its own eop — before the
+  CRC result is known (documented store-and-forward tradeoff). The untracked
+  packet's bytes/count landing in the scoreboard's `got_*` totals anyway
+  permanently desynced `got_pkt_count` from `exp_pkt_count`, so later
+  `while (got_pkt_count < exp_pkt_count)` waits returned early and threw off
+  every packet after it. Fixed by tracking that packet too. Debug tracing
+  code added while chasing this was removed once fixed.
+- **`chan_ctrl.sv` itself had three real bugs fixed this session**, all in the
+  `ChIdle` drain-and-discard path (see the file's own header) — the
+  `chan_ctrl` mutants were re-run against the post-fix RTL specifically
+  because of this, not assumed still-valid from before.
+- **A fifth Windows toolchain issue**: a long-running sandboxed PowerShell
+  session accumulates memory pressure over many Verilator/g++ builds,
+  eventually hitting `cc1plus.exe: out of memory` despite adequate free RAM.
+  Workaround: spawn a fresh one-off `powershell.exe` process per build/run
+  instead of reusing one long-lived session.
+
+**Next up**: phase 4 (DMA engine — `desc_fetch.sv`, `axi_rd_master.sv`,
+`axi_wr_master.sv`, `wr_track.sv`, `dma_sched.sv`), per
+`samples/sample_test_4/PHASE_3_6_PLAN.md`. The AXI read master's scope beyond
+descriptor fetch is deferred until `desc_fetch.sv` exists to make it concrete.
+Whether to run graphify over this repository (so Sample Test 2/3/4 assets
 become searchable) is still open.
 
 ## Git state

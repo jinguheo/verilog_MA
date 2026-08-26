@@ -52,6 +52,10 @@ $tops = @(
     @{ name = 'prim_reuse_smoke'; files = @("$daqRoot\filelist\rtl_phase1.f", "$daqRoot\tb\prim_reuse_smoke.sv") }
     @{ name = 'axil_slave';       files = @("$daqRoot\filelist\rtl_phase2.f") }
     @{ name = 'daq_csr';          files = @("$daqRoot\filelist\rtl_phase2.f") }
+    @{ name = 'pkt_align';        files = @("$daqRoot\filelist\rtl_phase3.f") }
+    @{ name = 'pkt_check';        files = @("$daqRoot\filelist\rtl_phase3.f") }
+    @{ name = 'chan_ctrl';        files = @("$daqRoot\filelist\rtl_phase3.f") }
+    @{ name = 'chan_top';         files = @("$daqRoot\filelist\rtl_phase3.f") }
 )
 if ($Only) { $tops = $tops | Where-Object { $Only -contains $_.name } }
 

@@ -102,10 +102,24 @@ Phase 1+2가 이번 세션의 대부분을 차지했고(특히 phase 2는 AXI �
 디버깅에 시간이 많이 들었음), phase 4가 지금까지 중 가장 크고, phase 6도
 시간이 많이 걸릴 가능성이 높습니다. 정확한 세션 수는 약속드리기 어렵습니다.
 
-## 현재 상태 (2026-08-09)
+## 현재 상태 (2026-08-26)
 
-Phase 3 착수만 시작한 상태입니다:
-- `daq_pkg.sv`에 `PktBeat*` 레이아웃 상수, `MaxPacketBytes` 추가됨.
-- `rtl/stream/pkt_align.sv` 초안 작성됨.
-- **둘 다 lint도, block TB도 아직 안 돌렸습니다** — phase 1-2처럼 "설계→lint→
-  block TB→mutation" 사이클을 완료하기 전까지는 검증된 것으로 취급하지 마세요.
+**Phase 3 완료 및 검증됨** — `pkt_align.sv`, `pkt_check.sv`, `chan_ctrl.sv`,
+`chan_top.sv` 전부 lint clean(6 configuration 스윕), block TB PASS, mutation
+9/9 killed. 상세 근거는 [RESULTS.md](RESULTS.md)의 "Phase 3" 절 참고.
+
+- `chan_top.sv`(유일하게 클럭을 넘는 모듈)의 block TB에서 phase 4(랜덤 멀티
+  패킷) 구간이 한동안 실패했음 — 원인은 RTL이 아니라 TB 스코어보드였음:
+  phase 2의 CRC 오류 패킷이 `track=1'b0`로 보내져 `exp_*` 카운터에 반영이
+  안 됐는데, `pkt_check`/`chan_ctrl`은 설계상 CRC 결과를 알기 전에 eop
+  beat까지 그대로 forward하기 때문에 `got_*` 카운터는 실제로 그 패킷을
+  세고 있었음 — 두 카운터가 영구적으로 어긋나면서 이후 `while (got_pkt_count
+  < exp_pkt_count)` 대기들이 조기 종료되는 연쇄 오류. phase 2도 추적하도록
+  고쳐서 해결. 디버그 트레이싱 코드는 수정 후 전부 제거함.
+- `chan_ctrl.sv`의 mutant 3종은 이번 세션 실버그 수정 3건(모두 `ChIdle`
+  drain-and-discard 로직) 이후의 최신 RTL 기준으로 재검증해서 3/3 killed
+  확인.
+- phase 1-3 전체 block TB regression 재실행, 전부 PASS.
+
+다음: phase 4 (DMA 엔진 — `desc_fetch.sv`, `axi_rd_master.sv`,
+`axi_wr_master.sv`, `wr_track.sv`, `dma_sched.sv`).

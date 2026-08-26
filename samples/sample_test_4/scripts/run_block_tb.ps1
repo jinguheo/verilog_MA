@@ -36,7 +36,10 @@ param(
     [int]$Jobs = 4,
     [int]$Seed = 0,
     [ValidateSet('MUT_SKID_READY','MUT_SKID_BYPASS','MUT_SKID_DRAIN','MUT_CNT_WRAP','MUT_CNT_CLEAR_LOSE',
-                 'MUT_AXIL_WPRIO','MUT_AXIL_NODECERR','MUT_CSR_IRQNOHW','MUT_CSR_NODECERR','MUT_CSR_GOALL')]
+                 'MUT_AXIL_WPRIO','MUT_AXIL_NODECERR','MUT_CSR_IRQNOHW','MUT_CSR_NODECERR','MUT_CSR_GOALL',
+                 'MUT_ALIGN_NOEOP','MUT_ALIGN_SOPFROZEN','MUT_ALIGN_NOCRC',
+                 'MUT_CHECK_WRONGIDX','MUT_CHECK_NOSOPRESET','MUT_CHECK_NOLENERR',
+                 'MUT_CTRL_NODRAIN','MUT_CTRL_NOABORT','MUT_CTRL_BUSYWRONG')]
     [string]$Mutant
 )
 $ErrorActionPreference = 'Stop'
@@ -84,6 +87,15 @@ $mutantOwner = @{
     'MUT_CSR_IRQNOHW'    = 'daq_csr'
     'MUT_CSR_NODECERR'   = 'daq_csr'
     'MUT_CSR_GOALL'      = 'daq_csr'
+    'MUT_ALIGN_NOEOP'     = 'pkt_align'
+    'MUT_ALIGN_SOPFROZEN' = 'pkt_align'
+    'MUT_ALIGN_NOCRC'     = 'pkt_align'
+    'MUT_CHECK_WRONGIDX'    = 'pkt_check'
+    'MUT_CHECK_NOSOPRESET'  = 'pkt_check'
+    'MUT_CHECK_NOLENERR'    = 'pkt_check'
+    'MUT_CTRL_NODRAIN'      = 'chan_ctrl'
+    'MUT_CTRL_NOABORT'      = 'chan_ctrl'
+    'MUT_CTRL_BUSYWRONG'    = 'chan_ctrl'
 }
 
 # Each TB's RTL dependencies beyond pkg.f, as paths relative to rtl/. Mutant
@@ -94,6 +106,10 @@ $tbModules = @{
     'tb_cnt_sat'     = @('common/cnt_sat')
     'tb_axil_slave'  = @('csr/axil_slave')
     'tb_daq_csr'     = @('csr/axil_slave', 'csr/daq_csr')
+    'tb_pkt_align'   = @('stream/pkt_align', 'common/skid_buffer')
+    'tb_pkt_check'   = @('stream/pkt_check')
+    'tb_chan_ctrl'   = @('stream/chan_ctrl')
+    'tb_chan_top'    = @('stream/pkt_align', 'stream/pkt_check', 'stream/chan_ctrl', 'stream/chan_top', 'common/skid_buffer')
 }
 # Extra +define+ args a TB needs beyond the sweep default. tb_daq_csr is built
 # at NumCh=4 - a value the phase-2 lint sweep already proved elaborates but no
@@ -102,7 +118,7 @@ $tbDefines = @{
     'tb_daq_csr' = @('+define+DAQ_NUM_CH=4')
 }
 
-$tbs = @('tb_skid_buffer', 'tb_cnt_sat', 'tb_axil_slave', 'tb_daq_csr')
+$tbs = @('tb_skid_buffer', 'tb_cnt_sat', 'tb_axil_slave', 'tb_daq_csr', 'tb_pkt_align', 'tb_pkt_check', 'tb_chan_ctrl', 'tb_chan_top')
 if ($Mutant) { $tbs = @("tb_$($mutantOwner[$Mutant])") }
 if ($Only)   { $tbs = $tbs | Where-Object { $Only -contains $_ } }
 

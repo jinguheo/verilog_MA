@@ -81,6 +81,17 @@ package daq_pkg;
   localparam int unsigned PktBeatSopBit  = AxiDw + AxiBw + 33;
   localparam int unsigned PktBeatBits    = AxiDw + AxiBw + 34;
 
+  // Post-check beat layout: the same as PktBeat* minus the crc field, since
+  // verification has already happened by the time pkt_check.sv hands a beat
+  // onward to chan_ctrl. A separate constant set rather than a slice of
+  // PktBeat*, so a field reorder on one side can't silently misalign the
+  // other.
+  localparam int unsigned PktBeatCleanDataLsb = 0;
+  localparam int unsigned PktBeatCleanStrbLsb = AxiDw;
+  localparam int unsigned PktBeatCleanEopBit  = AxiDw + AxiBw;
+  localparam int unsigned PktBeatCleanSopBit  = AxiDw + AxiBw + 1;
+  localparam int unsigned PktBeatCleanBits    = AxiDw + AxiBw + 2;
+
   // ---------------------------------------------------------------- descriptor
 
   typedef struct packed {
