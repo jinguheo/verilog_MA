@@ -30,6 +30,12 @@
      MUT_TRACK_NOERR      a burst's BRESP error is never latched
      MUT_TRACK_NOCLEAR    ch_abort_i no longer clears a latched error
      MUT_TRACK_WRONGCH    xfer_done_ch_o always channel 0
+     MUT_IRQ_NOEDGE       fetch/wr err feed IrqCauseErr as a level, not a pulse
+     MUT_IRQ_WRONGCH      xfer_done_i always pulses channel 0's IrqCauseDone
+     MUT_IRQ_BUSYWRONG    ch_busy_o drops desc_valid_i (stream_busy_i only)
+     MUT_PERF_BYTEWRONG   byte counter ignores strobe popcount
+     MUT_PERF_NOSTALL     stall count never increments
+     MUT_PERF_ERRMISS     CRC cause is not counted as an error event
 
    Usage:
      powershell -File samples\sample_test_4\scripts\run_block_tb.ps1
@@ -50,7 +56,9 @@ param(
                  'MUT_DESC_NOLINK','MUT_DESC_NOHALT','MUT_DESC_NOCHECK',
                  'MUT_RDM_NOSPLIT','MUT_RDM_LASTWRONG','MUT_RDM_ERRDROP',
                  'MUT_WRM_NOSPLIT','MUT_WRM_LASTWRONG','MUT_WRM_ERRDROP',
-                 'MUT_TRACK_NOERR','MUT_TRACK_NOCLEAR','MUT_TRACK_WRONGCH')]
+                 'MUT_TRACK_NOERR','MUT_TRACK_NOCLEAR','MUT_TRACK_WRONGCH',
+                 'MUT_IRQ_NOEDGE','MUT_IRQ_WRONGCH','MUT_IRQ_BUSYWRONG',
+                 'MUT_PERF_BYTEWRONG','MUT_PERF_NOSTALL','MUT_PERF_ERRMISS')]
     [string]$Mutant
 )
 $ErrorActionPreference = 'Stop'
@@ -122,6 +130,12 @@ $mutantOwner = @{
     'MUT_TRACK_NOERR'       = 'wr_track'
     'MUT_TRACK_NOCLEAR'     = 'wr_track'
     'MUT_TRACK_WRONGCH'     = 'wr_track'
+    'MUT_IRQ_NOEDGE'        = 'irq_ctrl'
+    'MUT_IRQ_WRONGCH'       = 'irq_ctrl'
+    'MUT_IRQ_BUSYWRONG'     = 'irq_ctrl'
+    'MUT_PERF_BYTEWRONG'    = 'perf_cnt'
+    'MUT_PERF_NOSTALL'      = 'perf_cnt'
+    'MUT_PERF_ERRMISS'      = 'perf_cnt'
 }
 
 # Each TB's RTL dependencies beyond pkg.f, as paths relative to rtl/. Mutant
@@ -141,6 +155,8 @@ $tbModules = @{
     'tb_axi_rd_master' = @('dma/axi_rd_master')
     'tb_axi_wr_master' = @('dma/axi_wr_master')
     'tb_wr_track'       = @('dma/wr_track')
+    'tb_irq_ctrl'       = @('irq/irq_ctrl')
+    'tb_perf_cnt'       = @('stat/perf_cnt', 'common/cnt_sat')
 }
 # Extra +define+ args a TB needs beyond the sweep default. tb_daq_csr,
 # tb_dma_sched and tb_desc_fetch are built at NumCh=4 - a value the lint
@@ -153,7 +169,7 @@ $tbDefines = @{
     'tb_desc_fetch' = @('+define+DAQ_NUM_CH=4')
 }
 
-$tbs = @('tb_skid_buffer', 'tb_cnt_sat', 'tb_axil_slave', 'tb_daq_csr', 'tb_pkt_align', 'tb_pkt_check', 'tb_chan_ctrl', 'tb_chan_top', 'tb_dma_sched', 'tb_desc_fetch', 'tb_axi_rd_master', 'tb_axi_wr_master', 'tb_wr_track')
+$tbs = @('tb_skid_buffer', 'tb_cnt_sat', 'tb_axil_slave', 'tb_daq_csr', 'tb_pkt_align', 'tb_pkt_check', 'tb_chan_ctrl', 'tb_chan_top', 'tb_dma_sched', 'tb_desc_fetch', 'tb_axi_rd_master', 'tb_axi_wr_master', 'tb_wr_track', 'tb_irq_ctrl', 'tb_perf_cnt')
 if ($Mutant) { $tbs = @("tb_$($mutantOwner[$Mutant])") }
 if ($Only)   { $tbs = $tbs | Where-Object { $Only -contains $_ } }
 

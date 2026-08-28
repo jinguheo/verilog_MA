@@ -61,6 +61,9 @@ $tops = @(
     @{ name = 'axi_rd_master';    files = @("$daqRoot\filelist\rtl_phase4.f") }
     @{ name = 'axi_wr_master';    files = @("$daqRoot\filelist\rtl_phase4.f") }
     @{ name = 'wr_track';         files = @("$daqRoot\filelist\rtl_phase4.f") }
+    @{ name = 'irq_ctrl';         files = @("$daqRoot\filelist\rtl_phase5.f") }
+    @{ name = 'perf_cnt';         files = @("$daqRoot\filelist\rtl_phase5.f") }
+    @{ name = 'daq_subsystem';    files = @("$daqRoot\filelist\rtl_phase5.f") }
 )
 if ($Only) { $tops = $tops | Where-Object { $Only -contains $_.name } }
 

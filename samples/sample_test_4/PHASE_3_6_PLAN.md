@@ -214,4 +214,44 @@ block TB PASS(5 phase), mutation 3/3 killed(`MUT_TRACK_NOERR`,
   레이스라는 증거). 캡처와 그 같은-edge 소비자를 하나의 always 블록으로
   합쳐서 해결 — 상세 근거는 RESULTS.md 참고.
 
-다음: phase 5 (`irq_ctrl.sv`, `perf_cnt.sv`, `daq_subsystem.sv`) 착수.
+**Phase 5 착수, `irq_ctrl.sv`/`perf_cnt.sv` 완료 및 검증됨, `daq_subsystem.sv`
+lint clean (WIP).** `irq_ctrl.sv`는 chan_top(stream)/desc_fetch(fetch
+error)/wr_track(write error+완료)의 서로 다른 상태를 daq_csr가 이미 기대하는
+채널별 busy/err/cause 형태로 합침 — daq_csr 자신의 IRQ_STATE 요약 로직과는
+겹치지 않게 그 한 단계 앞에서 멈춤. `ch_cause_o[IrqCauseDone]`은
+chan_ctrl의 패킷 단위 Done이 아니라 wr_track의 `xfer_done_i`(실제 descriptor
+완료)로 구동 — daq_pkg.sv 주석이 말하는 "descriptor completed"를 처음으로
+실제로 만족시키는 신호. desc_fetch/wr_track의 sticky 에러 레벨은 rising-edge
+검출로 one-shot pulse로 변환 후 daq_csr의 W1C에 넣음(안 그러면 소프트웨어
+클리어가 sticky 소스를 절대 이길 수 없음). lint clean(6 configuration),
+block TB PASS(5 phase), mutation 3/3 killed. `perf_cnt.sv`는 `cnt_sat`(phase
+1) 재사용, dma_sched 중재 이전(각 채널 자신의 chan_top 출력) 지점에서 측정 —
+다른 채널이 공유 write 경로를 쓰고 있다고 이 채널이 stall인 건 아니므로.
+CH_ECC_STATUS는 ECC 하드웨어가 아직 없어서 상수 0. lint clean, block TB
+PASS(6 phase), mutation 3/3 killed.
+
+`daq_subsystem.sv`는 phase 1-5 전체를 배선하는 top — **PLAN.md 원안에서 실제
+벗어난 부분을 확정**: 원안은 reg_clk(axil_slave/daq_csr)를 axi_clk과 별도의
+세 번째 클럭으로 두고 그 사이에 CDC를 넣는 설계였지만, 실제로 만들어진
+daq_csr.sv(phase 2, 이미 검증·커밋됨)는 단일 clk_i만 받고 자기 인터페이스
+안에 CDC 인식이 전혀 없음 — 지금 와서 진짜 CDC 경계를 넣으려면 이미 검증된
+모듈을 다시 열어야 함. 그래서 daq_subsystem.sv는 reg_clk과 axi_clk을 하나의
+clk_i로 묶었고, 이 설계의 진짜 비동기 경계는 각 채널 자신의 src_clk[c] 하나뿐
+(chan_top.sv가 이미 prim_fifo_async/prim_rst_sync로 건너고 있음) — 이게 이번
+phase 5의 CDC audit 핵심 결론. GLOBAL_CTRL.global_enable은 각 채널
+CH_CTRL.enable과 AND, soft_rst_pulse는 axil_slave/daq_csr를 제외한 DMA 쪽
+전체에 한 사이클짜리 추가 리셋(ctrl_rst_n)을 만듦(소프트웨어가 자기 설정을
+잃지 않도록). err_inject_o/axi_max_burst_o/axi_outstanding_o는 대응하는
+하드웨어가 phase 1-4 어디에도 없어서 그대로 미연결(기존부터 있던 gap, 이번에
+생긴 게 아님). **6 configuration 전체(NumCh 1/2/8 × AxiDw 32/64) lint
+clean** — 전체 설계가 하나로 elaborate됨.
+
+**`tb_daq_subsystem.sv`는 작성만 되고 아직 빌드/실행 안 됨 — 다음 세션은
+여기서 이어감.** NumCh=1, 채널 1개·descriptor 1개·패킷 1개, 실제
+AXI4-Lite(설정)와 채널 자신의 src_clk 스트림(데이터)으로 구동, descriptor
+fetch 읽기와 payload 쓰기를 하나의 공유 AXI4 메모리 모델이 응답. 아직
+`scripts/run_block_tb.ps1`의 기본 `$tbs` 목록에는 넣지 않음(통과 확인 후에
+추가 — 그래야 "전체 실행" 회귀가 그동안 계속 green).
+
+다음: `tb_daq_subsystem.sv` 빌드/디버그 → 통과 확인 → RESULTS.md에 CDC audit
+결론 기록 → phase 6(통합 UVM, 블록별 formal, 회귀 스크립트).

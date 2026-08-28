@@ -474,6 +474,192 @@ sections; short version:
 `daq_subsystem.sv` is the first full top-level integration and the "no
 ad-hoc CDC crossings" audit gate PLAN.md calls for.
 
+## Session 2026-08-28 (evening) — layout viewing, flow consolidation, first real SDC
+
+Three items, done in order. The third produced the result worth knowing.
+
+### 1. GDS layout is viewable, and verified working
+
+Sample Test 4 → **Layout** tab shows `chan_ctrl`, `cnt_sat` and `skid_buffer`
+at three zoom levels each, rendered by KLayout with the sky130A layer properties
+applied. Nine PNGs in `my_dashboard/public/layout/`, served by Vite.
+
+For panning and layer toggling: `tools\open_layout.bat <design>` opens the real
+KLayout GUI — it runs in WSL and draws on the Windows desktop through WSLg.
+
+Fixed while verifying: the `<img>` carried `loading="lazy"`, and since only one
+image is on screen at a time the figure stayed blank until it scrolled into
+view. Two earlier traps are recorded in `tools/wsl/README.md`: `zoom_box()`
+takes micrometres not database units (passing DBU writes a blank image), and
+`klayout -z` can exit non-zero after writing every file, so under `set -e` its
+status must not abort a render loop.
+
+### 2. OpenLane 2 is the flow; ORFS is abandoned
+
+Recorded with the evidence at the top of `tools/wsl/README.md`. ORFS consumed
+6.2 GB and never produced a binary across five build attempts, four of which
+trace to one cause (its `setup.sh` rejects Ubuntu 26.04 and aborts early, so
+later dependency stages silently never run). OpenLane 2 bundles its own
+OpenROAD and has produced every GDS here. Nothing was deleted — 925 GB free, so
+removal is optional housekeeping.
+
+Two leftovers noted there: the PDK is installed twice (the flow uses
+`~/.volare/...`; `~/eda/pdk` is unused, from this session's volare install), and
+there are two OpenLane venvs, both v2.3.10.
+
+### 3. Real SDC — and it changed the numbers
+
+`asic/constraints/chan_ctrl.sdc` and `asic/constraints/chan_top.sdc` now exist
+and are wired in via `PNR_SDC_FILE` / `SIGNOFF_SDC_FILE`. Until now every run
+logged *"'PNR_SDC_FILE' is not defined. Using generic fallback SDC"*.
+
+`chan_ctrl` re-ran end to end. Against the real constraints:
+
+| | fallback SDC | real SDC |
+| --- | --- | --- |
+| setup worst slack (ss corner) | 4.25 ns | **1.98 ns** |
+| setup worst slack (tt) | 4.96 ns | 2.70 ns |
+| cell area | 2,630 µm² | 2,888 µm² |
+| power | 273 µW | 327 µW |
+| DRC / LVS / XOR / antenna | 0 | **0** |
+
+**The old slack was flattering because there were no IO constraints at all**, not
+because the design was fast. With a 30%-of-period budget on inputs and outputs
+the real margin appears, and the tool spends area and power to meet it. Still
+zero violations at every corner.
+
+### chan_top — unfinished, and it found real timing pressure
+
+`asic/chan_top/config.json` + `tools/wsl/87_run_chan_top.sh` exist. Resume with:
+
+    wsl -d Ubuntu -- bash /mnt/d/MyWork/Veriolg_MA/tools/wsl/87_run_chan_top.sh
+
+It reached step 38 of 78 (global routing) before the session ended. What it
+showed: at a 10 ns `axi_clk`, chan_top starts post-CTS with **WNS −21.2 ns and
+TNS −1614 ns**, and the resizer pulls that to **−0.200 ns / −58.9 ns** — close,
+but not zero. **A decision is pending: relax the period or change the RTL.**
+This is the first block here with genuine timing pressure, and it only became
+visible once the SDC was real.
+
+Two other things chan_top needed:
+- It pulls `prim_fifo_async` and `prim_rst_sync` from `/mnt/d/MyWork/verilog`,
+  outside this repo, and OpenLane refuses to read above its working directory.
+  `87_run_chan_top.sh` launches from `/mnt/d/MyWork`, the nearest common
+  ancestor, rather than vendoring a copy of prim.
+- 172,790 µm² of cells — about 60× chan_ctrl, because it carries the FIFO
+  storage. 420×420 gave 109% utilisation; the die is now 800×800.
+
+### Regressions I introduced, and the fixes
+
+- **apt yosys broke OpenLane.** The `yosys 0.52` installed earlier in this
+  session shadowed the nix one; OpenLane calls `yosys -y <script.py>` (pyosys)
+  and 0.52 has no `-y`, so the flow died at "Generate JSON Header".
+- **Putting nix bin directories on PATH broke it differently**, by also exposing
+  their `python3` (3.11) while the venv's 3.12 stdlib was in effect —
+  "AssertionError: SRE module mismatch", 63 steps in. The runner now symlinks
+  only the individual tool binaries and pins `python3` to the venv interpreter.
+- **OpenSTA is not Synopsys DC.** `remove_from_collection` and
+  `append_to_collection` both abort every corner with "invalid command name".
+  Use `all_inputs -no_clocks` and separate commands instead.
+
+### The nix store was corrupted
+
+`libomp.so` was 0 bytes and roughly twenty other paths failed content
+verification, which is why openroad would not load. Repaired with:
+
+    sudo /nix/var/nix/profiles/default/bin/nix-store --verify --check-contents --repair
+
+**Cause unknown** — it happened after the 2026-08-26 runs succeeded. If OpenLane
+starts failing in odd ways, check this first.
+
+## Session 2026-08-28 (later) — Sample Test 4 phase 5 started (irq_ctrl, perf_cnt, daq_subsystem WIP)
+
+`rtl/irq/irq_ctrl.sv` and `rtl/stat/perf_cnt.sv` delivered and verified;
+`rtl/daq_subsystem.sv` (top-level wiring) is lint-clean across the full
+parameter sweep but its own smoke-test TB is written and NOT yet debugged -
+**resume there**, not from scratch. Full detail once phase 5 closes out will
+go in `samples/sample_test_4/RESULTS.md`; short version for now:
+
+- **`irq_ctrl.sv`**: reconciles chan_top's stream-level status,
+  desc_fetch's fetch errors, and wr_track's write errors/completions into
+  the single per-channel busy/err/cause shape daq_csr.sv (phase 2) already
+  expects - explicitly NOT duplicating daq_csr's own IRQ_STATE/summary
+  logic (PHASE_3_6_PLAN.md flagged that overlap risk by name).
+  `ch_cause_o[IrqCauseDone]` is driven from wr_track's `xfer_done_i` (a real
+  descriptor completion), not chan_ctrl's own per-packet Done bit, which
+  predates any DMA write being attempted - daq_pkg.sv's own comment says
+  "descriptor completed", and this is the first module positioned to
+  actually mean that. desc_fetch/wr_track's sticky error levels are turned
+  into one-shot rising-edge pulses before feeding daq_csr's W1C
+  CH_IRQ_STATE, or a software clear could never win against a still-sticky
+  source. Lint clean (6 configs), block TB PASS (5 phases), mutation 3/3
+  killed (`MUT_IRQ_NOEDGE`, `MUT_IRQ_WRONGCH`, `MUT_IRQ_BUSYWRONG`).
+  **A real testbench-design lesson surfaced closing this gate**: driving a
+  same-clock-domain "registered status input" stimulus at a negedge (this
+  project's usual valid/ready convention) defeats a rising-edge detector,
+  because the input is already stable a half-cycle before the detector's
+  own flop samples it, collapsing the intended one-cycle lag to zero - no
+  pulse ever appears. Fixed by driving the stimulus with a non-blocking
+  assignment scheduled at the matching posedge instead, reproducing the
+  timing relationship a real upstream register actually has. Full writeup
+  in the test file's own phase-2 comment.
+- **`perf_cnt.sv`**: per-channel byte/packet/error/stall counters, reusing
+  `cnt_sat` (phase 1) rather than hand-rolling five counters per channel.
+  Tapped at each channel's own gated beat stream (chan_top's output,
+  fanned out to dma_sched too), not after dma_sched's arbitration mux - a
+  channel is stalled only when IT has a beat ready and IT is not accepted,
+  not merely because another channel currently holds the shared write
+  path. CH_ERR_CNT counts every error-class cause; CH_CRC_STATUS narrows
+  the same stream to CRC-32 mismatches specifically - both are genuinely
+  undocumented register semantics this session had to decide and write
+  down, not read off an existing spec. CH_ECC_STATUS is a constant zero:
+  no ECC hardware exists anywhere in this design yet. Lint clean, block TB
+  PASS (6 phases), mutation 3/3 killed (`MUT_PERF_BYTEWRONG`,
+  `MUT_PERF_NOSTALL`, `MUT_PERF_ERRMISS`).
+- **`daq_subsystem.sv`**: instantiates and wires every phase 1-5 block.
+  **Settles a real architecture deviation from PLAN.md**: the plan's
+  original sketch has `reg_clk` (axil_slave/daq_csr) as a third clock
+  domain, separate from `axi_clk`, with an explicit CDC boundary between
+  them. That is not what got built - daq_csr.sv (phase 2, already
+  verified/committed) takes a single `clk_i` with no CDC awareness in its
+  own interface at all, so retrofitting a real reg_clk/axi_clk crossing now
+  would mean reopening an already-verified module for a boundary its own
+  concrete implementation never needed. `daq_subsystem.sv` ties reg_clk and
+  axi_clk together as one clock; the only real asynchronous boundary in
+  the whole design remains each channel's own `src_clk[c]`, which
+  chan_top.sv already crosses via `prim_fifo_async`/`prim_rst_sync`. Full
+  reasoning is in the file's own header - **this is the CDC audit's main
+  finding and needs to land in RESULTS.md's phase 5 section** once the
+  smoke test below passes. `GLOBAL_CTRL.global_enable` ANDs with every
+  channel's own CH_CTRL enable bit; `soft_rst_pulse` derives a second,
+  one-cycle reset (`ctrl_rst_n`) covering every DMA-side block but NOT
+  axil_slave/daq_csr, so software keeps its own register state readable
+  through a soft reset. Two register outputs (`err_inject_o`,
+  `axi_max_burst_o`/`axi_outstanding_o`) are left genuinely unconnected -
+  no fault-injection hooks or runtime-configurable burst limit exist
+  anywhere in the RTL, a pre-existing gap from phases 1-4, not something
+  introduced here. **Lint clean across all 6 configurations** (NumCh
+  1/2/8 × AxiDw 32/64) - the full design elaborates as one unit.
+- **`tb_daq_subsystem.sv` is WRITTEN BUT NOT YET BUILT OR RUN.** One
+  channel (NumCh=1 build), one descriptor, one packet, driven over real
+  AXI4-Lite (config) and the channel's own src_clk stream (data), with a
+  single shared AXI4 memory model answering both the descriptor-fetch read
+  and the payload write. Deliberately not wired into
+  `scripts/run_block_tb.ps1`'s default `$tbs` list yet - do that only once
+  it actually passes, so the "run everything" regression stays green in
+  the meantime. **This is where to resume**: build it
+  (`powershell -File scripts\run_block_tb.ps1 -Only tb_daq_subsystem`,
+  after adding a temporary entry the way every other TB has one), debug
+  whatever the first real end-to-end run turns up (there will very likely
+  be at least one - every other integration point in this project has had
+  one), then add it to the default list once green.
+- **Still to do to close out phase 5**: get `tb_daq_subsystem.sv` passing,
+  write up the CDC audit finding in RESULTS.md (the reg_clk/axi_clk
+  unification above, confirmed by grepping for any clock signal other than
+  `clk_i`/`src_clk_i[c]` used anywhere outside chan_top.sv - none should
+  exist), update PHASE_3_6_PLAN.md's phase 5 status, then phase 6
+  (integration UVM, formal per block, regression script) is last.
+
 ## Git state
 
 - Pushed to `https://github.com/jinguheo/verilog_MA.git`, branch `master`.
