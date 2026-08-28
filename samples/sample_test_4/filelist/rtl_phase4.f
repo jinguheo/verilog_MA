@@ -7,3 +7,5 @@
 $DAQ_ROOT/rtl/dma/dma_sched.sv
 $DAQ_ROOT/rtl/dma/desc_fetch.sv
 $DAQ_ROOT/rtl/dma/axi_rd_master.sv
+$DAQ_ROOT/rtl/dma/axi_wr_master.sv
+$DAQ_ROOT/rtl/dma/wr_track.sv

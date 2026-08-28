@@ -340,6 +340,140 @@ lives in `samples/sample_test_4/asic/` (untracked) plus dashboard changes in
   `CLOCK_PORT` only takes one clock name in a single-clock config; multi-
   clock SDC handling not yet investigated).
 
+## Session 2026-08-26 (evening) — full open-source EDA toolchain in WSL, GDS layout viewing
+
+Two separate things happened in this session. The second one matters more.
+
+### GDS layout is now viewable — done, but not visually verified
+
+Three designs already had finished GDS from the OpenLane track (`chan_ctrl`,
+`cnt_sat`, `skid_buffer`). They can now be looked at two ways:
+
+- **Dashboard.** A new **Layout** tab in `SampleTest4.tsx` shows each design at
+  three zoom levels (full die, 60 µm window, 20 µm window). Nine PNGs live in
+  `my_dashboard/public/layout/` and Vite serves them directly. Rendered by
+  KLayout with the **sky130A layer properties file applied**, so layers carry
+  their real colours — the blue horizontal bars are met1 power rails, magenta
+  verticals are met2 signal routing, green is N-well. Regenerate with
+  `tools/wsl/63_render_all.sh`.
+- **KLayout GUI.** `tools\open_layout.bat [design]` opens the GDS in the real
+  GUI. KLayout runs inside WSL and draws on the Windows desktop through
+  **WSLg** (`DISPLAY=:0` confirmed), so nothing is installed on the Windows
+  side. A web page cannot launch a local GUI without a backend to do it, which
+  is why this is a batch file rather than a dashboard button.
+
+**Not verified:** `tsc` passes, but the Layout tab was never confirmed rendering
+in a browser — the dev server port was open yet the browser tool could not read
+the page. **Check that tab first next session.**
+
+Two rendering mistakes worth remembering, both already fixed in
+`tools/wsl/render_gds.py`:
+
+- `view.zoom_box()` takes a **DBox in micrometres**, not a `Box` in database
+  units. Passing DBU silently zooms out by 1/dbu (1000× for sky130) and writes a
+  blank image.
+- KLayout will not run a script from `/dev/stdin` ("no interpreter") — it needs a
+  real `.py` file.
+
+### EDA toolchain installed in WSL — everything except OpenROAD
+
+All inside the WSL distro on `D:\WSL\Ubuntu`, so C: is untouched (26 GB used,
+931 GB free). See `tools/wsl/README.md` for the full account.
+
+Installed and working: yosys 0.52, verilator, iverilog 12.0, gtkwave, magic
+8.3.105, klayout 0.30.0, netgen-lvs 1.5.133, xschem, ngspice (sky130 models
+load), octave/numpy/matplotlib, and the **sky130 PDK via volare** (1.1 GB;
+liberty 716, LEF 12, GDS 299). Supporting libraries: or-tools 9.14 and Abseil in
+`/opt/or-tools`, Boost 1.89 / Eigen / CUDD / Lemon / spdlog in `/usr/local`.
+
+**OpenROAD did not build.** Resume with:
+
+    wsl -d Ubuntu -- bash /mnt/d/MyWork/Veriolg_MA/tools/wsl/35_build_nogui.sh
+
+`-no-gui` sets `-DBUILD_GUI=OFF` and drops Qt from the build graph. The previous
+attempt spent its whole run compiling Qt 6.9.1 and stopped at 10,335/11,882 with
+no compiler error and no OOM (13 GB of 15 GB free) — it looks like the
+backgrounded task was ended externally, so run it from an interactive terminal.
+Qt is only needed for OpenROAD's GUI, which this project does not use: the flow
+runs in batch and KLayout already covers layout viewing.
+
+**But reconsider whether to finish it at all.** OpenLane 2 is already working in
+another thread — that is what produced the three GDS files — and it bundles its
+own OpenROAD. Building ORFS from source duplicates that and has cost five
+failures so far, four of them traceable to one root cause: ORFS's top-level
+`setup.sh` rejects Ubuntu 26.04 (it supports 20.04/22.04/24.04) and aborts early,
+so every later dependency stage silently never runs. OpenROAD's *own*
+`etc/DependencyInstaller.sh` does understand 26.04. **Consolidating on OpenLane 2
+is probably the right call.**
+
+### Host clock was nine hours behind
+
+Three independent servers agreed. apt rejected every archive Release file as "not
+valid yet". Fixed on the Windows side during the session; the temporary
+`/etc/apt/apt.conf.d/99-clock-skew` workaround was removed once verified.
+**Files and git commits created before the fix carry timestamps that are off by
+nine hours** — worth checking the `2026-08-09` Sample Test 4 commits against when
+that work actually happened.
+
+Passwordless sudo was enabled for `oem` via `/etc/sudoers.d/99-nopasswd` so the
+installers could run unattended. Undo with
+`wsl -d Ubuntu -u root -- rm /etc/sudoers.d/99-nopasswd`.
+
+### Next
+
+1. Confirm the dashboard Layout tab renders.
+2. Decide OpenLane 2 vs ORFS, and stop maintaining both.
+3. Write a real SDC. The current runs report
+   `'PNR_SDC_FILE' is not defined. Using generic fallback SDC`, so the clean
+   timing numbers are against a default clock, not this design's constraints.
+   Fine for single-clock `chan_ctrl`; **required** before `chan_top` or the top
+   level, where the asynchronous exceptions (`set_clock_groups -asynchronous`,
+   `set_max_delay -datapath_only` on synchroniser inputs) are the real work.
+4. `chan_ctrl` sits at 3.3% utilisation because the die was oversized to fit 165
+   IO pins. Area is not meaningful yet.
+
+## Session 2026-08-28 — Sample Test 4 phase 4 complete (axi_wr_master, wr_track)
+
+`rtl/dma/axi_wr_master.sv` and `rtl/dma/wr_track.sv` delivered and verified,
+closing out phase 4 (`dma_sched.sv`, `desc_fetch.sv`, `axi_rd_master.sv`,
+`axi_wr_master.sv`, `wr_track.sv` all done). Full detail in
+`samples/sample_test_4/RESULTS.md`'s "axi_wr_master.sv"/"wr_track.sv"
+sections; short version:
+
+- **`axi_wr_master.sv`**: the AXI4 AW/W/B master, single-outstanding like
+  `axi_rd_master.sv`, but needing a second kind of split
+  (`daq_pkg::MaxBurst`, 16 beats) on top of the existing 4 KB boundary check
+  since a DMA payload write can be up to 1 MiB. Burst *sizing* comes from
+  the descriptor length; transfer *completion* comes from the stream's own
+  `wr_eop_i` - deliberately not derived from each other, so a
+  descriptor/packet length mismatch can't produce a wrong completion
+  signal. Lint clean (6 configs), block TB PASS (6 phases + 10 extra runs
+  after the race below was fixed), mutation 3/3 killed.
+- **`wr_track.sv`**: turns `axi_wr_master`'s per-burst completion events
+  into per-channel `xfer_done_o` (to `desc_fetch`) and sticky
+  `ch_err_o`/`ch_err_code_o`. A write error does NOT yet halt a channel's
+  ring walk - `desc_fetch.sv` (already built/verified/committed) has no
+  input for that; documented as an open question for phase 5, not silently
+  dropped.
+- **One real RTL bug**: `awlen_o` was read from the registered
+  `burst_beats_q`, which only updates once AW is *accepted* - stale for
+  however long `WrAw` spent waiting on backpressure. Fixed by driving it
+  from the live combinational value instead.
+- **One testbench race, the session's main time sink**: `bd_taken`'s
+  capture and the block that pushed it into a bookkeeping queue were two
+  separate `always @(posedge clk)` blocks with no guaranteed relative
+  order - occasionally the push read the *previous* cycle's value,
+  hanging `wait_transfer_done()`. Reproduced only intermittently across
+  reruns (seed-dependent), which is what pointed at a scheduling race
+  rather than a data bug. Fixed by merging each signal's capture and its
+  same-edge consumers into one block. `tb_axi_rd_master.sv` has the same
+  theoretical split (not touched - already verified/committed) but only
+  manifested here once a second same-edge consumer existed.
+
+**Next**: phase 5 (`irq_ctrl.sv`, `perf_cnt.sv`, `daq_subsystem.sv`) -
+`daq_subsystem.sv` is the first full top-level integration and the "no
+ad-hoc CDC crossings" audit gate PLAN.md calls for.
+
 ## Git state
 
 - Pushed to `https://github.com/jinguheo/verilog_MA.git`, branch `master`.

@@ -181,4 +181,37 @@ RESULTS.md의 "axi_rd_master.sv" 절 참고.
   `rd_resp_valid`를 직접 읽음 — 이미 올바른 `collect_resp`(latched
   `resp_taken` 사용)를 재사용하도록 재작성.
 
-다음: phase 4 나머지 (`axi_wr_master.sv`, `wr_track.sv`).
+**`axi_wr_master.sv`/`wr_track.sv` 완료 및 검증됨 — phase 4 전체 완료.**
+`axi_wr_master.sv`는 dma_sched의 병합된 beat 스트림과 desc_fetch의 채널별
+목적지 addr/length를 받아 AXI4 AW/W/B를 issue한다. axi_rd_master와 마찬가지로
+전체 설계에서 single-outstanding(같은 시점에 write burst가 둘 이상 진행되지
+않음)이지만, axi_rd_master와 달리 `daq_pkg::MaxBurst`(16 beat) 캡이 추가로
+필요하다 — descriptor 기반 payload write는 최대 1 MiB까지 갈 수 있어서, 4KB
+경계 체크만으로는 burst 하나가 비현실적으로 커짐. burst 크기 결정(descriptor
+length 기반)과 "전체 transfer 완료" 판단(실제 스트림의 `wr_eop_i` 기반)을
+의도적으로 분리 — 서로 다른 신호에서 각자 답을 구해서, 만약 descriptor
+length와 실제 패킷 길이가 어긋나도 잘못된 완료 신호로 이어지지 않도록 함.
+lint clean(6 configuration), block TB PASS(6 phase + race 수정 후 seed 10회
+추가 검증), mutation 3/3 killed(`MUT_WRM_NOSPLIT`, `MUT_WRM_LASTWRONG`,
+`MUT_WRM_ERRDROP`). `wr_track.sv`는 axi_wr_master의 burst 단위 완료 이벤트를
+채널 단위 의미(desc_fetch에 보낼 xfer_done, sticky 채널 에러 상태)로
+변환하는 얇은 모듈 — desc_fetch/axi_rd_master가 이미 쓴 프로토콜/의미 분리
+패턴을 반복. write 에러가 아직 채널의 ring walk를 멈추지 않는 것은 의도적
+미해결 사항으로 문서화(phase 5에서 재검토). lint clean(6 configuration),
+block TB PASS(5 phase), mutation 3/3 killed(`MUT_TRACK_NOERR`,
+`MUT_TRACK_NOCLEAR`, `MUT_TRACK_WRONGCH`). 상세 근거는 RESULTS.md 참고.
+
+- **RTL 실버그 1건**: `awlen_o`가 accept 시점에만 갱신되는 레지스터
+  `burst_beats_q`에서 읽혔는데, `WrAw` 상태에서 `awready_i` 백프레셔가 걸리는
+  동안은 그 값이 이전 burst 것으로 stale함. 라이브 조합 신호
+  `burst_beats_c`로 바꿔서 해결.
+- **테스트벤치 레이스 1건, 이번 세션 중 가장 시간이 걸린 디버깅**: `bd_taken`
+  캡처를 하는 always 블록과 그걸 큐에 push하는 별도의 always 블록이 둘 다
+  같은 posedge에 걸려 있어서, 두 블록의 상대적 실행 순서가 시뮬레이터
+  스케줄러에 달려 있었음 — 실제로 phase 1의 4-beat 단일 burst에서
+  `last=0`으로 잘못 push되어 `wait_transfer_done()`이 영원히 멈추는 증상으로
+  나타났고, seed에 따라 재현 여부가 달라짐(데이터 버그가 아니라 스케줄링
+  레이스라는 증거). 캡처와 그 같은-edge 소비자를 하나의 always 블록으로
+  합쳐서 해결 — 상세 근거는 RESULTS.md 참고.
+
+다음: phase 5 (`irq_ctrl.sv`, `perf_cnt.sv`, `daq_subsystem.sv`) 착수.

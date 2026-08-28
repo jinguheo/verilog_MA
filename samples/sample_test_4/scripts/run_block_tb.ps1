@@ -24,6 +24,12 @@
      MUT_SKID_DRAIN   skid clears without being consumed -> dropped beat
      MUT_CNT_WRAP     carry discarded                    -> wraps, never clamps
      MUT_CNT_CLEAR_LOSE   increment beats a same-cycle clear
+     MUT_WRM_NOSPLIT      burst sizing ignores MaxBurst/4KB entirely
+     MUT_WRM_LASTWRONG    wlast_o asserted on every W beat, not just the last
+     MUT_WRM_ERRDROP      burst_done_err_o always 0
+     MUT_TRACK_NOERR      a burst's BRESP error is never latched
+     MUT_TRACK_NOCLEAR    ch_abort_i no longer clears a latched error
+     MUT_TRACK_WRONGCH    xfer_done_ch_o always channel 0
 
    Usage:
      powershell -File samples\sample_test_4\scripts\run_block_tb.ps1
@@ -42,7 +48,9 @@ param(
                  'MUT_CTRL_NODRAIN','MUT_CTRL_NOABORT','MUT_CTRL_BUSYWRONG',
                  'MUT_SCHED_STICKYLOCK','MUT_SCHED_EARLYUNLOCK','MUT_SCHED_DBLREADY',
                  'MUT_DESC_NOLINK','MUT_DESC_NOHALT','MUT_DESC_NOCHECK',
-                 'MUT_RDM_NOSPLIT','MUT_RDM_LASTWRONG','MUT_RDM_ERRDROP')]
+                 'MUT_RDM_NOSPLIT','MUT_RDM_LASTWRONG','MUT_RDM_ERRDROP',
+                 'MUT_WRM_NOSPLIT','MUT_WRM_LASTWRONG','MUT_WRM_ERRDROP',
+                 'MUT_TRACK_NOERR','MUT_TRACK_NOCLEAR','MUT_TRACK_WRONGCH')]
     [string]$Mutant
 )
 $ErrorActionPreference = 'Stop'
@@ -108,6 +116,12 @@ $mutantOwner = @{
     'MUT_RDM_NOSPLIT'       = 'axi_rd_master'
     'MUT_RDM_LASTWRONG'     = 'axi_rd_master'
     'MUT_RDM_ERRDROP'       = 'axi_rd_master'
+    'MUT_WRM_NOSPLIT'       = 'axi_wr_master'
+    'MUT_WRM_LASTWRONG'     = 'axi_wr_master'
+    'MUT_WRM_ERRDROP'       = 'axi_wr_master'
+    'MUT_TRACK_NOERR'       = 'wr_track'
+    'MUT_TRACK_NOCLEAR'     = 'wr_track'
+    'MUT_TRACK_WRONGCH'     = 'wr_track'
 }
 
 # Each TB's RTL dependencies beyond pkg.f, as paths relative to rtl/. Mutant
@@ -125,18 +139,21 @@ $tbModules = @{
     'tb_dma_sched'   = @('dma/dma_sched')
     'tb_desc_fetch'  = @('dma/desc_fetch')
     'tb_axi_rd_master' = @('dma/axi_rd_master')
+    'tb_axi_wr_master' = @('dma/axi_wr_master')
+    'tb_wr_track'       = @('dma/wr_track')
 }
 # Extra +define+ args a TB needs beyond the sweep default. tb_daq_csr,
 # tb_dma_sched and tb_desc_fetch are built at NumCh=4 - a value the lint
 # sweep already proves elaborates but no block TB exercises at runtime
-# otherwise.
+# otherwise. tb_axi_wr_master stays at the NumCh=8 default (like
+# tb_axi_rd_master) since it hardcodes ChIdxW-sized (3-bit) channel literals.
 $tbDefines = @{
     'tb_daq_csr'    = @('+define+DAQ_NUM_CH=4')
     'tb_dma_sched'  = @('+define+DAQ_NUM_CH=4')
     'tb_desc_fetch' = @('+define+DAQ_NUM_CH=4')
 }
 
-$tbs = @('tb_skid_buffer', 'tb_cnt_sat', 'tb_axil_slave', 'tb_daq_csr', 'tb_pkt_align', 'tb_pkt_check', 'tb_chan_ctrl', 'tb_chan_top', 'tb_dma_sched', 'tb_desc_fetch', 'tb_axi_rd_master')
+$tbs = @('tb_skid_buffer', 'tb_cnt_sat', 'tb_axil_slave', 'tb_daq_csr', 'tb_pkt_align', 'tb_pkt_check', 'tb_chan_ctrl', 'tb_chan_top', 'tb_dma_sched', 'tb_desc_fetch', 'tb_axi_rd_master', 'tb_axi_wr_master', 'tb_wr_track')
 if ($Mutant) { $tbs = @("tb_$($mutantOwner[$Mutant])") }
 if ($Only)   { $tbs = $tbs | Where-Object { $Only -contains $_ } }
 

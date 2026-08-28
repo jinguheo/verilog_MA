@@ -351,10 +351,10 @@ a momentary gap mid-packet. Fixed with a sticky `drain_pending_q` bit that
 only clears on the drained packet's own observed eop, not on the mere
 absence of `beat_valid_i` on a given cycle.
 
-## Phase 4 (in progress) — DMA engine
+## Phase 4 — DMA engine
 
-`dma_sched.sv`, `desc_fetch.sv`, and `axi_rd_master.sv` done; `axi_wr_master.sv`
-and `wr_track.sv` are not started.
+Complete: `dma_sched.sv`, `desc_fetch.sv`, `axi_rd_master.sv`,
+`axi_wr_master.sv`, `wr_track.sv`.
 
 Delivered:
 - [`rtl/dma/dma_sched.sv`](rtl/dma/dma_sched.sv) - packet-granularity
@@ -561,6 +561,156 @@ this project's testbenches, a `valid`/`ready` pair should always be turned
 into a posedge-latched `*_taken` signal before any negedge-driven code
 branches on whether a beat was accepted - never read live at a negedge.
 
+### `axi_wr_master.sv` — AXI4 write master
+
+Delivered:
+- [`rtl/dma/axi_wr_master.sv`](rtl/dma/axi_wr_master.sv) - the actual AXI4
+  AW/W/B master, consuming `dma_sched`'s single arbitrated beat stream (one
+  channel's packet at a time, locked sop-to-eop) and `desc_fetch`'s
+  per-channel destination address/length. Single-outstanding across the
+  whole design, the same narrowing `axi_rd_master.sv` already applied to the
+  read side - `dma_sched` never presents more than one channel's packet at a
+  time, so there is never a reason for two AW/W bursts in flight together
+  either. Unlike `axi_rd_master.sv` (a fixed, tiny 16-byte fetch), a DMA
+  payload write can be up to `DescMaxLength` (1 MiB), so this module needs a
+  second kind of splitting `axi_rd_master.sv` never did:
+  `daq_pkg::MaxBurst` (16 beats) caps every burst, on top of the same 4 KB
+  boundary check (`axi_pkg::bytes_to_boundary()`, reused) `axi_rd_master.sv`
+  already established.
+- **Burst sizing and transfer completion are deliberately two different
+  signals, not one derived from the other.** Each burst's beat count comes
+  from `ch_desc_maxlen_i` (latched at the packet's sop) against `MaxBurst`
+  and the boundary - AXI requires committing to AWLEN before the first W
+  beat, so this has to come from something known in advance. Whether the
+  *whole transfer* is done is decided from `wr_eop_i`, observed directly on
+  whichever W beat the stream actually marks last, not from the
+  descriptor-length countdown reaching zero. If a descriptor's length and
+  the packet's real byte count ever disagree (not cross-checked anywhere
+  upstream), this split means a wrong burst size never also produces a
+  wrong completion signal - full reasoning in the file's own header.
+- Hands each finished burst off to `wr_track.sv` (not built yet) as a small
+  completion event (`burst_done_valid_o`/`ch_o`/`err_o`/`last_o`) rather
+  than deciding for itself what a completed transfer means for the channel
+  - the same protocol/semantics split `desc_fetch.sv`'s header already
+  describes between itself and `axi_rd_master.sv`.
+- Block testbench: [`tb/tb_axi_wr_master.sv`](tb/tb_axi_wr_master.sv),
+  standing in for dma_sched (the beat-stream side) and memory (a small AXI4
+  slave stub) at once. Six phases: a single short burst under `MaxBurst`
+  (with byte-strobe passthrough checked on a deliberately partial final
+  beat), a packet longer than `MaxBurst` forcing a beat-count-only split, a
+  destination address one beat before a 4 KB boundary forcing a
+  boundary-only split, a BRESP error aligned to the burst that carried it,
+  upstream backpressure mid-packet, and two channels back-to-back each
+  keeping their own descriptor address. Every AW is also checked for
+  AWSIZE/AWBURST/AWID/AWCACHE/AWPROT correctness. Run 10 additional times
+  (5 at fixed `-Seed` values, 5 more at the default random seed) after the
+  race described below was fixed, specifically because that bug was
+  seed-dependent and had passed at least once before being caught.
+- Mutant: [`mutants/axi_wr_master_MUTANT.sv`](mutants/axi_wr_master_MUTANT.sv)
+  (`MUT_WRM_NOSPLIT`, `MUT_WRM_LASTWRONG`, `MUT_WRM_ERRDROP`).
+
+#### Lint gate — parameter sweep
+
+Clean across all 6 configurations, but only after one fix: `burst_beats_c`
+(the live combinational burst-size decision) was originally declared a full
+32 bits even though it is mathematically capped at `MaxBurst` (one of its
+own three `min()` operands) and immediately narrowed to `BeatCntW` wherever
+it's consumed - Verilator's `-Wall` correctly flagged the unused upper bits.
+Fixed by declaring it `BeatCntW`-wide in the first place rather than
+widening the consumer to match.
+
+#### A real RTL bug: `awlen_o` read from the wrong copy of the burst size
+
+The first version drove `awlen_o` from `burst_beats_q` - the *registered*
+copy, latched only once `aw_accept` fires at the tail end of `WrAw`. That
+copy is correct for the whole of the following `WrW` state (where it's
+compared against `beat_cnt_q` for WLAST), but during `WrAw` itself, before
+acceptance, `burst_beats_q` still holds whatever the *previous* burst's size
+was - `awlen_o` was therefore stale for however many cycles `WrAw` spent
+waiting on `awready_i`, i.e. exactly as long as AW-side backpressure held.
+`tb_axi_wr_master.sv`'s own phase 1 caught it as a `wlast_o` mis-timing
+report the very first time AW backpressure happened to stall for more than
+a couple of cycles. Fixed by driving `awlen_o` from the live combinational
+`burst_beats_c` instead - its own inputs (`addr_q`, `remain_beats_q`) are
+already correct for the whole of `WrAw`, having last changed when the
+*previous* burst's B was accepted - while still latching `burst_beats_q`
+from it at `aw_accept` for `WrW`'s later use.
+
+#### A testbench race, not an RTL bug: same-edge multi-block `_taken` consumption
+
+The most time-consuming bug of this module's gate, and worth documenting in
+detail because it is a genuinely different class from every previous
+`valid`/`ready`-timing bug this project has found: `bd_taken` (a capture of
+`burst_done_valid_o`/`ch_o`/`err_o`/`last_o`) was originally computed in one
+`always @(posedge clk)` block and consumed by a *separate*
+`always @(posedge clk)` block that pushed it into a bookkeeping queue -
+mirroring `aw_taken`'s own capture-then-check split, which had worked fine
+in `tb_axi_rd_master.sv`. Two same-edge-triggered blocks with no declared
+data dependency between them have no guaranteed relative execution order
+inside the same simulation delta cycle; the push block could - and, on one
+otherwise-unremarkable run, did - read `bd_taken_last`'s *previous* cycle's
+value, one delta before the capture block updated it for the current edge.
+The symptom was exactly a hang, not a wrong-data corruption: phase 1's
+single 4-beat burst pushed `last=0` for what should have been (and, per a
+direct read of the DUT's own `burst_done_last_o` at that same instant, *was*
+- confirmed with a temporary debug trace) the transfer's one and only,
+final burst - so `wait_transfer_done()`'s `while` loop never saw the `last`
+flag it was waiting for and spun forever. It reproduced intermittently
+across otherwise-identical reruns (default random seeding, no `-Seed`
+override), which is exactly what a same-edge scheduling-order race predicts
+and what a data bug would not. Fixed by moving every "_taken" signal's
+capture and its *same-edge* consumers (checks, queue pushes) into one
+single always block each, so ordering is guaranteed by ordinary sequential
+statement order instead of relying on the simulator's tie-break between
+independent processes. Signals whose only consumer polls from a genuinely
+later delta cycle - `up_taken`/`w_taken`/`b_taken`, all read from
+`@(negedge clk)`-driven loops in a different process entirely - were left
+as separate captures, since that pattern has an actual one-delta gap and is
+not the same hazard. `tb_axi_rd_master.sv`'s own `ar_taken` split (capture
+block + a single separate check block, no push consumer) carries the same
+theoretical risk and was not touched here - it is already verified and
+committed, and a second same-edge consumer appears to be what was needed to
+expose the ordering ambiguity in practice.
+
+### `wr_track.sv` — write completion tracking and error aggregation
+
+Delivered:
+- [`rtl/dma/wr_track.sv`](rtl/dma/wr_track.sv) - turns `axi_wr_master`'s
+  per-burst completion events into the two things a channel actually needs:
+  `xfer_done_o`/`xfer_done_ch_o` to `desc_fetch` (fires whenever
+  `burst_done_last_i` does, telling it to advance the ring) and sticky
+  per-channel `ch_err_o`/`ch_err_code_o` (set to `ErrAxiWrite` on any
+  erroring burst, cleared only by `ch_abort_i` - the same convention
+  `desc_fetch.sv`'s own `err_q`/`halted_q` already use). Deliberately a
+  separate module from `axi_wr_master.sv` even though `axi_wr_master`'s
+  single-outstanding design keeps its own bookkeeping trivial (a plain
+  per-channel latch, not a real scoreboard) - see the file's header for why
+  the protocol/semantics split is still worth keeping.
+- **A documented gap, not a fix**: a write error does NOT halt a channel's
+  ring walk the way a descriptor-fetch error already does. `xfer_done_o`
+  fires regardless of `burst_done_err_i`, because `desc_fetch.sv`'s own
+  `xfer_done_i` input has no "and it failed" qualifier - giving it one would
+  mean touching `desc_fetch.sv` again, which is already built, verified,
+  and committed. Left explicit in the file's header rather than worked
+  around, the same way `chan_ctrl.sv`'s own header flagged what
+  `ch_abort_i` mid-packet left unresolved for phase 4 to pick up later.
+- Block testbench: [`tb/tb_wr_track.sv`](tb/tb_wr_track.sv), driving
+  `burst_done_*` directly (no AXI or beat-stream protocol on either side of
+  this module). Five phases: a single-burst transfer, a multi-burst
+  transfer (`xfer_done_o` only on the one marked last), a burst erroring
+  mid-transfer whose error survives past the transfer's own completion,
+  `ch_abort_i` clearing a latched error, and two channels' errors staying
+  independent (one channel's abort must not touch another's). A final loop
+  reads every channel's `ch_err_o`/`ch_err_code_o` bit, not just the ones
+  named in earlier phases, both as a real residual-state check and because
+  Verilator's `-Wall` flags array bits a testbench never reads at all.
+- Mutant: [`mutants/wr_track_MUTANT.sv`](mutants/wr_track_MUTANT.sv)
+  (`MUT_TRACK_NOERR`, `MUT_TRACK_NOCLEAR`, `MUT_TRACK_WRONGCH`).
+
+#### Lint gate — parameter sweep
+
+Clean across all 6 configurations on the first attempt.
+
 ## Toolchain notes (new, on top of what Sample Test 2/3 already documented)
 
 A fourth Windows toolchain issue, distinct from the three
@@ -582,15 +732,22 @@ reusing the same long-lived session for the build/run commands.
 
 ## Not done yet
 
-Phase 4 has `dma_sched.sv`, `desc_fetch.sv`, and `axi_rd_master.sv`;
-`axi_wr_master.sv` and `wr_track.sv` remain - and until they exist,
-`desc_fetch.sv`'s `ch_desc_valid_o`/`ch_desc_addr_o`/`ch_desc_maxlen_o`
-outputs still have no real consumer, only block testbenches' stand-ins
-(`axi_rd_master.sv` is now that real consumer for `desc_fetch.sv`'s
-`rd_req_*`/`rd_resp_*` side, at least). Phases 5-6 (IRQ/perf/top integration,
-integration UVM + formal + regression) are unstarted. `rtl/irq`, `rtl/stat`
-do not exist yet. `daq_csr.sv`'s per-channel status, counter, and cause
-inputs are currently driven directly by its block testbench; nothing
-downstream consumes `ch_enable_o` yet, though `ch_desc_base_o`/
-`ch_desc_go_o` now have a real (if not yet wired-up) consumer in
-`desc_fetch.sv`'s `ch_desc_base_i`/`ch_desc_go_i`.
+Phase 4 is complete: `dma_sched.sv`, `desc_fetch.sv`, `axi_rd_master.sv`,
+`axi_wr_master.sv`, `wr_track.sv` all done, verified, and lint-clean across
+the parameter sweep. Every phase-4 module now has a real consumer for every
+signal it produces (e.g. `desc_fetch.sv`'s `ch_desc_addr_o`/
+`ch_desc_maxlen_o` are `axi_wr_master.sv`'s own inputs now) - none of them
+are only exercised by a block testbench's stand-in anymore, except where the
+plan always intended a later phase to close the loop (`ch_desc_valid_o` is
+still not consulted by anything, a deliberate documented choice in
+`axi_wr_master.sv`'s own header, not a gap).
+
+Phases 5-6 (IRQ/perf/top integration, integration UVM + formal + regression)
+are unstarted. `rtl/irq`, `rtl/stat` do not exist yet. `daq_csr.sv`'s
+per-channel status, counter, and cause inputs are currently driven directly
+by its block testbench; nothing downstream consumes `ch_enable_o` yet,
+though `ch_desc_base_o`/`ch_desc_go_o` have a real consumer in
+`desc_fetch.sv`. A write error does not yet halt a channel's ring walk (see
+`wr_track.sv`'s own documented gap above) - whether to close that by adding
+an input to `desc_fetch.sv` or handling it entirely in phase 5's
+`daq_subsystem.sv`/`irq_ctrl.sv` is an open question for phase 5.

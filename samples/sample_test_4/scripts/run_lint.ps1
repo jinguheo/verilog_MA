@@ -59,6 +59,8 @@ $tops = @(
     @{ name = 'dma_sched';        files = @("$daqRoot\filelist\rtl_phase4.f") }
     @{ name = 'desc_fetch';       files = @("$daqRoot\filelist\rtl_phase4.f") }
     @{ name = 'axi_rd_master';    files = @("$daqRoot\filelist\rtl_phase4.f") }
+    @{ name = 'axi_wr_master';    files = @("$daqRoot\filelist\rtl_phase4.f") }
+    @{ name = 'wr_track';         files = @("$daqRoot\filelist\rtl_phase4.f") }
 )
 if ($Only) { $tops = $tops | Where-Object { $Only -contains $_.name } }
 
