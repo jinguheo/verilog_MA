@@ -214,8 +214,9 @@ block TB PASS(5 phase), mutation 3/3 killed(`MUT_TRACK_NOERR`,
   레이스라는 증거). 캡처와 그 같은-edge 소비자를 하나의 always 블록으로
   합쳐서 해결 — 상세 근거는 RESULTS.md 참고.
 
-**Phase 5 착수, `irq_ctrl.sv`/`perf_cnt.sv` 완료 및 검증됨, `daq_subsystem.sv`
-lint clean (WIP).** `irq_ctrl.sv`는 chan_top(stream)/desc_fetch(fetch
+**Phase 5 완료.** `irq_ctrl.sv`/`perf_cnt.sv` 완료 및 검증됨,
+`daq_subsystem.sv`(top-level 배선)도 lint clean + smoke-level 통합 테스트
+PASS. `irq_ctrl.sv`는 chan_top(stream)/desc_fetch(fetch
 error)/wr_track(write error+완료)의 서로 다른 상태를 daq_csr가 이미 기대하는
 채널별 busy/err/cause 형태로 합침 — daq_csr 자신의 IRQ_STATE 요약 로직과는
 겹치지 않게 그 한 단계 앞에서 멈춤. `ch_cause_o[IrqCauseDone]`은
@@ -246,12 +247,18 @@ CH_CTRL.enable과 AND, soft_rst_pulse는 axil_slave/daq_csr를 제외한 DMA 쪽
 생긴 게 아님). **6 configuration 전체(NumCh 1/2/8 × AxiDw 32/64) lint
 clean** — 전체 설계가 하나로 elaborate됨.
 
-**`tb_daq_subsystem.sv`는 작성만 되고 아직 빌드/실행 안 됨 — 다음 세션은
-여기서 이어감.** NumCh=1, 채널 1개·descriptor 1개·패킷 1개, 실제
-AXI4-Lite(설정)와 채널 자신의 src_clk 스트림(데이터)으로 구동, descriptor
-fetch 읽기와 payload 쓰기를 하나의 공유 AXI4 메모리 모델이 응답. 아직
-`scripts/run_block_tb.ps1`의 기본 `$tbs` 목록에는 넣지 않음(통과 확인 후에
-추가 — 그래야 "전체 실행" 회귀가 그동안 계속 green).
+**`tb_daq_subsystem.sv` 빌드 및 PASS 확인됨.** NumCh=1, 채널 1개·descriptor
+1개·패킷 1개, 실제 AXI4-Lite(설정)와 채널 자신의 src_clk 스트림(clk_i와 다른
+주기, non-integer ratio로 실제 CDC 경로를 실사용)으로 구동, descriptor fetch
+읽기와 payload 쓰기를 하나의 공유 AXI4 메모리 모델이 응답. 첫 실행부터 기능
+버그 없이 PASS, seed 8회 추가 검증. `scripts/run_block_tb.ps1`의 기본 `$tbs`
+목록에도 추가함. 전체 lint sweep(102 configuration) + 전체 block TB
+regression(16개) 모두 clean/PASS.
 
-다음: `tb_daq_subsystem.sv` 빌드/디버그 → 통과 확인 → RESULTS.md에 CDC audit
-결론 기록 → phase 6(통합 UVM, 블록별 formal, 회귀 스크립트).
+**CDC audit 완료**: `rtl/*.sv` 전체에서 `clk_i`(모듈 자신의 범용 클럭
+포트명)와 `src_clk_i[c]` 외의 클럭 신호가 있는지 grep으로 확인 — chan_top.sv/
+daq_subsystem.sv를 제외한 모든 모듈이 단일 `clk_i`만 가짐. 이 설계 전체에서
+진짜 비동기 클럭 경계는 chan_top.sv의 prim_fifo_async/prim_rst_sync 하나뿐
+(phase 3에서 이미 검증 완료)이라는 결론 — RESULTS.md phase 5 절에 상세 기록.
+
+다음: phase 6(통합 UVM, 블록별 formal, 회귀 스크립트) 착수.

@@ -711,6 +711,206 @@ Delivered:
 
 Clean across all 6 configurations on the first attempt.
 
+## Phase 5 — interrupt/perf aggregation and top-level integration
+
+Complete: `irq_ctrl.sv`, `perf_cnt.sv`, `daq_subsystem.sv`, plus a smoke-
+level integration testbench for `daq_subsystem.sv` itself (beyond what
+PLAN.md's own phase 5 gate - "full elaboration, CDC audit" - strictly
+requires; phase 6 is where the real integration UVM environment belongs,
+but a lint-clean top that has never actually moved a byte end-to-end is a
+weaker claim than this project has made for every other phase).
+
+### `irq_ctrl.sv` — status/interrupt-cause aggregation
+
+Delivered:
+- [`rtl/irq/irq_ctrl.sv`](rtl/irq/irq_ctrl.sv) - reconciles three
+  independent axi_clk-domain status sources (`chan_top`'s stream-level FSM,
+  `desc_fetch`'s fetch errors, `wr_track`'s write errors/completions) into
+  the single per-channel busy/err/cause shape `daq_csr.sv` (phase 2,
+  already verified/committed) was built to consume - deliberately without
+  duplicating any of daq_csr's own summary logic (its W1C `CH_IRQ_STATE`
+  latch, the live `IRQ_STATE` OR-with-enable summary, `irq_o` itself).
+  PHASE_3_6_PLAN.md flagged this exact overlap risk by name for `irq_ctrl.sv`.
+- **`ch_cause_o[IrqCauseDone]` means the DOCUMENTED thing, not chan_ctrl's
+  own per-packet completion.** `daq_pkg.sv`'s own comment on `IrqCauseDone`
+  says "descriptor completed" - a DMA-level event. `chan_ctrl.sv`'s own
+  Done cause (built in phase 3, before the DMA engine existed) actually
+  fires on stream-level packet completion, before any payload write is
+  even attempted. This module ignores chan_top's Done bit entirely and
+  drives `IrqCauseDone` from `wr_track`'s `xfer_done_i`/`xfer_done_ch_i` -
+  the first module positioned to make good on what the register map
+  actually promised.
+- **"Channel busy" is broader than "stream busy."** `chan_top`'s own
+  `ch_busy_o` only reflects `ChRunning`/`ChDraining` - a channel holding a
+  validated descriptor between packets reads as idle there. `ch_busy_o`
+  here is `stream_busy_i | desc_valid_i` (from `desc_fetch`), the reading
+  software polling `GLOBAL_STATUS`/`CH_STATUS` actually needs.
+- **Sticky error levels become one-shot pulses before reaching daq_csr's
+  W1C latch.** `desc_fetch`/`wr_track`'s `ch_err_o` are sticky (cleared
+  only by `ch_abort_i`), which is correct for this module's own `ch_err_o`
+  passthrough (also sticky) but wrong for `ch_cause_o[IrqCauseErr]`:
+  daq_csr's `CH_IRQ_STATE` write-commit applies `| ch_cause_i[c]` every
+  single cycle (see daq_csr.sv's own comment on why), so a sticky level
+  there would mean a software W1C clear is re-set the very next cycle,
+  for as long as the underlying condition persists. A rising-edge detector
+  turns each into a genuine one-shot pulse first.
+- Block testbench: [`tb/tb_irq_ctrl.sv`](tb/tb_irq_ctrl.sv). Five phases:
+  `ch_busy_o`/`dma_busy_o` as an OR of both sources, `fetch_err_i` sticky
+  producing exactly one pulse (not a continuous level) while `ch_err_o`
+  stays sticky, the same for `wr_err_i`, `xfer_done_i`/`xfer_done_ch_i`
+  routing to the correct channel only, and `stream_cause_i`'s Crc/FifoOvf
+  bits passing through unmodified. A final loop confirms every untouched
+  channel shows no residual state.
+- Mutant: [`mutants/irq_ctrl_MUTANT.sv`](mutants/irq_ctrl_MUTANT.sv)
+  (`MUT_IRQ_NOEDGE`, `MUT_IRQ_WRONGCH`, `MUT_IRQ_BUSYWRONG`).
+
+#### Lint gate — parameter sweep
+
+Clean across all 6 configurations, once `perf_cnt.sv`'s own unconnected
+`cnt_sat` `saturated_o` pins were wrapped in `lint_off`/`lint_on
+PINCONNECTEMPTY` (they surfaced while linting `irq_ctrl.sv`, since
+Verilator elaborates every module in the sourced file list, not just the
+named top).
+
+#### A testbench-design lesson: driving a same-domain edge detector's input at the wrong clock phase
+
+The one real debugging detour closing this gate, worth recording in detail
+because it is a genuinely different class of bug from anything found in
+phases 1-4: `fetch_err_i`/`wr_err_i` model a REGISTERED status output of
+another same-clock-domain module (`desc_fetch`'s/`wr_track`'s own `err_q`),
+so the edge-detector RTL (`fetch_err_q <= fetch_err_i; rise = fetch_err_i &
+~fetch_err_q;`) expects its input to transition with that same timing
+relationship. Driving the stimulus the way every other level/pulse input in
+this project's testbenches is driven - a blocking assignment set early, at
+a `negedge`, stable for the whole half-cycle before the next `posedge` -
+does NOT reproduce that relationship: by the time the detector's own flop
+first samples the input, it has already been stable, so the flop catches
+the "new" value on its very first opportunity too, with zero lag relative
+to the live signal - `fetch_err_rise` never sees a cycle where one is 1 and
+the other is still 0, so no pulse ever appears. The fix was a non-blocking
+assignment (`fetch_err[2] <= 1'b1;`) scheduled at the matching `posedge`
+instead, which reproduces exactly what a real upstream register does:
+everything triggered by that edge reads the OLD value of everything else
+also triggered by it, giving the detector's own flop the one genuine cycle
+of lag it needs. Full comment in `tb/tb_irq_ctrl.sv`'s phase 2.
+
+### `perf_cnt.sv` — per-channel activity counters
+
+Delivered:
+- [`rtl/stat/perf_cnt.sv`](rtl/stat/perf_cnt.sv) - byte/packet/error/stall
+  counters per channel, reusing `cnt_sat` (phase 1) five times per channel
+  rather than hand-rolling counters from scratch.
+- **Tapped at each channel's own gated beat stream (chan_top's output),
+  not after dma_sched's arbitration mux.** A channel is stalled only when
+  IT has a beat ready and IT is not being accepted - measuring downstream
+  of the shared arbiter would conflate "this channel is backed up" with
+  "some other channel currently holds the shared write path," which is not
+  the same fault.
+- **CH_ERR_CNT vs CH_CRC_STATUS is a genuine, previously-undocumented
+  register-semantics decision, not a spec lookup.** Neither `daq_pkg.sv`
+  nor PLAN.md's register-map sketch says more than the two names. Read
+  here as: CH_ERR_CNT counts every error-class cause a channel has raised
+  (reusing `irq_ctrl`'s already-computed per-channel cause vector rather
+  than re-deriving the same edge detection twice), while CH_CRC_STATUS
+  narrows that same stream to CRC-32 mismatches specifically.
+- CH_ECC_STATUS is a constant zero - no ECC hardware exists anywhere in
+  this design (the channel FIFO carries no SECDED encoding), so
+  `ErrEccUncorr` is unreachable by construction. Same documented-gap
+  treatment `chan_ctrl.sv`'s own header already gives
+  `ch_cause_o[IrqCauseFifoOvf]`.
+- Block testbench: [`tb/tb_perf_cnt.sv`](tb/tb_perf_cnt.sv). Six phases:
+  full-strobe beats with packet count only on an accepted eop, a
+  partial-strobe beat advancing byte count by popcount not full width,
+  backpressure counted as stall without moving byte/pkt counts, each of
+  the three error-class cause bits bumping CH_ERR_CNT with only
+  IrqCauseCrc also bumping CH_CRC_STATUS, `ch_abort_i` clearing only the
+  aborted channel's counters, and CH_ECC_STATUS reading zero on every
+  channel.
+- Mutant: [`mutants/perf_cnt_MUTANT.sv`](mutants/perf_cnt_MUTANT.sv)
+  (`MUT_PERF_BYTEWRONG`, `MUT_PERF_NOSTALL`, `MUT_PERF_ERRMISS`).
+
+#### Lint gate — parameter sweep
+
+Clean across all 6 configurations on the first attempt.
+
+### `daq_subsystem.sv` — top-level integration, and the CDC audit
+
+Delivered:
+- [`rtl/daq_subsystem.sv`](rtl/daq_subsystem.sv) - instantiates and wires
+  every phase 1-5 block per PLAN.md's own architecture diagram.
+- **The CDC audit's main finding: `reg_clk` and `axi_clk` are unified into
+  one clock, a real deviation from PLAN.md's original sketch.** The plan's
+  architecture has `axil_slave`/`daq_csr` on a separate `reg_clk`, with an
+  explicit CDC boundary into `axi_clk`'s DMA engine. That is not what got
+  built: `daq_csr.sv` (phase 2, already verified/committed) takes a single
+  `clk_i` with no CDC awareness anywhere in its own interface - its
+  write-commit logic reads `ch_busy_i`/`ch_cause_i`/etc. as plain
+  same-cycle combinational inputs, which would be a genuine metastability
+  hazard if those inputs actually crossed a real asynchronous boundary.
+  Retrofitting a real crossing now would mean reopening an already-verified,
+  committed module for a boundary its own concrete implementation never
+  needed - a real DAQ card's register interface and DMA engine are
+  routinely driven from the same PLL output in practice. Full reasoning in
+  the file's own header.
+- **Audit method and result: grepped every `rtl/*.sv` file for any
+  clock-typed signal other than `clk_i` (a module's own generic clock
+  port name) and `src_clk_i`/`src_clk_i[c]`.** Every module outside
+  `chan_top.sv`/`daq_subsystem.sv` declares exactly one `clk_i` port and
+  nothing else - no module anywhere in this design carries two clock
+  ports or references a second clock signal internally. `chan_top.sv`
+  remains the SOLE place a real clock domain is crossed
+  (`prim_fifo_async` + `prim_rst_sync` per domain, already verified in
+  phase 3); `daq_subsystem.sv` only ever passes each channel's
+  `src_clk_i[c]` straight through to that one already-audited boundary,
+  never touching it with any logic of its own. This is the audit PLAN.md's
+  phase 5 gate calls for, and its conclusion is: given the reg_clk/axi_clk
+  unification above, there is exactly one clock-domain crossing in the
+  entire design, and it was already closed out in phase 3.
+- `GLOBAL_CTRL.global_enable_o` ANDs with every channel's own `CH_CTRL`
+  enable bit - a channel only runs when both are set. `soft_rst_pulse_o`
+  derives a second, one-cycle-wide reset (`ctrl_rst_n`) covering every
+  DMA-side block (chan_top, dma_sched, desc_fetch, both AXI masters,
+  wr_track, irq_ctrl, perf_cnt) but NOT `axil_slave`/`daq_csr`, so software
+  keeps its own register state readable through a soft reset instead of
+  losing its own configuration along with the datapath it just reset.
+- **Two register-map outputs are left genuinely unconnected - a
+  pre-existing gap from phases 1-4, not something introduced here.**
+  `err_inject_o` and `axi_max_burst_o`/`axi_outstanding_o` are read/write
+  registers in `daq_csr.sv` with no consumer anywhere in the RTL: no
+  fault-injection hook exists, and both AXI masters split bursts against
+  `daq_pkg::MaxBurst`, a compile-time constant, not a runtime register.
+  Making either real would mean changing the interface of already-verified
+  modules, out of scope for a wiring-only phase.
+- **Lint clean across all 6 parameter-sweep configurations** (`NumCh`
+  1/2/8 × `AxiDw` 32/64) - the full design elaborates as one unit.
+
+#### Smoke-level integration test
+
+[`tb/tb_daq_subsystem.sv`](tb/tb_daq_subsystem.sv): one channel (`NumCh=1`
+build), one descriptor, one packet, driven entirely over the two real
+external interfaces - AXI4-Lite for configuration, the channel's own
+`src_clk` stream for data (at a deliberately different period from `clk_i`,
+non-integer ratio, so the one real CDC crossing is genuinely exercised) -
+with a single shared AXI4 memory model answering both `axi_rd_master`'s
+descriptor-fetch reads and `axi_wr_master`'s payload writes. Not the
+integration UVM environment phase 6 calls for (no randomised traffic, no
+scoreboard, a single channel) - it exists to prove the wiring in
+`daq_subsystem.sv` is actually correct end-to-end, which the lint/
+elaboration gate alone does not demonstrate.
+
+Sequence and checks: configure over AXI4-Lite (`CH_DESC_BASE`, `CH_CTRL`,
+`GLOBAL_CTRL`, `IRQ_ENABLE`/`CH_IRQ_ENABLE`, `CH_DESC_CTRL.go`), poll
+`CH_STATUS.busy` until `desc_fetch` has validated the descriptor, send one
+CRC-correct packet sized to exactly the descriptor's length, wait for
+`CH_IRQ_STATE`'s Done cause, then check: the memory model's payload address
+holds the exact bytes sent, `irq_o` itself only asserts once IRQ_ENABLE/
+CH_IRQ_ENABLE actually unmask the cause, and `CH_BYTE_CNT`/`CH_PKT_CNT`
+read back correctly over AXI4-Lite. Every AR/AW is also checked for
+ARSIZE/ARBURST/ARID/ARCACHE/ARPROT (mirroring `axi_rd_master`'s/
+`axi_wr_master`'s own block-level checks), and WSTRB/WLAST on the one W
+beat. Passed on the first real run after being wired up, and 8 additional
+runs (5 fixed `-Seed` values, 3 more at the default random seed).
+
 ## Toolchain notes (new, on top of what Sample Test 2/3 already documented)
 
 A fourth Windows toolchain issue, distinct from the three
@@ -742,12 +942,20 @@ plan always intended a later phase to close the loop (`ch_desc_valid_o` is
 still not consulted by anything, a deliberate documented choice in
 `axi_wr_master.sv`'s own header, not a gap).
 
-Phases 5-6 (IRQ/perf/top integration, integration UVM + formal + regression)
-are unstarted. `rtl/irq`, `rtl/stat` do not exist yet. `daq_csr.sv`'s
-per-channel status, counter, and cause inputs are currently driven directly
-by its block testbench; nothing downstream consumes `ch_enable_o` yet,
-though `ch_desc_base_o`/`ch_desc_go_o` have a real consumer in
-`desc_fetch.sv`. A write error does not yet halt a channel's ring walk (see
-`wr_track.sv`'s own documented gap above) - whether to close that by adding
-an input to `desc_fetch.sv` or handling it entirely in phase 5's
-`daq_subsystem.sv`/`irq_ctrl.sv` is an open question for phase 5.
+Phase 5 is complete: `irq_ctrl.sv`, `perf_cnt.sv`, `daq_subsystem.sv` all
+done, verified, and lint-clean across the parameter sweep, plus a smoke-
+level integration test proving the whole design moves a byte end-to-end
+for real. `daq_csr.sv`'s per-channel status/counter/cause inputs now have
+real producers (`irq_ctrl.sv`/`perf_cnt.sv`) instead of a block testbench
+stand-in; `ch_enable_o` now has a real consumer (every `chan_top`, gated
+by `global_enable_o`). A write error still does not halt a channel's ring
+walk - `wr_track.sv`'s own documented gap - left as-is rather than
+reopening the already-verified `desc_fetch.sv` to add the qualifier;
+whether phase 6's integration environment needs to close this is still
+open.
+
+Phase 6 (integration UVM, formal per block, regression script) is
+unstarted. Two register-map outputs remain permanently unconnected unless
+a later decision changes their scope: `err_inject_o` (no fault-injection
+hooks anywhere) and `axi_max_burst_o`/`axi_outstanding_o` (both AXI masters
+use `daq_pkg::MaxBurst` as a compile-time constant, not a runtime value).

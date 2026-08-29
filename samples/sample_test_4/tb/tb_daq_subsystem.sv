@@ -208,9 +208,21 @@ module tb_daq_subsystem;
   logic [31:0]       arm_taken_addr;
   logic [7:0]        arm_taken_len;
   always @(posedge clk) begin
-    arm_taken      = arvalid_m & arready_m;
+    automatic logic taken = arvalid_m & arready_m;
+    arm_taken      = taken;
     arm_taken_addr = araddr_m;
     arm_taken_len  = arlen_m;
+    // Constant AXI signalling fields on the read master port, checked every
+    // AR the same way tb_axi_rd_master.sv does at the block level - this
+    // smoke test only needs to confirm daq_subsystem wires them straight
+    // through, not re-prove axi_rd_master's own protocol correctness.
+    if (rst_n && taken) begin
+      check(arsize_m == 3'($clog2(BeatBytes)), "AR: ARSIZE was not the full bus width");
+      check(arburst_m == BurstIncr, "AR: ARBURST was not INCR");
+      check(arid_m == '0, "AR: ARID was not the fixed single-outstanding id");
+      check(arcache_m == CacheNonCacheable, "AR: ARCACHE mismatch");
+      check(arprot_m == ProtDataUnpriv, "AR: ARPROT mismatch");
+    end
   end
   logic rm_taken;
   always @(posedge clk) rm_taken = rvalid_m & rready_m;
@@ -246,15 +258,33 @@ module tb_daq_subsystem;
   logic [31:0]       awm_taken_addr;
   logic [7:0]        awm_taken_len;
   always @(posedge clk) begin
-    awm_taken      = awvalid_m & awready_m;
+    automatic logic taken = awvalid_m & awready_m;
+    awm_taken      = taken;
     awm_taken_addr = awaddr_m;
     awm_taken_len  = awlen_m;
+    // Same constant-field check as the AR side above, mirroring
+    // tb_axi_wr_master.sv's own block-level AW checks.
+    if (rst_n && taken) begin
+      check(awsize_m == 3'($clog2(BeatBytes)), "AW: AWSIZE was not the full bus width");
+      check(awburst_m == BurstIncr, "AW: AWBURST was not INCR");
+      check(awid_m == '0, "AW: AWID was not the fixed single-outstanding id");
+      check(awcache_m == CacheNonCacheable, "AW: AWCACHE mismatch");
+      check(awprot_m == ProtDataUnpriv, "AW: AWPROT mismatch");
+    end
   end
   logic             wm_taken;
   logic [AxiDw-1:0] wm_taken_data;
   always @(posedge clk) begin
-    wm_taken      = wvalid_m & wready_m;
+    automatic logic taken = wvalid_m & wready_m;
+    wm_taken      = taken;
     wm_taken_data = wdata_m;
+    if (rst_n && taken) begin
+      check(wstrb_m == {AxiBw{1'b1}}, "W: WSTRB should be fully enabled for this smoke test's whole-beat packet");
+      // This smoke test's one packet is exactly one beat, so the one AW it
+      // produces (checked separately as aw_count == 1) must also be a
+      // single-beat burst - WLAST has to be set on this, its only W beat.
+      check(wlast_m, "W: WLAST should be set on this smoke test's only (single-beat) W transfer");
+    end
   end
   logic bm_taken;
   always @(posedge clk) bm_taken = bvalid_m & bready_m;
@@ -345,7 +375,10 @@ module tb_daq_subsystem;
         tries++;
         repeat (2) @(negedge clk);
       end
+      check(resp == RespOkay, "CH_STATUS read should be OKAY");
       check(status[0], "CH_STATUS.busy should assert once the descriptor is fetched");
+      check(!status[1], "CH_STATUS.err should not be set at this point");
+      check(status[31:2] == '0, "CH_STATUS's reserved bits should read zero");
     end
 
     // ---- send one CRC-correct packet, exactly one beat long ---------------------
@@ -362,6 +395,7 @@ module tb_daq_subsystem;
         tries++;
         repeat (2) @(negedge clk);
       end
+      check(resp == RespOkay, "CH_IRQ_STATE read should be OKAY");
       check(irq_state[IrqCauseDone], "CH_IRQ_STATE should latch the Done cause after the transfer");
       check(irq, "irq_o should be asserted once IRQ_ENABLE/CH_IRQ_ENABLE unmask the Done cause");
     end
@@ -383,8 +417,10 @@ module tb_daq_subsystem;
       automatic logic [31:0] byte_cnt, pkt_cnt;
       automatic logic [1:0]  resp;
       axil_read(chan_addr(OffByteCnt), byte_cnt, resp);
+      check(resp == RespOkay, "CH_BYTE_CNT read should be OKAY");
       check(byte_cnt == 32'(BeatBytes), "CH_BYTE_CNT should read back the one beat's bytes");
       axil_read(chan_addr(OffPktCnt), pkt_cnt, resp);
+      check(resp == RespOkay, "CH_PKT_CNT read should be OKAY");
       check(pkt_cnt == 32'd1, "CH_PKT_CNT should read back exactly one packet");
     end
 

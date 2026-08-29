@@ -157,6 +157,10 @@ $tbModules = @{
     'tb_wr_track'       = @('dma/wr_track')
     'tb_irq_ctrl'       = @('irq/irq_ctrl')
     'tb_perf_cnt'       = @('stat/perf_cnt', 'common/cnt_sat')
+    'tb_daq_subsystem'  = @('common/skid_buffer', 'common/cnt_sat', 'csr/axil_slave', 'csr/daq_csr',
+                             'stream/pkt_align', 'stream/pkt_check', 'stream/chan_ctrl', 'stream/chan_top',
+                             'dma/dma_sched', 'dma/desc_fetch', 'dma/axi_rd_master', 'dma/axi_wr_master',
+                             'dma/wr_track', 'irq/irq_ctrl', 'stat/perf_cnt', 'daq_subsystem')
 }
 # Extra +define+ args a TB needs beyond the sweep default. tb_daq_csr,
 # tb_dma_sched and tb_desc_fetch are built at NumCh=4 - a value the lint
@@ -167,9 +171,10 @@ $tbDefines = @{
     'tb_daq_csr'    = @('+define+DAQ_NUM_CH=4')
     'tb_dma_sched'  = @('+define+DAQ_NUM_CH=4')
     'tb_desc_fetch' = @('+define+DAQ_NUM_CH=4')
+    'tb_daq_subsystem' = @('+define+DAQ_NUM_CH=1')
 }
 
-$tbs = @('tb_skid_buffer', 'tb_cnt_sat', 'tb_axil_slave', 'tb_daq_csr', 'tb_pkt_align', 'tb_pkt_check', 'tb_chan_ctrl', 'tb_chan_top', 'tb_dma_sched', 'tb_desc_fetch', 'tb_axi_rd_master', 'tb_axi_wr_master', 'tb_wr_track', 'tb_irq_ctrl', 'tb_perf_cnt')
+$tbs = @('tb_skid_buffer', 'tb_cnt_sat', 'tb_axil_slave', 'tb_daq_csr', 'tb_pkt_align', 'tb_pkt_check', 'tb_chan_ctrl', 'tb_chan_top', 'tb_dma_sched', 'tb_desc_fetch', 'tb_axi_rd_master', 'tb_axi_wr_master', 'tb_wr_track', 'tb_irq_ctrl', 'tb_perf_cnt', 'tb_daq_subsystem')
 if ($Mutant) { $tbs = @("tb_$($mutantOwner[$Mutant])") }
 if ($Only)   { $tbs = $tbs | Where-Object { $Only -contains $_ } }
 
