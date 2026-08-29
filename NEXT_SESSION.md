@@ -528,18 +528,51 @@ because the design was fast. With a 30%-of-period budget on inputs and outputs
 the real margin appears, and the tool spends area and power to meet it. Still
 zero violations at every corner.
 
-### chan_top — unfinished, and it found real timing pressure
+### chan_top — physically complete, but FAILS TIMING SIGNOFF
 
-`asic/chan_top/config.json` + `tools/wsl/87_run_chan_top.sh` exist. Resume with:
+`asic/chan_top/config.json` + `tools/wsl/87_run_chan_top.sh`. Re-run with:
 
     wsl -d Ubuntu -- bash /mnt/d/MyWork/Veriolg_MA/tools/wsl/87_run_chan_top.sh
 
-It reached step 38 of 78 (global routing) before the session ended. What it
-showed: at a 10 ns `axi_clk`, chan_top starts post-CTS with **WNS −21.2 ns and
-TNS −1614 ns**, and the resizer pulls that to **−0.200 ns / −58.9 ns** — close,
-but not zero. **A decision is pending: relax the period or change the RTL.**
-This is the first block here with genuine timing pressure, and it only became
-visible once the SDC was real.
+The run got to **74 of 78 steps** — placement, CTS, detailed routing, RCX,
+streamout (45 MB Magic GDS, 21 MB KLayout GDS), manufacturability report — and
+then stopped at the signoff gate on **setup violations in every tt and ss
+corner**. Post-PnR STA, `54-openroad-stapostpnr/summary.rpt`:
+
+| corner | setup WNS | setup TNS | setup vio | hold WNS |
+| --- | --- | --- | --- | --- |
+| nom_tt_025C_1v80 | −9.06 ns | −140 ns | 46 | +0.23 |
+| nom_ss_100C_1v60 | **−23.12 ns** | **−4465 ns** | 3786 | +0.13 |
+| nom_ff_n40C_1v95 | −3.39 ns | −7.4 ns | 4 | **−0.066** |
+
+**This is a real result, not a tooling problem.** chan_top does not meet a 10 ns
+`axi_clk`; the slow corner misses by more than two clock periods, and ~19,990 of
+the failing paths are register-to-register, so it is logic depth rather than IO
+budget. There are also 3 hold violations at the fast corner.
+
+Note the trajectory: post-CTS started at WNS −21.2 ns / TNS −1614 ns and the
+resizer improved it, but the final routed result is still far off. Do not read
+the intermediate resizer numbers as the answer.
+
+**Decision needed before the next run.** Options, roughly in order of honesty:
+1. Relax `CLOCK_PERIOD` until it closes, and report the frequency the block
+   actually achieves rather than the one that was assumed.
+2. Look at what the ~20k reg-to-reg failing paths are. `pkt_check`'s CRC-32 over
+   the full AXI data width in one cycle is the obvious suspect and would want
+   pipelining.
+3. Both — find the closing period first, then decide whether that number is
+   acceptable for the subsystem.
+
+Everything else passed: no max-cap or max-slew violations at any corner, and the
+physical steps completed cleanly.
+
+Two other things chan_top needed:
+- It pulls `prim_fifo_async` and `prim_rst_sync` from `/mnt/d/MyWork/verilog`,
+  outside this repo, and OpenLane refuses to read above its working directory.
+  `87_run_chan_top.sh` launches from `/mnt/d/MyWork`, the nearest common
+  ancestor, rather than vendoring a copy of prim.
+- 172,790 µm² of cells — about 60× chan_ctrl, because it carries the FIFO
+  storage. 420×420 gave 109% utilisation; the die is now 800×800.
 
 Two other things chan_top needed:
 - It pulls `prim_fifo_async` and `prim_rst_sync` from `/mnt/d/MyWork/verilog`,
@@ -659,6 +692,85 @@ go in `samples/sample_test_4/RESULTS.md`; short version for now:
   `clk_i`/`src_clk_i[c]` used anywhere outside chan_top.sv - none should
   exist), update PHASE_3_6_PLAN.md's phase 5 status, then phase 6
   (integration UVM, formal per block, regression script) is last.
+
+## Session 2026-08-28 (later still) — chan_top timing root-caused, closes at 32/10
+
+Continuation of the earlier "chan_top FAILS TIMING SIGNOFF" entry above. That
+entry's "decision needed" is now answered with evidence, not a guess. No RTL
+was touched — `pkt_check.sv`, `chan_ctrl.sv`, `chan_top.sv`, `pkt_align.sv`,
+`skid_buffer.sv` are all unmodified. Only `asic/constraints/chan_top.sdc` and
+`asic/chan_top/config.json` changed.
+
+**Two independent combinational structures, not one.** Diagnosed against the
+routed netlist plus RC-extracted SPEF (`53-openroad-rcx/max/chan_top.max.spef`)
+at the worst corner, using `openroad -no_init -exit` with a scratch Tcl script
+rather than re-running full P&R per hypothesis — each check took seconds:
+
+- **axi_clk domain**: `pkt_check.sv`'s byte-enable-aware CRC-32 — eight chained
+  `crc32_byte_step` calls, each an unrolled 8-bit serial shift-XOR loop, fed by
+  the CDC FIFO's combinational read-side memory mux (`prim_fifo_async`'s
+  `storage[fifo_rptr_q[...]]`). Startpoint in every worst-path report was
+  `fifo_rptr_q[2]`. Closes to WNS −0.95 ns at `axi_period=30`, positive at 32.
+- **src_clk domain — genuinely separate, and this is the one that mattered**:
+  `skid_buffer.sv`'s `out_data_q` mux, selected by the late-arriving
+  `skid_valid_q` and fed by `pkt_align.sv`'s variable-index byte accumulator
+  (`nxt_data[byte_cnt_q*8+:8] = src_data_i`). Confirmed by name from the routed
+  netlist (`u_pkt_align.u_skid.skid_valid_q` → `align_data[N]`), not inferred.
+  Raising `axi_period` alone plateaued the *overall* worst slack at a fixed
+  −3.23 ns no matter how high it went (checked up to 38 ns) — because that
+  residual violation lives entirely inside the fixed-period src_clk domain, so
+  axi_clk has no effect on it. Isolated by holding axi_clk at a generous 40 ns
+  and sweeping src_clk alone: 8 ns still violates (−1.33 ns), 10 ns is clean
+  (+0.57 ns, TNS 0).
+
+**Periods that close, verified against the routed design, no RTL changes:
+`src_period=10`, `axi_period=32`** (32 rather than the 30 that just barely
+closes, for margin). Both files updated. `6/10` — inherited from the RTL
+testbench's default half-periods — was never validated against synthesized
+logic depth before this session; it was self-consistent for simulation, not a
+manufacturing timing budget. A full OpenLane run at 10/32 was kicked off to
+confirm full signoff PASS; check `asic/chan_top/runs/` for the newest `RUN_*`
+and its `final/metrics.json`.
+
+**Pipelining `pkt_check`'s CRC chain and/or `pkt_align`'s byte accumulator
+would let both clocks run faster than 32/10.** Not attempted this session —
+these numbers are the "no RTL changes" answer, not a claim that faster is
+unreachable. If a real interface requirement needs `src_clk` faster than 10 ns,
+that pipelining is where to start, and it changes cycle-accurate behavior
+(`pkt_check`'s "no extra latency" contract, `pkt_align`'s accumulator timing)
+enough to need re-verification of both blocks' TBs, not just a resynth.
+
+**Also fixed along the way — a real OpenSTA syntax lesson, not just this
+project's problem**: the original CDC exception used
+`set_max_delay -datapath_only ... -to [get_pins -hierarchical {*sync_wptr*/*/d}]`.
+Both parts were wrong:
+- `-datapath_only` **does not exist in OpenSTA at all** — grep'd its own
+  `sdc/Sdc.tcl`, the flag is absent from `set_path_delay`'s `parse_key_args`,
+  not merely spelled differently. Using it aborts SDC reading outright. Fixed
+  by using plain `set_max_delay` (loses the clock-latency exclusion a
+  DC-compatible tool would give here, a real but second-order gap).
+- The pin pattern matched nothing, silently: synthesis flattens the design, so
+  there is no submodule boundary at that path — what survives is the
+  synchroniser's own Q net name (`u_cdc_fifo.sync_rptr.intq[N]`). The fix
+  finds the net, takes its driving (output) pin, takes that cell, and takes
+  the SAME cell's own D pin — verified against the netlist by name
+  (`sky130_fd_sc_hd__dfrtp_2 _18994_`: `.D(fifo_rptr_gray_q[0])`,
+  `.Q(sync_rptr.intq[0])`, `.CLK(src_clk_i)`), not assumed.
+- `get_pins -filter "direction==input"` on a `dfrtp` cell returns three pins
+  (D, CLK, RESET_B), not one — the fix adds `&&name==D`.
+- OpenSTA has no `foreach_in_collection`; the debug script that first
+  exercised these queries used `report_object_full_names` instead (from
+  OpenSTA's own `test/get_filter.tcl`).
+
+`tools/wsl/88`–`106_*.sh` are the diagnosis scripts, numbered in the order run;
+`94_sdc_check.tcl` + `95_run_sdc_check.sh` is the fast SDC-syntax-check-against-
+already-synthesized-netlist pattern (seconds, not the ~15 minutes a full P&R
+re-run costs) — reuse it before trusting any future SDC edit on this design.
+
+**Coordination note**: another Claude session is working the same checkout on
+Sample Test 4 phase 5 (`irq_ctrl.sv`, `perf_cnt.sv`, `daq_subsystem.sv`,
+`tb_daq_subsystem.sv`). Confirmed to them directly that none of the RTL files
+above were touched.
 
 ## Git state
 

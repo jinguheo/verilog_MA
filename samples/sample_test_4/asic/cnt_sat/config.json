@@ -1,0 +1,9 @@
+{
+  "DESIGN_NAME": "cnt_sat",
+  "VERILOG_FILES": "dir::../../rtl/common/cnt_sat.sv",
+  "CLOCK_PORT": "clk_i",
+  "CLOCK_PERIOD": 10,
+  "FP_SIZING": "relative",
+  "FP_CORE_UTIL": 35,
+  "PL_TARGET_DENSITY_PCT": 40
+}

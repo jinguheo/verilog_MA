@@ -26,6 +26,20 @@
 .warning-badge { font-size: var(--text-xs); font-weight: 700; color: var(--warning); background: var(--warning-soft); padding: 5px 9px; border-radius: 999px; }
 .ok-badge { font-size: var(--text-xs); font-weight: 700; color: var(--success); background: var(--success-soft); padding: 5px 9px; border-radius: 999px; }
 
+/* GDS layout gallery */
+.layout-controls { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+.layout-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.layout-pills button { font-size: var(--text-xs); font-weight: 600; padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); cursor: pointer; }
+.layout-pills button:hover { border-color: var(--accent); color: var(--accent); }
+.layout-pills button.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-strong); }
+.layout-figure { margin: 0 0 14px; }
+/* Layouts are dense and monochrome-dark at the edges; a neutral backdrop keeps
+   them readable in both themes without recolouring the render itself. */
+.layout-figure img { display: block; width: 100%; max-width: 760px; aspect-ratio: 1 / 1; object-fit: contain;
+  border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+.layout-figure figcaption { margin-top: 8px; font-size: var(--text-sm); color: var(--text-secondary); }
+
 .uvm-stack { display: grid; gap: 4px; }
 .uvm-stack b { font: 600 var(--text-sm) var(--font-mono); color: var(--accent-strong); }
 .uvm-stack span { display: block; font-size: var(--text-sm); color: var(--text-muted); padding: 0 0 var(--sp-2); border-bottom: 1px solid var(--border); line-height: 1.5; }

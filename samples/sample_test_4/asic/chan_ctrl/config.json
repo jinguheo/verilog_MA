@@ -1,0 +1,16 @@
+{
+  "DESIGN_NAME": "chan_ctrl",
+  "VERILOG_FILES": [
+    "dir::../../rtl/pkg/axi_pkg.sv",
+    "dir::../../rtl/pkg/daq_pkg.sv",
+    "dir::../../rtl/stream/chan_ctrl.sv"
+  ],
+  "USE_SYNLIG": true,
+  "CLOCK_PORT": "clk_i",
+  "CLOCK_PERIOD": 10,
+  "PNR_SDC_FILE": "dir::../constraints/chan_ctrl.sdc",
+  "SIGNOFF_SDC_FILE": "dir::../constraints/chan_ctrl.sdc",
+  "FP_SIZING": "absolute",
+  "DIE_AREA": [0, 0, 300, 300],
+  "PL_TARGET_DENSITY_PCT": 40
+}

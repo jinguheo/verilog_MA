@@ -16,6 +16,8 @@ const guides: Record<string, Guide> = {
   'Code KG / Graphify': { function: '기존 RTL 블록과 하위 모듈의 관계를 탐색합니다.', strength: '재사용 가능한 설계 구조를 빠르게 파악합니다.', comparison: 'Slang이 코드 자체를 해석한다면, Code KG는 저장된 구조 관계를 탐색하는 데 강합니다.' },
   'OpenLane / OpenROAD': { function: 'floorplan부터 routing까지 물리 설계를 자동화합니다.', strength: 'PDK가 준비되면 오픈소스 physical implementation 흐름을 제공합니다.', comparison: 'Yosys는 RTL 합성까지만 담당하고, OpenLane/OpenROAD는 배치·배선 같은 물리 구현을 담당합니다.' },
   'Docker / WSL': { function: 'EDA 도구와 PDK 실행 환경을 일관되게 만듭니다.', strength: '팀·PC마다 달라질 수 있는 설치 환경을 재현하기 쉽습니다.', comparison: 'EDA 도구 자체가 아니라 도구를 안정적으로 실행시키는 환경 계층입니다.' },
+  'WSL (Ubuntu)': { function: 'Linux 전용으로 빌드된 nix 기반 OpenLane/OpenROAD/yosys를 Windows에서 실행할 환경을 제공합니다.', strength: 'Docker 컨테이너 오버헤드 없이 네이티브 Python venv로 바로 실행 — 이 프로젝트가 실제로 쓰는 방식입니다.', comparison: 'Docker는 이미지 격리에 강하지만, 여기서는 WSL의 네이티브 Linux 파일시스템·nix store에 직접 접근하는 방식이 더 단순해 채택했습니다.' },
+  'sky130 PDK': { function: 'SkyWater 130nm 공정의 표준셀, LEF/LIB, DRC/LVS 규칙을 제공하는 오픈소스 PDK입니다.', strength: 'foundry NDA 없이 실제 GDSII까지 완주 가능한 몇 안 되는 PDK — Google 후원으로 2020년 오픈소스화됐습니다.', comparison: '상용 PDK(TSMC/Samsung/GlobalFoundries 등)는 서명된 NDA와 파운드리 고객 계약이 있어야 접근 가능하고 최신 공정(3~7nm급)을 제공하지만, sky130은 누구나 무료로 받을 수 있는 대신 130nm 구세대 공정입니다.' },
   'PDK': { function: '특정 반도체 공정의 라이브러리, 배선 규칙, 검증 규칙을 제공합니다.', strength: '실제 제조 가능한 타이밍·면적·DRC/LVS 결과의 기준이 됩니다.', comparison: 'Yosys 같은 도구가 회로를 만들고, PDK는 그 회로를 어느 공정에서 어떻게 만들지 정의합니다.' },
   'Issue store': { function: '발견한 문제를 분류하고 중복을 관리합니다.', strength: '누락 없이 담당자·심각도·해결 상태를 추적합니다.', comparison: 'Git이 코드 변경을 관리한다면, Issue store는 해결해야 할 문제를 관리합니다.' },
   'Git': { function: '코드와 문서의 변경 이력, 검토, branch를 관리합니다.', strength: '누가 언제 무엇을 바꿨는지 재현하고 검토하기 쉽습니다.', comparison: 'Issue store가 할 일을 관리한다면, Git은 실제 변경 내용을 관리합니다.' },

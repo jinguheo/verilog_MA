@@ -1,0 +1,70 @@
+{
+  "DESIGN_NAME": "chan_top",
+
+  "//": [
+    "chan_top is the first multi-clock design here: src_clk_i and axi_clk_i are",
+    "asynchronous, crossed only by prim_fifo_async plus a prim_rst_sync per",
+    "domain. The constraints that matter are in constraints/chan_top.sdc.",
+    "",
+    "The prim files live outside this repository, in the OpenTitan corpus at",
+    "/mnt/d/MyWork/verilog. OpenLane refuses to read files above its working",
+    "directory, so the flow is launched from /mnt/d/MyWork - the nearest common",
+    "ancestor of both trees - by tools/wsl/87_run_chan_top.sh. Paths below are",
+    "therefore written relative to this config file and resolve inside that root.",
+    "",
+    "The dependency list came from tools/wsl/86_chan_top_deps.sh, which walks",
+    "prim instantiations transitively rather than guessing."
+  ],
+
+  "VERILOG_FILES": [
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_util_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_mubi_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_flop.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_flop_2sync.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_clock_mux2.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_rst_sync.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_fifo_async.sv",
+
+    "dir::../../rtl/pkg/axi_pkg.sv",
+    "dir::../../rtl/pkg/daq_pkg.sv",
+    "dir::../../rtl/common/skid_buffer.sv",
+    "dir::../../rtl/stream/pkt_align.sv",
+    "dir::../../rtl/stream/pkt_check.sv",
+    "dir::../../rtl/stream/chan_ctrl.sv",
+    "dir::../../rtl/stream/chan_top.sv"
+  ],
+
+  "VERILOG_INCLUDE_DIRS": [
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl"
+  ],
+
+  "USE_SYNLIG": true,
+
+  "//CLOCK_PERIOD": [
+    "10 did not close (see constraints/chan_top.sdc for the full account: worst",
+    "corner WNS -23.1 ns, TNS -4465 ns). Two independent combinational",
+    "structures root-caused against the routed netlist - pkt_check's CRC-32",
+    "chain (axi_clk) and skid_buffer/pkt_align's byte-select mux (src_clk) -",
+    "close at 32/10 without touching RTL. This value only seeds early",
+    "synthesis-stage estimates; the SDC's own create_clock calls are what",
+    "actually govern P&R and signoff."
+  ],
+  "CLOCK_PORT": "axi_clk_i",
+  "CLOCK_PERIOD": 32,
+
+  "PNR_SDC_FILE": "dir::../constraints/chan_top.sdc",
+  "SIGNOFF_SDC_FILE": "dir::../constraints/chan_top.sdc",
+
+  "FP_SIZING": "absolute",
+  "//DIE_AREA": [
+    "chan_top synthesises to ~172,790 um^2 of standard cells - about 60x",
+    "chan_ctrl, because it carries the async FIFO's storage. 420x420 gave 109%",
+    "utilisation and global placement refused to start. 800x800 puts it near",
+    "27%, and the 3200 um perimeter leaves room for the wide beat_data/strb and",
+    "src_crc buses, which is the other thing that has bitten this flow before."
+  ],
+  "DIE_AREA": [0, 0, 800, 800],
+  "PL_TARGET_DENSITY_PCT": 40
+}

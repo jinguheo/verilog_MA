@@ -17,6 +17,17 @@ samples/**/*.out
 samples/**/uvm/uvm-regression*
 .local-cache/
 
+# OpenLane run output (GDS/LEF/netlist/logs per step) - reproducible via
+# tools/wsl/80_run_openlane.sh / 87_run_chan_top.sh, and large (multi-GB across
+# runs). config.json and constraints/*.sdc alongside these ARE tracked - only
+# the generated runs/ trees and stray render output are excluded.
+samples/**/asic/*/runs/
+samples/**/asic/*/layout/
+samples/**/slpp_all/
+
+# Diagnostic script output from tools/wsl/*.sh - reproducible, not source.
+tools/wsl/logs/
+
 oss-cad-suite/
 third_party/installers/
 third_party/uvm-core/
