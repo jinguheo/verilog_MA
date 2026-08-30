@@ -88,7 +88,7 @@ module perf_cnt
       .clk_i, .rst_ni,
       .clear_i    (ch_abort_i[c]),
       .incr_en_i  (accept),
-      .incr_i     (ByteIncrW'($countones(beat_strb_i[c]))),
+      .incr_i     (daq_pkg::popcount(beat_strb_i[c])),
       .cnt_o      (ch_byte_cnt_o[c]),
       .saturated_o()
     );

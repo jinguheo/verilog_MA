@@ -1051,3 +1051,86 @@ attempt them:
   the new formal proofs across `NUM_CH`/`AXI_DW` values.
 - Full-stack mutation, once the integration environment exists to run mutants
   through.
+
+## Physical design — daq_subsystem (top-level, 8-channel), started (2026-08-30)
+
+First attempt at running the full chip top through OpenLane, not just a
+single block. Two real things were found in the process - one RTL bug this
+flow is the first tool ever to have exercised, and one open question about
+`chan_top`'s own previously-claimed timing closure that this session's full
+re-run contradicts and did not have time to resolve.
+
+**Setup**: `asic/daq_subsystem/config.json` + `asic/constraints/daq_subsystem.sdc`
++ `tools/wsl/100_run_daq_subsystem.sh`, following `chan_top`'s exact pattern
+(launch from `/mnt/d/MyWork`, `dir::` relative traversal for the external
+`prim` files, its own tool shim so it can't race `chan_top`'s). Clocking is
+`clk_i` (32 ns, floor estimate carried over from `chan_top`'s own axi_clk_i -
+see the caveat below) plus 8 independent `src_clk_i[c]` (10 ns each, reusing
+`chan_top`'s proven value), all mutually asynchronous - not the 3-domain split
+`PLAN.md` sketched; see `daq_subsystem.sv`'s own header comment for why reg_clk
+and axi_clk were merged. The dependency list came from grepping every
+`rtl/**/*.sv` file for actual module instantiations rather than trusting the
+phase-1 planning table (which lists prim modules, e.g. `prim_secded_39_32` for
+ECC, that were never actually wired in) - chip-wide there are exactly three:
+`prim_fifo_async`, `prim_rst_sync` (both already in `chan_top`'s list) and
+`prim_arbiter_tree` (new, for `dma_sched`'s channel arbitration; it does not
+itself instantiate `prim_arbiter_ppc`/`prim_leading_one_ppc`, so those aren't
+needed despite the formal harness listing them for a different reason).
+
+**Bug found: `perf_cnt.sv`'s `$countones` crashes OpenLane's synthesis
+frontend.** `perf_cnt.sv` (phase 3, already verified and committed) uses
+`$countones(beat_strb_i[c])` to turn an AXI strobe into a byte count.
+Verilator and the sby/slang formal flow both accept this without complaint -
+it is legal SystemVerilog - but no earlier design pulled `perf_cnt.sv` into
+OpenLane (`chan_top` doesn't use it), so this is the first time it met the
+physical-design toolchain. OpenLane's "Generate JSON Header" step uses
+yosys's classic AST frontend (not the `synlig`/UHDM frontend the main
+synthesis step uses, even with `USE_SYNLIG: true`), which flags `$countones`
+a "non-synthesizable construct," silently drops the call, and then segfaults
+serializing the resulting malformed AST. Fix: a synthesizable accumulate-loop
+popcount. First attempt declared it as a local `function automatic` inside
+`perf_cnt.sv` itself - same classic frontend then failed differently
+(`Can't resolve function name 'gen_ch[0].popcount'`), a real limitation of
+that frontend when a module-local automatic function is called from inside a
+`generate for` scope. Moved to `daq_pkg::popcount` instead, the same pattern
+`axi_pkg::bytes_to_boundary` and this package's own `apply_wstrb` already use
+- and proven safe specifically for the generate-block case by
+`pkt_check.sv`'s `crc32_byte_step`, called from inside its own `g_crc_stage`
+generate loop and already exercised successfully by `chan_top`'s completed
+OpenLane run. Both fixes were verified behavior-preserving before trusting
+them: rebuilt and re-ran `tb_perf_cnt` and `tb_daq_subsystem` (both pass) and
+re-confirmed `MUT_PERF_BYTEWRONG` is still killed (`run_block_tb.ps1 -Mutant
+MUT_PERF_BYTEWRONG`) after each change.
+
+With that fixed, synthesis proceeds normally (~107k generic cells pre-tech-
+mapping, vs. `chan_top`'s ~29.5k final stdcell count - consistent with "well
+over 8x", as expected for 8 channels plus the shared DMA/CSR/IRQ/perf logic).
+Full P&R was still running at the time of writing; `DIE_AREA` (3200x3200 um)
+and `CLOCK_PERIOD` (32 ns, clk_i) are both first-pass estimates per the
+config's own comments, not validated numbers.
+
+**Open question, not resolved this session: does `chan_top` actually close
+timing at 10/32?** `constraints/chan_top.sdc`'s own header claims 32/10 was
+"verified against the routed design" with the worst corner
+(`nom_ss_100C_1v60`) closing to positive slack. This session's `chan_top`
+re-run (`RUN_2026-08-30_20-00-29`, resumed after being interrupted once,
+finished to full signoff artifacts - GDS/LEF/SPEF/etc. all present) reports
+the opposite at that same corner: `timing__setup__wns = -8.4 ns`,
+`timing__setup__tns = -150.4 ns`, 926 setup violations
+(`final/metrics.json`). The worst path traced in
+`54-openroad-stapostpnr/max_ss_100C_1v60/max.rpt` runs from
+`u_cdc_fifo.fifo_rptr_q[4]` (axi_clk domain) through an `xnor2` chain
+consistent with `pkt_check`'s CRC-32 structure to `ch_cause_o[0]` - so the
+*shape* of the violation matches the already-documented root cause (CRC chain
+fed by the CDC FIFO's read-side mux), but the *severity* flatly contradicts
+the "closes cleanly at 32" claim. Two most likely explanations, neither
+confirmed: the earlier bisection that produced "32 closes" may have checked
+a narrower corner set or used a faster incremental re-STA on an already-
+routed netlist rather than a fresh placement, and this from-scratch re-run's
+placement/routing genuinely differs enough to matter; or something about the
+uncertainty/transition/corner setup differs between the two checks. Whichever
+it is, `chan_top`'s timing-closed status should be treated as unverified
+until this is re-examined - the design likely still needs either a faster
+period or the CRC/mux restructuring the SDC header already flagged as the
+real fix ("faster is unreachable" was never claimed, only that 32/10 needed
+no RTL changes - and that specific claim is what this run puts in doubt).

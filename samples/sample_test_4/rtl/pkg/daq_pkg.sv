@@ -267,4 +267,26 @@ package daq_pkg;
     end
   endfunction
 
+  // Synthesizable popcount over an AxiBw-wide strobe, standing in for
+  // $countones(). $countones is legal SystemVerilog and every simulator/
+  // formal tool used on this project accepts it, but OpenLane's physical-
+  // design flow's "Generate JSON Header" step uses yosys's classic AST
+  // frontend, which flags it a "non-synthesizable construct" and crashes
+  // trying to serialize the resulting AST. perf_cnt.sv used to declare this
+  // same loop as a local function; the same classic frontend then failed
+  // differently ("Can't resolve function name gen_ch[0].popcount") because
+  // it cannot resolve a module-local automatic function called from inside
+  // a generate-for scope. A package function has neither problem - the
+  // exact pattern axi_pkg::bytes_to_boundary and this package's own
+  // apply_wstrb already use, and pkt_check.sv's crc32_byte_step already
+  // proves package functions called from inside a generate-for block are
+  // fine on this toolchain (chan_top's own OpenLane run already exercises
+  // that exact call site).
+  function automatic logic [$clog2(AxiBw + 1)-1:0] popcount(input logic [AxiBw-1:0] v);
+    popcount = '0;
+    for (int unsigned b = 0; b < AxiBw; b++) begin
+      popcount = popcount + $clog2(AxiBw + 1)'(v[b]);
+    end
+  endfunction
+
 endpackage
