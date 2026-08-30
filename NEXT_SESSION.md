@@ -772,6 +772,69 @@ Sample Test 4 phase 5 (`irq_ctrl.sv`, `perf_cnt.sv`, `daq_subsystem.sv`,
 `tb_daq_subsystem.sv`). Confirmed to them directly that none of the RTL files
 above were touched.
 
+## Session 2026-08-30 — chan_top re-run at 10/32, phase 6 formal (3 blocks), direction set: physical design over exhaustive UVM
+
+### Direction change, explicit from the user
+
+Building the full phase-6 integration UVM environment (AXI4-Lite agent + 8
+source agents + AXI4 slave memory model + reference model + scoreboard) is
+**deprioritized, not abandoned** - the user's own words: "UVM 모두 돌리는 것은
+의미 없는 것 같고" (running all of UVM doesn't seem worth it), followed by
+wanting to focus more on the manufacturing/physical-design side instead, since
+that is what verification is ultimately building toward. Rationale for
+deprioritizing: phase 5's smoke-level integration test already proves
+end-to-end byte movement for real, and the per-block TBs plus the phase-6
+formal proofs (below) already cover most of what a full integration UVM
+environment would add. Revisit only if a concrete need appears (e.g. a
+fault-injection scenario that genuinely needs the full environment).
+**Next sessions should weight time toward the OpenLane/physical-design track
+over further UVM/formal breadth**, per this decision.
+
+### chan_top: re-ran with the corrected 10/32 ns SDC, still finishing
+
+`tools/wsl/87_run_chan_top.sh` was re-run from scratch (the previous attempt's
+WSL processes were killed mid-session) with the periods and CDC-exception
+fixes documented in the entry above. As of this session's end it was still
+running - 36 of 78 steps, in a post-CTS hold-violation repair pass (4012
+violating endpoints, a genuinely slow but not stuck step - confirmed alive via
+`ps` at 99.9% CPU, `etimes` climbing). No `final/metrics.json` yet.
+
+**Resume/check with:**
+
+    Get-Content tools\wsl\logs\87f_chan_top_resume.log -Tail 10
+    # if not finished:
+    wsl -d Ubuntu -- bash /mnt/d/MyWork/Veriolg_MA/tools/wsl/87_run_chan_top.sh
+
+Killing and restarting is safe if needed (as it was this session) - OpenLane
+starts a fresh `RUN_*` each time; nothing is corrupted by an interrupted run,
+it just has to redo synthesis-through-wherever-it-stopped.
+
+### Phase 6 formal: 3 blocks done (see the commit / RESULTS.md for full detail)
+
+`skid_buffer.sv`, `cnt_sat.sv`, `dma_sched.sv` each have an unbounded
+k-induction SymbiYosys proof plus every documented mutant caught by the
+specific property it should break. Committed as `01757a9`. Full writeup
+(including the real formal-coverage gap found and closed on
+`skid_buffer.sv`, and the `dma_sched.sv` scope note that it proves safety, not
+round-robin fairness) is in `samples/sample_test_4/RESULTS.md`'s "Phase 6"
+section - read that before continuing this track rather than re-deriving it.
+
+**Given the direction change above, do not treat "more block formal" as the
+default next action either** - it is lower priority than the physical-design
+track now. If resumed, the next targets in priority order are `daq_csr.sv`
+(W1C, reuse the pattern from Sample Test 3's `daq_status_sync.sby`),
+`axil_slave.sv` (AXI4-Lite handshake), `wr_track.sv`.
+
+### Dashboard
+
+Sample Test 4 → Architecture tab's "NOT DONE YET" card was stale (had phase 4
+still "in progress" and phase 5 not mentioned at all, despite both being long
+complete) - replaced with a status card reflecting the real phase 4/5/6 state
+and the UVM deprioritization decision, plus a "다음에 이어서 할 때" card with
+copy-pasteable resume commands for exactly the two items above. Not yet
+committed as of this session's end - do that along with whatever else is
+pending, or ask the user first.
+
 ## Git state
 
 - Pushed to `https://github.com/jinguheo/verilog_MA.git`, branch `master`.
