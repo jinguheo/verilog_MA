@@ -2,6 +2,8 @@ import type { Overview } from '../types'
 import RtlDesignGuide from './RtlDesignGuide'
 import SoftwareGuide from './SoftwareGuide'
 import PhysicalDesignStatus from './PhysicalDesignStatus'
+import VerificationStatus from './VerificationStatus'
+import FormalStatus from './FormalStatus'
 
 export type TaskId = 'requirements' | 'architecture' | 'rtl' | 'verification' | 'formal' | 'manufacturing' | 'review'
 type Tool = { name: string; key?: string; purpose: string; usage: string }
@@ -18,7 +20,7 @@ export const tasks: Record<TaskId, Task> = {
 }
 
 export default function TaskWorkspace({ taskId, data }: { taskId: TaskId; data: Overview }) {
-  return <><TaskWorkspaceBase taskId={taskId} data={data}/>{taskId === 'rtl' && <RtlDesignGuide/>}{taskId === 'manufacturing' && <PhysicalDesignStatus/>}<SoftwareGuide names={tasks[taskId].tools.map(tool => tool.name)}/></>
+  return <><TaskWorkspaceBase taskId={taskId} data={data}/>{taskId === 'rtl' && <RtlDesignGuide/>}{taskId === 'verification' && <VerificationStatus/>}{taskId === 'formal' && <FormalStatus/>}{taskId === 'manufacturing' && <PhysicalDesignStatus/>}<SoftwareGuide names={tasks[taskId].tools.map(tool => tool.name)}/></>
 }
 
 function TaskWorkspaceBase({ taskId, data }: { taskId: TaskId; data: Overview }) {

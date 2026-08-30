@@ -94,6 +94,27 @@ const mutantsP4 = [
   ['MUT_SCHED_STICKYLOCK', 'dma_sched', '패킷 완료(eop) 후에도 채널 lock이 안 풀림', 'killed'],
   ['MUT_SCHED_EARLYUNLOCK', 'dma_sched', 'eop 이전에 lock이 풀려 다른 채널이 끼어들 수 있음', 'killed'],
   ['MUT_SCHED_DBLREADY', 'dma_sched', '동시에 두 채널의 ready_o가 세팅될 수 있음 (onehot0 위반)', 'killed'],
+  ['MUT_DESC_NOLINK', 'desc_fetch', 'ctrl.link 무시하고 항상 선형(+DescBytes)으로만 진행', 'killed'],
+  ['MUT_DESC_NOHALT', 'desc_fetch', 'ctrl.last인 descriptor 완료 후에도 halt하지 않음', 'killed'],
+  ['MUT_DESC_NOCHECK', 'desc_fetch', 'desc_check() 결과를 무시하고 항상 유효 처리', 'killed'],
+  ['MUT_RDM_NOSPLIT', 'axi_rd_master', '4KB 경계 분할 결정을 건너뜀', 'killed'],
+  ['MUT_RDM_LASTWRONG', 'axi_rd_master', 'rd_resp_last_o가 분할 여부와 무관하게 rlast_i 그대로', 'killed'],
+  ['MUT_RDM_ERRDROP', 'axi_rd_master', 'rd_resp_err_o가 항상 0', 'killed'],
+  ['MUT_WRM_NOSPLIT', 'axi_wr_master', 'burst 크기 결정이 MaxBurst/4KB를 완전히 무시', 'killed'],
+  ['MUT_WRM_LASTWRONG', 'axi_wr_master', 'wlast_o가 burst의 모든 beat에서 세팅됨', 'killed'],
+  ['MUT_WRM_ERRDROP', 'axi_wr_master', 'burst_done_err_o가 항상 0', 'killed'],
+  ['MUT_TRACK_NOERR', 'wr_track', 'burst의 BRESP 에러가 절대 latch되지 않음', 'killed'],
+  ['MUT_TRACK_NOCLEAR', 'wr_track', 'ch_abort_i가 latch된 에러를 더 이상 클리어하지 않음', 'killed'],
+  ['MUT_TRACK_WRONGCH', 'wr_track', 'xfer_done_ch_o가 항상 채널 0', 'killed'],
+] as const
+
+const mutantsP5 = [
+  ['MUT_IRQ_NOEDGE', 'irq_ctrl', 'fetch/write 에러가 pulse가 아닌 level로 IrqCauseErr에 반영', 'killed'],
+  ['MUT_IRQ_WRONGCH', 'irq_ctrl', 'xfer_done_i가 항상 채널 0의 IrqCauseDone을 pulse', 'killed'],
+  ['MUT_IRQ_BUSYWRONG', 'irq_ctrl', 'ch_busy_o가 desc_valid_i를 빼고 stream_busy_i만 반영', 'killed'],
+  ['MUT_PERF_BYTEWRONG', 'perf_cnt', '바이트 카운터가 strobe popcount를 무시', 'killed'],
+  ['MUT_PERF_NOSTALL', 'perf_cnt', 'stall 카운트가 절대 증가하지 않음', 'killed'],
+  ['MUT_PERF_ERRMISS', 'perf_cnt', 'CRC 원인이 에러 이벤트로 카운트되지 않음', 'killed'],
 ] as const
 
 const chanCtrlBugs = [
@@ -132,15 +153,16 @@ export default function SampleTest4() {
   const [tab, setTab] = useState<Tab>('overview')
   return <>
     <section className="task-hero">
-      <small className="kicker">IN-PROGRESS · RTL PHASE 4 OF 6 · ASIC SYNTHESIS TRACK STARTED</small>
+      <small className="kicker">RTL PHASE 5 OF 6 완료 · PHASE 6 진행 중 · ASIC SYNTHESIS TRACK 병행</small>
       <h2>Multi-channel DAQ/DMA Subsystem</h2>
-      <p>8채널 AXI4-Lite CSR + AXI4 DMA IP 리허설. Phase 1-3(패키지·common·CSR·스트림 경로)이 전부 완료·검증됐고, phase 4(DMA 엔진)가 진행 중입니다. 동시에 검증이 끝난 블록부터 <b>sky130 오픈소스 PDK로 실제 ASIC 합성</b>을 시작해 툴체인과 타이밍 클로징을 확인하고 있습니다.</p>
-      <b>구현: rtl/pkg · rtl/common · rtl/csr · rtl/stream(전체) · rtl/dma(dma_sched, desc_fetch 진행중) · asic/(sky130 합성)</b>
+      <p>8채널 AXI4-Lite CSR + AXI4 DMA IP 리허설. Phase 1-5(패키지·common·CSR·스트림 경로·DMA 엔진·top 통합)가 전부 완료·검증됐고, phase 6(블록별 formal·통합 UVM)이 진행 중입니다. 동시에 검증이 끝난 블록부터 <b>sky130 오픈소스 PDK로 실제 ASIC 합성</b>을 진행해 툴체인과 타이밍 클로징을 확인하고 있습니다.</p>
+      <b>구현: rtl/pkg · rtl/common · rtl/csr · rtl/stream · rtl/dma · rtl/irq · rtl/stat · rtl/daq_subsystem.sv(top) · asic/(sky130 합성)</b>
     </section>
     <section className="sample-summary">
-      <span><b>54</b> lint 구성 전부 clean (phase 1-4)</span>
-      <span><b>22/22</b> mutation 검출</span>
-      <span><b>9</b> block testbench PASS</span>
+      <span><b>102</b> lint 구성 전부 clean (phase 1-5)</span>
+      <span><b>40/40</b> mutation 검출</span>
+      <span><b>16</b> block testbench PASS</span>
+      <span><b>3</b> 블록 formal(k-induction) 무한 증명 완료</span>
       <span><b>3</b> 블록 ASIC 합성 성공 (sky130, FSM 로직 포함)</span>
     </section>
     <div className="sample-tabs" role="tablist">
@@ -153,7 +175,7 @@ export default function SampleTest4() {
 function Detail({ tab }: { tab: Tab }) {
   if (tab === 'architecture') return <>
     <Card kicker="PRIM REUSE — PHASE 1의 핵심 결정" title="OpenTitan hw/ip/prim에서 재사용한 9개"><div className="data-table"><table><thead><tr><th>계획된 모듈</th><th>실제 사용</th><th>역할</th></tr></thead><tbody>{primReuse.map(([mod, real, role]) => <tr key={mod}><td><code>{mod}</code></td><td><b>{real}</b></td><td>{role}</td></tr>)}</tbody></table></div><div className="check-list">{notReused.map(([mod, why]) => <p key={mod}><b><code>{mod}</code> — 새로 작성</b><span>{why}</span></p>)}</div><p className="rtl-guide-note">이 매핑은 문서로만 남긴 게 아니라 <code>tb/prim_reuse_smoke.sv</code>가 9개 전부를 실제 폭으로 인스턴스화해 lint gate에 포함시켜 증명합니다 — 나중에 어떤 phase가 하나를 안 쓰게 되면 이 smoke test가 그 drift를 잡아냅니다.</p></Card>
-    <Card kicker="BLOCK &amp; PORT DIAGRAM" title="지금까지 구현된 phase 1-4 블록"><pre className="rtl-code">{`AXI4-Lite  --->  +---------------+   regbus (내부)   +---------------+\n  AW/W/B/AR/R     | axil_slave.sv | -----------------> |   daq_csr.sv   |\n                  +---------------+                     +---------------+\n\nsrc_clk 도메인                    axi_clk 도메인 (채널당 1개, chan_top.sv)\n+------------+   +------------+   async CDC FIFO   +-----------+   +-----------+\n| byte stream| ->| pkt_align  | ----------------->  | pkt_check | ->| chan_ctrl |--+\n+------------+   +------------+  (prim_fifo_async)  +-----------+   +-----------+  |\n                                                                                      |\n            채널 NumCh개의 chan_top.sv 게이티드 beat 스트림 전부 ---------------------+\n                                        |                                            v\n                                        v                                  +------------+\n                              +------------------+  packet-granularity RR  | dma_sched  |\n                              | axi_wr_master     |  <----------------------| (완료)     |\n                              | (아직 없음)        |                        +------------+\n                              +------------------+\n\n            desc_fetch.sv (진행중, 미검증) / axi_rd_master.sv, wr_track.sv (아직 없음)`}</pre><p className="rtl-guide-note"><code>chan_top.sv</code>가 phase 3에서 유일하게 클럭 도메인을 실제로 건너는 지점입니다 — <code>prim_fifo_async</code> + 도메인별 <code>prim_rst_sync</code>. <code>dma_sched.sv</code>는 beat 단위가 아니라 <b>패킷 경계에서만</b> 중재합니다 — 한 채널의 sop가 이기면 그 채널의 eop까지 다른 채널은 중재에서 완전히 배제되어, 정지가 두 채널의 패킷을 인터리빙하는 일이 없습니다.</p></Card>
+    <Card kicker="BLOCK &amp; PORT DIAGRAM" title="phase 1-5 완성된 전체 파이프라인 (daq_subsystem.sv)"><pre className="rtl-code">{`clk_i (reg_clk = axi_clk, 하나로 통일 — CDC audit 결론)\nAXI4-Lite  --->  +---------------+   regbus (내부)   +---------------+\n  AW/W/B/AR/R     | axil_slave.sv | -----------------> |   daq_csr.sv   |\n                  +---------------+                     +---------------+\n                                                            |        ^\nsrc_clk[c] 도메인 (채널당 독립)     axi_clk 도메인 (chan_top.sv)      | ctrl   | status/irq/cnt\n+------------+   +------------+   async CDC FIFO   +-----------+   +-----------+\n| byte stream| ->| pkt_align  | ----------------->  | pkt_check | ->| chan_ctrl |--+\n+------------+   +------------+  (prim_fifo_async)  +-----------+   +-----------+  |\n     (유일한 실제 클럭 경계 — chan_top.sv, phase 3 CDC audit 완료)                   |\n            채널 NumCh개의 chan_top.sv 게이티드 beat 스트림 전부 ---------------------+\n                                        |                                            v\n                                        v                                  +------------+\n                              +------------------+  packet-granularity RR  | dma_sched  |\n                              | axi_wr_master     |  <----------------------| (완료)     |\n                              | (완료) -> AXI4     |                        +------------+\n                              +--------+---------+                                |\n                                       v                                          v\n                                 +-----------+                            +-------------+\n                                 | wr_track  |--- xfer_done ------------->| desc_fetch  |--> axi_rd_master --> AXI4\n                                 +-----------+                            +-------------+\n                                       |                                          |\n                                       v                                          v\n                              +------------------+  ch_busy/err/cause   +--------------+\n                              |    irq_ctrl       | <------------------ |   perf_cnt   |\n                              +------------------+                      +--------------+`}</pre><p className="rtl-guide-note"><code>chan_top.sv</code>가 이 설계 전체에서 유일하게 클럭 도메인을 실제로 건너는 지점입니다 — <code>prim_fifo_async</code> + 도메인별 <code>prim_rst_sync</code>(phase 3에서 검증, phase 5 CDC audit에서 재확인: <code>rtl/*.sv</code> 전체에 <code>clk_i</code>/<code>src_clk_i[c]</code> 외의 클럭 신호가 없음을 grep으로 확인). <code>dma_sched.sv</code>는 beat 단위가 아니라 <b>패킷 경계에서만</b> 중재합니다 — 한 채널의 sop가 이기면 그 채널의 eop까지 다른 채널은 중재에서 완전히 배제되어, 정지가 두 채널의 패킷을 인터리빙하는 일이 없습니다. <code>irq_ctrl.sv</code>의 Done 원인은 chan_ctrl의 패킷 단위 완료가 아니라 <b>wr_track의 실제 descriptor 완료</b>(<code>xfer_done_i</code>)로 구동됩니다.</p></Card>
     <Card kicker="REGISTER MAP" title="daq_csr.sv 구현 완료"><div className="data-table"><table><thead><tr><th>주소</th><th>이름</th><th>Access</th><th>필드</th></tr></thead><tbody>{regMap.map(([addr, name, acc, fields]) => <tr key={`${addr}-${name}`}><td><code>{addr}</code></td><td><b>{name}</b></td><td>{acc}</td><td>{fields}</td></tr>)}</tbody></table></div><p className="rtl-guide-note"><b>IRQ_STATE를 원안(W1C)에서 RO로 바꿨습니다</b> — 같은 정보를 요약하는 두 번째 W1C 래치는 채널 원인이 여전히 pending인 채로 클리어돼도 다음 사이클에 다시 세팅될 뿐인 중복이자 오해의 소지였습니다.</p></Card>
     <Card kicker="chan_ctrl.sv — 5-STATE FSM" title="ChIdle → ChArmed → ChRunning/ChDraining → ChError"><div className="check-list">{chanCtrlBugs.map(([title, detail]) => <p key={title}><b>{title}</b><span>{detail}</span></p>)}</div><p className="rtl-guide-note">셋 다 이번 세션에 발견·수정한 실제 RTL 버그입니다 — chan_ctrl.sv 자체 헤더 코멘트에 전체 서사가 남아있습니다.</p></Card>
     <Card kicker="STATUS · 2026-08-30" title="Phase 4-6 실제 현황"><div className="check-list">
@@ -169,8 +191,8 @@ function Detail({ tab }: { tab: Tab }) {
     </tbody></table></div><p className="rtl-guide-note">전체 배경은 <code>NEXT_SESSION.md</code> 마지막 "Sample Test 4 phase 6" 절, 근거는 <code>samples/sample_test_4/RESULTS.md</code>의 "Phase 6" 절 참고.</p></Card>
   </>
   if (tab === 'verification') return <>
-    <Card kicker="LINT GATE — PARAMETER SWEEP" title="54개 구성 전부 clean (phase 1-4)"><pre className="rtl-code">{`scripts/run_lint.ps1\n  for NumCh in {1, 2, 8}:\n    for AxiDw in {32, 64}:\n      for top in {skid_buffer, cnt_sat, prim_reuse_smoke, axil_slave, daq_csr,\n                  pkt_align, pkt_check, chan_ctrl, chan_top, dma_sched}:\n        verilator --lint-only -Wall  ->  PASS (60/60, desc_fetch 별도 진행중)`}</pre><p className="rtl-guide-note">NumCh=1이 dma_sched.sv에서도 실제 버그를 하나 더 잡았습니다 — prim_arbiter_tree의 idx_o가 N=1에서 zero-width가 되는 걸 그 prim 자체가 가드하지 않아, generate if (NumCh &gt; 1)로 우회.</p></Card>
-    <Card kicker="BLOCK TESTBENCHES" title="9개 전부 PASS"><div className="data-table"><table><thead><tr><th>Testbench</th><th>대상</th><th>커버리지</th></tr></thead><tbody>
+    <Card kicker="LINT GATE — PARAMETER SWEEP" title="102개 구성 전부 clean (phase 1-5)"><pre className="rtl-code">{`scripts/run_lint.ps1\n  for NumCh in {1, 2, 8}:\n    for AxiDw in {32, 64}:\n      for top in {skid_buffer, cnt_sat, prim_reuse_smoke, axil_slave, daq_csr,\n                  pkt_align, pkt_check, chan_ctrl, chan_top, dma_sched,\n                  desc_fetch, axi_rd_master, axi_wr_master, wr_track,\n                  irq_ctrl, perf_cnt, daq_subsystem}:\n        verilator --lint-only -Wall  ->  PASS (102/102)`}</pre><p className="rtl-guide-note">NumCh=1이 dma_sched.sv와 desc_fetch.sv 양쪽에서 실제 버그를 잡았습니다 — prim_arbiter_tree의 idx_o가 N=1에서 zero-width가 되는 걸 그 prim 자체가 가드하지 않아, generate if (NumCh &gt; 1)로 우회.</p></Card>
+    <Card kicker="BLOCK TESTBENCHES" title="16개 전부 PASS"><div className="data-table"><table><thead><tr><th>Testbench</th><th>대상</th><th>커버리지</th></tr></thead><tbody>
       <tr><td><code>tb_skid_buffer</code></td><td>skid_buffer.sv</td><td>full-rate throughput, random backpressure, 2-beat capacity 한계</td></tr>
       <tr><td><code>tb_cnt_sat</code></td><td>cnt_sat.sv</td><td>saturation, clear 우선순위, wide-increment 교차확인</td></tr>
       <tr><td><code>tb_axil_slave</code></td><td>axil_slave.sv</td><td>AW/W 동시·분리 도착, AW+W+AR 동시 경합, DECERR</td></tr>
@@ -180,8 +202,20 @@ function Detail({ tab }: { tab: Tab }) {
       <tr><td><code>tb_chan_ctrl</code></td><td>chan_ctrl.sv</td><td>8 phase — Idle drain, single-beat pkt_done, abort, cause 게이팅</td></tr>
       <tr><td><code>tb_chan_top</code></td><td>chan_top.sv (전체 통합)</td><td>비정수 클럭비, phase 3a/3b drain/discard 경계, 랜덤 8패킷 양방향 backpressure</td></tr>
       <tr><td><code>tb_dma_sched</code></td><td>dma_sched.sv (NumCh=4)</td><td>동시 sop 경합, mid-packet 경합, 4채널 랜덤 스트레스 + 5회 추가 시드</td></tr>
+      <tr><td><code>tb_desc_fetch</code></td><td>desc_fetch.sv (NumCh=4)</td><td>단일/링크/에러 5종/abort-재시작/2채널 경합, 6 phase</td></tr>
+      <tr><td><code>tb_axi_rd_master</code></td><td>axi_rd_master.sv</td><td>4KB 분할, RRESP 에러, 양방향 backpressure, 연속 fetch, 5 phase + 시드 5회</td></tr>
+      <tr><td><code>tb_axi_wr_master</code></td><td>axi_wr_master.sv</td><td>MaxBurst/4KB 분할, BRESP 에러, 백프레셔, 6 phase + 시드 10회</td></tr>
+      <tr><td><code>tb_wr_track</code></td><td>wr_track.sv</td><td>단일/다중 burst 완료, 에러 sticky, abort clear, 채널 독립성</td></tr>
+      <tr><td><code>tb_irq_ctrl</code></td><td>irq_ctrl.sv</td><td>busy OR, sticky→pulse 변환, xfer_done 라우팅, cause passthrough</td></tr>
+      <tr><td><code>tb_perf_cnt</code></td><td>perf_cnt.sv</td><td>바이트/패킷/에러/stall 카운트, popcount 정확성, abort clear</td></tr>
+      <tr><td><code>tb_daq_subsystem</code></td><td>daq_subsystem.sv (NumCh=1, 통합 smoke)</td><td>실제 AXI4-Lite+src_clk 스트림으로 채널 1개 end-to-end 확인, 시드 8회</td></tr>
     </tbody></table></div></Card>
-    <Card kicker="MUTATION — NON-VACUOUS" title="22/22 결함 검출 (phase 1-4)"><div className="data-table"><table><thead><tr><th>결함</th><th>모듈</th><th>내용</th><th>결과</th></tr></thead><tbody>{[...mutantsP12, ...mutantsP3, ...mutantsP4].map(([id, mod, desc, result]) => <tr key={id}><td><code>{id}</code></td><td>{mod}</td><td>{desc}</td><td><span className="ok-badge">{result}</span></td></tr>)}</tbody></table></div><p className="rtl-guide-note">뮤턴트를 만드는 과정에서 <code>MUT_SKID_ORDER</code> 하나는 폐기했습니다 — 애초에 동시 도달 불가능한 equivalent mutant였습니다.</p></Card>
+    <Card kicker="MUTATION — NON-VACUOUS" title="40/40 결함 검출 (phase 1-5)"><div className="data-table"><table><thead><tr><th>결함</th><th>모듈</th><th>내용</th><th>결과</th></tr></thead><tbody>{[...mutantsP12, ...mutantsP3, ...mutantsP4, ...mutantsP5].map(([id, mod, desc, result]) => <tr key={id}><td><code>{id}</code></td><td>{mod}</td><td>{desc}</td><td><span className="ok-badge">{result}</span></td></tr>)}</tbody></table></div><p className="rtl-guide-note">뮤턴트를 만드는 과정에서 <code>MUT_SKID_ORDER</code> 하나는 폐기했습니다 — 애초에 동시 도달 불가능한 equivalent mutant였습니다.</p></Card>
+    <Card kicker="PHASE 6 — 블록별 FORMAL" title="3개 블록 unbounded k-induction 증명 완료"><div className="data-table"><table><thead><tr><th>블록</th><th>proof</th><th>결과</th><th>mutant (전부 catch)</th></tr></thead><tbody>
+      <tr><td><code>skid_buffer.sv</code></td><td><code>formal/skid_buffer.sby</code></td><td><span className="ok-badge">PASS — k-induction</span></td><td>MUT_SKID_READY · MUT_SKID_BYPASS · MUT_SKID_DRAIN</td></tr>
+      <tr><td><code>cnt_sat.sv</code></td><td><code>formal/cnt_sat.sby</code></td><td><span className="ok-badge">PASS — k-induction</span></td><td>MUT_CNT_WRAP · MUT_CNT_CLEAR_LOSE</td></tr>
+      <tr><td><code>dma_sched.sv</code></td><td><code>formal/dma_sched.sby</code></td><td><span className="ok-badge">PASS — k-induction</span></td><td>MUT_SCHED_STICKYLOCK · MUT_SCHED_EARLYUNLOCK · MUT_SCHED_DBLREADY</td></tr>
+    </tbody></table></div><p className="rtl-guide-note">세 블록 모두 단일 클럭이라 별도 induction-helper 없이 첫 시도에서 무한 증명이 닫혔습니다. skid_buffer.sv는 첫 property 세트가 MUT_SKID_DRAIN을 놓쳐 다섯 번째 property("no premature drain")를 추가해 갭을 메웠고, dma_sched.sv는 fairness(liveness) 대신 mutual-exclusion/packet-atomicity 같은 safety만 증명합니다. 남은 ~12개 블록과 통합 UVM 환경(보류 결정)은 위 STATUS 카드 참고.</p></Card>
     <Card kicker="이번 세션에 발견한 버그 (RTL이 아닌 것도 포함)" title="검증 코드 자체의 버그 2건"><div className="check-list">{otherBugsP34.map(([title, detail]) => <p key={title}><b>{title}</b><span>{detail}</span></p>)}</div><p className="rtl-guide-note">Sample Test 2/3/4 phase 1-2에서 반복된 것과 같은 교훈: 정확히 그 케이스를 겨냥하지 않는 드라이버·스코어보드는 망가진 설계 옆에서도, 혹은 stale해진 뮤턴트 옆에서도 그냥 통과합니다.</p></Card>
   </>
   if (tab === 'synthesis') return <>
@@ -190,38 +224,41 @@ function Detail({ tab }: { tab: Tab }) {
     <Card kicker="SMOKE TEST" title="openlane --dockerized --smoke-test"><p className="rtl-guide-note">OpenLane 내장 예제 설계로 78개 스테이지(합성→플로어플랜→배치→CTS→라우팅→STA→DRC/LVS/Antenna) 전체 완주, 1분 42초. <span className="ok-badge">Smoke test passed</span> — 툴체인 자체가 정상 동작함을 먼저 확인.</p></Card>
     <Card kicker="이 프로젝트 RTL 합성 결과" title="검증 완료된 블록 3개, 전부 통과"><div className="data-table"><table><thead><tr><th>모듈</th><th>셀 수</th><th>셀 면적(µm²)</th><th>다이 면적(µm²)</th><th>Setup slack</th><th>Hold slack</th><th>DRC 에러</th><th>DRC</th><th>LVS</th><th>Antenna</th></tr></thead><tbody>{synthResults.map(([name, cells, cellArea, dieArea, setup, hold, drcErr, drc, lvs, ant]) => <tr key={name}><td><code>{name}</code></td><td>{cells}</td><td>{cellArea}</td><td>{dieArea}</td><td>{setup} ns</td><td>{hold} ns</td><td>{drcErr}</td><td><span className="ok-badge">{drc}</span></td><td><span className="ok-badge">{lvs}</span></td><td><span className="ok-badge">{ant}</span></td></tr>)}</tbody></table></div><p className="rtl-guide-note">클럭 목표 10ns(100MHz)에서 세 블록 모두 setup slack이 여유 커서(+3.8~4.8ns) — <code>chan_ctrl</code>처럼 실제 5-state FSM 로직이 들어간 블록도 마찬가지로, sky130에서 타이밍 클로징이 이 프로젝트 설계 복잡도에서 문제없이 유지됩니다. Hold slack은 세 설계 모두 +0.12ns로 통과하지만 여유가 좁아 — phase 5/6에서 더 큰 블록을 합성할 때 주시할 지표입니다. 산출물(GDS/LEF/netlist/SPEF/SDF/5-corner .lib)은 각 <code>asic/&lt;module&gt;/runs/RUN_*/final/</code>에 완전한 세트로 생성됩니다.</p></Card>
     <Card kicker="chan_ctrl 합성에서 새로 만난 문제 2가지" title="실제 FSM 블록이라 처음 나타난 이슈"><div className="check-list">{chanCtrlSynthIssues.map(([title, detail]) => <p key={title}><b>{title}</b><span>{detail}</span></p>)}</div></Card>
-    <Card kicker="다음 합성 대상" title="아직 안 한 것"><div className="check-list"><p><b>dma_sched.sv</b><span>prim_arbiter_tree(OpenTitan 외부 prim) 재사용 블록의 첫 합성 — 프로젝트 밖 경로를 어떻게 읽기 허용 범위에 넣을지가 관건</span></p><p><b>chan_top.sv</b><span>CDC를 포함한 첫 멀티클럭 합성 대상</span></p><p><b>daq_subsystem.sv (top, phase 5에서 생성 예정)</b><span>전체 IP 합성은 phase 5 완료 이후</span></p></div></Card>
+    <Card kicker="다음 합성 대상" title="chan_top.sv 진행 중, 그 다음"><div className="check-list"><p><b>chan_top.sv</b><span>CDC 포함 첫 멀티클럭 합성 대상 — 실제 SDC 적용 후 타이밍 signoff 원인 규명까지 완료, 재실행 진행 중. 실시간 상세는 <b>General RTL Pipeline → Physical Design</b> 탭 참고.</span></p><p><b>dma_sched.sv</b><span>prim_arbiter_tree(OpenTitan 외부 prim) 재사용 블록의 첫 합성 — 아직 시작 전</span></p><p><b>daq_subsystem.sv (top)</b><span>phase 5 완료로 이미 존재 — 전체 IP 합성은 아직 시작 전</span></p></div></Card>
   </>
   if (tab === 'layout') return <LayoutGallery/>
-  if (tab === 'documents') return <Card kicker="ARTIFACT LIBRARY" title="phase 1-4 + ASIC 합성 산출물"><div className="sample-list">
-    <div><b>PLAN.md / PHASE_3_6_PLAN.md</b><span>6-phase 계획, phase 3-6 상세 실행 계획</span></div>
-    <div><b>RESULTS.md</b><span>phase 1-4 근거 전체 — lint, TB, mutation, 발견한 버그와 원인분석</span></div>
+  if (tab === 'documents') return <Card kicker="ARTIFACT LIBRARY" title="phase 1-5 완료 + phase 6 formal 시작 + ASIC 합성 산출물"><div className="sample-list">
+    <div><b>PLAN.md / PHASE_3_6_PLAN.md</b><span>6-phase 계획, phase 3-6 상세 실행 계획 및 현황</span></div>
+    <div><b>RESULTS.md</b><span>phase 1-6 근거 전체 — lint, TB, mutation, formal, 발견한 버그와 원인분석</span></div>
     <div><b>rtl/pkg/{'{axi_pkg,daq_pkg}'}.sv</b><span>AXI 인코딩, descriptor struct, 레지스터 맵, packed-beat 레이아웃</span></div>
     <div><b>rtl/common/{'{skid_buffer,cnt_sat}'}.sv</b><span>prim에 대응 모듈이 없는 두 신규 모듈</span></div>
     <div><b>rtl/csr/{'{axil_slave,daq_csr}'}.sv</b><span>AXI4-Lite 브리지 + 레지스터 파일</span></div>
     <div><b>rtl/stream/{'{pkt_align,pkt_check,chan_ctrl,chan_top}'}.sv</b><span>채널당 스트림 경로 — CDC 포함</span></div>
-    <div><b>rtl/dma/dma_sched.sv</b><span>채널 간 packet-granularity round-robin arbiter</span></div>
+    <div><b>rtl/dma/{'{dma_sched,desc_fetch,axi_rd_master,axi_wr_master,wr_track}'}.sv</b><span>DMA 엔진 전체 — channel arbiter, descriptor ring walker, AXI4 read/write master, write completion tracking</span></div>
+    <div><b>rtl/irq/irq_ctrl.sv · rtl/stat/perf_cnt.sv</b><span>상태/인터럽트 집계, per-channel 카운터</span></div>
+    <div><b>rtl/daq_subsystem.sv</b><span>top-level 배선 — phase 1-5 전체 블록을 하나로 인스턴스화, reg_clk/axi_clk 통일 결정 포함</span></div>
+    <div><b>formal/{'{skid_buffer,cnt_sat,dma_sched}'}_formal.sv + .sby</b><span>3개 블록 unbounded k-induction 증명 + mutation .sby</span></div>
     <div><b>tb/prim_reuse_smoke.sv</b><span>prim 재사용 매핑을 증명하는 lint-gate 인스턴스화</span></div>
     <div><b>scripts/{'{run_lint,run_block_tb}'}.ps1</b><span>parameter sweep lint gate, block TB + <code>-Mutant</code> 실행</span></div>
-    <div><b>mutants/</b><span>7파일, 22개 결함 (phase 1-4)</span></div>
-    <div><b>asic/{'{skid_buffer,cnt_sat}'}/config.json + runs/</b><span>sky130 OpenLane 합성 설정과 완전한 산출물(GDS/LEF/netlist/lib/SPEF/SDF)</span></div>
+    <div><b>mutants/</b><span>17파일, 40개 결함 (phase 1-5)</span></div>
+    <div><b>asic/{'{skid_buffer,cnt_sat,chan_ctrl,chan_top}'}/config.json + runs/</b><span>sky130 OpenLane 합성 설정과 산출물(GDS/LEF/netlist/lib/SPEF/SDF) — 상세는 General RTL Pipeline → Physical Design 탭</span></div>
   </div><p className="rtl-guide-note">작업 위치: <code>samples/sample_test_4/</code>. Sample Test 3는 이 작업으로 수정되지 않았습니다.</p></Card>
   return <>
     <Card kicker="OVERVIEW" title="지금까지의 결정과 상태"><div className="decision-grid">
       <div><b>왜 이 샘플이 있는가</b><p>Sample Test 3(229줄, 단일 파일)는 교육용이지, 실제 IP 리허설이 아닙니다. Test 4는 file list, block-level vs integration 검증, regression 관리, parameter sweep이 실제로 문제가 되는 규모(목표 ~5천줄 RTL, 24 모듈, 6 phase)를 겨냥합니다.</p></div>
       <div><b>가장 중요한 결정</b><p>계획된 <code>rtl/common/</code> 11개 모듈 중 9개를 직접 작성하는 대신 OpenTitan <code>hw/ip/prim</code>에서 재사용하기로 했고, <code>tb/prim_reuse_smoke.sv</code>로 그 매핑이 실제로 동작함을 증명했습니다.</p></div>
-      <div><b>지금까지 검증</b><p>lint sweep 54/54, block TB 9/9, mutation 22/22 — phase 1(패키지·common), phase 2(AXI4-Lite CSR), phase 3(스트림 경로) 전부 완료·검증. phase 4는 dma_sched.sv만 완료, desc_fetch.sv는 진행중(미검증).</p></div>
-      <div><b>검증 이후 목표는 ASIC</b><p>FPGA가 아니라 오픈소스 sky130 PDK로 실제 GDS까지 합성하기로 결정. OpenLane2 툴체인을 WSL+Docker로 설치·검증했고, 검증 완료된 블록 3개(skid_buffer, cnt_sat, chan_ctrl)가 이미 DRC/LVS/Antenna 전부 통과하며 합성됐습니다 — chan_ctrl은 실제 5-state FSM이라 SV 파싱·IO 핀 배치 문제를 처음 만났고 둘 다 해결했습니다.</p></div>
+      <div><b>지금까지 검증</b><p>lint sweep 102/102, block TB 16/16, mutation 40/40 — phase 1(패키지·common), phase 2(AXI4-Lite CSR), phase 3(스트림 경로), phase 4(DMA 엔진), phase 5(top 통합) 전부 완료·검증. phase 6(블록별 formal)은 3개 블록 k-induction 무한 증명 완료, 나머지 진행 중 — 통합 UVM 환경은 phase 5 smoke 테스트로 대체 가능하다고 판단해 보류 결정.</p></div>
+      <div><b>검증 이후 목표는 ASIC</b><p>FPGA가 아니라 오픈소스 sky130 PDK로 실제 GDS까지 합성하기로 결정. OpenLane2 툴체인을 WSL+Docker로 설치·검증했고, 검증 완료된 블록 3개(skid_buffer, cnt_sat, chan_ctrl)가 이미 DRC/LVS/Antenna 전부 통과하며 합성됐습니다. chan_top(첫 멀티클럭 대상)은 실제 SDC 적용 후 타이밍 signoff 실패 원인을 규명하고 재실행 중입니다.</p></div>
     </div></Card>
     <Card kicker="PHASE PROGRESS" title="6-phase 계획 + ASIC 합성 트랙 대비 현황"><div className="pipeline-flow">
       <div className="pipeline-step pass"><span>01</span><b>pkg/ + common/</b><small>파일 리스트, 빌드 스크립트, lint gate</small><em>DONE</em></div>
       <div className="pipeline-step pass"><span>02</span><b>AXI4-Lite CSR</b><small>axil_slave, daq_csr, W1C/readback TB</small><em>DONE</em></div>
       <div className="pipeline-step pass"><span>03</span><b>스트림 경로</b><small>pkt_align, pkt_check, chan_ctrl, chan_top — CDC 포함</small><em>DONE</em></div>
-      <div className="pipeline-step blocked"><span>04</span><b>DMA 엔진</b><small>dma_sched 완료 · desc_fetch 진행중 · axi masters/wr_track 대기</small><em>진행중</em></div>
-      <div className="pipeline-step"><span>05</span><b>top</b><small>irq_ctrl, perf_cnt, daq_subsystem</small><em>대기</em></div>
-      <div className="pipeline-step"><span>06</span><b>통합</b><small>UVM, formal, regression, mutation</small><em>대기</em></div>
-      <div className="pipeline-step blocked"><span>ASIC</span><b>sky130 합성</b><small>skid_buffer, cnt_sat, chan_ctrl(FSM) 완료 · dma_sched/chan_top 대기</small><em>진행중</em></div>
-    </div><p className="rtl-guide-note">각 phase는 parameter sweep 전체에서 lint clean이 나와야 다음 phase로 넘어갑니다 — 지금까지 어긴 적 없습니다. ASIC 합성 트랙은 RTL 검증(lint→TB→mutation)이 끝난 블록부터 phase 진행과 별도로 병행합니다. 전체 근거: <code>samples/sample_test_4/RESULTS.md</code>.</p></Card>
+      <div className="pipeline-step pass"><span>04</span><b>DMA 엔진</b><small>dma_sched, desc_fetch, axi_rd_master, axi_wr_master, wr_track 전부 완료</small><em>DONE</em></div>
+      <div className="pipeline-step pass"><span>05</span><b>top</b><small>irq_ctrl, perf_cnt, daq_subsystem — smoke 통합 테스트로 end-to-end 확인</small><em>DONE</em></div>
+      <div className="pipeline-step blocked"><span>06</span><b>통합</b><small>블록별 formal 3/15+ 완료 · 통합 UVM은 보류 결정 · regression/mutation 대기</small><em>진행중</em></div>
+      <div className="pipeline-step blocked"><span>ASIC</span><b>sky130 합성</b><small>skid_buffer, cnt_sat, chan_ctrl(FSM) 완료 · chan_top 타이밍 원인규명 후 재실행 중 · dma_sched 대기</small><em>진행중</em></div>
+    </div><p className="rtl-guide-note">각 phase는 parameter sweep 전체에서 lint clean이 나와야 다음 phase로 넘어갑니다 — 지금까지 어긴 적 없습니다. ASIC 합성 트랙은 RTL 검증(lint→TB→mutation)이 끝난 블록부터 phase 진행과 별도로 병행합니다. 전체 근거: <code>samples/sample_test_4/RESULTS.md</code>. 실시간 상세: 검증은 위 Verification 탭, formal은 Architecture 탭의 STATUS 카드와 <b>General RTL Pipeline → Verification/Formal</b> 탭, ASIC은 <b>General RTL Pipeline → Physical Design</b> 탭.</p></Card>
   </>
 }
 function Card({ kicker, title, children }: { kicker: string; title: string; children: ReactNode }) { return <section className="card"><div className="card-title"><div><small className="kicker">{kicker}</small><h2>{title}</h2></div></div>{children}</section> }
