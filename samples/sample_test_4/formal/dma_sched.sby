@@ -1,0 +1,30 @@
+[options]
+mode prove
+depth 20
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+# No -I needed: [files] below copies the two .svh headers prim_assert.sv
+# actually `includes (under the implicit SYNTHESIS define read_slang sets -
+# see samples/sample_test_2/formal/prim_fifo_sync.sby for that note) into the
+# same flat src/ directory as prim_assert.sv itself, and read_slang's default
+# include search checks a file's own local directory before anything else.
+read_slang --top dma_sched_formal -DDAQ_NUM_CH=2 prim_util_pkg.sv prim_assert.sv prim_leading_one_ppc.sv prim_arbiter_ppc.sv prim_arbiter_tree.sv axi_pkg.sv daq_pkg.sv dma_sched.sv dma_sched_formal.sv
+prep -top dma_sched_formal
+
+[files]
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_util_pkg.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_assert.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_assert_dummy_macros.svh
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_assert_sec_cm.svh
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_flop_macros.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_leading_one_ppc.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_arbiter_ppc.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_arbiter_tree.sv
+rtl/pkg/axi_pkg.sv
+rtl/pkg/daq_pkg.sv
+rtl/dma/dma_sched.sv
+formal/dma_sched_formal.sv

@@ -1,0 +1,18 @@
+[options]
+# Checker sanity: MUT_SKID_DRAIN alone (skid clears as soon as it is occupied,
+# regardless of out_advance - the skidded beat is silently dropped). Expected
+# outcome: FAIL, not PASS.
+mode prove
+depth 20
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+read_slang --top skid_buffer_formal -DMUT_SKID_DRAIN skid_buffer_MUTANT.sv skid_buffer_formal.sv
+prep -top skid_buffer_formal
+
+[files]
+mutants/skid_buffer_MUTANT.sv
+formal/skid_buffer_formal.sv

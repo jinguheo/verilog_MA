@@ -1,0 +1,17 @@
+[options]
+# Checker sanity: MUT_SKID_READY alone (ready_o ignores the skid register).
+# Expected outcome: FAIL, not PASS.
+mode prove
+depth 20
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+read_slang --top skid_buffer_formal -DMUT_SKID_READY skid_buffer_MUTANT.sv skid_buffer_formal.sv
+prep -top skid_buffer_formal
+
+[files]
+mutants/skid_buffer_MUTANT.sv
+formal/skid_buffer_formal.sv

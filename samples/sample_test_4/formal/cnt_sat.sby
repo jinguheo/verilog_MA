@@ -1,0 +1,15 @@
+[options]
+mode prove
+depth 20
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+read_slang --top cnt_sat_formal cnt_sat.sv cnt_sat_formal.sv
+prep -top cnt_sat_formal
+
+[files]
+rtl/common/cnt_sat.sv
+formal/cnt_sat_formal.sv

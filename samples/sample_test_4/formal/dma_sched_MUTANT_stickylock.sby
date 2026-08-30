@@ -1,0 +1,27 @@
+[options]
+# Checker sanity: MUT_SCHED_STICKYLOCK alone (a single-beat grant locks
+# permanently instead of releasing the same cycle). Expected: FAIL, not PASS.
+mode prove
+depth 20
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+read_slang --top dma_sched_formal -DDAQ_NUM_CH=2 -DMUT_SCHED_STICKYLOCK prim_util_pkg.sv prim_assert.sv prim_leading_one_ppc.sv prim_arbiter_ppc.sv prim_arbiter_tree.sv axi_pkg.sv daq_pkg.sv dma_sched_MUTANT.sv dma_sched_formal.sv
+prep -top dma_sched_formal
+
+[files]
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_util_pkg.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_assert.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_assert_dummy_macros.svh
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_assert_sec_cm.svh
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_flop_macros.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_leading_one_ppc.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_arbiter_ppc.sv
+D:\MyWork\verilog\dbs\opentitan\hw\ip\prim\rtl\prim_arbiter_tree.sv
+rtl/pkg/axi_pkg.sv
+rtl/pkg/daq_pkg.sv
+mutants/dma_sched_MUTANT.sv
+formal/dma_sched_formal.sv

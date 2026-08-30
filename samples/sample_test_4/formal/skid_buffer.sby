@@ -1,0 +1,18 @@
+[options]
+# Single clock, no CDC - a genuine unbounded proof is the right target here,
+# unlike Sample Test 3's multiclock blocks where induction cannot close (see
+# samples/sample_test_3/RESULTS.md for why).
+mode prove
+depth 20
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+read_slang --top skid_buffer_formal skid_buffer.sv skid_buffer_formal.sv
+prep -top skid_buffer_formal
+
+[files]
+rtl/common/skid_buffer.sv
+formal/skid_buffer_formal.sv

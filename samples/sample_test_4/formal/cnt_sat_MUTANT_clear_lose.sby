@@ -1,0 +1,17 @@
+[options]
+# Checker sanity: MUT_CNT_CLEAR_LOSE alone (a simultaneous increment beats
+# clear). Expected outcome: FAIL, not PASS.
+mode prove
+depth 20
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+read_slang --top cnt_sat_formal -DMUT_CNT_CLEAR_LOSE cnt_sat_MUTANT.sv cnt_sat_formal.sv
+prep -top cnt_sat_formal
+
+[files]
+mutants/cnt_sat_MUTANT.sv
+formal/cnt_sat_formal.sv

@@ -1,0 +1,17 @@
+[options]
+# Checker sanity: MUT_SKID_BYPASS alone (drain emits data_i instead of the
+# stored skid_data_q - reordering). Expected outcome: FAIL, not PASS.
+mode prove
+depth 20
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+read_slang --top skid_buffer_formal -DMUT_SKID_BYPASS skid_buffer_MUTANT.sv skid_buffer_formal.sv
+prep -top skid_buffer_formal
+
+[files]
+mutants/skid_buffer_MUTANT.sv
+formal/skid_buffer_formal.sv

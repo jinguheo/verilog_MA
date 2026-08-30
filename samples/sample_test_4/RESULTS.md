@@ -954,8 +954,100 @@ reopening the already-verified `desc_fetch.sv` to add the qualifier;
 whether phase 6's integration environment needs to close this is still
 open.
 
-Phase 6 (integration UVM, formal per block, regression script) is
-unstarted. Two register-map outputs remain permanently unconnected unless
-a later decision changes their scope: `err_inject_o` (no fault-injection
-hooks anywhere) and `axi_max_burst_o`/`axi_outstanding_o` (both AXI masters
-use `daq_pkg::MaxBurst` as a compile-time constant, not a runtime value).
+Phase 6 (integration UVM, formal per block, regression script) is started,
+not complete - see the next section for exactly how far. Two register-map
+outputs remain permanently unconnected unless a later decision changes their
+scope: `err_inject_o` (no fault-injection hooks anywhere) and
+`axi_max_burst_o`/`axi_outstanding_o` (both AXI masters use
+`daq_pkg::MaxBurst` as a compile-time constant, not a runtime value).
+
+## Phase 6 — per-block formal, started (2026-08-29)
+
+Scope per [PHASE_3_6_PLAN.md](PHASE_3_6_PLAN.md): integration UVM environment,
+per-block SymbiYosys formal, a parameter-sweep regression script, and
+full-stack mutation. That plan document itself flags phase 6 as likely the
+largest remaining phase; this session made a real, verified start on the
+formal piece and nothing else. Not claiming more than that.
+
+**Three blocks formally proven, each an unbounded k-induction proof plus full
+mutation coverage** — every documented mutant in `mutants/` for these three
+modules is caught by the specific property that states the guarantee it
+breaks, not a downstream symptom:
+
+| Block | Proof | Mutants (all caught) |
+| --- | --- | --- |
+| `skid_buffer.sv` | `formal/skid_buffer.sby` — PASS by k-induction | `MUT_SKID_READY`, `MUT_SKID_BYPASS`, `MUT_SKID_DRAIN` |
+| `cnt_sat.sv` | `formal/cnt_sat.sby` — PASS by k-induction | `MUT_CNT_WRAP`, `MUT_CNT_CLEAR_LOSE` |
+| `dma_sched.sv` | `formal/dma_sched.sby` — PASS by k-induction | `MUT_SCHED_STICKYLOCK`, `MUT_SCHED_EARLYUNLOCK`, `MUT_SCHED_DBLREADY` |
+
+All three are single-clock, so - unlike Sample Test 3's CDC blocks - a genuine
+unbounded proof is the right target and closes on the first attempt (no
+induction-helper invariants needed).
+
+**A real formal coverage gap was found and closed while proving
+`skid_buffer.sv`, not assumed away.** The first property set (capacity,
+no-silent-accept, correct-source-selection, no-silent-drop) passed on golden
+RTL but let `MUT_SKID_DRAIN` through - the mutant clears the skid register the
+instant it becomes occupied rather than waiting for `out_advance`, which drops
+the skidded beat one cycle before any of those four properties ever observe
+`skid_valid_q` as true in their one-cycle-history checks. A fifth property
+("no premature drain": `skid_valid_q` may only clear on the cycle
+`out_advance` fires) was added and closes the gap - the mutant now fails
+exactly there. Recorded in `skid_buffer_formal.sv`'s own comments so the next
+person to touch this file knows why that property exists.
+
+**`dma_sched.sv`'s proof deliberately does not claim round-robin fairness.**
+Fairness ("a channel that keeps requesting is eventually granted") is a
+liveness property; `mode prove` k-induction proves only safety. What is proven
+is packet-atomicity and mutual exclusion instead: `$countones(ch_ready_o) <= 1`
+always, a lock only releases on a genuinely *accepted* eop beat (not merely an
+offered one), a lock that should release on a single-beat packet actually
+does, and a grant is never taken on a non-sop beat. `NumCh` was overridden to
+2 via `-DDAQ_NUM_CH=2` (the same package override the lint parameter sweep
+already uses) to keep the state space small - 2 channels is the minimum that
+can exercise "another channel's sop arrives while one is locked" at all, which
+is what every one of the three documented mutants attacks. `AxiDw` was left at
+its real default (64) after overriding it to 8 broke elaboration entirely: it
+collapses `daq_pkg`'s `DescAlignBytes` (`= AxiDw/8`) to 1, and
+`$clog2(1)-1 = -1` makes an unrelated function elsewhere in the package
+declare a reversed `[-1:0]` bit range - the package elaborates as a whole, so
+a width choice with no connection to `dma_sched` itself still broke the build.
+
+**A path/PATH lesson for any future `read_slang` harness that pulls in
+external OpenTitan `prim` files**: `sby`'s `[files]` section accepts absolute
+Windows paths directly (unlike OpenLane's config, which refuses anything
+outside its working directory and needed the `dir::../../../../../verilog`
+relative-traversal workaround in `asic/chan_top/config.json`) - so pulling
+`prim_arbiter_tree`/`prim_arbiter_ppc`/`prim_leading_one_ppc`/`prim_assert`
+straight from `D:\MyWork\verilog\dbs\opentitan\...` needed no path gymnastics,
+just listing them. Two things did trip on the first attempt: quoting a `-I`
+path in the `[script]` line's `read_slang` invocation is taken literally as
+part of the string (produces a "no such directory" warning for a path with
+stray quote characters in its name, then cascades into "unknown macro"
+errors for everything that header would have defined) - the fix was to drop
+`-I` entirely and instead list the two `.svh` files `prim_assert.sv` actually
+`` `include``s (under the `SYNTHESIS` define `read_slang` sets implicitly,
+which routes it to the dummy no-op macro set - see
+`samples/sample_test_2/formal/prim_fifo_sync.sby`'s note on the same thing)
+in `[files]` alongside it, since `read_slang`'s default include search checks
+a file's own local directory - and every `[files]` entry lands in the same
+flat `src/` directory regardless of its original path - before anywhere else.
+
+**What genuinely remains for phase 6**, in the order it likely makes sense to
+attempt them:
+
+- Formal for the other ~12 blocks. Good next targets, roughly in order of
+  value-for-effort: `daq_csr.sv` (per-bit W1C, same proven pattern as Sample
+  Test 3's `daq_status_sync.sby`), `axil_slave.sv` (AXI4-Lite handshake
+  compliance), `wr_track.sv` (outstanding-write bookkeeping never goes
+  negative or leaks). `chan_ctrl.sv`'s FSM and the two AXI masters'
+  burst/4KB-split logic are higher-value but also harder targets - expect them
+  to take real iteration, the way `skid_buffer.sv` and `dma_sched.sv` did here.
+- The integration UVM environment (AXI4-Lite agent, 8 source agents, AXI4
+  slave memory model with latency/SLVERR/DECERR, reference model, scoreboard)
+  - the largest single item, not started.
+- The parameter-sweep regression script - needs the integration environment
+  to exist first, or is scoped down to re-running the existing lint sweep plus
+  the new formal proofs across `NUM_CH`/`AXI_DW` values.
+- Full-stack mutation, once the integration environment exists to run mutants
+  through.
