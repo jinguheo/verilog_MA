@@ -42,6 +42,27 @@ const pdkAccess = [
   ['gf180, ASAP7 등 다른 오픈 PDK', 'gf180(GlobalFoundries 180nm)도 NDA 없이 공개됐고, ASAP7은 실제 파운드리가 아닌 ASU/ARM의 예측 모델(7nm급 특성을 흉내낸 가상 PDK) — 둘 다 실제 최신 상용 제조로 이어지지 않습니다.'],
 ] as const
 
+// SynthesisExploration 결과 (2026-09-14) — 9개 전략 실측 비교.
+const synthExplore = [
+  ['chan_ctrl', '789.5 µm² · slack 2.45ns', 'AREA 2', '782.0 µm² (−0.9%) · slack 2.59ns (+5.8%)', '트레이드오프 없이 순수 개선 — 전환 권장'],
+  ['cnt_sat', '1975.6 µm² · slack 3.98ns', 'AREA 1', '1911.8 µm² (−3.2%) · slack 3.72ns', '면적↓ 대신 여유 조금↓ (그래도 TNS 0) — 면적 우선이면 전환'],
+  ['skid_buffer', '2864.0 µm² · slack 4.82ns', 'AREA 0/1 (동률)', '변화 없음', '이미 면적 최적 — 변경 불필요'],
+] as const
+
+// 순차 vs 동시 실행 시간 비교 (같은 3개 블록, 같은 호스트, 같은 세션에서 실측).
+const parallelTiming = [
+  ['chan_ctrl', '25.0s'],
+  ['cnt_sat', '29.6s'],
+  ['skid_buffer', '26.2s'],
+] as const
+
+// SYNTH_STRATEGY를 실제 config.json에 반영하고 전체 P&R(배치·배선 포함)을
+// 재실행해 pre-placement 예측이 실제로 맞는지 검증 (2026-09-14).
+const fullPnrVerify = [
+  ['chan_ctrl', 'AREA 2', '2887.77 µm² · slack 1.958ns', '2905.29 µm² (+0.6%) · slack 2.211ns (+12.9%)', '면적 −0.9% 예측 → 실제 +0.6%(반전). slack은 +5.8% 예측보다 더 좋게 나옴(+12.9%)'],
+  ['cnt_sat', 'AREA 1', '2275.93 µm² · slack 3.772ns', '2128.29 µm² (−6.5%) · slack 4.132ns (+9.6%)', 'slack −6.5%(감수) 예측 → 실제는 +9.6%(반전, 더 좋아짐). 면적도 예측보다 더 줄어듦(−6.5% vs −3.2%)'],
+] as const
+
 // 왜 RTL 설계부터 제조까지 오래 걸리는가 — chan_top 경험을 근거로.
 const whySlow = [
   ['배치·배선 전에는 진짜 타이밍을 알 수 없다', '배선 지연은 실제 셀 위치와 배선 길이가 정해져야 계산됩니다(RC 추출). 그래서 RTL 시뮬레이션 단계의 클럭 주기(6/10ns)는 "논리적으로 말이 되는가"만 검증했을 뿐, 실제로 그 속도로 동작하는지는 배치·배선을 끝내야 알 수 있었습니다. chan_top이 바로 이 사례 — 시뮬레이션에서는 통과했지만 실제 합성·배치 후에는 10배 가까운 초과 위반이 나왔습니다.'],
@@ -70,6 +91,22 @@ export default function PhysicalDesignStatus() {
     </section>
     <section className="card"><div className="card-title"><div><small className="kicker">파운드리 PDK 접근 — NDA가 갈라놓는 것</small><h2>왜 sky130으로만 "진짜 제조"를 해볼 수 있는가</h2></div></div>
       <div className="check-list">{pdkAccess.map(([name, detail]) => <p key={name}><b>{name}</b><span>{detail}</span></p>)}</div>
+    </section>
+    <section className="card"><div className="card-title"><div><small className="kicker">SYNTH_STRATEGY 탐색 · 2026-09-14</small><h2>9개 전략 실측 비교 — 처음으로 근거 있는 선택</h2></div></div>
+      <div className="data-table"><table><thead><tr><th>블록</th><th>현재(AREA 0 기본값)</th><th>최선 전략</th><th>결과</th><th>판단</th></tr></thead><tbody>{synthExplore.map(([name, cur, strat, res, verdict]) => <tr key={name}><td><code>{name}</code></td><td>{cur}</td><td><b>{strat}</b></td><td>{res}</td><td>{verdict}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note"><code>openlane --flow SynthesisExploration</code> — yosys/ABC 전략 9개(AREA 0-3, DELAY 0-4)를 병렬로 돌려 gates/면적/worst slack/TNS를 비교합니다. <b>Pre-placement 단계까지만</b>(합성 + STAPrePNR, 실제 배치·배선 전) — "종이 위에서" 어느 전략이 작고 빠른지 알려주는 것이지 배선 후 결과를 보장하지 않습니다. <code>chan_ctrl</code>의 <code>AREA 1</code>은 이 설계에서 yosys 내부 크래시(capnp schema mismatch)로 실패 — 원인은 더 파지 않음(AREA 2가 이미 더 나아서). 전체 9개 전략 표는 각 <code>asic/&lt;block&gt;/synth_explore_summary.txt</code>에 있습니다. <b>config에 반영하고 전체 P&R로 재검증 완료</b> — 바로 아래 섹션.</p>
+    </section>
+    <section className="card"><div className="card-title"><div><small className="kicker">SYNTH_STRATEGY 전체 P&R 재검증 · 2026-09-14</small><h2>예측이 실제로 맞았는가 — 배치·배선 후 다시 측정함</h2></div></div>
+      <div className="data-table"><table><thead><tr><th>블록</th><th>적용된 전략</th><th>기존(AREA 0, 배선 완료)</th><th>신규(배선 완료)</th><th>pre-placement 예측과 비교</th></tr></thead><tbody>{fullPnrVerify.map(([name, strat, before, after, note]) => <tr key={name}><td><code>{name}</code></td><td><b>{strat}</b></td><td>{before}</td><td><span className="ok-badge">{after}</span></td><td>{note}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note"><b>둘 다 예측이 방향까지 틀렸는데, 결과는 더 좋게 나왔습니다.</b> <code>chan_ctrl</code>은 면적이 줄 것으로 예측했지만 실제 배치·배선(버퍼 삽입, CTS 리페어)을 거치자 오히려 살짝 늘었고, <code>cnt_sat</code>은 slack이 줄어드는 트레이드오프를 감수하기로 했었는데 실제로는 늘었습니다. 두 경우 다 TNS는 0으로 유지 — 즉 최종 판단(전략을 바꿀지 말지)은 pre-placement 표로도 맞았지만, 그 표에 적힌 <i>수치</i>를 최종 PPA 결과로 보고할 수는 없다는 뜻입니다. 배치·배선을 실제로 돌리기 전까지는 숫자가 확정되지 않습니다. <code>skid_buffer</code>는 <code>SynthesisExploration</code>에서 개선 여지가 없었으므로(위 표) 재실행하지 않았습니다.</p>
+    </section>
+    <section className="card"><div className="card-title"><div><small className="kicker">순차 vs 동시 실행 · 2026-09-14</small><h2>1.43배 빨라짐 — 왜 3배가 아닌지도 확인함</h2></div></div>
+      <div className="data-table"><table><thead><tr><th>모드</th><th>chan_ctrl</th><th>cnt_sat</th><th>skid_buffer</th><th>합계</th></tr></thead><tbody>
+        <tr><td>순차 실행</td>{parallelTiming.map(([name, t]) => <td key={name}>{t}</td>)}<td><b>80.8s</b></td></tr>
+        <tr><td>동시 실행(3개 백그라운드)</td><td colSpan={3}>—</td><td><b className="ok-badge">56.4s</b></td></tr>
+      </tbody></table></div>
+      <p className="rtl-guide-note"><b>왜 3배가 아니라 1.43배인가</b>: 이 호스트는 CPU 8코어인데, <code>SynthesisExploration</code> 실행 하나가 이미 내부적으로 9개 전략을 스레드풀로 병렬 처리합니다 — 즉 3개를 동시에 돌리면 "독립된 기계 3대"가 아니라 "같은 8코어를 두고 경쟁하는 스레드풀 3개"가 됩니다. I/O 대기를 동시성으로 숨기는 상황이 아니라 순수 CPU 경합이라, 코어 수를 넘어서는 배수의 속도 향상은 기대할 수 없습니다. 두 모드의 결과값(전략별 gates/면적/slack 표)은 <b>바이트 단위로 동일함을 확인</b> — 동시 실행이 결과를 바꾸지 않고 시간만 줄인다는 걸 실측으로 검증했습니다.</p>
+      <p className="rtl-guide-note"><b>이번에 실제로 고친 것</b>: <code>107_synth_explore.sh</code>의 원래 shim 설정은 매 실행마다 공유 경로(<code>$HOME/.cache/openlane-tools/bin</code>)를 <code>rm -rf</code>하고 새로 만드는 방식이었는데, 이걸 동시에 3개 돌리면 서로 심볼릭 링크를 지웠다 만들었다 하며 레이스가 납니다 — 다른 세션이 2026-09-12에 경고했던 것과 같은 종류의 문제입니다. 블록별로 독립된 shim 경로(<code>openlane-tools-&lt;block&gt;</code>)를 쓰고, 이미 있으면 재생성하지 않도록(idempotent) 고쳐서 해결했습니다.</p>
     </section>
     <section className="card"><div className="card-title"><div><small className="kicker">왜 RTL→제조가 오래 걸리는가</small><h2>chan_top에서 실제로 겪은 이유들</h2></div></div>
       <div className="check-list">{whySlow.map(([title, detail]) => <p key={title}><b>{title}</b><span>{detail}</span></p>)}</div>

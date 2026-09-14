@@ -1,0 +1,6 @@
+Sequential vs concurrent SynthesisExploration (chan_ctrl, cnt_sat, skid_buffer)
+Generated: 2026-09-14T21:53:05+09:00
+
+sequential total: 80.833466799s
+concurrent total: 56.407298953s
+speedup: 1.43x

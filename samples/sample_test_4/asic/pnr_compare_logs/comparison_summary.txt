@@ -1,0 +1,10 @@
+Full P&R re-verification of SYNTH_STRATEGY picks
+Generated: 2026-09-14T22:07:37+09:00
+
+Baseline (AREA 0 default):
+  chan_ctrl: area=2887.77 um^2 worst_slack=1.9578743624960435ns tns=0
+  cnt_sat: area=2275.93 um^2 worst_slack=3.7719397561883556ns tns=0
+
+After SYNTH_STRATEGY (chan_ctrl=AREA 2, cnt_sat=AREA 1):
+  chan_ctrl (/mnt/d/MyWork/Veriolg_MA/samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02): area=2905.29 um^2 worst_slack=2.21086355480766ns tns=0
+  cnt_sat (/mnt/d/MyWork/Veriolg_MA/samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02): area=2128.29 um^2 worst_slack=4.132263537199522ns tns=0

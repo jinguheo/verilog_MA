@@ -1109,28 +1109,367 @@ Full P&R was still running at the time of writing; `DIE_AREA` (3200x3200 um)
 and `CLOCK_PERIOD` (32 ns, clk_i) are both first-pass estimates per the
 config's own comments, not validated numbers.
 
-**Open question, not resolved this session: does `chan_top` actually close
-timing at 10/32?** `constraints/chan_top.sdc`'s own header claims 32/10 was
-"verified against the routed design" with the worst corner
-(`nom_ss_100C_1v60`) closing to positive slack. This session's `chan_top`
-re-run (`RUN_2026-08-30_20-00-29`, resumed after being interrupted once,
-finished to full signoff artifacts - GDS/LEF/SPEF/etc. all present) reports
-the opposite at that same corner: `timing__setup__wns = -8.4 ns`,
-`timing__setup__tns = -150.4 ns`, 926 setup violations
-(`final/metrics.json`). The worst path traced in
-`54-openroad-stapostpnr/max_ss_100C_1v60/max.rpt` runs from
-`u_cdc_fifo.fifo_rptr_q[4]` (axi_clk domain) through an `xnor2` chain
-consistent with `pkt_check`'s CRC-32 structure to `ch_cause_o[0]` - so the
-*shape* of the violation matches the already-documented root cause (CRC chain
-fed by the CDC FIFO's read-side mux), but the *severity* flatly contradicts
-the "closes cleanly at 32" claim. Two most likely explanations, neither
-confirmed: the earlier bisection that produced "32 closes" may have checked
-a narrower corner set or used a faster incremental re-STA on an already-
-routed netlist rather than a fresh placement, and this from-scratch re-run's
-placement/routing genuinely differs enough to matter; or something about the
-uncertainty/transition/corner setup differs between the two checks. Whichever
-it is, `chan_top`'s timing-closed status should be treated as unverified
-until this is re-examined - the design likely still needs either a faster
-period or the CRC/mux restructuring the SDC header already flagged as the
-real fix ("faster is unreachable" was never claimed, only that 32/10 needed
-no RTL changes - and that specific claim is what this run puts in doubt).
+**Resolved (2026-09-12): why `chan_top`'s "closes at 32/10" claim didn't hold
+up.** `constraints/chan_top.sdc`'s own header claimed 32/10 was "verified
+against the routed design... at the ss_100C_1v60 (worst) corner". The
+2026-08-30 signoff re-run (`RUN_2026-08-30_20-00-29`) showed the opposite at
+that corner: `timing__setup__wns = -8.4 ns`, `-150.4 ns` TNS, 926 violations.
+Root cause, found by walking every historical `chan_top/runs/RUN_*` directory
+for whatever check actually produced the "closes" claim:
+
+- Only **one** run (`RUN_2026-08-30_20-00-29` itself) ever reached
+  `final/metrics.json` - i.e. ever completed a real signoff. Every earlier
+  run died mid-flow.
+- The fast recheck tool used between P&R attempts
+  (`tools/wsl/94_sdc_check.tcl`/`95_run_sdc_check.sh`) reads
+  `06-yosys-synthesis/chan_top.nl.v` - the **pre-placement, pre-route**
+  netlist - with `read_liberty` but no `read_spef` at all. It was built and
+  is only useful for checking CDC pin-pattern matches (its own header says
+  "SDC syntax/match check"), not for any real delay number - with zero wire
+  parasitics loaded, it cannot report a valid setup slack at any corner.
+- The nearest thing to a real routed check in the run history is
+  `RUN_2026-08-29_16-32-56/42-openroad-stamidpnr-3/`, a mid-flow STA
+  checkpoint that ran **one hour before detailed routing** (stage 42, vs.
+  detailed routing at stage 43) - so still global-route-estimated
+  parasitics, not extracted SPEF - and, critically, it only evaluated
+  **`nom_tt_025C_1v80`** (typical corner): `wns.max.rpt` shows `0.0`,
+  `ws.max.rpt` shows `+2.58 ns`. It never touched `nom_ss_100C_1v60` at all.
+- The completed run's own final metrics confirm the typical corner really
+  does close cleanly and consistently with that number:
+  `timing__setup__wns__corner:nom_tt_025C_1v80 = 0`,
+  `timing__setup__ws__corner:nom_tt_025C_1v80 = +2.36 ns`, 0 violations - a
+  close match to the pre-route estimate. So the "closes at 32/10" part of the
+  claim is genuinely true and reproducible, just for the *typical* corner
+  only.
+
+**Conclusion**: `chan_top` at 10/32 ns closes fine at typical process/voltage/
+temperature, but was never actually checked at the worst corner
+(slow-slow silicon, 100°C, 1.60V) before this session's completed run - the
+SDC header's claim to have verified the worst corner was not backed by any
+saved artifact, and the one saved partial-flow check that exists used the
+typical corner instead. This is now a real, not merely apparent, timing
+closure gap: at `ss_100C_1v60`, `chan_top` needs either a slower `axi_clk`
+period than 32 ns, or the CRC/CDC-mux restructuring the SDC header already
+flagged as the underlying fix, before this design is worst-corner clean.
+Not yet re-tuned - next step if picked up: bisect `axi_period` upward from
+32 ns against `nom_ss_100C_1v60` specifically (the informal-check script
+should be rewritten to actually read a routed netlist + real SPEF and
+target that corner, or simply re-run the full flow at each candidate period
+and read `final/metrics.json` directly, per the lesson above).
+
+## Physical design — P&R optimization options in this OpenLane 2.3.10 install (2026-09-12)
+
+Asked: can placement+routing be optimized "all at once" instead of the
+current one-shot-then-inspect-at-the-end approach, and what alternatives
+exist. Investigated by reading the installed package
+(`openlane/flows/*.py`, `openlane/steps/openroad.py`,
+`openlane/config/variable.py`) rather than going by general OpenLane
+knowledge, since this is exactly the install both `chan_top` and
+`daq_subsystem` actually run through. Four real mechanisms exist; none is a
+drop-in "just do it better" replacement for the current flow - each is a
+genuine trade-off.
+
+**1. `SynthesisExploration` flow - real, usable, but pre-P&R only.**
+`openlane/flows/synth_explore.py` runs all 8 of yosys/ABC's built-in
+strategies (`AREA 0-3`, `DELAY 0-4`) **in parallel**, then prints a
+comparison table (gates, area, worst setup slack, TNS per strategy) so you
+can pick the best `SYNTH_STRATEGY` before committing to a full run. This is
+a legitimate, ready-to-use alternative to guessing a synthesis strategy up
+front - `openlane --flow SynthesisExploration <config>`. Limitation: its
+`Steps` list is only `[Yosys.Synthesis, OpenROAD.CheckSDCFiles,
+OpenROAD.STAPrePNR]` - pre-placement, no real wire delay, same blind spot
+`94_sdc_check.tcl` has. Good for picking a starting strategy, not for
+predicting final timing.
+
+**2. `Optimizing` flow - real, but explicitly a demo, and it stops at global
+placement.** `openlane/flows/optimizing.py`'s own comment calls it "a custom
+demo flow to show what's possible with non-sequential Flows". It runs the
+same 3-strategy synthesis race, picks the smallest-area result, then tries
+floorplanning + IO placement + global placement at `FP_CORE_UTIL=99`,
+falling back to `40` if that fails. It never runs CTS, detailed placement,
+routing, or any signoff STA - `Steps` ends at `OpenROAD.GlobalPlacement`.
+Not usable as-is for a real run; would need to be forked/extended to
+actually finish a design, at which point it stops being a novel flow and
+becomes "Classic with a smarter floorplan step."
+
+**3. Multi-corner optimization during placement/routing is already the
+default - the chan_top gap above was not "only optimizing one corner".**
+Checked `ResizerStep.run()` in `openroad.py`: every resizer-based repair
+step (`CTS`, `RepairDesignPostGRT`, `ResizerTimingPostCTS`,
+`ResizerTimingPostGRT`) resolves its corner list from `RSZ_CORNERS`, which
+falls back to `STA_CORNERS` when unset - and neither `chan_top`'s nor
+`daq_subsystem`'s config overrides either variable, so both already default
+to the PDK's full corner set. `chan_top`'s own completed `final/metrics.json`
+proves this empirically: it has real reported numbers for all 9 corners
+(`nom/min/max` x `tt/ss/ff`), not just one - the tool clearly did evaluate
+`ss_100C_1v60` throughout the flow, it just couldn't close the resulting
+violation through cell-level ECO (buffering/upsizing) alone. This matters:
+it means the -8.4 ns gap is a **structural** logic-depth problem (needs a
+pipeline stage or the CRC/mux restructuring already flagged), not something
+a "try harder" resizer setting would fix.
+
+**4. Hierarchical (macro-based) P&R is real, fully wired-in, and the most
+promising actual alternative for `daq_subsystem` specifically.**
+`openlane/config/variable.py`'s `Macro` dataclass (referenced by the
+`MACROS` config variable, used across `openroad.py`/`odb.py`/`magic.py`) lets
+a top-level run treat an already-hardened block as a placeable macro instead
+of flattening its RTL in - it takes GDS + LEF (required) plus optional
+per-corner LIB/SPEF/netlist for hierarchical STA, and an `instances: {name:
+Instance{location, orientation}}` map for where to place each copy.
+`chan_top`'s own `final/` directory already has every one of these files
+(`gds/`, `lef/`, `lib/`, `spef/`, `nl/`) sitting there from its completed
+run. This is the standard "harden once, place N times" ASIC methodology,
+and it directly addresses two problems this project has already hit
+empirically:
+  - **Runtime**: P&R runtime scales worse-than-linearly with cell count
+    (already observed going `chan_ctrl` → `chan_top`, ~22x the cells took
+    far more than 22x the time). `daq_subsystem`'s current flat approach
+    resynthesizes and re-places 8 essentially-identical copies of `chan_top`
+    from scratch inside one ~107k-cell run. Hardening `chan_top` once and
+    instantiating it 8x as a macro turns that into 1 real P&R run plus 8
+    cheap macro placements.
+  - **Predictability**: each macro's internal timing is closed (or not, and
+    known) independently of the top-level run, rather than an 8x-bigger flat
+    netlist surfacing a new worst path somewhere unpredictable (as happened
+    twice already: chan_top's own CRC/mux path, then perf_cnt's synthesis-
+    frontend crash, both first discovered only at the level where they
+    happened to matter).
+
+  **The real trade-off, not free**: hierarchy trades whole-design
+  optimization for modularity. Cross-macro paths need explicit
+  `set_input_delay`/`set_output_delay` timing budgets at every macro
+  boundary (the per-channel IO budgets already written into
+  `constraints/daq_subsystem.sdc` are exactly this, so the current SDC
+  is not wasted work if this path is taken later) - the top level can no
+  longer discover and fix a critical path that happens to cross a macro
+  boundary the way flat P&R can. It also means `chan_top` needs to be
+  worst-corner timing-clean *first* (see the finding above) before hardening
+  it as a reusable macro is worthwhile - hardening a known-broken block 8x
+  over just multiplies the same violation instead of fixing it once.
+
+  Not attempted this session - `daq_subsystem`'s currently-running attempt
+  is the flat approach. If the flat run's own runtime or final timing turns
+  out to be a real problem, hierarchical macro-based P&R (harden `chan_top`
+  once, after fixing its worst-corner timing, then reference it via `MACROS`
+  in a new top-level config) is the concrete next thing to try, not a vague
+  "maybe possible" - the mechanism is proven-present in this exact install.
+
+**No built-in parameter-sweep/DSE tool exists in this OpenLane 2.3.10
+install** for the kind of thing `chan_top`'s clock-period bisection did
+manually (try 10/32, try 30/32, etc.) - no `openlane/flows/*.py` file does
+this, and there's no `dse`/`sweep` module in the package. That kind of sweep
+still has to be done by hand or with an external loop calling `openlane`
+once per candidate period and reading `final/metrics.json` back (which is
+what the `chan_top` worst-corner re-tune above should do, this time actually
+targeting `ss_100C_1v60`).
+
+## chan_top — worst-corner-targeted synthesis experiment (2026-09-12)
+
+Tried the fast-mid-flow-estimate idea directly: OpenLane's `OpenROAD.STAMidPNR`
+step (there are 4 in the Classic flow, at increasing fidelity as the flow
+progresses) uses `estimate_parasitics -global_routing`/`-placement` - a real
+"cheap estimate before the expensive step" mechanism already built in, per
+its own script (`openroad/sta/corner.tcl`) and log line
+(`"[INFO] Setting RC values..."`). But it only evaluates **one** corner per
+run - `openroad/sta/corner.tcl`'s own comment says so explicitly ("supports
+one defined corner per-process") - driven by the `DEFAULT_CORNER` config
+variable, which is `pdk=True` and defaults to `nom_<typical_pvt>`
+(`config/pdk_compat.py`). This is the exact same variable, defaulting to the
+exact same typical corner, that caused the original "closes at 32/10" miss:
+the historical mid-flow checkpoint that exists in this project's run history
+(`RUN_2026-08-29.../42-openroad-stamidpnr-3`) only ever saw
+`nom_tt_025C_1v80` because nothing ever overrode `DEFAULT_CORNER`.
+
+Ran `chan_top` again with `-c DEFAULT_CORNER=nom_ss_100C_1v60` (an OpenLane
+CLI run-only override, no config.json edit -
+`tools/wsl/101_chan_top_worst_corner_estimate.sh`). Two implementation
+gotchas along the way, both fixed in the script:
+- `-c KEY=VALUE` for a string variable must NOT be quoted
+  (`DEFAULT_CORNER=nom_ss_100C_1v60`, not `DEFAULT_CORNER="nom_ss_100C_1v60"`)
+  - the quotes get taken as literal characters in the string value, which
+    then matches no real corner and leaves yosys's `DFFLIBMAP` pass with zero
+    liberty files (`ERROR: Missing -liberty liberty_file option!`).
+- `DEFAULT_CORNER` must be a `nom_*`-prefixed corner - trying
+  `max_ss_100C_1v60` (the actual worst-of-9 corner) hit the identical
+  DFFLIBMAP error; synthesis's own liberty lookup
+  (`toolbox.filter_views(config, config["LIB"])` in `openlane/steps/yosys.py`)
+  apparently only resolves against the nominal-corner family. `nom_ss_100C_1v60`
+  (same slow-process/high-temp/low-voltage combination, just not the single
+  worst of the 9) works and is still a meaningfully bad corner.
+
+Intended to stop early via `-T OpenROAD.STAMidPNR-3` (the 4th, most-accurate
+mid-flow checkpoint, right before the slow `DetailedRouting`/`RCX` steps) -
+`--to` did not actually halt the sequential flow at that repeated-step id
+(ran to `78/78`, "Flow complete" - worth filing as a real limitation of
+this OpenLane version's `-T` handling for steps that appear multiple times
+in one flow, not investigated further this session). The upside: it still
+finished in **32m38s**, versus this design's earlier from-scratch run's
+much longer wall time, and now with a REAL RCX-extracted-SPEF signoff
+result rather than just an estimate, since it ran to completion anyway.
+
+**Result - the worst-corner number improved, but at the price of the
+typical corner:**
+
+| | old run (2026-08-30, `DEFAULT_CORNER`=nom_tt) | new run (2026-09-12, `DEFAULT_CORNER`=nom_ss) |
+|---|---|---|
+| cells | 29,510 | 29,474 |
+| setup WNS (worst of 9) | -8.40 ns | **-7.16 ns** (better) |
+| setup TNS (worst of 9) | -150.4 ns | **-129.2 ns** (better) |
+| setup violation count | 926 | **463** (better) |
+| `nom_tt_025C_1v80` (typical) | **0 - clean** | **-3.78 ns - now broken** |
+| `nom_ss_100C_1v60` | -7.94 ns | -7.16 ns (better) |
+
+Retargeting synthesis's reference liberty toward the worst corner does not
+fix the underlying problem - it **redistributes** it. ABC's technology
+mapping and the resizer's cell selection/sizing optimize against whichever
+one corner `DEFAULT_CORNER` points to; biasing that toward `ss_100C_1v60`
+measurably helped every `ss` corner and the aggregate worst-of-9 numbers,
+but broke the previously-clean typical corner in the process. There is no
+single `DEFAULT_CORNER` choice, at 10/32 ns, that closes every corner at
+once with this RTL - which is exactly what "the CRC/CDC-mux chain is
+architecturally too deep for this period at every corner, just by different
+margins" would predict, and lines up with `ResizerTimingPostCTS`'s own
+explicit `[RSZ-0062] Unable to repair all setup violations` warning (present
+in both runs) - cell-level ECO can shrink the gap and shift which corner
+hurts most, but cannot close it. **Confirms, rather than changes, the
+conclusion above**: the real fix is a slower `axi_clk` period or pipelining
+`pkt_check`'s CRC-32 chain / the CDC FIFO's read-side mux, not a synthesis-
+strategy or corner-targeting trick. Not yet attempted this session (both
+`daq_subsystem`'s flat run and this experiment were using shared CPU/WSL
+resources) - next concrete step if picked up: bisect `axi_period` upward
+(e.g. 40, 48 ns) using this same fast worst-corner-targeted approach, with
+`DEFAULT_CORNER=nom_ss_100C_1v60` and `-c CLOCK_PERIOD=...` together, reading
+`final/metrics.json`'s `timing__setup__wns__corner:nom_tt_025C_1v80` AND
+`:nom_ss_100C_1v60` both, since this experiment shows a period/strategy that
+fixes one can break the other.
+
+## Physical design — SYNTH_STRATEGY exploration, and sequential vs concurrent runs (2026-09-14)
+
+Two things done together: pick a real `SYNTH_STRATEGY` for `chan_ctrl`/
+`cnt_sat`/`skid_buffer` using OpenLane's own `SynthesisExploration` flow
+(discovered but not used in the 2026-09-12 P&R-options investigation above),
+and measure whether running independent designs concurrently instead of
+one-after-another is actually worth doing - timed both ways in the same
+session rather than assumed.
+
+### `SynthesisExploration` results - real evidence, not a guess
+
+[`tools/wsl/107_synth_explore.sh`](tools/wsl/107_synth_explore.sh) runs
+`openlane --flow SynthesisExploration <config>`, which tries all 9 yosys/ABC
+strategies (`AREA 0-3`, `DELAY 0-4` - each a different `resub`/`rewrite`/
+`refactor`/`balance` restructuring sequence into a different `map -p -a`
+(area-biased) or `map -p` (delay-biased) technology mapping, `AREA 3` alone
+using a distinct ORFS-style `dch`+`topo` script) and reports gates/area/
+worst-setup-slack/TNS per strategy. Scope: `Yosys.Synthesis` +
+`OpenROAD.CheckSDCFiles` + `OpenROAD.STAPrePNR` only - pre-placement, no real
+wire delay, same blind spot the fast SDC-check script already had. Tells you
+which strategy is smaller/faster *on paper*; not a substitute for a routed
+result.
+
+| Design | Current default (`AREA 0`) | Best found | Verdict |
+| --- | --- | --- | --- |
+| `chan_ctrl` | 789.5 µm², slack 2.45 ns | **`AREA 2`**: 782.0 µm² (−0.9%), slack 2.59 ns (+5.8%) | Strictly better on both axes - no trade-off, switch |
+| `cnt_sat` | 1975.6 µm², slack 3.98 ns | **`AREA 1`**: 1911.8 µm² (−3.2%), slack 3.72 ns (still 0 TNS) | Genuine trade-off - smaller, slightly less margin, still comfortably positive |
+| `skid_buffer` | 2864.0 µm², slack 4.82 ns | `AREA 0`/`AREA 1` tie for smallest; `DELAY 4` gives 5.72 ns slack for +26.7% area | Already at the area optimum - no change needed |
+
+`AREA 1` crashed outright for `chan_ctrl` specifically (`capnp` schema
+mismatch inside pyosys - a yosys-internal issue with that design/strategy
+combination, not investigated further since `AREA 2` already won). All
+9-strategy tables are archived per design at
+`asic/<design>/synth_explore_summary.txt`.
+
+**Applied and re-verified with full P&R** - see the
+"`SYNTH_STRATEGY` re-verification" section below; the pre-placement numbers
+above are `Yosys.Synthesis` + `STAPrePNR` only and turned out not to predict
+the routed result reliably, which is exactly why that re-run was necessary
+rather than optional.
+
+### Sequential vs concurrent: 1.43x, not 3x, and why
+
+Asked directly: is there a real time cost to running independent block runs
+one after another instead of all at once? Answer, timed rather than assumed
+(`tools/wsl/108_synth_explore_compare.sh`, same three designs, same host,
+back-to-back in one session so nothing else was competing for the machine
+in between):
+
+| Mode | chan_ctrl | cnt_sat | skid_buffer | Total |
+| --- | --- | --- | --- | --- |
+| Sequential | 25.0s | 29.6s | 26.2s | **80.8s** |
+| Concurrent (all 3 backgrounded) | — | — | — | **56.4s** |
+
+**1.43x speedup, not 3x**, because the host has 8 CPU cores
+(`nproc` = 8) and each `SynthesisExploration` run already uses its own
+internal thread pool to run 9 strategies in parallel - three such runs
+backgrounded together are three thread pools contending for the same 8
+cores, not three independent machines. This is CPU-bound contention, not
+I/O-wait that concurrency would hide "for free". The results were verified
+identical between the two modes (byte-for-byte comparison table per design,
+not just "it finished") - concurrency changed only wall-clock time, not any
+synthesis outcome, which is the expected and necessary result for three
+genuinely independent designs.
+
+**Why this matters going forward, not just for these three small blocks**:
+the same 1.4x-ish ceiling should be expected for any future batch of
+independent OpenLane runs on this 8-core host (e.g. exploring more
+strategies, or later per-block formal runs) - concurrency is worth doing
+(free ~30% wall-clock reduction here) but should not be assumed to scale
+past core count. `107_synth_explore.sh` itself had to be made safe for this
+in the first place: its original shim setup (`rm -rf` + rebuild a single
+shared `$HOME/.cache/openlane-tools/bin` path every invocation, the same
+pattern `80_run_openlane.sh`/`87_run_chan_top.sh` use) would have raced
+three concurrent copies against each other, deleting each other's symlinks
+mid-flight - exactly the class of bug a live peer session's own shim
+collision warning (2026-09-12) flagged for a different pair of scripts. Fixed
+by giving each design its own shim path
+(`$HOME/.cache/openlane-tools-<design>/bin`) and making the setup idempotent
+(skip rebuilding if already present) instead of unconditional - both changes
+are in `107_synth_explore.sh` now, not a one-off workaround in the compare
+script.
+
+### `SYNTH_STRATEGY` re-verification with full P&R (2026-09-14, later same day)
+
+`SynthesisExploration`'s numbers above are pre-placement
+(`Yosys.Synthesis` + `STAPrePNR`, no real wire delay). Before trusting them,
+`config.json` was actually updated (`chan_ctrl` → `SYNTH_STRATEGY: "AREA 2"`,
+`cnt_sat` → `SYNTH_STRATEGY: "AREA 1"`) and the **full** default OpenLane
+flow (real floorplan, placement, CTS, routing, DRC, LVS, signoff STA) was
+re-run for both, via a new race-safe runner
+([`tools/wsl/109_run_full_pnr.sh`](tools/wsl/109_run_full_pnr.sh), same
+per-design-shim pattern as `107_synth_explore.sh`) driven by
+[`tools/wsl/110_run_full_pnr_compare.sh`](tools/wsl/110_run_full_pnr_compare.sh),
+which also pulled each design's last full-flow run from before
+`SYNTH_STRATEGY` existed as the baseline for a real before/after diff.
+
+| Design | Baseline (`AREA 0`, routed) | New (routed, `SYNTH_STRATEGY` applied) | Pre-placement had predicted |
+| --- | --- | --- | --- |
+| `chan_ctrl` | 2887.77 µm², worst slack 1.958 ns, TNS 0 | **`AREA 2`**: 2905.29 µm² (**+0.6%**), worst slack 2.211 ns (**+12.9%**), TNS 0 | area −0.9%, slack +5.8% |
+| `cnt_sat` | 2275.93 µm², worst slack 3.772 ns, TNS 0 | **`AREA 1`**: 2128.29 µm² (**−6.5%**), worst slack 4.132 ns (**+9.6%**), TNS 0 | area −3.2%, slack −6.5% (accepted trade-off) |
+
+Both blocks: real net win after full P&R (better timing margin, no new
+violations), but **the pre-placement prediction did not hold for either
+design** - not even in direction, for two of the four numbers:
+
+- `chan_ctrl`'s predicted area reduction (−0.9%) **reversed** to a small
+  increase (+0.6%) after real buffering/repair during placement and CTS,
+  while its predicted slack gain undersold the actual result (+12.9% vs the
+  +5.8% predicted).
+- `cnt_sat`'s predicted slack *cost* (−6.5%, an accepted trade-off for a
+  smaller die) **reversed into a gain** (+9.6%) once real routing delay
+  replaced the pre-placement estimate, on top of a bigger-than-predicted
+  area win (−6.5% actual vs −3.2% predicted).
+
+Net conclusion: `SynthesisExploration`'s pre-placement table is a reasonable
+*first filter* for picking which strategy to try (both switches were still
+correct calls - nothing here would have flipped a decision), but its actual
+percentages are not reliable enough to report as the final PPA number for
+either area or timing. Full P&R is the only step in this flow that measures
+what a routed design will actually do; that's why this re-run is treated as
+required confirmation, not a formality, and why it was worth doing before
+this was called "done" for these two blocks. `skid_buffer` was left as
+`AREA 0` since `SynthesisExploration` found no improvement available there
+(see table above) - no full re-run needed for a strategy that wasn't
+changed. Raw before/after run directories:
+`asic/chan_ctrl/runs/RUN_2026-08-28_19-29-14` (baseline) vs
+`asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02` (new); `asic/cnt_sat/runs/
+RUN_2026-08-26_12-43-50` (baseline) vs `asic/cnt_sat/runs/
+RUN_2026-09-14_22-03-02` (new).
