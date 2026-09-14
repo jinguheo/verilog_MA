@@ -43,16 +43,17 @@
   "USE_SYNLIG": true,
 
   "//CLOCK_PERIOD": [
-    "10 did not close (see constraints/chan_top.sdc for the full account: worst",
-    "corner WNS -23.1 ns, TNS -4465 ns). Two independent combinational",
-    "structures root-caused against the routed netlist - pkt_check's CRC-32",
-    "chain (axi_clk) and skid_buffer/pkt_align's byte-select mux (src_clk) -",
-    "close at 32/10 without touching RTL. This value only seeds early",
-    "synthesis-stage estimates; the SDC's own create_clock calls are what",
-    "actually govern P&R and signoff."
+    "10/32 did not close at the worst corner for a genuinely from-scratch",
+    "32/10-targeted run (verified twice, 2026-08-30 and 2026-09-12 - see",
+    "RESULTS.md). Re-swept against that same real routed netlist's real",
+    "parasitics, sourcing constraints/chan_top.sdc unmodified except for the",
+    "period values, found no plateau in either clock domain - src=12/axi=48",
+    "closes the whole design (worst slack +0.90 ns, TNS 0). This value only",
+    "seeds early synthesis-stage estimates; the SDC's own create_clock calls",
+    "are what actually govern P&R and signoff."
   ],
   "CLOCK_PORT": "axi_clk_i",
-  "CLOCK_PERIOD": 32,
+  "CLOCK_PERIOD": 48,
 
   "PNR_SDC_FILE": "dir::../constraints/chan_top.sdc",
   "SIGNOFF_SDC_FILE": "dir::../constraints/chan_top.sdc",

@@ -50,10 +50,51 @@
 # pkt_check's CRC chain and/or pkt_align's byte accumulator would let both
 # clocks run faster than this - not attempted this session; these numbers are
 # the "no RTL changes" answer, not a claim that faster is unreachable.
+#
+# CORRECTION (2026-09-14, found jointly by two concurrent sessions working
+# this repo - see RESULTS.md's "Correction" note for the full account): the
+# bisection above re-timed RUN_2026-08-28_19-41-37's real DEF + extracted
+# SPEF against substituted candidate periods - real parasitics, so the
+# specific numbers above are genuine and reproducible - but that physical
+# implementation was itself placed/routed/optimized targeting 6/10 ns (see
+# the paragraph above), not 32/10. A layout over-built for an aggressive 6/10
+# target predictably has slack left over when re-graded against a much
+# looser 32/10 requirement after the fact; that is NOT the same as what a
+# from-scratch synthesis+P&R run actually targeting 32/10 from the start
+# produces, since the tool calibrates its own optimization effort to
+# whatever period it is given. Two independent from-scratch 32/10-targeted
+# runs since (RUN_2026-08-30_20-00-29, and a DEFAULT_CORNER=nom_ss_100C_1v60
+# retarget experiment) both show real setup violations at the worst corner
+# despite this bisection - so treat 32/10 as validated for the *typical*
+# corner only, not the worst corner, until a genuinely from-scratch run
+# closes clean at the worst corner too.
+#
+# SECOND CORRECTION (2026-09-14, same day): the "no RTL change can close the
+# worst corner, axi_period plateaus at -3.23 ns no matter how far it goes"
+# claim two paragraphs up is ALSO an artifact of the same mistake - that
+# plateau was measured against RUN_2026-08-28_19-41-37 (the 6/10-targeted
+# netlist) too, with an additionally incomplete hand-written Tcl constraint
+# set that omitted this file's own set_input_delay/set_output_delay budgets
+# (30% of each period, reserved for board-level IO - e.g. ch_cause_o has an
+# axi_budget deadline, not the full axi_period). Re-swept against
+# RUN_2026-08-30_20-00-29 (the genuine 32/10-targeted netlist) by sourcing
+# THIS file unmodified except for the two period lines below (so every real
+# exception - IO budgets, CDC max_delay, driving_cell/load, max_transition -
+# stays exactly as signoff uses it, not reimplemented by hand): axi_clk alone
+# (src forced to 1000 ns) goes -7.90 ns at 32, -2.75 at 40, +2.41 ns (TNS 0)
+# at 48, and keeps climbing linearly past 100 ns - no plateau. src_clk alone
+# (axi forced to 1000 ns) goes -1.00 ns at 10, +0.90 ns (TNS 0) at 12, also
+# linear. Combined, src=12/axi=48 closes the whole design (+0.90 ns, TNS 0) -
+# verified against this same routed netlist's real parasitics. A genuinely
+# from-scratch run AT 12/48 (not a re-timing of a 10/32-targeted layout) is
+# the actual confirmation and is what these period values below now reflect -
+# see RESULTS.md for that run's outcome. If it holds, RTL pipelining of
+# pkt_check's CRC chain / pkt_align's byte accumulator is NOT required to
+# close chan_top's worst corner - a modest periods-only relaxation is.
 set src_clk_name src_clk
 set axi_clk_name axi_clk
-set src_period   10.0
-set axi_period   32.0
+set src_period   12.0
+set axi_period   48.0
 
 create_clock -name $src_clk_name -period $src_period [get_ports src_clk_i]
 create_clock -name $axi_clk_name -period $axi_period [get_ports axi_clk_i]
