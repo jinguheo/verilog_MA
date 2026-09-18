@@ -3,7 +3,7 @@ import TaskWorkspace, { type TaskId } from './TaskWorkspace'
 import type { Overview } from '../types'
 
 const tabs: Array<{ id: TaskId; label: string }> = [
-  { id: 'requirements', label: 'Requirements' }, { id: 'architecture', label: 'Architecture' }, { id: 'rtl', label: 'RTL Design' }, { id: 'verification', label: 'Verification' }, { id: 'formal', label: 'Formal / Security' }, { id: 'manufacturing', label: 'Physical Design' }, { id: 'review', label: 'Review / Triage' },
+  { id: 'requirements', label: 'Requirements' }, { id: 'architecture', label: 'Architecture' }, { id: 'rtl', label: 'RTL Design' }, { id: 'verification', label: 'Verification' }, { id: 'formal', label: 'Formal / Security' }, { id: 'manufacturing', label: 'Physical Design' }, { id: 'pnr_research', label: 'P&R Research' }, { id: 'review', label: 'Review / Triage' },
 ]
 
 export default function GeneralRtlPipeline({ data }: { data: Overview }) {
