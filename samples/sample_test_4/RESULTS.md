@@ -1117,9 +1117,6 @@ that corner: `timing__setup__wns = -8.4 ns`, `-150.4 ns` TNS, 926 violations.
 Root cause, found by walking every historical `chan_top/runs/RUN_*` directory
 for whatever check actually produced the "closes" claim:
 
-- Only **one** run (`RUN_2026-08-30_20-00-29` itself) ever reached
-  `final/metrics.json` - i.e. ever completed a real signoff. Every earlier
-  run died mid-flow.
 - The fast recheck tool used between P&R attempts
   (`tools/wsl/94_sdc_check.tcl`/`95_run_sdc_check.sh`) reads
   `06-yosys-synthesis/chan_top.nl.v` - the **pre-placement, pre-route**
@@ -1127,20 +1124,65 @@ for whatever check actually produced the "closes" claim:
   is only useful for checking CDC pin-pattern matches (its own header says
   "SDC syntax/match check"), not for any real delay number - with zero wire
   parasitics loaded, it cannot report a valid setup slack at any corner.
-- The nearest thing to a real routed check in the run history is
-  `RUN_2026-08-29_16-32-56/42-openroad-stamidpnr-3/`, a mid-flow STA
-  checkpoint that ran **one hour before detailed routing** (stage 42, vs.
-  detailed routing at stage 43) - so still global-route-estimated
-  parasitics, not extracted SPEF - and, critically, it only evaluated
-  **`nom_tt_025C_1v80`** (typical corner): `wns.max.rpt` shows `0.0`,
-  `ws.max.rpt` shows `+2.58 ns`. It never touched `nom_ss_100C_1v60` at all.
-- The completed run's own final metrics confirm the typical corner really
-  does close cleanly and consistently with that number:
-  `timing__setup__wns__corner:nom_tt_025C_1v80 = 0`,
-  `timing__setup__ws__corner:nom_tt_025C_1v80 = +2.36 ns`, 0 violations - a
-  close match to the pre-route estimate. So the "closes at 32/10" part of the
-  claim is genuinely true and reproducible, just for the *typical* corner
-  only.
+- A mid-flow checkpoint in the run history
+  (`RUN_2026-08-29_16-32-56/42-openroad-stamidpnr-3/`) ran one hour before
+  detailed routing - global-route-estimated parasitics, not extracted SPEF -
+  and only evaluated **`nom_tt_025C_1v80`** (typical corner): `wns.max.rpt`
+  shows `0.0`, `ws.max.rpt` shows `+2.58 ns`. Never touched
+  `nom_ss_100C_1v60`.
+
+**Correction (2026-09-14): the "verified against the routed design" claim
+does have a real source, found jointly with a concurrent session working the
+same repo** - an earlier pass through this investigation (above) wrongly
+said no pre-`RUN_2026-08-30_20-00-29` run ever reached real signoff, because
+only that run has a `final/` directory. `RUN_2026-08-28_19-41-37` was never
+opened to check - it turns out to run all 74 stages including
+`53-openroad-rcx` (real per-corner extracted SPEF:
+`53-openroad-rcx/{max,min,nom}/chan_top.*.spef` all present) and
+`54-openroad-stapostpnr` (real multi-corner signoff STA), it just never
+wrote a `final/` directory. Its own `54-openroad-stapostpnr/state_out.json`
+reports `timing__setup__wns__corner:max_ss_100C_1v60 = -23.46 ns` - matching
+RESULTS.md's own already-documented "first signoff attempt at 6/10 ns failed
+badly" account almost exactly (-23.1 ns there). Confirmed by checking the
+SDC actually in effect throughout that run, from `13-openroad-floorplan/`
+through `51-openroad-fillinsertion/`: `create_clock ... -period 6.0000`
+(`src_clk`) / `-period 10.0000` (`axi_clk`), unchanged start to finish. So
+this run's real, extracted-SPEF physical implementation was built to hit
+6/10 ns, not 32/10.
+
+The "32/10 closes, verified against the routed design" claim came from
+re-running OpenSTA against *this run's* real DEF + real extracted SPEF with
+a *different*, substituted SDC (candidate `axi`/`src` periods swapped in
+after the fact) - which is a legitimate technique (real parasitics don't
+change based on what period you later ask about) but answers a different
+question than it looks like it answers. A physical implementation that was
+placed, resized, buffered, and routed to fight for an aggressive 6 ns/10 ns
+target receives *more* optimization effort throughout the entire flow than
+one the tool is only ever asked to hit 32/10 ns for - so it is expected to
+have slack left over when re-graded against the much looser 32/10 ns
+requirement after the fact. That is not the same as what a **from-scratch**
+run targeting 32/10 ns from the first synthesis pass would produce, because
+the tool calibrates its own optimization effort to whatever target it is
+actually given. Both of this session's real, independent, from-scratch-
+targeting-32/10 runs - `RUN_2026-08-30_20-00-29` (`DEFAULT_CORNER`=typical)
+and the `DEFAULT_CORNER`=`nom_ss_100C_1v60` retarget experiment below - show
+the opposite of "closes," which is the answer that actually matters for an
+eventual tapeout (nobody ships a 6/10 ns-optimized layout and calls it a
+32/10 ns part - a real 32/10 ns chip gets synthesized and placed *for*
+32/10 ns from the start). **Conclusion stands, now with a full account of
+where the contradicting claim came from rather than an unexplained gap**:
+`chan_top` genuinely does not close at 10/32 ns for a from-scratch
+implementation at the worst corner, and needs either a slower period or the
+CRC/CDC-mux restructuring already flagged.
+
+Separately, the completed run's own final metrics confirm the *typical*
+corner really does close cleanly for a from-scratch 32/10 ns implementation:
+`timing__setup__wns__corner:nom_tt_025C_1v80 = 0`,
+`timing__setup__ws__corner:nom_tt_025C_1v80 = +2.36 ns`, 0 violations - a
+close match to the earlier pre-route estimate. So the "closes at 32/10"
+claim is genuinely true and reproducible for the *typical* corner specifically
+- just never true for the worst corner, at any of the three from-scratch
+implementations tried so far.
 
 **Conclusion**: `chan_top` at 10/32 ns closes fine at typical process/voltage/
 temperature, but was never actually checked at the worst corner

@@ -841,6 +841,241 @@ pending, or ask the user first.
 - Latest pushed commit: `b01bbee` (`Add Sample Test 4 (phases 1-2), close out Sample Test 2/3, dashboard flowcharts`).
 - `docs/session_notes/` and `third_party/uvm-core/` are intentionally untracked local directories; generated UVM output/logs are ignored.
 
+## Session 2026-08-30 (cont'd) — daq_subsystem top-level launched, chan_top timing claim now in doubt
+
+Stopped here per user request ("여기까지 하자" / "다음에 이어가자"). Nothing
+from this continuation has been committed - `git status` shows:
+```
+ M samples/sample_test_4/RESULTS.md
+ M samples/sample_test_4/mutants/perf_cnt_MUTANT.sv
+ M samples/sample_test_4/rtl/pkg/daq_pkg.sv
+ M samples/sample_test_4/rtl/stat/perf_cnt.sv
+?? samples/sample_test_4/asic/constraints/daq_subsystem.sdc
+?? samples/sample_test_4/asic/daq_subsystem/
+?? tools/wsl/100_run_daq_subsystem.sh
+```
+Ask the user before committing (they distinguish "commit" from "push" as
+separate explicit requests - see this file's own git-state convention below).
+Latest actual commit on disk is `b9da6e8`.
+
+**daq_subsystem (8-channel top) OpenLane run - first ever, likely still
+running in WSL.** Started via
+`wsl -d Ubuntu -- bash /mnt/d/MyWork/Veriolg_MA/tools/wsl/100_run_daq_subsystem.sh`,
+logging to `tools/wsl/logs/100c_daq_subsystem.log`. This process is a real
+WSL background job, independent of any Claude session state - it keeps
+running whether or not a session is attached (same as `chan_top`'s earlier
+resumed run did across a stop/restart this same day). To check on it:
+```
+wsl -d Ubuntu -- bash -lc "tail -n 30 /mnt/d/MyWork/Veriolg_MA/tools/wsl/logs/100c_daq_subsystem.log"
+wsl -d Ubuntu -- bash -lc "ps aux | grep -E 'openlane|yosys|openroad|magic' | grep -v grep"
+```
+At last check it was mid-synthesis (ABC technology mapping, ~107k cells pre-
+mapping - consistent with "well over 8x chan_top's ~29.5k final cells", as
+expected for 8 channels plus shared DMA/CSR/IRQ/perf logic). If it's finished
+by next session, check `asic/daq_subsystem/runs/RUN_*/final/metrics.json` for
+`design__violations`, `timing__setup__wns`/`__tns__`,
+`timing__setup_vio__count` at the worst corner
+(`nom_ss_100C_1v60`/`max_ss_100C_1v60`) - see the chan_top finding below for
+why the `design__violations` field alone is not enough to call it clean.
+`DIE_AREA` (3200x3200 um) and `CLOCK_PERIOD` (32 ns, clk_i) in
+`asic/daq_subsystem/config.json` are both first-pass guesses, not validated -
+expect to revisit once real placement/synthesis numbers exist.
+
+**Real RTL bug found and fixed: `perf_cnt.sv`'s `$countones()` crashes
+OpenLane's synthesis frontend.** Legal SystemVerilog, fine in Verilator and
+the sby/slang formal flow, but never exercised by any physical-design run
+before `daq_subsystem` (no earlier design used `perf_cnt.sv`). Fixed by
+moving the popcount into `daq_pkg::popcount` (package function, not a
+module-local one - a local one hits a *different* yosys-classic-frontend
+failure when called from inside a `generate for` block). Full root-cause
+writeup, plus why this exact package-function pattern is proven safe
+(`pkt_check.sv`'s `crc32_byte_step`, already exercised by `chan_top`'s
+completed run), is in `samples/sample_test_4/RESULTS.md`'s new "Physical
+design — daq_subsystem" section. Verified non-regressing: `tb_perf_cnt`,
+`tb_daq_subsystem`, and `MUT_PERF_BYTEWRONG` all still pass/kill correctly
+after the fix (`powershell -File samples\sample_test_4\scripts\run_block_tb.ps1
+-Only tb_perf_cnt,tb_daq_subsystem` and `-Mutant MUT_PERF_BYTEWRONG`).
+
+**Open question, NOT resolved - needs attention before trusting `chan_top`'s
+signoff status again.** `constraints/chan_top.sdc`'s own header claims 10/32 ns
+"closes cleanly" (positive slack) at the worst corner, verified against a
+routed netlist. This session's actual `chan_top` re-run
+(`RUN_2026-08-30_20-00-29`, completed to full signoff artifacts - GDS/LEF/
+SPEF all present) reports the opposite at that same corner:
+**`timing__setup__wns = -8.4 ns`, `timing__setup__tns = -150.4 ns`, 926 setup
+violations**. `design__violations: 0` in the same metrics file does NOT mean
+clean timing - that field tracks a different (DRC/power-grid) violation
+class; always check the `timing__setup__*` keys directly. The failing path
+(`54-openroad-stapostpnr/max_ss_100C_1v60/max.rpt`) runs from
+`u_cdc_fifo.fifo_rptr_q[4]` through an `xnor2` chain matching the already-
+documented CRC-32 root cause to `ch_cause_o[0]` - so the *diagnosis* still
+looks right, but the *severity* flatly contradicts "closes at 32". Two
+unconfirmed theories: the earlier bisection may have checked a narrower
+corner set or used a faster incremental re-STA on an already-routed netlist
+rather than a genuinely fresh placement; or something differs in the
+uncertainty/transition/corner setup between the two checks. Next session
+should either re-run the fast SDC-only check
+(`tools/wsl/95_run_sdc_check.sh`) against this exact routed netlist to see if
+it reproduces the discrepancy, or accept that `chan_top` needs a slower
+period / the CRC-chain restructuring the SDC already flagged as the real
+fix, and re-tune from there. Full detail in RESULTS.md.
+
+## Session 2026-09-12/14 — chan_top timing mystery resolved (jointly with a concurrent session), daq_subsystem still running
+
+Stopped here per user request ("다음에 이어서 하자" / "지금까지 저장하고 다음에 하도록 해줘").
+**Nothing committed this session** - only NEXT_SESSION.md and RESULTS.md were
+touched by me; ask before committing (established convention - "commit" and
+"push" are separate explicit requests from this user).
+
+**Another Claude session was concurrently active in this same repo
+throughout 9/14** (`veriolg-ma-48`), working the same `chan_top` timing
+question in parallel and coordinating over cross-session messages. Its own
+uncommitted changes are visible in `git status` alongside mine -
+`dashboard_server.py`, `my_dashboard/src/App.tsx`,
+`my_dashboard/src/views/PhysicalDesignStatus.tsx`,
+`my_dashboard/src/views/PhysicalDesignLive.tsx` (new),
+`my_dashboard/src/physical-design.css` (new), `pdk/` (new, untracked),
+`physical_design/` (new, untracked), `asic/chan_top/config.json`,
+`tools/wsl/111_run_chan_top_safe.sh` (new) - **not reviewed or authored by
+this thread**, don't assume familiarity with what they contain; ask that
+session (or the user) before touching them.
+
+**chan_top timing mystery - fully resolved, in three corrections layered on
+each other over one day:**
+1. `RUN_2026-08-30_20-00-29` (a genuine from-scratch 32/10 ns run) showed
+   real setup violations at the worst corner (`ss_100C_1v60`), contradicting
+   `chan_top.sdc`'s own header claim that 32/10 "closes cleanly, verified
+   against the routed design."
+2. Root-caused: that claim's numbers came from re-timing
+   `RUN_2026-08-28_19-41-37`'s real DEF+SPEF (a run I originally
+   mischaracterized as "died mid-flow" without checking it - it actually
+   completed all 74 stages) against a *substituted* SDC with looser candidate
+   periods. The catch, found jointly with the concurrent session: that
+   physical implementation was itself placed/routed targeting **6/10 ns**
+   (confirmed via the SDC in effect at every one of its stages,
+   floorplan through fillinsertion), not 32/10 - so it had slack to spare
+   when re-graded against a much looser requirement after the fact. A
+   `DEFAULT_CORNER=nom_ss_100C_1v60` from-scratch retarget experiment
+   (this session) independently confirmed the same conclusion: no single
+   corner-targeting choice closes both typical and worst corner at 10/32 ns
+   with this RTL - `chan_top.sdc` now carries a "CORRECTION" comment block
+   explaining this.
+3. **But then a second correction, same day**: the concurrent session
+   re-swept `RUN_2026-08-30_20-00-29` (this time using `chan_top.sdc`
+   unmodified except for the two period lines - so every real IO delay
+   budget / CDC max_delay / driving_cell exception stays exactly as signoff
+   uses it) and found the SDC's other headline claim - "axi_period plateaus
+   at -3.23 ns no matter how far you raise it, needs RTL pipelining" - is
+   ALSO an artifact of the same 6/10-targeted-netlist contamination. Against
+   the real 32/10-targeted netlist, there is no plateau: axi_clk alone
+   (src forced to 1000 ns) goes -7.90 ns (32) → -2.75 (40) → +2.41, TNS 0
+   (48), climbing linearly past 100 ns; src_clk alone goes -1.00 ns (10) →
+   +0.90 ns, TNS 0 (12). **Combined src=12/axi=48 closes the whole design
+   (+0.90 ns, TNS 0)** on this real netlist's real parasitics.
+   `chan_top.sdc` now has `src_period=12.0`/`axi_period=48.0` and a "SECOND
+   CORRECTION" comment with the full account.
+
+**Not yet confirmed as of session end, but looking very good**: the
+concurrent session was running a genuine from-scratch synthesis+P&R at
+12/48 ns (`RUN_2026-09-14_22-43-24`) to verify the re-timing prediction
+holds for an implementation actually optimized for 12/48 from the start
+(not just a relaxed re-check of the 10/32-targeted layout). Its config.json,
+the updated `chan_top.sdc` (12/48), and a new
+`tools/wsl/111_run_chan_top_safe.sh` are already committed as `fea27b7`
+("pending fresh-run confirmation"). Last word from that session before it
+also stopped: the run reached post-CTS (stage 36/74) with **setup already
++0.064 ns / TNS 0 at that checkpoint** - promising, but still a mid-flow
+estimate, not final signoff (routing + RCX + STAPostPNR still to go). The
+run is a real WSL background process and may still be going, or may have
+died the same way `daq_subsystem` has twice - check
+`ps aux | grep openroad` and this run's own log first. **Check
+`asic/chan_top/runs/RUN_2026-09-14_22-43-24/final/metrics.json` first
+thing** - if `timing__setup__wns` is clean at the worst corner there,
+`chan_top` needs NO RTL pipelining at all, just this period change - a
+materially better outcome than this session believed until today.
+RESULTS.md's own conclusion was deliberately left saying "RTL pipelining or
+slower period" (both stated as options) rather than rewritten again pending
+this confirmation - update it once that `final/metrics.json` is in hand,
+crediting both sessions' joint debugging (see the account above).
+
+**`daq_subsystem` (8-channel top) - still never completed a run.** Killed by
+session/computer teardown twice now (same failure mode both times - WSL
+background processes die when the whole Code session/computer closes, not
+an OpenLane bug). Relaunched a third time this session
+(`RUN_2026-09-14_21-42-52`, log `tools/wsl/logs/100e_daq_subsystem.log`) -
+was at `ResizerTimingPostCTS` (stage 36/78, 38,912 hold-violation endpoints
+being repaired) and still running when this session ended, elapsed >1h25m
+with no completed run to compare pace against (first-ever attempt to reach
+this deep). Real WSL process, keeps running independent of Claude Code
+session state - check `ps aux | grep openroad` and the log tail first thing
+next session; if genuinely dead (no matching process, log mtime stale),
+`rm -rf` the run dir and relaunch via
+`wsl -d Ubuntu -- bash /mnt/d/MyWork/Veriolg_MA/tools/wsl/100_run_daq_subsystem.sh`.
+Given cell count (~107k vs `chan_top`'s ~29.5k, i.e. 3.6x) and this project's
+own observed worse-than-linear P&R runtime scaling, budget considerably more
+than an hour for a real signoff attempt - no confirmed number exists yet.
+
 ## Storage constraint
 
 - C: drive has little free space. Do not install large tools, download dependencies, or place build caches/artifacts on C: unless the user explicitly approves it. Prefer the `D:\MyWork\Veriolg_MA` workspace or a user-designated non-C: location.
+
+## Session 2026-09-14 — Windows OpenLane/SKY130 installation and dashboard integration
+
+Stopped here at the user's request. Do not reinstall components that are
+already verified below.
+
+### Verified installation
+
+- WSL2 Ubuntu runs correctly (`WSL_OK x86_64`).
+- Docker Desktop Engine 29.6.2 is running.
+- Docker image `ghcr.io/efabless/openlane2:2.3.10` is installed.
+- Persistent SKY130 PDK revision
+  `0fe599b2afb6708d281543108caf8310912f54af` is enabled under
+  `D:\MyWork\Veriolg_MA\pdk\volare\sky130\versions\`.
+  Installed size measured 2.06 GB. Do not commit the `pdk/` directory.
+- OpenLane smoke test completed all 78/78 stages in 3m42s using the persistent
+  PDK. Synthesis, floorplan, placement, CTS, routing, STA and GDS generation
+  completed; Magic/KLayout DRC, Netgen LVS and antenna checks passed; setup
+  and hold violations were zero.
+
+### Dashboard implementation
+
+- `dashboard_server.py` now exposes `GET /api/physical-design`, dynamically
+  checks WSL/Docker/OpenLane/PDK, and analyzes OpenLane config files.
+- `POST /api/physical-design/configure` validates RTL and SDC paths and writes
+  a generated OpenLane config under
+  `physical_design/designs/<design>/config.json`. The selected SDC is assigned
+  to both `PNR_SDC_FILE` and `SIGNOFF_SDC_FILE`.
+- Installation evidence is stored in
+  `physical_design/install_status.json`.
+- The Physical Design UI is in
+  `my_dashboard/src/views/PhysicalDesignLive.tsx`, with styling in
+  `my_dashboard/src/physical-design.css`. It is mounted at the top of the
+  existing Physical Design task tab.
+- Dashboard services were restarted and verified:
+  API `http://127.0.0.1:8788/api/physical-design` = HTTP 200,
+  UI `http://127.0.0.1:5173` = HTTP 200.
+- Current automatic connection audit: 3/5 complete.
+  `chan_ctrl` (3/3 RTL + SDC), `chan_top` (15/15 + SDC), and
+  `daq_subsystem` (27/27 + SDC) are complete. `cnt_sat` and
+  `skid_buffer` have missing RTL references and no SDC; the UI shows these
+  gaps rather than treating them as ready.
+
+### Verification and next actions
+
+- React production build passed (`npm.cmd run build`).
+- Physical Design API imported and returned live installation/config data.
+- Full Python suite: 20 passed, 2 failed. The failures are stale expectations:
+  `test_toolchain.py` expects 10 tools but detection now returns 14;
+  `test_workflow.py` expects `openlane_config` to be missing even though
+  configs now exist. Update these tests before claiming a fully green suite.
+- Next priority: add dashboard run/cancel controls, launch OpenLane with the
+  selected config, stream logs, persist run state, and ingest final
+  metrics/GDS/DRC/LVS into the Physical Design tab.
+- Before enabling a run button, mount the common `D:\MyWork` root in Docker
+  so configs referencing both `Veriolg_MA` and the external
+  `D:\MyWork\verilog` corpus resolve consistently.
+- Review/fix the incomplete `cnt_sat` and `skid_buffer` configs, then use
+  the new form to connect the user's actual RTL top and SDC.
+- Existing unrelated and concurrent worktree changes were preserved. Nothing
+  was committed or pushed by this task.
