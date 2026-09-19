@@ -969,8 +969,8 @@ full-stack mutation. That plan document itself flags phase 6 as likely the
 largest remaining phase; this session made a real, verified start on the
 formal piece and nothing else. Not claiming more than that.
 
-**Three blocks formally proven, each an unbounded k-induction proof plus full
-mutation coverage** — every documented mutant in `mutants/` for these three
+**Four blocks formally proven, each an unbounded k-induction proof plus full
+mutation coverage** — every documented mutant in `mutants/` for these four
 modules is caught by the specific property that states the guarantee it
 breaks, not a downstream symptom:
 
@@ -979,8 +979,9 @@ breaks, not a downstream symptom:
 | `skid_buffer.sv` | `formal/skid_buffer.sby` — PASS by k-induction | `MUT_SKID_READY`, `MUT_SKID_BYPASS`, `MUT_SKID_DRAIN` |
 | `cnt_sat.sv` | `formal/cnt_sat.sby` — PASS by k-induction | `MUT_CNT_WRAP`, `MUT_CNT_CLEAR_LOSE` |
 | `dma_sched.sv` | `formal/dma_sched.sby` — PASS by k-induction | `MUT_SCHED_STICKYLOCK`, `MUT_SCHED_EARLYUNLOCK`, `MUT_SCHED_DBLREADY` |
+| `daq_csr.sv` | `formal/daq_csr.sby` — PASS by k-induction | `MUT_CSR_IRQNOHW`, `MUT_CSR_NODECERR`, `MUT_CSR_GOALL` |
 
-All three are single-clock, so - unlike Sample Test 3's CDC blocks - a genuine
+All four are single-clock, so - unlike Sample Test 3's CDC blocks - a genuine
 unbounded proof is the right target and closes on the first attempt (no
 induction-helper invariants needed).
 
@@ -1013,6 +1014,55 @@ collapses `daq_pkg`'s `DescAlignBytes` (`= AxiDw/8`) to 1, and
 declare a reversed `[-1:0]` bit range - the package elaborates as a whole, so
 a width choice with no connection to `dma_sched` itself still broke the build.
 
+**`daq_csr.sv`'s proof reuses `daq_status_sync.sby`'s exact three-property
+split for a simultaneous-hardware-set/software-clear W1C register** (per-bit
+hardware-always-wins, a clear takes effect on any bit it names that hardware
+did not also set, an untouched bit is preserved exactly), applied per channel
+to `CH_IRQ_STATE`. Also proves the address decode is genuinely one-hot (at
+most one `sel_*` live at once - the module header's own claim about why the
+read mux and write-commit path cannot drift), `CH_DESC_CTRL`'s go pulse fires
+for the addressed channel only and never lingers, channel isolation (a write
+naming channel 0 provably leaves channel 1's `CH_CTRL`/`CH_DESC_BASE`/
+`CH_IRQ_ENABLE` storage untouched, and vice versa), and `irq_o`'s summary
+formula. `NumCh` overridden to 2, same reasoning as `dma_sched.sv`'s proof -
+2 is the minimum that can exercise isolation at all.
+
+**The pre-existing block-TB mutant file (`mutants/daq_csr_MUTANT.sv`) was
+diffed against golden before reuse, not trusted on the strength of its own
+git history** - the lesson from phase 3's `chan_ctrl_MUTANT.sv` staleness
+incident applies to every mutant file, not just the one it happened to. It
+was current (comments aside), so the same three `ifdef` defects
+(`MUT_CSR_IRQNOHW`/`MUT_CSR_NODECERR`/`MUT_CSR_GOALL`) were reused directly
+for the formal mutation runs rather than re-authored.
+
+**A reset-check timing bug in the harness itself, not the RTL, on the first
+attempt.** A first version gated the reset-defaults assertions on a
+registered `just_reset_q` flag (`<= !past_valid`, one clock behind
+`past_valid` itself) and immediately found a "failure": `CH_IRQ_STATE`
+nonzero right after reset. Root cause was the checker, not `daq_csr.sv` -
+that extra register delay meant the check landed one real operating cycle
+*after* the reset branch's defaults were visible, by which point
+`ch_cause_i` (a free, unconstrained input the proof lets the solver pick
+freely) had already legitimately been latched in, exactly as designed.
+Fixed by checking reset defaults on `rst_ni && !past_valid` directly - the
+same cycle boundary `dma_sched_formal.sv`'s own `past_valid`-gated
+properties already use to mean "first real cycle," just without adding a
+second register in front of it. The general lesson: in a k-induction
+harness built from this project's own `cyc`/`rst_ni`/`past_valid` reset
+generator, `!past_valid` already *is* "the first cycle out of reset" -
+building a second, further-delayed flag on top of it checks the wrong cycle.
+
+**A path lesson: `sby`'s process crashed silently (`returncode=3221225781`,
+i.e. `STATUS_DLL_NOT_FOUND`) with an empty `design.log`** when `yosys.exe`
+was launched with only `oss-cad-suite\bin` on `PATH` and not
+`oss-cad-suite\lib` too - the same DLL-shadowing/missing-runtime class of
+issue this project's Verilator scripts already carry a PATH-ordering fix
+for, just manifesting as a bare crash instead of a `STATUS_ENTRYPOINT_NOT_FOUND`
+this time. Both directories need to be on `PATH` before invoking `sby`
+directly (`scripts/run_lint.ps1`'s own `$env:PATH` line already does this
+for the lint/block-TB flows; there is no equivalent wrapper script for
+`sby` yet).
+
 **A path/PATH lesson for any future `read_slang` harness that pulls in
 external OpenTitan `prim` files**: `sby`'s `[files]` section accepts absolute
 Windows paths directly (unlike OpenLane's config, which refuses anything
@@ -1036,13 +1086,12 @@ flat `src/` directory regardless of its original path - before anywhere else.
 **What genuinely remains for phase 6**, in the order it likely makes sense to
 attempt them:
 
-- Formal for the other ~12 blocks. Good next targets, roughly in order of
-  value-for-effort: `daq_csr.sv` (per-bit W1C, same proven pattern as Sample
-  Test 3's `daq_status_sync.sby`), `axil_slave.sv` (AXI4-Lite handshake
-  compliance), `wr_track.sv` (outstanding-write bookkeeping never goes
-  negative or leaks). `chan_ctrl.sv`'s FSM and the two AXI masters'
-  burst/4KB-split logic are higher-value but also harder targets - expect them
-  to take real iteration, the way `skid_buffer.sv` and `dma_sched.sv` did here.
+- Formal for the other ~11 blocks. Good next targets, roughly in order of
+  value-for-effort: `axil_slave.sv` (AXI4-Lite handshake compliance),
+  `wr_track.sv` (outstanding-write bookkeeping never goes negative or
+  leaks). `chan_ctrl.sv`'s FSM and the two AXI masters' burst/4KB-split
+  logic are higher-value but also harder targets - expect them to take real
+  iteration, the way `skid_buffer.sv` and `dma_sched.sv` did here.
 - The integration UVM environment (AXI4-Lite agent, 8 source agents, AXI4
   slave memory model with latency/SLVERR/DECERR, reference model, scoreboard)
   - the largest single item, not started.
@@ -1515,3 +1564,32 @@ changed. Raw before/after run directories:
 `asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02` (new); `asic/cnt_sat/runs/
 RUN_2026-08-26_12-43-50` (baseline) vs `asic/cnt_sat/runs/
 RUN_2026-09-14_22-03-02` (new).
+
+## chan_top — 12/48 ns from-scratch confirmation, real result (2026-09-18)
+
+The from-scratch synthesis+P&R at `src_period=12.0`/`axi_period=48.0`
+(`111_run_chan_top_safe.sh`, `RUN_2026-09-18_21-19-11`) completed to full
+signoff. Real result, not an estimate:
+
+| | 10/32 ns (`RUN_2026-08-30_20-00-29`) | 12/48 ns (`RUN_2026-09-18_21-19-11`) |
+|---|---|---|
+| cells | 29,510 | 31,147 |
+| setup WNS (worst of 9, `max_ss_100C_1v60`) | -8.40 ns | **-2.73 ns** |
+| setup TNS (worst of 9) | -150.4 ns | **-3.43 ns** |
+| setup violation count | 926 | **5** |
+| hold WNS / TNS / violations | (clean) | 0 / 0 / 0 (still clean) |
+
+**Massive improvement (926 → 5 violating endpoints, -150 → -3.4 ns TNS) but
+NOT fully closed.** The mid-flow re-timing prediction ("no plateau, closes
+clean at 12/48") was directionally right - this is dramatically better - but
+a genuinely fresh implementation still leaves 5 endpoints short by a small
+margin. The remaining violators span both domains:
+`ch_cause_o[0]`/`ch_cause_o[2]` (axi_clk, the same CRC/CDC-mux path
+documented throughout this investigation) and several internal src_clk
+flops. Given how close this is (-2.73 ns out of a 48 ns period, ~5.7%
+short) and that TNS is already tiny, the next cheap thing to try is a
+modest further period increase (e.g. 14/52 or 14/56) via the same
+from-scratch confirmation pattern, before concluding RTL pipelining is
+actually required - unlike the 926-violation case, 5 endpoints this close
+is exactly the regime where a small period bump plausibly finishes the job
+without touching RTL at all. Not yet tried this session.

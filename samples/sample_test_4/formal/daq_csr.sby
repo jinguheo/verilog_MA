@@ -1,0 +1,17 @@
+[options]
+mode prove
+depth 20
+
+[engines]
+smtbmc
+
+[script]
+plugin -i slang
+read_slang --top daq_csr_formal -DDAQ_NUM_CH=2 axi_pkg.sv daq_pkg.sv daq_csr.sv daq_csr_formal.sv
+prep -top daq_csr_formal
+
+[files]
+rtl/pkg/axi_pkg.sv
+rtl/pkg/daq_pkg.sv
+rtl/csr/daq_csr.sv
+formal/daq_csr_formal.sv
