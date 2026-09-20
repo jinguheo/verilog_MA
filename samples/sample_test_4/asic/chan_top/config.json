@@ -67,5 +67,15 @@
     "src_crc buses, which is the other thing that has bitten this flow before."
   ],
   "DIE_AREA": [0, 0, 800, 800],
-  "PL_TARGET_DENSITY_PCT": 40
+  "PL_TARGET_DENSITY_PCT": 40,
+
+  "//DIODE_INSERTION_STRATEGY": [
+    "Default strategy left 17 pin / 16 net antenna violations at signoff",
+    "(RUN_2026-09-20_19-36-35), all barely over the side-area ratio limit",
+    "(1.01x-1.67x) - repair-antennas (stage 41) runs before detailed routing",
+    "(stage 43) and nothing re-repairs after, so routing can still nudge",
+    "borderline nets over. Strategy 4 inserts diodes more liberally to leave",
+    "headroom against exactly this."
+  ],
+  "DIODE_INSERTION_STRATEGY": 4
 }

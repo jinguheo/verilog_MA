@@ -1,0 +1,163 @@
+{
+  "name": "Sample Test 4 — measured OpenLane hardened blocks",
+  "generated_at": "2026-09-19T08:07:13.130847+00:00",
+  "source": "Completed OpenLane final LEF/GDS/metrics",
+  "connectivity_source": "declared Sample Test 4 architecture; geometry, views, and PPA are auto-extracted from completed OpenLane runs",
+  "coordinate_scale": {
+    "units_per_micron": 10
+  },
+  "seed": 4400,
+  "outline": {
+    "width": 4150,
+    "height": 4120,
+    "width_um": 415,
+    "height_um": 412,
+    "unit": "1/10 micrometer"
+  },
+  "blocks": [
+    {
+      "name": "channel_control",
+      "module": "chan_ctrl",
+      "instance": "u_chan_ctrl",
+      "width": 3000,
+      "height": 3000,
+      "width_um": 300.0,
+      "height_um": 300.0,
+      "edge": 0,
+      "group": 1,
+      "fixed_aspect": true,
+      "source_run": "samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02",
+      "views": {
+        "lef": "samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/lef/chan_ctrl.lef",
+        "gds": "samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/gds/chan_ctrl.gds",
+        "def": "samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/def/chan_ctrl.def",
+        "nl": "samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/nl/chan_ctrl.nl.v",
+        "pnl": "samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/pnl/chan_ctrl.pnl.v",
+        "json_h": "samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/json_h/chan_ctrl.h.json"
+      },
+      "measured": {
+        "instance_count": 1369,
+        "instance_area_um2": 2905.29,
+        "die_area_um2": 90000,
+        "wirelength_um": 5830,
+        "power_total_w": 0.0003128401003777981,
+        "setup_wns_ns": 0,
+        "hold_wns_ns": 0
+      }
+    },
+    {
+      "name": "saturating_counter",
+      "module": "cnt_sat",
+      "instance": "u_cnt_sat",
+      "width": 849,
+      "height": 957,
+      "width_um": 84.945,
+      "height_um": 95.665,
+      "edge": 0,
+      "group": 1,
+      "fixed_aspect": true,
+      "source_run": "samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02",
+      "views": {
+        "lef": "samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/lef/cnt_sat.lef",
+        "gds": "samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/gds/cnt_sat.gds",
+        "def": "samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/def/cnt_sat.def",
+        "nl": "samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/nl/cnt_sat.nl.v",
+        "pnl": "samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/pnl/cnt_sat.pnl.v",
+        "json_h": "samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/json_h/cnt_sat.h.json"
+      },
+      "measured": {
+        "instance_count": 285,
+        "instance_area_um2": 2128.29,
+        "die_area_um2": 8126.26,
+        "wirelength_um": 4483,
+        "power_total_w": 0.0003462088934611529,
+        "setup_wns_ns": 0,
+        "hold_wns_ns": 0
+      }
+    },
+    {
+      "name": "skid_buffer",
+      "module": "skid_buffer",
+      "instance": "u_skid_buffer",
+      "width": 1015,
+      "height": 1122,
+      "width_um": 101.5,
+      "height_um": 112.22,
+      "edge": 0,
+      "group": 1,
+      "fixed_aspect": true,
+      "source_run": "samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27",
+      "views": {
+        "lef": "samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/lef/skid_buffer.lef",
+        "gds": "samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/gds/skid_buffer.gds",
+        "def": "samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/def/skid_buffer.def",
+        "nl": "samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/nl/skid_buffer.nl.v",
+        "pnl": "samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/pnl/skid_buffer.pnl.v",
+        "json_h": "samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/json_h/skid_buffer.h.json"
+      },
+      "measured": {
+        "instance_count": 443,
+        "instance_area_um2": 4341.66,
+        "die_area_um2": 11390.3,
+        "wirelength_um": 6243,
+        "power_total_w": 0.0012163618812337518,
+        "setup_wns_ns": 0,
+        "hold_wns_ns": 0
+      }
+    }
+  ],
+  "pins": [
+    {
+      "name": "clk_i",
+      "x": 2075,
+      "y": 4120,
+      "side": "top"
+    },
+    {
+      "name": "rst_ni",
+      "x": 622,
+      "y": 4120,
+      "side": "top"
+    },
+    {
+      "name": "data_i",
+      "x": 0,
+      "y": 2266,
+      "side": "left"
+    },
+    {
+      "name": "data_o",
+      "x": 4150,
+      "y": 2266,
+      "side": "right"
+    }
+  ],
+  "nets": [
+    [
+      "channel_control",
+      "saturating_counter",
+      "skid_buffer",
+      "clk_i"
+    ],
+    [
+      "channel_control",
+      "saturating_counter",
+      "skid_buffer",
+      "rst_ni"
+    ],
+    [
+      "channel_control",
+      "skid_buffer",
+      "data_i"
+    ],
+    [
+      "skid_buffer",
+      "saturating_counter",
+      "data_o"
+    ],
+    [
+      "channel_control",
+      "saturating_counter"
+    ]
+  ]
+}

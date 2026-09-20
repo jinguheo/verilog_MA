@@ -1,0 +1,21 @@
+{
+  "MACROS": {
+    "sky130_ef_ip__adc3v_12bit": {
+      "gds": [
+        "dir::../../../analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.gds"
+      ],
+      "lef": [
+        "dir::../../../analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.lef"
+      ],
+      "instances": {
+        "u_adc": {
+          "location": [50.0, 50.0],
+          "orientation": "N"
+        }
+      }
+    }
+  },
+  "VERILOG_FILES_BLACKBOX": [
+    "dir::../../../analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.blackbox.v"
+  ]
+}

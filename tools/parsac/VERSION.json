@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/IntelLabs/parsac.git",
+  "commit": "bff459ba7cc4b71d3d78f016e146f9a71f5b62ab",
+  "repository_status": "archived_read_only",
+  "archived_on": "2026-04-06",
+  "license": "Apache-2.0",
+  "runtime": {
+    "python": "3.9.25",
+    "torch": "2.7.1+cpu",
+    "numpy": "2.0.1",
+    "host": "Windows native",
+    "compiler": "Microsoft Visual Studio Build Tools 2026 x64"
+  }
+}

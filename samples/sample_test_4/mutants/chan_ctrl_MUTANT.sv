@@ -261,9 +261,19 @@ module chan_ctrl
   // while this module sits in ChIdle. Without this gate that would raise a
   // real interrupt cause in the CSR for a packet software never even started
   // in the session it is about to begin.
-  assign ch_cause_o[IrqCauseDone]    = accepting & pkt_done_i & ~crc_err_i & ~len_err_i;
-  assign ch_cause_o[IrqCauseErr]     = accepting & pkt_done_i & len_err_i;
-  assign ch_cause_o[IrqCauseCrc]     = accepting & pkt_done_i & crc_err_i;
-  assign ch_cause_o[IrqCauseFifoOvf] = 1'b0;
+  logic [NumIrqCause-1:0] cause_d;
+  assign cause_d[IrqCauseDone]    = accepting & pkt_done_i & ~crc_err_i & ~len_err_i;
+  assign cause_d[IrqCauseErr]     = accepting & pkt_done_i & len_err_i;
+  assign cause_d[IrqCauseCrc]     = accepting & pkt_done_i & crc_err_i;
+  assign cause_d[IrqCauseFifoOvf] = 1'b0;
+
+  // Registered on the way out - see golden chan_ctrl.sv for why. Mirrored
+  // here unchanged (not part of any MUT_CTRL_* defect) so this file stays
+  // structurally in sync with golden, per the project's own stale-mutant
+  // lesson.
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) ch_cause_o <= '0;
+    else         ch_cause_o <= cause_d;
+  end
 
 endmodule

@@ -1,0 +1,22 @@
+{
+  "name": "sky130_ef_ip__adc3v_12bit",
+  "pdk": "sky130A",
+  "source": "analog/third_party/sky130_ef_ip__adc3v_12bit",
+  "dimensions_um": [223.71, 293.365],
+  "views": {
+    "lef": "analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.lef",
+    "gds": "analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.gds",
+    "spice": "analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.spice",
+    "verilog": "analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.blackbox.v",
+    "liberty": null
+  },
+  "power_domains": {
+    "digital": {"power": "vccd", "ground": "vssd"},
+    "analog": {"power": "vdda", "ground": "vssa"}
+  },
+  "status": {
+    "physical_views": "exportable",
+    "pin_contract": "validated_by_script",
+    "timing": "not_characterized"
+  }
+}

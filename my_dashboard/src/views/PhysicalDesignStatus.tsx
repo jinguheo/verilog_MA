@@ -4,6 +4,8 @@
 // has actually run, with real numbers, so the tab is not just a checklist.
 // Snapshot as of 2026-08-29 16:40 KST — refresh the numbers by hand after the
 // next run finishes (see the "how to refresh" note at the bottom).
+import PhysicalDesignLive from './PhysicalDesignLive'
+import ParsacFloorplan from './ParsacFloorplan'
 
 const toolchain = [
   ['flow', 'OpenLane 2 v2.3.10', 'Python 3.12 venv (~/.venvs/openlane312), native — not the ORFS/OpenROAD-from-source track, which was abandoned (see tools/wsl/README.md)'],
@@ -14,15 +16,28 @@ const toolchain = [
 ] as const
 
 const blocks = [
-  ['skid_buffer', '완료 · signoff clean', 'DRC 0 · LVS 0 · XOR 0 · antenna 0'],
-  ['cnt_sat', '완료 · signoff clean', 'DRC 0 · LVS 0 · XOR 0 · antenna 0'],
-  ['chan_ctrl', '완료 · signoff clean (실제 SDC 적용)', '단일 클럭. 폴백 SDC 대비 setup 여유 4.25→1.98ns로 낮아짐 — IO 제약이 없어서 좋아 보였던 것'],
-  ['chan_top', '진행 중 · 30/78 단계 (mid-PnR STA)', '첫 시도(6/10ns)는 타이밍 신호오프 실패 → 원인 규명 후 SDC 수정(10/32ns)하여 재실행 중'],
+  ['skid_buffer', '완료 · signoff clean', 'DRC 0 · LVS 0 · XOR 0 · antenna 0 · SYNTH_STRATEGY 탐색 결과 이미 최적'],
+  ['cnt_sat', '완료 · signoff clean', 'DRC 0 · LVS 0 · XOR 0 · antenna 0 · AREA 1 전환 후 전체 P&R 재검증'],
+  ['chan_ctrl', '완료 · signoff clean (실제 SDC 적용)', '단일 클럭. AREA 2 전환 후 전체 P&R 재검증. 폴백 SDC 대비 setup 여유 4.25→1.98ns로 낮아짐 — IO 제약이 없어서 좋아 보였던 것'],
+  ['chan_top', '완료 · 주기 스윕 결론 남 (RUN_2026-09-20_19-36-35)', '12/52ns 전체 signoff 완주. 12/48보다 오히려 악화(WNS −2.73→−3.38ns) + 안테나 위반 신규 발생. 주기만 올려서는 안 닫힌다는 게 확정 — 다음은 RTL 파이프라이닝. DRC 0 · LVS Passed'],
+  ['daq_subsystem (8채널 top)', '재실행 중 · worst-corner 추정 (RUN_2026-09-20_19-36-36)', '6번째 시도 — 앞선 5번 모두 세션/PC 절전으로 WSL이 죽어 완주 못 함. 이번엔 stage 34(CTS) hold 수리를 사상 처음으로 통과, 계속 진행 중. ~107k 셀(chan_top의 3.6배)'],
 ] as const
 
+// 진단(두 병목)은 그대로 유효 — 실패 경로의 시작/끝 신호명이 모든 재실행에서
+// 일치. 틀렸던 건 "어느 주기에서 닫히는가"라는 결론 쪽이고, 그 정정 기록은
+// 아래 timingHistory 표와 constraints/chan_top.sdc의 CORRECTION 블록 3개에 있음.
 const rootCauses = [
-  ['axi_clk 도메인', 'pkt_check.sv의 CRC-32가 8단 crc32_byte_step을 조합 로직으로 직렬 연결 (각 단이 내부적으로 8비트 시프트-XOR 재귀) — 사실상 64단 조합 체인. axi_period=32ns에서 여유 확보.'],
-  ['src_clk 도메인 (별개 원인)', 'skid_buffer.sv의 출력 mux가 pkt_align.sv의 가변 인덱스 바이트 누산기(nxt_data[byte_cnt_q*8+:8])에 물려 있음. axi_clk를 아무리 늘려도 최종 −3.23ns에서 안 움직인 이유 — 고정 6ns인 src_clk 내부 문제라 axi_clk와 무관했음. src_period=10ns에서 여유 확보.'],
+  ['axi_clk 도메인', 'pkt_check.sv의 CRC-32가 8단 crc32_byte_step을 조합 로직으로 직렬 연결 (각 단이 내부적으로 8비트 시프트-XOR 재귀) — 사실상 64단 조합 체인, 종점은 ch_cause_o[0]/[2]. 12/48ns 재합성 후에도 남은 5개 위반이 전부 이 경로 (SDC 3차 정정 기준).'],
+  ['src_clk 도메인 (별개 원인)', 'skid_buffer.sv의 출력 mux가 pkt_align.sv의 가변 인덱스 바이트 누산기(nxt_data[byte_cnt_q*8+:8])에 물려 있음 — axi_clk와 무관한 src_clk 내부 문제. src_period=12ns에서 모든 코너·모든 실행 0 위반으로 확정.'],
+] as const
+
+// 세 번 정정된 chan_top 타이밍 결론 — 매번 "실측"이었지만 무엇을 재는지가 달랐음.
+const timingHistory = [
+  ['6/10 ns (최초, 시뮬레이션 주기 그대로)', 'RUN_2026-08-28_19-41-37', '전체 완주했으나 signoff 실패', '이 넷리스트가 이후 두 오판의 원인 — 6/10 목표로 과잉 최적화된 레이아웃'],
+  ['10/32 ns "closes cleanly" (8/28 주장)', '위 넷리스트 재타이밍', '❌ 오판', '6/10용으로 만든 레이아웃을 느슨한 10/32로 다시 채점하니 여유가 남아 보였을 뿐. 처음부터 10/32로 돌린 RUN_2026-08-30_20-00-29는 worst corner WNS −8.4ns, 926 위반'],
+  ['"axi를 아무리 올려도 −3.23ns 플래토" (8/28 주장)', '같은 넷리스트 + 수기 Tcl', '❌ 오판', '같은 오염 + IO delay 예산(주기의 30%)을 빠뜨린 수기 제약. 진짜 10/32 넷리스트로 SDC 원본을 써서 재스윕하니 플래토 없음 — axi 48ns에서 +2.41, src 12ns에서 +0.90, 선형 개선 (9/14, 두 세션 공동)'],
+  ['12/48 ns 처음부터 재합성 (9/18)', 'RUN_2026-09-18_21-19-11', '위반 926→5, TNS −150→−3.4ns', '실제 결과. 방향은 맞았으나 WNS −2.73ns로 완전 클로징은 아님. 남은 5개는 전부 axi 도메인'],
+  ['12/52 ns 처음부터 재합성 (9/20)', 'RUN_2026-09-20_19-36-35', '❌ 오히려 악화', 'WNS −2.73→−3.38ns, TNS −3.4→−5.3ns (같은 두 신호 ch_cause_o[0]/[2]). 원인: SDC의 clock_uncertainty/transition이 주기의 %로 커져서(axi 48→52ns면 마진도 2.4→2.6ns), 64단 CRC 체인에 누적되며 주기 증가분보다 마진 손해가 더 컸음. 안테나 위반도 새로 발생(핀17·넷16). 주기 스윕으로는 안 닫힘 — RTL 파이프라이닝만 남음'],
 ] as const
 
 // 상용 EDA/파운드리 PDK vs 이 프로젝트가 실제 쓰는 오픈소스 스택.
@@ -74,7 +89,9 @@ const whySlow = [
 
 export default function PhysicalDesignStatus() {
   return <>
-    <section className="card"><div className="card-title"><div><small className="kicker">LIVE STATUS · 2026-08-29 16:40</small><h2>Sample Test 4 — ASIC 물리 설계 진행 상황</h2></div><span className="warning-badge">chan_top 진행 중</span></div>
+    <PhysicalDesignLive/>
+    <ParsacFloorplan/>
+    <section className="card"><div className="card-title"><div><small className="kicker">STATUS SNAPSHOT · 2026-09-18 23:20</small><h2>Sample Test 4 — ASIC 물리 설계 진행 상황</h2></div><span className="warning-badge">chan_top · daq_subsystem 동시 실행 중</span></div>
       <div className="data-table"><table><thead><tr><th>블록</th><th>상태</th><th>근거</th></tr></thead><tbody>{blocks.map(([name, status, note]) => <tr key={name}><td><code>{name}</code></td><td>{status.includes('완료') ? <span className="ok-badge">{status}</span> : <span className="warning-badge">{status}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
       <p className="rtl-guide-note">산출물 위치: <code>samples/sample_test_4/asic/&lt;block&gt;/runs/RUN_*/final/</code> (GDS·LEF·netlist·SPEF·5-corner .lib). RTL은 이 작업 중 어느 것도 수정되지 않았습니다.</p>
     </section>
@@ -83,7 +100,20 @@ export default function PhysicalDesignStatus() {
     </section>
     <section className="card"><div className="card-title"><div><small className="kicker">chan_top — 타이밍 실패 원인 규명</small><h2>두 개의 독립된 조합 로직 병목</h2></div></div>
       <div className="check-list">{rootCauses.map(([title, detail]) => <p key={title}><b>{title}</b><span>{detail}</span></p>)}</div>
-      <p className="rtl-guide-note">둘 다 실측 기반 진단입니다 — 넷리스트에서 실제 시작점 신호명을 확인하고(<code>fifo_rptr_q[2]</code>, <code>u_pkt_align.u_skid.skid_valid_q</code>), 배치·배선 완료된 설계 + 추출된 SPEF 기생 성분으로 클럭 주기를 스윕해 실제로 닫히는 지점을 찾았습니다 (매 시도마다 전체 P&R을 다시 돌리지 않고 OpenSTA/OpenROAD 배치 스크립트로 수 초 안에 확인). RTL 파이프라이닝(CRC 체인, 바이트 누산기)을 하면 더 빠른 클럭도 가능하지만 이번엔 시도하지 않았습니다 — 10/32ns는 "RTL 변경 없이 닫히는" 답입니다.</p>
+      <p className="rtl-guide-note">둘 다 실측 기반 진단이고 지금도 유효합니다 — 넷리스트에서 실제 시작점 신호명을 확인하고(<code>fifo_rptr_q[2]</code>, <code>u_pkt_align.u_skid.skid_valid_q</code>), 배치·배선 완료된 설계 + 추출된 SPEF로 주기를 스윕했습니다. <b>하지만 "어느 주기에서 닫히는가"는 두 번 틀렸습니다</b> — 아래 표. 현재 근거 있는 결론: src 12ns는 확정 clean, axi는 48ns에서 5개 남았고 52ns로 재실행 중. RTL 파이프라이닝(CRC 체인, 바이트 누산기) 없이 주기 조정만으로 닫힐 가능성이 높은 구간이지만, 12/52 완주 전까지는 확정 아님.</p>
+    </section>
+    <section className="card"><div className="card-title"><div><small className="kicker">chan_top — 타이밍 결론이 세 번 바뀐 기록</small><h2>같은 "실측"이라도 무엇을 재는지가 달랐다</h2></div></div>
+      <div className="data-table"><table><thead><tr><th>주장 / 시도</th><th>근거 실행</th><th>결과</th><th>왜 그렇게 나왔나</th></tr></thead><tbody>{timingHistory.map(([claim, run, result, why]) => <tr key={claim}><td><b>{claim}</b></td><td><code>{run}</code></td><td>{result.startsWith('❌') ? <span className="warning-badge">{result}</span> : result}</td><td>{why}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note"><b>교훈 두 가지.</b> (1) 이미 배치·배선된 레이아웃을 다른 SDC로 "다시 채점"한 값은 그 레이아웃이 원래 어떤 목표로 최적화됐는지에 종속됩니다 — 툴은 주어진 주기에 맞춰 최적화 노력을 조절하므로, 빡빡한 목표로 만든 레이아웃은 느슨한 요구에 여유가 남아 보이는 게 당연합니다. 처음부터 그 주기로 돌린 실행만이 근거입니다. (2) 주기 스윕 시 수기 Tcl 대신 <b>signoff SDC 원본을 그대로 source</b>해야 합니다 — IO delay 예산, CDC max_delay, driving_cell 같은 예외 하나만 빠져도 결론이 뒤집힙니다. 두 오판 모두 <code>constraints/chan_top.sdc</code>의 CORRECTION 블록 3개와 RESULTS.md에 사후 기록돼 있습니다.</p>
+      <p className="rtl-guide-note"><b>비교 기준 실행이 사라진 문제 (원인 미확인)</b>: 12/48 결과의 근거인 <code>RUN_2026-09-18_21-19-11</code> 디렉터리가 디스크에 없습니다. 실행 자체는 실재했고 완주했음이 로그로 확인되지만(<code>tools/wsl/logs/111_chan_top_1248.log</code>에 해당 run 태그와 <code>Flow complete</code>), 8/29 것까지 포함해 다른 run 디렉터리는 모두 남아있는 와중에 이것만 없어졌습니다. <b>러너 스크립트가 지운 것은 아닙니다</b> — <code>111</code>/<code>102</code>의 <code>rm -rf</code>는 shim 경로(<code>~/.cache/openlane-tools-*</code>)에만 적용되고 run 디렉터리는 건드리지 않음을 확인했습니다. 누가/무엇이 지웠는지는 확인되지 않았습니다. 결과적으로 수치는 로그와 RESULTS.md에 남아 신뢰 가능하나 GDS/metrics.json 재검증은 불가 — 기준이 될 실행은 별도 보존(복사 또는 태그)하는 정책이 필요합니다.</p>
+    </section>
+    <section className="card"><div className="card-title"><div><small className="kicker">daq_subsystem — 8채널 전체 top</small><h2>첫 완주를 향해 4번째 시도 중</h2></div></div>
+      <div className="check-list">
+        <p><b>왜 아직 한 번도 안 끝났나</b><span>OpenLane 버그가 아니라 실행 환경 문제. WSL 백그라운드 프로세스는 Claude 세션과 무관하게 살아있지만, PC/전체 Code 세션이 닫히면 함께 죽습니다 — 3번 다 그렇게 중단. 매 시도가 처음부터 다시 시작(합성부터).</span></p>
+        <p><b>이번 시도의 범위</b><span><code>--to OpenROAD.STAMidPNR-3</code> + <code>DEFAULT_CORNER=nom_ss_100C_1v60</code> — 전체 signoff가 아니라 worst corner(ss) 기준 배치 후 타이밍 감부터 확보. 현재 detailed placement(33/78), 1시간 12분 경과. 완주 시 첫 실측 숫자.</span></p>
+        <p><b>이미 잡은 RTL 버그 1건</b><span><code>perf_cnt.sv</code>의 <code>$countones()</code>가 OpenLane 합성 프론트엔드를 크래시 — Verilator/sby에선 멀쩡한 합법 SV. <code>daq_pkg::popcount</code> 패키지 함수로 옮겨 해결, TB/mutation 비회귀 확인 (<code>a4dbd21</code>).</span></p>
+        <p><b>검증 안 된 첫 추정치</b><span><code>DIE_AREA</code> 3200×3200µm, <code>CLOCK_PERIOD</code> 32ns — 둘 다 실측 전 감. ~107k 셀(chan_top 29.5k의 3.6배)에 P&R 시간은 비선형으로 늘어나므로 전체 signoff는 시간 단위 이상 예산 필요.</span></p>
+      </div>
     </section>
     <section className="card"><div className="card-title"><div><small className="kicker">상용 EDA vs 오픈소스 — 무엇이 다른가</small><h2>왜 실제 반도체 회사는 이 도구들을 안 쓰는가</h2></div></div>
       <div className="data-table"><table><thead><tr><th>항목</th><th>상용 EDA</th><th>이 프로젝트(오픈소스)</th></tr></thead><tbody>{eda.map(([item, commercial, oss]) => <tr key={item}><td><b>{item}</b></td><td>{commercial}</td><td>{oss}</td></tr>)}</tbody></table></div>
@@ -117,7 +147,7 @@ export default function PhysicalDesignStatus() {
         <p><b>대시보드에서</b><span>Sample Test 4 → Layout 탭 — 렌더링된 이미지 (전체 다이 / 60µm / 20µm 배율), sky130A 레이어 색상 적용.</span></p>
         <p><b>KLayout GUI로 직접</b><span><code>tools\open_layout.bat &lt;design&gt;</code> — WSL의 KLayout이 WSLg를 통해 Windows 화면에 바로 뜹니다. 추가 설치 불필요.</span></p>
       </div>
-      <p className="rtl-guide-note">이 카드는 스냅샷입니다 — 자동 갱신되지 않습니다. chan_top 재실행이 끝나면 상단 상태 표와 결과를 다시 반영해야 합니다. 최신 로그: <code>tools/wsl/logs/87e_chan_top_fixed.log</code>, run 디렉터리: <code>samples/sample_test_4/asic/chan_top/runs/</code> 최신 항목.</p>
+      <p className="rtl-guide-note">이 페이지의 표들은 스냅샷입니다 — 맨 위 <b>Physical Design Live</b> 패널만 API로 자동 갱신됩니다. 두 실행이 끝나면 상단 상태 표와 타이밍 기록 표를 다시 반영해야 합니다. 실행 중 로그: chan_top <code>tools/wsl/logs/111b_chan_top_1252.log</code>, daq_subsystem <code>tools/wsl/logs/102_daq_subsystem_estimate.log</code>. 살아있는지 확인: <code>wsl -d Ubuntu -- bash -lc "ps aux | grep openroad | grep -v grep"</code>.</p>
     </section>
   </>
 }

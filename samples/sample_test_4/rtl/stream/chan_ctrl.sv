@@ -234,9 +234,32 @@ module chan_ctrl
   // while this module sits in ChIdle. Without this gate that would raise a
   // real interrupt cause in the CSR for a packet software never even started
   // in the session it is about to begin.
-  assign ch_cause_o[IrqCauseDone]    = accepting & pkt_done_i & ~crc_err_i & ~len_err_i;
-  assign ch_cause_o[IrqCauseErr]     = accepting & pkt_done_i & len_err_i;
-  assign ch_cause_o[IrqCauseCrc]     = accepting & pkt_done_i & crc_err_i;
-  assign ch_cause_o[IrqCauseFifoOvf] = 1'b0;
+  logic [NumIrqCause-1:0] cause_d;
+  assign cause_d[IrqCauseDone]    = accepting & pkt_done_i & ~crc_err_i & ~len_err_i;
+  assign cause_d[IrqCauseErr]     = accepting & pkt_done_i & len_err_i;
+  assign cause_d[IrqCauseCrc]     = accepting & pkt_done_i & crc_err_i;
+  assign cause_d[IrqCauseFifoOvf] = 1'b0;
+
+  // Registered on the way out, found necessary by real signoff data, not
+  // added speculatively: crc_err_i sits behind pkt_check.sv's ~64-stage
+  // crc32_byte_step chain, and ch_cause_o carries a tighter-than-full-period
+  // IO delay budget in chan_top's signoff SDC (constraints/chan_top.sdc).
+  // Combinational, that chain plus this gate plus the pin's own routing all
+  // had to land inside that reduced budget in one cycle - real from-scratch
+  // signoff runs (RESULTS.md, chan_top 12/48 and 12/52 ns) both show that is
+  // exactly what fails to close at the worst corner, on exactly this path
+  // (ch_cause_o[IrqCauseDone]/[IrqCauseCrc]), and that a further period
+  // increase alone makes it worse (SDC's uncertainty/transition margins
+  // scale with the period, eating the extra budget the longer period was
+  // supposed to buy back). A registered output costs nothing functionally:
+  // every consumer already treats ch_cause_o as a one-cycle pulse it must
+  // catch with its own sticky-OR/latch, never something read in lockstep
+  // with the eop beat's own acceptance cycle (see tb_chan_ctrl.sv's and
+  // tb_chan_top.sv's cause_seen/done_cause_seen pattern) - delaying its
+  // external visibility by one clk_i cycle changes no observable contract.
+  always_ff @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) ch_cause_o <= '0;
+    else         ch_cause_o <= cause_d;
+  end
 
 endmodule

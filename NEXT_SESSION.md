@@ -1079,3 +1079,168 @@ already verified below.
   the new form to connect the user's actual RTL top and SDC.
 - Existing unrelated and concurrent worktree changes were preserved. Nothing
   was committed or pushed by this task.
+
+## Session 2026-09-18 — Analog and memory design dashboard
+
+This work is isolated under `analog/`, `analog_optimizer.py`, and the new
+dashboard tab. It did not stop or modify the concurrent `chan_top` and
+`daq_subsystem` OpenLane runs.
+
+### Installed public resources
+
+- SKY130 Efabless 12-bit SAR ADC plus its CDAC and clocked-comparator
+  dependencies; IIC-JKU SKY130 ADC reference.
+- OpenFASoC temperature-sensor, digital-LDO, and Glayout generator sources.
+- Efabless analog IP template, CACE source, and IHP Analog Academy reference.
+- OpenRAM, SKY130 SRAM macro configurations, SRAM22 SKY130 hard macros, and
+  Efabless PSRAM/QSPI controller RTL.
+- Isolated CACE 2.11.0 environment at `analog/.venv-cace`; Xschem, ngspice,
+  Magic, Netgen, KLayout, and sky130A are available in WSL.
+- Large third-party sources, the CACE venv, and generated studies are excluded
+  by `.gitignore`; their inventory remains in `analog/catalog.json`.
+
+### Implemented behavior
+
+- `analog_optimizer.py` normalizes circuit/PDK/voltage/performance/area/
+  power and memory requirements, ranks compatible public candidates, and
+  records studies under `analog/runs/<id>/study.json`.
+- Supported requirement families are ADC, DAC, comparator, LDO, temperature
+  sensor, custom analog, SRAM, and external memory controller.
+- SRAM hard macro/generator choices are explicitly separated from the
+  PSRAM/QSPI external-memory controller. SRAM22 silicon-measurement evidence
+  is weighted above unmeasured examples.
+- DRC=0 and LVS match are hard gates. PPA is never fabricated: every candidate
+  stays `not_measured` until a real PEX/post-layout characterization adapter
+  supplies values.
+- API: `GET /api/analog` and `POST /api/analog/select`.
+- UI: top-level **Analog & Memory** tab with requirements form, candidate
+  ranking, blockers/evidence, nine-stage optimization tracker, installed
+  toolchain, and public IP/artifact inventory.
+
+### Verification and remaining work
+
+- `python -m unittest tests.test_analog_optimizer`: 4/4 passed.
+- `python -m py_compile analog_optimizer.py dashboard_server.py`: passed.
+- `npm.cmd run build` in `my_dashboard`: passed.
+- API was restarted independently on port 8788; do not use the broad restart
+  script while the unrelated IPv6 Vite instance on port 5173 is open.
+- Candidate selection and status tracking are executable now. Automatic
+  schematic characterization, sizing search, constraint-driven analog
+  placement/routing, DRC/LVS execution, PEX/PPA Pareto optimization, and hard
+  macro export are intentionally marked `tool-ready` or `planned`, not
+  falsely complete. Implement these as per-family adapters next, starting with
+  CACE characterization of the 12-bit ADC and SRAM22/OpenRAM integration.
+
+## Session 2026-09-19 — OpenFASoC generator continuation
+
+- Created isolated `analog/.venv-openfasoc` with pandas, NumPy, matplotlib,
+  SciPy, Pillow, CairoSVG, LTspice parser, Mako, gdstk, and gdsfactory 7.7.0.
+- Expanded the OpenFASoC sparse checkout with generator common modules,
+  `platform_config.json`, and SKY130 HD/HVL platform data.
+- Verified both generator entry points and real Verilog generation:
+  temperature sensor produced five RTL files; LDO produced two RTL files,
+  selected a 13-cell power-transistor array, and estimated 2637.47596049829
+  square micrometers before physical implementation.
+- Added `generate_verilog` and `generate_macro` actions to
+  `analog_runner.py`. Generated files and logs are persisted per job.
+- Added a resource gate: OpenFASoC macro/GDS generation reports
+  `openlane_busy` instead of launching while Veriolg_MA digital OpenLane
+  processes are active.
+- Added matching dashboard buttons and result fields. Python syntax, eight
+  targeted tests, and the React production build all passed.
+- At session end, fresh `chan_top` and `daq_subsystem` OpenLane runs were
+  active. They were not stopped or modified. Next session should first check
+  those runs; after they finish, use the Analog & Memory tab to execute an
+  OpenFASoC `generate_macro` job and validate GDS/LEF/SPICE plus DRC/LVS.
+
+## Session 2026-09-19 — both OpenLane runs relaunched, dashboard corrected against reality
+
+User direction restated explicitly this session: **P&R optimization in physical
+design is the main work** from here on; RTL design and analog design are both
+in scope as tracks feeding it, but the optimization side is the focus.
+
+### Both overnight runs died again, and both are relaunched
+
+`chan_top` (12/52 ns full signoff) and `daq_subsystem` (worst-corner estimate)
+were both found dead with no `final/metrics.json` - logs simply truncate
+mid-flow with no error, the same session/host-teardown mode this file has
+documented four times now. Last positions reached before dying: `chan_top`
+stage 42 (`STAMidPNR-3`, typical-corner setup TNS 0 confirmed by then),
+`daq_subsystem` stage 34 (post-CTS hold repair, iteration 0 of 39,505
+violating endpoints).
+
+Relaunched from scratch (OpenLane starts a fresh `RUN_*`, nothing carries
+over): `chan_top` = `RUN_2026-09-19_16-03-34`, `daq_subsystem` =
+`RUN_2026-09-19_16-03-40`. Verified both alive via `ps` with exactly one
+pipeline each (no duplicates). Check with:
+
+    wsl -d Ubuntu -e bash -lc "ps aux | grep -E 'openlane|openroad|yosys' | grep -v grep"
+    wsl -d Ubuntu -e bash -lc "ls -d /mnt/d/MyWork/Veriolg_MA/samples/sample_test_4/asic/chan_top/runs/RUN_2026-09-19_16-03-34/[0-9]* | tail -1"
+
+**Two launch-mechanism traps hit while relaunching, both worth knowing:**
+1. `setsid nohup ... & disown` inside `wsl -d Ubuntu -e bash -lc '...'`
+   silently does nothing - the log file is never even created. Do not trust
+   it as a detachment strategy here.
+2. `wsl -d Ubuntu -e bash /mnt/d/...script.sh` (script path as a bare
+   argument, no `-lc` wrapper) fails with exit 127 - Git Bash's MSYS path
+   conversion rewrites `/mnt/d/...` into
+   `C:/Program Files/Git/mnt/d/...` before `wsl.exe` ever sees it. **Always
+   wrap as** `wsl -d Ubuntu -e bash -lc "bash /mnt/d/..."`, which is what
+   works and what every earlier successful launch in this repo used.
+
+### A claim of mine was wrong and is corrected
+
+I had written (dashboard + my own session notes) that `RUN_2026-09-18_21-19-11`
+- the 12/48 ns run whose 926→5 violation improvement is the current headline
+result - was deleted because `111_run_chan_top_safe.sh` does `rm -rf` on run
+directories each invocation. **That is false.** Both `111` and `102` only
+`rm -rf` their *shim* directory (`~/.cache/openlane-tools-*`); neither touches
+`runs/`. The directory is genuinely missing while every other run dir back to
+8/29 survives, and **nothing confirms what removed it**. The 12/48 numbers
+themselves remain trustworthy (that run's tag and `Flow complete` are both in
+`tools/wsl/logs/111_chan_top_1248.log`, and RESULTS.md records the metrics),
+but its GDS/`metrics.json` cannot be re-examined. Corrected in the dashboard
+to say exactly this rather than assert a cause. **Worth adopting: copy or tag
+any run that becomes a comparison baseline**, since something in this
+environment evidently can remove them.
+
+### Dashboard corrected against current reality
+
+`my_dashboard/src/views/PhysicalDesignStatus.tsx` and
+`views/SampleTest4.tsx` carried several claims that later work had already
+overturned - they now match what the runs actually show:
+- chan_top's "closes cleanly at 10/32 ns" and the "axi_period plateaus at
+  -3.23 ns, needs RTL pipelining" conclusion were both still presented as
+  current. Both are artifacts of re-grading a 6/10-targeted netlist (see the
+  9/12-14 entry above). Replaced with a five-row timing-history table that
+  shows each claim, the run it came from, and why it read that way - the two
+  overturned rows are explicitly marked wrong rather than deleted, since the
+  *method* error (re-timing a layout optimized for a different target; hand
+  written Tcl that omits the signoff SDC's IO budgets) is the reusable lesson.
+- The two root-cause diagnoses (CRC-32 combinational chain on axi_clk;
+  skid_buffer/pkt_align variable-index accumulator on src_clk) are unchanged
+  and still hold - only the "which period closes it" conclusion was wrong.
+- `daq_subsystem` was absent from the page entirely; now has its own card
+  (why it has never completed, this attempt's reduced scope, the
+  `$countones()` synthesis crash already fixed in `a4dbd21`, and the fact
+  that `DIE_AREA` 3200² / 32 ns are unvalidated first guesses).
+- Toolchain described as "WSL + Docker" with `--dockerized` invocations;
+  actually native `~/.venvs/openlane312` now. Fixed in both files.
+- `SampleTest4.tsx` said daq_subsystem synthesis was "아직 시작 전"; it is on
+  its fifth attempt. `dma_sched` genuinely is still unstarted (verified: no
+  `asic/dma_sched/` directory) and is left saying so.
+
+Verified with `npm.cmd run build` (tsc + vite, passed) and
+`python -m py_compile dashboard_server.py`. Nothing committed - the working
+tree also holds a concurrent session's `ParsacFloorplan.tsx`, `AnalogDesign`,
+`PhysicalDesignLive`, `pdk/`, `physical_design/`, `analog/` work that is not
+mine to commit.
+
+**Next**: when the two runs land, read
+`final/metrics.json` → `timing__setup__wns`/`__tns`/`__vio__count` at the
+worst corner (**not** `design__violations`, which is a DRC/power-grid class
+and reads 0 even with 926 setup violations), record in RESULTS.md, and update
+the dashboard's status table + timing-history table. If 12/52 closes, chan_top
+needs no RTL pipelining at all. Then the actual P&R optimization work per
+RESULTS.md's "P&R optimization options in this OpenLane 2.3.10 install"
+section (line ~1202).

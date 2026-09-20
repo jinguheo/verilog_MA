@@ -1,0 +1,92 @@
+{
+  "MACRO_PLACEMENT_CFG": "dir::macro_placement.cfg",
+  "MACROS": {
+    "chan_ctrl": {
+      "instances": {
+        "u_chan_ctrl": {
+          "location": [
+            0.0,
+            0.0
+          ],
+          "orientation": "N"
+        }
+      },
+      "lef": [
+        "dir::../../../samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/lef/chan_ctrl.lef"
+      ],
+      "gds": [
+        "dir::../../../samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/gds/chan_ctrl.gds"
+      ],
+      "nl": [
+        "dir::../../../samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/nl/chan_ctrl.nl.v"
+      ],
+      "pnl": [
+        "dir::../../../samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/pnl/chan_ctrl.pnl.v"
+      ],
+      "json_h": [
+        "dir::../../../samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/json_h/chan_ctrl.h.json"
+      ]
+    },
+    "cnt_sat": {
+      "instances": {
+        "u_cnt_sat": {
+          "location": [
+            300.0,
+            0.0
+          ],
+          "orientation": "N"
+        }
+      },
+      "lef": [
+        "dir::../../../samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/lef/cnt_sat.lef"
+      ],
+      "gds": [
+        "dir::../../../samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/gds/cnt_sat.gds"
+      ],
+      "nl": [
+        "dir::../../../samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/nl/cnt_sat.nl.v"
+      ],
+      "pnl": [
+        "dir::../../../samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/pnl/cnt_sat.pnl.v"
+      ],
+      "json_h": [
+        "dir::../../../samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/json_h/cnt_sat.h.json"
+      ]
+    },
+    "skid_buffer": {
+      "instances": {
+        "u_skid_buffer": {
+          "location": [
+            300.0,
+            95.7
+          ],
+          "orientation": "N"
+        }
+      },
+      "lef": [
+        "dir::../../../samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/lef/skid_buffer.lef"
+      ],
+      "gds": [
+        "dir::../../../samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/gds/skid_buffer.gds"
+      ],
+      "nl": [
+        "dir::../../../samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/nl/skid_buffer.nl.v"
+      ],
+      "pnl": [
+        "dir::../../../samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/pnl/skid_buffer.pnl.v"
+      ],
+      "json_h": [
+        "dir::../../../samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/json_h/skid_buffer.h.json"
+      ]
+    }
+  },
+  "PARSAC_PROVENANCE": {
+    "source_result": "result.json",
+    "seed": 4407,
+    "outline_um": [
+      415.0,
+      412.0
+    ],
+    "validation": "boundary and pairwise overlap checks passed"
+  }
+}

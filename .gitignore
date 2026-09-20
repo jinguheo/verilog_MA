@@ -31,5 +31,24 @@ tools/wsl/logs/
 oss-cad-suite/
 third_party/installers/
 third_party/uvm-core/
+
+# Installed analog tool environments, third-party sources and generated runs.
+analog/.venv-cace/
+analog/.venv-openfasoc/
+analog/third_party/
+analog/runs/
+analog/jobs/
+analog/build/
 docs/session_notes/
 .claude/settings.local.json
+
+# SkyWater PDK install (volare), ~2GB - reinstallable, not source. See
+# NEXT_SESSION.md's 2026-09-14 entry.
+/pdk/
+
+# Stray Python venv accidentally created at the repo root (pyvenv.cfg's own
+# "command" line shows `python3 -m venv /mnt/d/MyWork/Veriolg_MA` - it should
+# have been created in a subdirectory). Not source, do not commit.
+/bin/
+/lib/
+/pyvenv.cfg

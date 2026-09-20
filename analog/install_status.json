@@ -1,0 +1,36 @@
+{
+  "updated_at": "2026-09-19T17:05:00+09:00",
+  "pdk": {
+    "name": "sky130A",
+    "path_wsl": "/home/oem/eda/pdk/sky130A",
+    "status": "available"
+  },
+  "tools": [
+    {"name": "Xschem", "status": "available", "purpose": "schematic capture and netlisting", "path": "/usr/bin/xschem"},
+    {"name": "ngspice", "status": "available", "purpose": "schematic and post-layout SPICE simulation", "path": "/usr/bin/ngspice"},
+    {"name": "Magic", "status": "available", "purpose": "custom layout, extraction and DRC", "path": "/usr/bin/magic"},
+    {"name": "Netgen", "status": "available", "purpose": "layout versus schematic", "path": "/usr/bin/netgen-lvs"},
+    {"name": "KLayout", "status": "available", "purpose": "GDS inspection and independent DRC", "path": "/usr/bin/klayout"},
+    {"name": "CACE 2.11.0", "status": "available", "purpose": "PVT, Monte Carlo and circuit characterization", "path": "analog/.venv-cace/bin/cace"},
+    {"name": "OpenFASoC Python", "status": "available", "purpose": "temperature-sensor, LDO and Glayout generation", "path": "analog/.venv-openfasoc/bin/python"}
+  ],
+  "optimization": {
+    "candidate_selection": "implemented",
+    "pdk_filter": "implemented",
+    "requirement_normalization": "implemented",
+    "step_tracking": "implemented",
+    "schematic_simulation": "adapter-implemented; electrical benches required per circuit",
+    "device_sizing_search": "OpenFASoC model search verified for temperature sensor and LDO",
+    "analog_placement_search": "OpenFASoC macro adapter implemented; resource-gated while OpenLane runs",
+    "analog_routing_search": "OpenFASoC macro adapter implemented; resource-gated while OpenLane runs",
+    "drc_lvs_gate": "ADC per-job LVS adapter verified: Netgen LVS match; KLayout DRC=0; Magic DRC=103 remains open",
+    "memory_macro_selection": "Requirement-matched SRAM22/SKY130 selection with complete-view rejection and LEF area evidence",
+    "pex_ppa_pareto": "planned",
+    "macro_export": "artifact audit and OpenFASoC generation adapters implemented"
+  },
+  "safety_policy": {
+    "physical_gate": "DRC violations must be zero and LVS must match",
+    "ppa_policy": "Only measured post-layout values participate in optimization",
+    "unknown_metrics": "not_measured"
+  }
+}

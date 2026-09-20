@@ -1,0 +1,217 @@
+{
+  "status": "passed",
+  "generated_at": "2026-09-19T07:09:58.422221+00:00",
+  "tool": "IntelLabs PARSAC",
+  "mode": "Windows-native parallel coarse floorplanning",
+  "source_model": "Sample Test 2 — hierarchical synchronous FIFO (coarse model)",
+  "steps_per_run": 500,
+  "runs": 8,
+  "workers": 2,
+  "outline": {
+    "width": 180,
+    "height": 120,
+    "unit": "abstract placement unit"
+  },
+  "pins": [
+    {
+      "name": "clk",
+      "x": 90,
+      "y": 120
+    },
+    {
+      "name": "rst_ni",
+      "x": 10,
+      "y": 120
+    },
+    {
+      "name": "wdata_i",
+      "x": 0,
+      "y": 65
+    },
+    {
+      "name": "rdata_o",
+      "x": 180,
+      "y": 65
+    }
+  ],
+  "best": {
+    "seed": 4306,
+    "cost": {
+      "white_space": 24.251805985552117,
+      "wirelength": 654.0,
+      "area": 7752.0,
+      "edge_violations": 0.0,
+      "cluster_fragments": 1.0,
+      "rectilinear_fragments": 0.0,
+      "total": 2.5811746417421064,
+      "width_penalty": 0.0,
+      "height_penalty": 0.0,
+      "preplaced_cost": 0.0
+    },
+    "blocks": [
+      {
+        "name": "fifo_control",
+        "width": 38,
+        "height": 26,
+        "group": 1,
+        "fixed_aspect": true,
+        "x": 0,
+        "y": 54
+      },
+      {
+        "name": "fifo_memory_0",
+        "width": 48,
+        "height": 34,
+        "group": 1,
+        "fixed_aspect": true,
+        "x": 38,
+        "y": 54
+      },
+      {
+        "name": "fifo_memory_1",
+        "width": 48,
+        "height": 34,
+        "group": 1,
+        "fixed_aspect": true,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "name": "read_pointer",
+        "width": 24,
+        "height": 20,
+        "edge": 1,
+        "group": 2,
+        "fixed_aspect": true,
+        "x": 0,
+        "y": 34
+      },
+      {
+        "name": "write_pointer",
+        "width": 24,
+        "height": 20,
+        "edge": 2,
+        "group": 2,
+        "fixed_aspect": true,
+        "x": 24,
+        "y": 34
+      },
+      {
+        "name": "output_mux",
+        "width": 30,
+        "height": 22,
+        "edge": 2,
+        "fixed_aspect": true,
+        "x": 0,
+        "y": 80
+      }
+    ]
+  },
+  "run_costs": [
+    {
+      "seed": 4300,
+      "white_space": 24.251805985552117,
+      "wirelength": 674.0,
+      "area": 7752.0,
+      "edge_violations": 0.0,
+      "cluster_fragments": 1.0,
+      "rectilinear_fragments": 0.0,
+      "total": 2.595239339351108,
+      "width_penalty": 0.0,
+      "height_penalty": 0.0,
+      "preplaced_cost": 0.0
+    },
+    {
+      "seed": 4301,
+      "white_space": 24.1343669250646,
+      "wirelength": 663.0,
+      "area": 7740.0,
+      "edge_violations": 1.0,
+      "cluster_fragments": 1.0,
+      "rectilinear_fragments": 0.0,
+      "total": 5.923551910168287,
+      "width_penalty": 0.0,
+      "height_penalty": 0.0,
+      "preplaced_cost": 0.0
+    },
+    {
+      "seed": 4302,
+      "white_space": 37.92811839323467,
+      "wirelength": 742.0,
+      "area": 9460.0,
+      "edge_violations": 0.0,
+      "cluster_fragments": 1.0,
+      "rectilinear_fragments": 0.0,
+      "total": 2.7114408732601256,
+      "width_penalty": 0.0,
+      "height_penalty": 0.0,
+      "preplaced_cost": 0.0
+    },
+    {
+      "seed": 4303,
+      "white_space": 19.912711402073104,
+      "wirelength": 676.0,
+      "area": 7332.0,
+      "edge_violations": 1.0,
+      "cluster_fragments": 0.0,
+      "rectilinear_fragments": 0.0,
+      "total": 3.908283669527946,
+      "width_penalty": 0.0,
+      "height_penalty": 0.0,
+      "preplaced_cost": 0.0
+    },
+    {
+      "seed": 4304,
+      "white_space": 36.28472222222222,
+      "wirelength": 682.0,
+      "area": 9216.0,
+      "edge_violations": 1.0,
+      "cluster_fragments": 0.0,
+      "rectilinear_fragments": 0.0,
+      "total": 3.994363132911392,
+      "width_penalty": 0.0,
+      "height_penalty": 0.0,
+      "preplaced_cost": 0.0
+    },
+    {
+      "seed": 4305,
+      "white_space": 19.912711402073104,
+      "wirelength": 676.0,
+      "area": 7332.0,
+      "edge_violations": 1.0,
+      "cluster_fragments": 0.0,
+      "rectilinear_fragments": 0.0,
+      "total": 3.908283669527946,
+      "width_penalty": 0.0,
+      "height_penalty": 0.0,
+      "preplaced_cost": 0.0
+    },
+    {
+      "seed": 4306,
+      "white_space": 24.251805985552117,
+      "wirelength": 654.0,
+      "area": 7752.0,
+      "edge_violations": 0.0,
+      "cluster_fragments": 1.0,
+      "rectilinear_fragments": 0.0,
+      "total": 2.5811746417421064,
+      "width_penalty": 0.0,
+      "height_penalty": 0.0,
+      "preplaced_cost": 0.0
+    },
+    {
+      "seed": 4307,
+      "white_space": 24.251805985552117,
+      "wirelength": 654.0,
+      "area": 7752.0,
+      "edge_violations": 0.0,
+      "cluster_fragments": 1.0,
+      "rectilinear_fragments": 0.0,
+      "total": 2.5811746417421064,
+      "width_penalty": 0.0,
+      "height_penalty": 0.0,
+      "preplaced_cost": 0.0
+    }
+  ],
+  "caveat": "PoC geometry is an engineering model. Confirm the selected placement with OpenLane/OpenROAD placement and signoff."
+}

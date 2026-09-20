@@ -1,0 +1,24 @@
+{
+  "updated_at": "2026-09-14T13:22:32+09:00",
+  "openlane_version": "2.3.10",
+  "pdk": "sky130A",
+  "pdk_revision": "0fe599b2afb6708d281543108caf8310912f54af",
+  "pdk_size_gb": 2.06,
+  "tools": [
+    {"name": "Yosys", "status": "available", "purpose": "RTL synthesis"},
+    {"name": "OpenROAD/OpenSTA", "status": "available", "purpose": "P&R and STA"},
+    {"name": "Magic 8.3.489", "status": "available", "purpose": "GDS and DRC"},
+    {"name": "KLayout 0.29.4", "status": "available", "purpose": "GDS and DRC"},
+    {"name": "Netgen 1.5.278", "status": "available", "purpose": "LVS"}
+  ],
+  "smoke_test": {
+    "status": "passed",
+    "stages": "78/78",
+    "duration": "00:03:42",
+    "drc": "passed",
+    "lvs": "passed",
+    "antenna": "passed",
+    "setup_violations": 0,
+    "hold_violations": 0
+  }
+}

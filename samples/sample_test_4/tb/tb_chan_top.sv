@@ -167,6 +167,12 @@ module tb_chan_top;
     @(negedge src_clk);
     send_packet(AxiBw * 2 + 3, 1'b0, 1'b1);
     while (got_pkt_count < exp_pkt_count) @(negedge axi_clk);
+    // chan_ctrl.sv now registers ch_cause_o (added to close chan_top's own
+    // signoff timing - see the module header), so the cause pulse trails
+    // the eop beat's own forwarding by one axi_clk cycle. One extra cycle
+    // of settle margin before checking the sticky latch, same technique
+    // as everywhere else this project waits out a registered pulse.
+    repeat (2) @(negedge axi_clk);
     if (got_bytes.size() != exp_bytes.size()) begin
       $display("ERROR: phase1 byte count got %0d expected %0d", got_bytes.size(), exp_bytes.size());
       errors++;

@@ -1,0 +1,43 @@
+.pd-install-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+.pd-install {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+}
+.pd-install i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+.pd-install i.online { background: var(--success); }
+.pd-install small, .pd-install b, .pd-install span { display: block; }
+.pd-install small, .pd-install span { color: var(--text-muted); font-size: var(--text-xs); }
+.pd-tools { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-4); }
+.pd-tools span { padding: var(--sp-2) var(--sp-3); border-radius: 999px; background: var(--success-soft); color: var(--success); font-size: var(--text-xs); }
+.pd-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); margin: var(--sp-4) 0 var(--sp-5); padding: var(--sp-4); background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.pd-form label { display: grid; gap: var(--sp-2); font-size: var(--text-sm); font-weight: 600; }
+.pd-form .wide { grid-column: 1 / -1; }
+.pd-form input, .pd-form textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font: 12px var(--font-mono); }
+.pd-path { display: block; max-width: 360px; margin-top: var(--sp-1); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.parsac-form { display: grid; grid-template-columns: minmax(260px, 2fr) repeat(3, minmax(100px, 1fr)) auto; gap: var(--sp-3); align-items: end; margin: var(--sp-4) 0; }
+.parsac-form label { display: grid; gap: var(--sp-2); font-size: var(--text-sm); font-weight: 600; }
+.parsac-form input, .parsac-form select { min-width: 0; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); }
+.parsac-progress { display: grid; gap: var(--sp-2); margin: var(--sp-4) 0; }
+.parsac-progress div { display: flex; justify-content: space-between; gap: var(--sp-3); color: var(--text-muted); font-size: var(--text-sm); }
+.parsac-progress progress { width: 100%; height: 10px; accent-color: var(--accent); }
+@media (max-width: 900px) {
+  .pd-install-grid { grid-template-columns: repeat(2, 1fr); }
+  .pd-form { grid-template-columns: 1fr; }
+  .pd-form .wide { grid-column: auto; }
+  .parsac-form { grid-template-columns: 1fr 1fr; }
+}

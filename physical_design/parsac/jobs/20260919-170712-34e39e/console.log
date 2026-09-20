@@ -1,0 +1,26 @@
+OPENLANE_MODEL=D:\MyWork\Veriolg_MA\physical_design\parsac\jobs\20260919-170712-34e39e\input.json
+channel_control: 300.0 x 300.0 um (samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02)
+saturating_counter: 84.945 x 95.665 um (samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02)
+skid_buffer: 101.5 x 112.22 um (samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27)
+Area:             1.09513e+07
+Target Area:      1.09513e+07
+W:                3309
+H:                3309
+Chip AR:          1
+
+MIN COST = 100.606
+INITIAL TEMPERATURE = 0.001
+Area:             1.09513e+07
+Target Area:      1.09513e+07
+W:                3309
+H:                3309
+Chip AR:          1
+
+MIN COST = 100.771
+INITIAL TEMPERATURE = 0.001
+PARSAC_RESULT=D:\MyWork\Veriolg_MA\physical_design\parsac\jobs\20260919-170712-34e39e\result.json
+BEST_SEED=4401 TOTAL_COST=0.531300
+PARSAC result: D:\MyWork\Veriolg_MA\physical_design\parsac\jobs\20260919-170712-34e39e\result.json
+MACRO_PLACEMENT=D:\MyWork\Veriolg_MA\physical_design\parsac\jobs\20260919-170712-34e39e\macro_placement.cfg
+OPENLANE_MACROS=D:\MyWork\Veriolg_MA\physical_design\parsac\jobs\20260919-170712-34e39e\openlane_macros.json
+PLACEMENT_VALIDATION=passed

@@ -28,7 +28,8 @@ const races = [
 ] as const
 
 const status = [
-  ['Flat 트랙 1~3단계', '검증됨', 'chan_ctrl/cnt_sat/skid_buffer로 1~3단계 전부 실행·검증 완료. chan_top은 2단계(재시간측정)까지 검증, 3단계(from-scratch 12/48 확인)는 daq_subsystem과 함께 지금 백그라운드 진행 중'],
+  ['Flat 트랙 1~3단계', '검증됨', 'chan_ctrl/cnt_sat/skid_buffer로 1~3단계 전부 실행·검증 완료. chan_top은 2단계(재시간측정)까지 검증, 3단계(from-scratch 12/48 확인)는 지금 백그라운드 진행 중(2026-09-18 21:19 시작, hold-violation 수리 단계)'],
+  ['daq_subsystem — 2단계 적용', '진행 중 (2026-09-18)', '8채널 전체를 처음부터 32/10 ns로 완주 시도하던 4번째 런을 killed하고, chan_top의 확정된 48/12 ns로 SDC/config 갱신 후 재시작 — 전체 완주(수 시간) 전에 DEFAULT_CORNER=nom_ss_100C_1v60 오버라이드로 mid-flow 추정부터 먼저 확인 중(102_daq_subsystem_worst_corner_estimate.sh). 32/10 그대로 8시간 태웠으면 chan_top과 똑같은 실패를 8배 규모로 반복했을 것 — 이게 이 탭이 말하는 깔때기를 daq_subsystem 자신에게도 적용한 첫 사례'],
   ['Hierarchical 트랙', '설계만 됨, 미착수', 'ParSAC(IntelLabs, Apache 2.0, archived지만 사용 가능) 조사 완료 — 매크로 floorplanning 전용 SA 도구, OpenLane MACROS와 연결하는 글루코드 필요. chan_top이 worst-corner까지 안 닫힌 상태라 아직 투입 시점 아님'],
   ['4단계 맞대결', '미착수', 'Hierarchical 1단계부터 선행 필요'],
 ] as const
@@ -56,7 +57,7 @@ export default function PnrResearch() {
 
     <section className="card"><div className="card-title"><div><small className="kicker">현재 진행 상태</small><h2>뭐가 검증됐고 뭐가 아직 설계만 됐는가</h2></div></div>
       <div className="data-table"><table><thead><tr><th>항목</th><th>상태</th><th>비고</th></tr></thead><tbody>{status.map(([item, stat, note]) => <tr key={item}><td><b>{item}</b></td><td>{stat === '검증됨' ? <span className="ok-badge">{stat}</span> : <span className="warning-badge">{stat}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
-      <p className="rtl-guide-note">다음 구체적 실행 단계 — 이 순서로: (1) chan_top 12/48 from-scratch 확인 + daq_subsystem flat 첫 완주, 둘 다 지금 백그라운드 진행 중 → (2) chan_top이 worst-corner까지 닫히면 hardening해서 macro LEF/GDS 확보 → (3) ParSAC venv 설치 + chan_top macro를 8개 배치하는 글루코드 작성(1단계 실행) → (4) 살아남은 배치 후보로 daq_subsystem hierarchical 3단계(전체 P&R) 실행 → (5) 같은 시점의 flat 3단계 결과와 4단계 맞대결.</p>
+      <p className="rtl-guide-note">다음 구체적 실행 단계 — 이 순서로: (1) chan_top 12/48 from-scratch 확인 + daq_subsystem을 같은 48/12로 재타겟해서 2단계 필터(mid-flow 추정)부터 먼저 확인, 둘 다 지금 백그라운드 진행 중 → (2) daq_subsystem 2단계 추정이 나쁘지 않으면 그때 전체 완주(3단계) 커밋, 나쁘면 완주 전에 재튜닝 → (3) chan_top이 worst-corner까지 닫히면 hardening해서 macro LEF/GDS 확보 → (4) ParSAC venv 설치 + chan_top macro를 8개 배치하는 글루코드 작성(1단계 실행) → (5) 살아남은 배치 후보로 daq_subsystem hierarchical 3단계(전체 P&R) 실행 → (6) 같은 시점의 flat 3단계 결과와 4단계 맞대결.</p>
     </section>
   </>
 }

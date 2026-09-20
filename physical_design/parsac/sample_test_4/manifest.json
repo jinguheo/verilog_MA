@@ -1,0 +1,26 @@
+{
+  "name": "Sample Test 4 — measured OpenLane hardened blocks",
+  "seed": 4400,
+  "units_per_micron": 10,
+  "outline_area_margin": 1.55,
+  "outline_clearance_um": 2.0,
+  "connectivity_source": "declared Sample Test 4 architecture; geometry, views, and PPA are auto-extracted from completed OpenLane runs",
+  "blocks": [
+    {"name": "channel_control", "module": "chan_ctrl", "instance": "u_chan_ctrl", "runs_dir": "samples/sample_test_4/asic/chan_ctrl/runs", "group": 1},
+    {"name": "saturating_counter", "module": "cnt_sat", "instance": "u_cnt_sat", "runs_dir": "samples/sample_test_4/asic/cnt_sat/runs", "group": 1},
+    {"name": "skid_buffer", "module": "skid_buffer", "instance": "u_skid_buffer", "runs_dir": "samples/sample_test_4/asic/skid_buffer/runs", "group": 1}
+  ],
+  "pins": [
+    {"name": "clk_i", "side": "top", "offset": 0.50},
+    {"name": "rst_ni", "side": "top", "offset": 0.15},
+    {"name": "data_i", "side": "left", "offset": 0.55},
+    {"name": "data_o", "side": "right", "offset": 0.55}
+  ],
+  "nets": [
+    ["channel_control", "saturating_counter", "skid_buffer", "clk_i"],
+    ["channel_control", "saturating_counter", "skid_buffer", "rst_ni"],
+    ["channel_control", "skid_buffer", "data_i"],
+    ["skid_buffer", "saturating_counter", "data_o"],
+    ["channel_control", "saturating_counter"]
+  ]
+}

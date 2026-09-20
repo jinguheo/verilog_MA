@@ -1,0 +1,30 @@
+{
+  "name": "Sample Test 2 — hierarchical synchronous FIFO (coarse model)",
+  "seed": 4300,
+  "outline": {
+    "width": 180,
+    "height": 120,
+    "unit": "abstract placement unit"
+  },
+  "blocks": [
+    {"name": "fifo_control", "width": 38, "height": 26, "group": 1, "fixed_aspect": true},
+    {"name": "fifo_memory_0", "width": 48, "height": 34, "group": 1, "fixed_aspect": true},
+    {"name": "fifo_memory_1", "width": 48, "height": 34, "group": 1, "fixed_aspect": true},
+    {"name": "read_pointer", "width": 24, "height": 20, "edge": 1, "group": 2, "fixed_aspect": true},
+    {"name": "write_pointer", "width": 24, "height": 20, "edge": 2, "group": 2, "fixed_aspect": true},
+    {"name": "output_mux", "width": 30, "height": 22, "edge": 2, "fixed_aspect": true}
+  ],
+  "pins": [
+    {"name": "clk", "x": 90, "y": 120},
+    {"name": "rst_ni", "x": 10, "y": 120},
+    {"name": "wdata_i", "x": 0, "y": 65},
+    {"name": "rdata_o", "x": 180, "y": 65}
+  ],
+  "nets": [
+    ["fifo_control", "fifo_memory_0", "fifo_memory_1", "read_pointer", "write_pointer", "clk"],
+    ["fifo_control", "write_pointer", "fifo_memory_0", "fifo_memory_1", "wdata_i"],
+    ["fifo_memory_0", "fifo_memory_1", "read_pointer", "output_mux", "rdata_o"],
+    ["read_pointer", "write_pointer", "fifo_control"],
+    ["fifo_control", "rst_ni"]
+  ]
+}

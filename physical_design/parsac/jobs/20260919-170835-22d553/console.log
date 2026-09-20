@@ -1,0 +1,11 @@
+Area:             5872
+Target Area:      5872
+W:                77
+H:                76
+Chip AR:          1
+
+MIN COST = 7.36045
+INITIAL TEMPERATURE = 0.001
+PARSAC_RESULT=D:\MyWork\Veriolg_MA\physical_design\parsac\jobs\20260919-170835-22d553\result.json
+BEST_SEED=4300 TOTAL_COST=5.920250
+PARSAC result: D:\MyWork\Veriolg_MA\physical_design\parsac\jobs\20260919-170835-22d553\result.json

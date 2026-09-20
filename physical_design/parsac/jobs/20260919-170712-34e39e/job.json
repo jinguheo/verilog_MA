@@ -1,0 +1,219 @@
+{
+  "id": "20260919-170712-34e39e",
+  "model": "sample_test_4",
+  "steps": 100,
+  "runs": 2,
+  "workers": 1,
+  "status": "complete",
+  "progress": 100,
+  "stage": "완료",
+  "created_at": "2026-09-19T08:07:12.939488+00:00",
+  "result": {
+    "status": "passed",
+    "generated_at": "2026-09-19T08:07:25.137036+00:00",
+    "tool": "IntelLabs PARSAC",
+    "mode": "Windows-native parallel coarse floorplanning",
+    "source_model": "Sample Test 4 — measured OpenLane hardened blocks",
+    "source": "Completed OpenLane final LEF/GDS/metrics",
+    "connectivity_source": "declared Sample Test 4 architecture; geometry, views, and PPA are auto-extracted from completed OpenLane runs",
+    "coordinate_scale": {
+      "units_per_micron": 10
+    },
+    "steps_per_run": 100,
+    "runs": 2,
+    "workers": 1,
+    "outline": {
+      "width": 4150,
+      "height": 4120,
+      "width_um": 415,
+      "height_um": 412,
+      "unit": "1/10 micrometer"
+    },
+    "pins": [
+      {
+        "name": "clk_i",
+        "x": 2075,
+        "y": 4120,
+        "side": "top"
+      },
+      {
+        "name": "rst_ni",
+        "x": 622,
+        "y": 4120,
+        "side": "top"
+      },
+      {
+        "name": "data_i",
+        "x": 0,
+        "y": 2266,
+        "side": "left"
+      },
+      {
+        "name": "data_o",
+        "x": 4150,
+        "y": 2266,
+        "side": "right"
+      }
+    ],
+    "best": {
+      "seed": 4401,
+      "cost": {
+        "white_space": 9.079925280199253,
+        "wirelength": 21677.0,
+        "area": 12045000.0,
+        "edge_violations": 0.0,
+        "cluster_fragments": 0.0,
+        "rectilinear_fragments": 0.0,
+        "total": 0.5313002809334091,
+        "width_penalty": 0.0,
+        "height_penalty": 0.0,
+        "preplaced_cost": 0.0
+      },
+      "blocks": [
+        {
+          "name": "channel_control",
+          "module": "chan_ctrl",
+          "instance": "u_chan_ctrl",
+          "width": 3000,
+          "height": 3000,
+          "width_um": 300.0,
+          "height_um": 300.0,
+          "edge": 0,
+          "group": 1,
+          "fixed_aspect": true,
+          "source_run": "samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02",
+          "views": {
+            "lef": "samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/lef/chan_ctrl.lef",
+            "gds": "samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/gds/chan_ctrl.gds",
+            "def": "samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/def/chan_ctrl.def",
+            "nl": "samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/nl/chan_ctrl.nl.v",
+            "pnl": "samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/pnl/chan_ctrl.pnl.v",
+            "json_h": "samples/sample_test_4/asic/chan_ctrl/runs/RUN_2026-09-14_22-03-02/final/json_h/chan_ctrl.h.json"
+          },
+          "measured": {
+            "instance_count": 1369,
+            "instance_area_um2": 2905.29,
+            "die_area_um2": 90000,
+            "wirelength_um": 5830,
+            "power_total_w": 0.0003128401003777981,
+            "setup_wns_ns": 0,
+            "hold_wns_ns": 0
+          },
+          "x": 0,
+          "y": 0
+        },
+        {
+          "name": "saturating_counter",
+          "module": "cnt_sat",
+          "instance": "u_cnt_sat",
+          "width": 849,
+          "height": 957,
+          "width_um": 84.945,
+          "height_um": 95.665,
+          "edge": 0,
+          "group": 1,
+          "fixed_aspect": true,
+          "source_run": "samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02",
+          "views": {
+            "lef": "samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/lef/cnt_sat.lef",
+            "gds": "samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/gds/cnt_sat.gds",
+            "def": "samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/def/cnt_sat.def",
+            "nl": "samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/nl/cnt_sat.nl.v",
+            "pnl": "samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/pnl/cnt_sat.pnl.v",
+            "json_h": "samples/sample_test_4/asic/cnt_sat/runs/RUN_2026-09-14_22-03-02/final/json_h/cnt_sat.h.json"
+          },
+          "measured": {
+            "instance_count": 285,
+            "instance_area_um2": 2128.29,
+            "die_area_um2": 8126.26,
+            "wirelength_um": 4483,
+            "power_total_w": 0.0003462088934611529,
+            "setup_wns_ns": 0,
+            "hold_wns_ns": 0
+          },
+          "x": 3000,
+          "y": 1122
+        },
+        {
+          "name": "skid_buffer",
+          "module": "skid_buffer",
+          "instance": "u_skid_buffer",
+          "width": 1015,
+          "height": 1122,
+          "width_um": 101.5,
+          "height_um": 112.22,
+          "edge": 0,
+          "group": 1,
+          "fixed_aspect": true,
+          "source_run": "samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27",
+          "views": {
+            "lef": "samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/lef/skid_buffer.lef",
+            "gds": "samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/gds/skid_buffer.gds",
+            "def": "samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/def/skid_buffer.def",
+            "nl": "samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/nl/skid_buffer.nl.v",
+            "pnl": "samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/pnl/skid_buffer.pnl.v",
+            "json_h": "samples/sample_test_4/asic/skid_buffer/runs/RUN_2026-08-26_12-40-27/final/json_h/skid_buffer.h.json"
+          },
+          "measured": {
+            "instance_count": 443,
+            "instance_area_um2": 4341.66,
+            "die_area_um2": 11390.3,
+            "wirelength_um": 6243,
+            "power_total_w": 0.0012163618812337518,
+            "setup_wns_ns": 0,
+            "hold_wns_ns": 0
+          },
+          "x": 3000,
+          "y": 0
+        }
+      ],
+      "placement_validation": {
+        "passed": true,
+        "boundary_violations": [],
+        "overlaps": []
+      }
+    },
+    "placement_validation": {
+      "passed": true,
+      "boundary_violations": [],
+      "overlaps": []
+    },
+    "run_costs": [
+      {
+        "seed": 4400,
+        "white_space": 9.079925280199253,
+        "wirelength": 23142.0,
+        "area": 12045000.0,
+        "edge_violations": 0.0,
+        "cluster_fragments": 0.0,
+        "rectilinear_fragments": 0.0,
+        "total": 0.5641389790415414,
+        "width_penalty": 0.0,
+        "height_penalty": 0.0,
+        "preplaced_cost": 0.0
+      },
+      {
+        "seed": 4401,
+        "white_space": 9.079925280199253,
+        "wirelength": 21677.0,
+        "area": 12045000.0,
+        "edge_violations": 0.0,
+        "cluster_fragments": 0.0,
+        "rectilinear_fragments": 0.0,
+        "total": 0.5313002809334091,
+        "width_penalty": 0.0,
+        "height_penalty": 0.0,
+        "preplaced_cost": 0.0
+      }
+    ],
+    "caveat": "PoC geometry is an engineering model. Confirm the selected placement with OpenLane/OpenROAD placement and signoff."
+  },
+  "updated_at": "2026-09-19T08:07:25.408002+00:00",
+  "artifacts": {
+    "result": "D:\\MyWork\\Veriolg_MA\\physical_design\\parsac\\jobs\\20260919-170712-34e39e\\result.json",
+    "log": "D:\\MyWork\\Veriolg_MA\\physical_design\\parsac\\jobs\\20260919-170712-34e39e\\console.log",
+    "macro_placement": "D:\\MyWork\\Veriolg_MA\\physical_design\\parsac\\jobs\\20260919-170712-34e39e\\macro_placement.cfg",
+    "openlane_macros": "D:\\MyWork\\Veriolg_MA\\physical_design\\parsac\\jobs\\20260919-170712-34e39e\\openlane_macros.json"
+  },
+  "finished_at": "2026-09-19T08:07:25.408002+00:00"
+}

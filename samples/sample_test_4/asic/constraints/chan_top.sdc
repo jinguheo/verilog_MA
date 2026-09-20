@@ -91,10 +91,20 @@
 # see RESULTS.md for that run's outcome. If it holds, RTL pipelining of
 # pkt_check's CRC chain / pkt_align's byte accumulator is NOT required to
 # close chan_top's worst corner - a modest periods-only relaxation is.
+#
+# THIRD CORRECTION (2026-09-18): the 12/48 from-scratch confirmation run
+# (RUN_2026-09-18_21-19-11) landed real - WNS -8.4ns/926 violations dropped
+# to WNS -2.73ns/5 violations, a massive improvement, but not fully closed.
+# All 5 remaining violations are exclusively axi_clk (ch_cause_o[0]/[2], the
+# same CRC/CDC-mux path documented above) across the ss corners - src_clk at
+# 12ns is already fully clean (0 violations at every corner, every run so
+# far). Bumping only axi_period to 52 ns (src_period stays 12.0, no reason
+# to touch a domain that's already clean) - a modest ~8% increase given the
+# gap is only -2.73 ns out of 48. See RESULTS.md for this run's outcome.
 set src_clk_name src_clk
 set axi_clk_name axi_clk
 set src_period   12.0
-set axi_period   48.0
+set axi_period   52.0
 
 create_clock -name $src_clk_name -period $src_period [get_ports src_clk_i]
 create_clock -name $axi_clk_name -period $axi_period [get_ports axi_clk_i]

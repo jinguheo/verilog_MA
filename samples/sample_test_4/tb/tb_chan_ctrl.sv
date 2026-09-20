@@ -162,6 +162,11 @@ module tb_chan_ctrl;
     send_beat(1'b0, 1'b1);
     signal_pkt_done(1'b0, 1'b0);
     check_state(ChArmed, "phase2: clean pkt_done, still enabled -> Armed");
+    // chan_ctrl.sv now registers ch_cause_o (added to close chan_top's own
+    // signoff timing - see the module header), so the cause pulse trails
+    // pkt_done_i by one clk cycle. One extra cycle of settle margin before
+    // checking the sticky latch.
+    @(negedge clk);
     check(cause_seen[IrqCauseDone] === 1'b1, "phase2: Done cause pulsed");
     check(ch_busy === 1'b0, "phase2: busy clears back in Armed");
 
@@ -192,6 +197,7 @@ module tb_chan_ctrl;
     signal_pkt_done(1'b1, 1'b0);  // crc_err
     check_state(ChError, "phase5: crc_err at pkt_done -> Error");
     check(ch_err === 1'b1, "phase5: ch_err_o set in Error");
+    @(negedge clk);  // ch_cause_o is now registered - see phase2's comment
     check(cause_seen[IrqCauseCrc] === 1'b1, "phase5: Crc cause pulsed");
     check(in_ready === 1'b0, "phase5: Error does not accept");
     ch_abort = 1'b1;
@@ -211,6 +217,7 @@ module tb_chan_ctrl;
     send_beat(1'b0, 1'b1);
     signal_pkt_done(1'b0, 1'b1);  // len_err
     check_state(ChError, "phase6: len_err at pkt_done while Draining -> Error");
+    @(negedge clk);  // ch_cause_o is now registered - see phase2's comment
     check(cause_seen[IrqCauseErr] === 1'b1, "phase6: Err cause pulsed for len_err");
     ch_abort = 1'b1;
     @(negedge clk);

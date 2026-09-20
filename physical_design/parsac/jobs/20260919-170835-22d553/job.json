@@ -1,0 +1,158 @@
+{
+  "id": "20260919-170835-22d553",
+  "model": "sample_test_2",
+  "steps": 50,
+  "runs": 1,
+  "workers": 1,
+  "status": "complete",
+  "progress": 100,
+  "stage": "완료",
+  "created_at": "2026-09-19T08:08:35.641825+00:00",
+  "result": {
+    "status": "passed",
+    "generated_at": "2026-09-19T08:08:46.661478+00:00",
+    "tool": "IntelLabs PARSAC",
+    "mode": "Windows-native parallel coarse floorplanning",
+    "source_model": "Sample Test 2 — hierarchical synchronous FIFO (coarse model)",
+    "source": null,
+    "connectivity_source": null,
+    "coordinate_scale": null,
+    "steps_per_run": 50,
+    "runs": 1,
+    "workers": 1,
+    "outline": {
+      "width": 180,
+      "height": 120,
+      "unit": "abstract placement unit"
+    },
+    "pins": [
+      {
+        "name": "clk",
+        "x": 90,
+        "y": 120
+      },
+      {
+        "name": "rst_ni",
+        "x": 10,
+        "y": 120
+      },
+      {
+        "name": "wdata_i",
+        "x": 0,
+        "y": 65
+      },
+      {
+        "name": "rdata_o",
+        "x": 180,
+        "y": 65
+      }
+    ],
+    "best": {
+      "seed": 4300,
+      "cost": {
+        "white_space": 24.1343669250646,
+        "wirelength": 663.0,
+        "area": 7740.0,
+        "edge_violations": 1.0,
+        "cluster_fragments": 1.0,
+        "rectilinear_fragments": 0.0,
+        "total": 5.9202498936970525,
+        "width_penalty": 0.0,
+        "height_penalty": 0.0,
+        "preplaced_cost": 0.0
+      },
+      "blocks": [
+        {
+          "name": "fifo_control",
+          "width": 38,
+          "height": 26,
+          "group": 1,
+          "fixed_aspect": true,
+          "x": 0,
+          "y": 56
+        },
+        {
+          "name": "fifo_memory_0",
+          "width": 48,
+          "height": 34,
+          "group": 1,
+          "fixed_aspect": true,
+          "x": 38,
+          "y": 56
+        },
+        {
+          "name": "fifo_memory_1",
+          "width": 48,
+          "height": 34,
+          "group": 1,
+          "fixed_aspect": true,
+          "x": 24,
+          "y": 0
+        },
+        {
+          "name": "read_pointer",
+          "width": 24,
+          "height": 20,
+          "edge": 1,
+          "group": 2,
+          "fixed_aspect": true,
+          "x": 0,
+          "y": 20
+        },
+        {
+          "name": "write_pointer",
+          "width": 24,
+          "height": 20,
+          "edge": 2,
+          "group": 2,
+          "fixed_aspect": true,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "name": "output_mux",
+          "width": 30,
+          "height": 22,
+          "edge": 2,
+          "fixed_aspect": true,
+          "x": 24,
+          "y": 34
+        }
+      ],
+      "placement_validation": {
+        "passed": true,
+        "boundary_violations": [],
+        "overlaps": []
+      }
+    },
+    "placement_validation": {
+      "passed": true,
+      "boundary_violations": [],
+      "overlaps": []
+    },
+    "run_costs": [
+      {
+        "seed": 4300,
+        "white_space": 24.1343669250646,
+        "wirelength": 663.0,
+        "area": 7740.0,
+        "edge_violations": 1.0,
+        "cluster_fragments": 1.0,
+        "rectilinear_fragments": 0.0,
+        "total": 5.9202498936970525,
+        "width_penalty": 0.0,
+        "height_penalty": 0.0,
+        "preplaced_cost": 0.0
+      }
+    ],
+    "caveat": "PoC geometry is an engineering model. Confirm the selected placement with OpenLane/OpenROAD placement and signoff."
+  },
+  "updated_at": "2026-09-19T08:08:46.786289+00:00",
+  "artifacts": {
+    "result": "D:\\MyWork\\Veriolg_MA\\physical_design\\parsac\\jobs\\20260919-170835-22d553\\result.json",
+    "log": "D:\\MyWork\\Veriolg_MA\\physical_design\\parsac\\jobs\\20260919-170835-22d553\\console.log",
+    "macro_placement": null,
+    "openlane_macros": null
+  },
+  "finished_at": "2026-09-19T08:08:46.786275+00:00"
+}
