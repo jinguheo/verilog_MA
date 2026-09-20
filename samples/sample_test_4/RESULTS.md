@@ -1593,3 +1593,117 @@ from-scratch confirmation pattern, before concluding RTL pipelining is
 actually required - unlike the 926-violation case, 5 endpoints this close
 is exactly the regime where a small period bump plausibly finishes the job
 without touching RTL at all. Not yet tried this session.
+
+## chan_top — 12/52 ns tried, made it WORSE, period-bumping is dead (2026-09-20)
+
+The obvious next step from the paragraph above - relax `axi_period` a little
+further, from 48 to 52 ns, `src_period` unchanged at 12 - was tried with a
+genuine from-scratch synthesis+P&R (`111_run_chan_top_safe.sh`,
+`RUN_2026-09-20_19-36-35`, full signoff including DRC/LVS/Antenna, not an
+estimate). Result:
+
+| | 12/48 ns (`RUN_2026-09-18_21-19-11`) | 12/52 ns (`RUN_2026-09-20_19-36-35`) |
+|---|---|---|
+| cells | 31,147 | 31,194 |
+| setup WNS (worst corner, `max_ss_100C_1v60`) | -2.73 ns | **-3.38 ns (worse)** |
+| setup TNS (worst corner) | -3.43 ns | **-5.28 ns (worse)** |
+| setup violation count | 5 | 2 (same two nets: `ch_cause_o[0]`/`[2]`) |
+| hold | clean | clean (0 across every corner) |
+| DRC | - | 0 errors, Passed |
+| LVS | - | Passed |
+| Antenna | - | **Failed** (17 pin violations, 16 net violations) - new, not seen at 12/48 |
+
+**Raising the period further does not help here, and this result explains
+why not.** `chan_top.sdc` sets both `clock_uncertainty` (5%) and
+`clock_transition` (2%) as a *percentage of the period itself*
+(`set_clock_uncertainty [expr {$axi_period * 0.05}] $axi_clk_name`, likewise
+for transition). Going from 48 to 52 ns raises axi_clk's uncertainty budget
+from 2.4 to 2.6 ns and its transition budget from 0.96 to 1.04 ns - margin
+that grows right along with the period. The two violating paths both end at
+`ch_cause_o` through the ~64-stage combinational `crc32_byte_step` chain
+documented since the chan_top timing investigation began; a transition-time
+increase compounding across that many cascaded stages plausibly costs more
+delay than the extra 4 ns of period buys back, which is exactly the
+"regressed instead of improved" direction seen here. The antenna failure is
+new at this period and not yet root-caused - worth checking whether it's
+this run's specific routing solution (a different-but-not-worse random
+outcome) or something the period change itself provoked (e.g. different
+buffer/diode insertion decisions upstream).
+
+**This closes the period-sweep line of investigation.** Two real
+from-scratch signoff runs (12/48, 12/52) bracket the same two violating
+nets with no monotonic trend toward closure - the earlier optimistic framing
+("if 12/52 closes, chan_top needs no RTL pipelining at all") is now
+falsified by data, not just theory. The SDC's own original root-cause
+diagnosis - RTL pipelining of `pkt_check.sv`'s CRC chain and/or the
+CDC/mux path into `ch_cause_o` - is the remaining real option for fully
+closing chan_top's worst corner. Not attempted yet.
+
+## Analog integration — digital SAR-ADC bridge, `rtl/analog_if/sar_adc_ch.sv` (2026-09-20)
+
+First concrete step on digital+analog co-design (separate from the six-phase
+RTL plan and from the physical-design track above): the interface contract
+between one channel's analog front end (the SKY130
+`sky130_ef_ip__adc3v_12bit` hard macro catalogued under `analog/` - see
+`analog/README.md`) and that channel's own `chan_top`/`pkt_align` byte
+stream. The catalogued macro is the analog core only (CDAC + comparator; its
+own port list has no on-board successive-approximation sequencer), so the
+digital SAR control logic that walks the DAC code bit by bit did not exist
+anywhere in this project until now.
+
+**Decisions settled** (full rationale in the module's own header):
+- **Clock domain**: the bridge runs entirely on that channel's own
+  `src_clk_i` - no new (ninth) clock domain, no extra CDC. The plan already
+  gives every channel an independent clock for exactly this kind of analog
+  front end.
+- **Packet framing**: `SamplesPerPacket` (a parameter, not hardcoded)
+  consecutive 12-bit conversions batch into one packet, 2 bytes/sample (low
+  byte, then `{4'b0, code[11:8]}`), sop on the packet's first byte, eop on
+  its last, CRC-32 on `src_crc_o` at eop - daq_pkg's sideband-CRC
+  convention, using the identical `crc32_byte_step` algorithm already
+  established in `pkt_check.sv` and this project's testbenches.
+- **Conversion timing**: one `src_clk_i` cycle per SAR bit decision (12
+  cycles) plus one for sample-and-hold, documented as a simplifying
+  assumption pending real comparator-settling-time characterization from
+  the physical-design side (not yet available - see `analog/README.md`'s
+  LVS section below for the macro's current signoff status).
+
+**Verified with a behavioral comparator model** (`adc_comp_out = trial_code
+> true_code`, the standard SAR convention) in
+[`tb/tb_sar_adc_ch.sv`](tb/tb_sar_adc_ch.sv) - exactly the "real-number/
+behavioral ADC model" this integration needed before anything here could be
+exercised at the digital-testbench level, previously identified as missing
+entirely. Three phases: randomised codes across several packets (SAR
+convergence is exact per sample - proven, not spot-checked - plus byte
+order, CRC-32 against a software reference, and sop/eop framing), directed
+all-zero/all-ones extremes, and backpressure on `src_ready_i` through
+several packets. Built at `SamplesPerPacket=4` for a fast-running TB; lint
+clean under `-Wall`; passes across 7 `-Seed` values.
+
+**A real testbench deadlock found and fixed while adding the backpressure
+phase**: an earlier version toggled `src_ready_i` in one `fork` branch
+gated on `schedule_idx` (how many samples had been *started*), joined
+against a second branch waiting for all bytes to be *collected*. Once every
+sample had started, the first branch could exit and stop touching
+`src_ready_i` - freezing it at whatever value it last happened to hold,
+occasionally 0 - before the last sample's bytes had actually been emitted,
+permanently starving the second branch. Fixed by dropping the `fork`
+entirely and gating the one backpressure loop on the same "bytes collected"
+condition the completion check itself uses, removing the seam where the two
+conditions could fall out of step. Caught immediately by a `-Seed` sweep
+(1 of 7 seeds hit it) - the same reason this project runs TBs with
+randomised phases at more than one seed by default.
+
+### LVS root-cause work on the catalogued ADC macro itself (2026-09-20)
+
+Separate from the digital bridge above: `analog/README.md` documents two
+real bugs found and fixed in the project's own analog checkout/tooling (not
+the vendor IP) that had been silently blocking `netgen_lvs` from running at
+all on `sky130_ef_ip__adc3v_12bit` ("Cannot find cell ..."). With both
+fixed, LVS now actually runs and reports **the schematic and layout devices
+are electrically equivalent** - the one remaining failure is a top-level
+pin *order* mismatch (`adc_vrefH`/`adc_vrefL`, the `adc_dac_val[11:0]` bus
+rotated by one, `vdda`/`vssd` position), not a circuit defect. Not yet
+fixed - needs deciding whether to reorder the xschem top symbol's pins to
+match the GDS's physical order, or the reverse. See `analog/README.md` for
+the full writeup (root cause, both fixes, and the LVS report excerpt).
