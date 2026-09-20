@@ -25,19 +25,22 @@
 # clk_i: chan_top's own axi_clk_i needed 32 ns to close (root-caused to
 # pkt_check's CRC-32 chain and the CDC FIFO's read-side mux — see
 # chan_top.sdc). clk_i here carries all of that PLUS dma_sched's arbitration
-# tree and daq_csr's write-commit path layered on top, so 32 ns is a floor
-# carried over from chan_top, not a validated number for this design — it is
-# very likely to need loosening once this actually runs through STA against
-# a routed netlist. Not tuned yet; this is a first attempt, same as
-# chan_top's original 6/10 was before its own root-cause pass.
+# tree and daq_csr's write-commit path layered on top.
 #
-# src_clk_i[c]: reused at chan_top's own proven 10 ns for every channel.
-# Each channel is a bit-for-bit repeat of the same chan_top logic with no new
-# combinational path added between src_clk domain elements at this level, so
-# there is no reason to expect a different number per channel.
+# UPDATED (2026-09-18): chan_top's own 10/32 ns was never actually
+# worst-corner clean (see chan_top.sdc's two CORRECTION blocks and
+# RESULTS.md) - the real, from-scratch-confirmed periods-only fix is
+# 12/48 ns (axi_clk plateau claim was itself an artifact of re-timing the
+# wrong netlist; the genuine 32/10-targeted netlist showed no plateau and
+# closed clean at 12/48 when re-timed, with a from-scratch confirmation run
+# in progress). Retargeting clk_i/src_clk_i[c] here to the same 48/12 ns
+# rather than repeating chan_top's whole mistake-and-fix cycle a second
+# time at 8x the scale. Each channel is a bit-for-bit repeat of the same
+# chan_top logic, so there's no reason to expect a different number per
+# channel here than chan_top's own confirmed value.
 set num_ch    8
-set clk_period 32.0
-set src_period 10.0
+set clk_period 48.0
+set src_period 12.0
 
 create_clock -name clk -period $clk_period [get_ports clk_i]
 set_clock_uncertainty [expr {$clk_period * 0.05}] clk

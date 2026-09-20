@@ -1637,7 +1637,80 @@ nets with no monotonic trend toward closure - the earlier optimistic framing
 falsified by data, not just theory. The SDC's own original root-cause
 diagnosis - RTL pipelining of `pkt_check.sv`'s CRC chain and/or the
 CDC/mux path into `ch_cause_o` - is the remaining real option for fully
-closing chan_top's worst corner. Not attempted yet.
+closing chan_top's worst corner.
+
+## chan_top — RTL pipelining + antenna fix, real signoff numbers (2026-09-20, same day)
+
+The "remaining real option" above was attempted the same day, in a
+concurrent session working this repo: `chan_ctrl.sv`'s `ch_cause_o` changed
+from a combinational output to a registered one, breaking the ~64-stage
+`crc32_byte_step` chain's direct combinational path to the output pin.
+`mutants/chan_ctrl_MUTANT.sv` kept structurally in sync; `tb_chan_ctrl.sv`/
+`tb_chan_top.sv` given a 1-cycle margin at the three cause-check sites this
+touches. Full regression re-run before trusting it: lint 102/102, block TB
+16/16, mutation 3/3 - no regressions. **Not yet committed as of this
+writing** - verified but pending that session's own commit.
+
+Also carried in the same P&R attempt: `DIODE_INSERTION_STRATEGY: 4` added to
+`chan_top`'s config, targeting the new antenna failure the 12/52-alone run
+above hit (17 pin / 16 net violations).
+
+Real signoff result (`RUN_2026-09-20_21-14-08`, `final/metrics.json`, at
+12/52 ns with both fixes applied):
+
+| | 12/52 ns, RTL unchanged (`RUN_2026-09-20_19-36-35`) | 12/52 ns + `ch_cause_o` register + antenna fix (`RUN_2026-09-20_21-14-08`) |
+|---|---|---|
+| cells | 31,194 | 45,739 |
+| setup WNS (worst of 9 corners) | -3.38 ns | **-0.496 ns** |
+| setup TNS (worst of 9 corners) | -5.28 ns | **-0.496 ns** |
+| setup violation count | 2 (`ch_cause_o[0]`/`[2]`) | **3** |
+| hold | clean | clean (0/0/0) |
+| antenna violations | 17 pin / 16 net | **0** |
+| `design__violations` | - | 0 |
+
+**Real, substantial progress - not yet fully closed.** The cell count jump
+(31,194 → 45,739) is larger than one register would suggest on its own;
+worth confirming later whether that's entirely the `DIODE_INSERTION_STRATEGY`
+change (diode/buffer insertion for antenna fixing) rather than the RTL edit.
+The registered `ch_cause_o` did its job - TNS collapsing to equal WNS means
+only one endpoint group is now violating, down from many. That session's own
+observation, not yet independently confirmed via `report_checks`: the
+remaining violation may have moved to a *different* path (`src_ready_o`,
+`src_clk` domain) rather than still being the `ch_cause_o`/CRC path this fix
+targeted - if so, this is progress on the original bottleneck but a
+different, smaller one is now the tallest pole, not full closure. Next step
+if picked up: `report_checks -path_delay max` on the worst corner in this
+exact run to confirm which net(s) the remaining 3 violations are actually
+on, before declaring chan_top closed or diagnosing a new bottleneck.
+
+## Parallel tracks the same day, for the record (2026-09-20)
+
+Several concurrent sessions worked this repo alongside the above; listed
+here so a later reader has one place to find all of it rather than piecing
+it together from `git log` -
+- **Phase 4 DMA engine, 3 modules**: `dma_sched.sv`, `desc_fetch.sv`,
+  `axi_rd_master.sv` - each lint+block-TB+mutation(3/3) verified, committed
+  separately (`3051059`, `efada0d`, `078c473`).
+- **Phase 6 formal**: `daq_csr.sv` k-induction proof added, reusing Sample
+  Test 3's `daq_status_sync.sby` pattern (`a362405`).
+- **Analog SAR-ADC digital bridge**: `rtl/analog_if/sar_adc_ch.sv` and its
+  LVS root-cause fixes on the catalogued ADC macro - see the two sections
+  above and `analog/README.md` (`99a68d0`).
+- **Dashboard**: a new "P&R Research" tab (flat vs. hierarchical P&R funnel
+  design, `b58c428`) and an expanded Analog & Memory area - "아날로그·메모리·
+  디지털 차이" and "메모리 셀 설계" sub-tabs added with real KLayout renders
+  of the catalogued ADC (`sky130_ef_ip__adc3v_12bit`) and SRAM
+  (`sky130_sram_1kbyte_1rw1r_32x256_8`) macros - real device counts (50
+  NMOS/39 PMOS/4 cap/5 res/1 diode on the ADC), real pin lists, and
+  floorplan block identification (CDAC array, switch columns, comparator,
+  bitcell array, dual decoders for the 2-port SRAM) - not illustrations,
+  rendered from the actual GDS via `tools/wsl/63_render_adc_layout.sh` /
+  `65_render_sram_layout.sh`.
+- **P&R algorithm research**: ParSAC (SA-based macro floorplanner) installed;
+  DREAMPlace (GPU-accelerated RePlAce alternative) being built from source in
+  WSL as a comparison point for the hierarchical-P&R track's own macro
+  placement question - isolated under `$HOME/eda-research/`, not yet
+  affecting any run in this document.
 
 ## Analog integration — digital SAR-ADC bridge, `rtl/analog_if/sar_adc_ch.sv` (2026-09-20)
 

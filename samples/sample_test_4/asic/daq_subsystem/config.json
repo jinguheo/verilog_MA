@@ -73,17 +73,17 @@
 
   "//CLOCK_PERIOD": [
     "Seed estimate only - constraints/daq_subsystem.sdc's own create_clock",
-    "calls govern P&R and signoff. clk_i now carries dma_sched's arbitration",
-    "tree and daq_csr's write-commit path on top of everything chan_top's",
-    "axi_clk_i already had (which needed 32 ns), so 32 ns is a floor, not a",
-    "prediction - expect this to widen once real STA runs against the routed",
-    "netlist, same as chan_top did (10 -> 32 ns after root-causing two",
-    "combinational chains). src_clk_i[c] reuses chan_top's own proven 10 ns,",
-    "since each channel is a bit-for-bit repeat of the same chan_top logic",
-    "with no new combinational path added between src_clk domain elements."
+    "calls govern P&R and signoff. Updated 2026-09-18 to 48 ns, mirroring",
+    "chan_top's own from-scratch-confirmed periods-only fix (12/48, not the",
+    "originally-assumed 10/32 - see daq_subsystem.sdc's own updated header",
+    "for why). clk_i carries dma_sched's arbitration tree and daq_csr's",
+    "write-commit path on top of everything chan_top's axi_clk_i already",
+    "had, so this is still a floor for daq_subsystem's own from-scratch run,",
+    "not a guarantee - but starting from chan_top's real answer instead of",
+    "its since-corrected first guess."
   ],
   "CLOCK_PORT": "clk_i",
-  "CLOCK_PERIOD": 32,
+  "CLOCK_PERIOD": 48,
 
   "PNR_SDC_FILE": "dir::../constraints/daq_subsystem.sdc",
   "SIGNOFF_SDC_FILE": "dir::../constraints/daq_subsystem.sdc",
