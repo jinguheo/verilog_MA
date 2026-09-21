@@ -110,3 +110,24 @@ CACE is invoked with the Magic 8.3.489 binary already installed by OpenLane,
 because Ubuntu's Magic 8.3.105 is too old for the current SKY130 techfile.
 Electrical PPA remains unmeasured where an IP repository only supplies
 physical checks and no power/performance testbench.
+
+## 2026-09-21: what the SRAM is for — ADC calibration LUT
+
+The catalogued `sram22_1024x32m8w8` macro (above) now has an architectural
+job: a shared, single-port, per-channel ADC calibration/linearity-correction
+lookup table, digital RTL in
+[`samples/sample_test_4/rtl/analog_if/adc_cal_lut.sv`](../samples/sample_test_4/rtl/analog_if/adc_cal_lut.sv).
+The macro's own fixed 1024 x 32-bit depth is what pins the split: 8 channels
+x 128 entries/channel fills it exactly, addressed by `{channel_id,
+code[11:5]}` — a SAR ADC's systematic INL/DNL needs a piecewise correction
+table indexed by the upper code bits, which a single per-channel trim
+constant (`sar_adc_ch.sv`'s original placeholder assumption) cannot provide.
+Calibration writes (software, rare) always win single-port arbitration over
+per-channel reads (frequent, up to once per conversion); reads arbitrate
+against each other with `prim_arbiter_tree` for genuine round-robin
+fairness. Verified in
+[`samples/sample_test_4/tb/tb_adc_cal_lut.sv`](../samples/sample_test_4/tb/tb_adc_cal_lut.sv)
+across 7 seeds — see `samples/sample_test_4/RESULTS.md`'s 2026-09-21 entry
+for the full writeup. Wiring this LUT into `sar_adc_ch.sv`'s own conversion
+FSM (issue lookup, wait for grant+data, apply correction before packet
+emission) is a deliberately separate next step, not yet done.

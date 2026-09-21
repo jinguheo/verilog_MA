@@ -1780,3 +1780,77 @@ rotated by one, `vdda`/`vssd` position), not a circuit defect. Not yet
 fixed - needs deciding whether to reorder the xschem top symbol's pins to
 match the GDS's physical order, or the reverse. See `analog/README.md` for
 the full writeup (root cause, both fixes, and the LVS report excerpt).
+
+## Analog integration — what the SRAM is for, `rtl/analog_if/adc_cal_lut.sv` (2026-09-21)
+
+The third digital+analog integration step (after the ADC LVS root-cause fix
+and the SAR-ADC digital bridge above): deciding what the SRAM22 macro
+catalogued under `analog/` is architecturally *for*, and building the RTL
+that gives it that job.
+
+**Decision**: a shared, single-port, per-channel ADC calibration/linearity-
+correction lookup table, not a handful of per-channel trim registers.
+`sar_adc_ch.sv`'s own header had flagged calibration as "most likely a
+CSR-backed trim register, out of scope here" - but a SAR ADC's systematic
+INL/DNL nonlinearity needs a piecewise correction table indexed by the upper
+bits of the raw code, which a single per-channel constant cannot provide.
+The macro's own fixed depth (1024 x 32-bit, single port) is what actually
+pins down the split: `NumCh=8` channels x `EntriesPerCh=128` entries exactly
+fills it, so the top 7 bits of each 12-bit code (`code[11:5]`) select an
+entry and the bottom 5 bits are corrected locally-linearly by it.
+
+**Arbitration**: single port means read and write are mutually exclusive
+every cycle. Calibration writes (software loading/updating the table, rare -
+once at bring-up, occasionally after recalibration) always win over channel
+reads (frequent - up to once per conversion, per channel) when both want the
+port the same cycle: the rare, latency-tolerant side should yield to itself,
+never the reverse, and a write is a single isolated cycle, never a
+sustained burst that could actually starve reads. Channel reads arbitrate
+against each other with `prim_arbiter_tree` - this project's third use of it
+after `dma_sched.sv` and `desc_fetch.sv`, including the same `generate if
+(NumCh > 1)` bypass every other consumer needs for its zero-width `idx_o` at
+N=1. Read latency is registered (one cycle, grant to data), matching how a
+real single-port SRAM macro behaves rather than assuming a same-cycle
+combinational read no real macro provides.
+
+**Verified** in [`tb/tb_adc_cal_lut.sv`](tb/tb_adc_cal_lut.sv), built at
+`NumCh=4`/`EntriesPerCh=8` (32 entries - small enough to exhaustively cover
+while still exercising real contention, the same reasoning `tb_dma_sched.sv`/
+`tb_desc_fetch.sv` use for their own smaller-than-default `NumCh`). A
+host-side shadow array is the reference model. Three phases: one channel
+reading every one of its entries in order (basic write-then-read
+correctness), all four channels contending concurrently with random indices
+(per-channel correctness plus no starvation across 6 reads/channel in one
+run), and a CSR write racing several channels' read requests (write wins -
+no grant that cycle - and the new value is visible on a read afterward). A
+continuous checker also confirms `rd_gnt_o` is one-hot0, never asserted for
+a channel that did not request, and never asserted the same cycle a write
+fires. Lint-clean under `-Wall` at `NumCh={1,2,8}`; passes across 7 seeds
+(default + 1, 2, 3, 42, 999, 12345).
+
+**Two real testbench bugs found while writing phase 2's concurrency test**,
+both consistent with bugs this project has already hit and documented
+elsewhere:
+- `fork <for-loop-spawning-join_none-children> join` waits only on the
+  for-loop's own single thread, which returns as soon as it has finished
+  *launching* every child - not when the children finish - so the outer
+  `join` returned immediately while phase 2's reads were still in flight in
+  the background. Those orphaned processes then corrupted phase 3's shared
+  driver state (`rd_req`/`rd_idx`) by racing it for the same signals,
+  producing failures in phase 3 that had nothing to do with phase 3 itself.
+  Fixed with the standard idiom: spawn each iteration via `fork ... join_none`
+  directly inside the for-loop, then `wait fork;` after it to block until
+  every child this process forked has actually completed.
+- The `served` per-channel counter array needed module scope, not
+  `automatic` inside the enclosing `begin...end` block, for the same reason
+  `tb_dma_sched.sv`'s `stress_done` array needed it: a `join_none`-spawned
+  process can outlive the block scope it was spawned from, so referencing an
+  automatic variable from that scope is a LIFETIME hazard Verilator's
+  `--timing` elaboration catches at build time (not a silent runtime bug
+  here, but the identical root cause).
+
+**Deferred, explicitly not done in this step**: wiring the LUT into
+`sar_adc_ch.sv` itself (issuing a lookup for the SAR-converged code, waiting
+for grant + data, applying the correction before packet emission). That
+needs `sar_adc_ch.sv`'s own FSM extended with a lookup-wait state and is
+left as a clearly separate next step rather than folded into this one.
