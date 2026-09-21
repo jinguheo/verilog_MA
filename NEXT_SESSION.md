@@ -1015,6 +1015,117 @@ Given cell count (~107k vs `chan_top`'s ~29.5k, i.e. 3.6x) and this project's
 own observed worse-than-linear P&R runtime scaling, budget considerably more
 than an hour for a real signoff attempt - no confirmed number exists yet.
 
+## Session 2026-09-20 — daq_subsystem retargeted to 12/48, chan_top's remaining violation isolated to one path, Analog & Memory dashboard grew a lot (multiple concurrent sessions)
+
+Stopped here per user request ("여기까지 하자" / "다음에 이어서 하자"). This was
+a heavily multi-session day - at least 4 Claude sessions worked this repo
+concurrently, coordinating over cross-session messages. What follows is this
+thread's own work plus a consolidated pointer to the others', so a fresh
+session doesn't have to reconstruct it from `git log` alone.
+
+**Committed this session (`aca2efd`, on top of the day's earlier commits
+`fea27b7`...`99a68d0`):**
+- `asic/daq_subsystem/config.json` + `asic/constraints/daq_subsystem.sdc`
+  retargeted from 32/10 ns to **48/12 ns**, mirroring `chan_top`'s own
+  from-scratch-confirmed fix, instead of letting daq_subsystem's next full
+  run rediscover the same problem at 8x the scale and cost.
+- `tools/wsl/102_daq_subsystem_worst_corner_estimate.sh`: same fast
+  worst-corner mid-flow filter technique as `chan_top`'s own `101` script,
+  applied to daq_subsystem before committing to another multi-hour full run.
+- Real KLayout renders of the two Analog & Memory catalog macros actually in
+  use - Efabless SKY130 12-bit SAR ADC and the OpenRAM-generated
+  256×32-bit 2-port SRAM - via new `tools/wsl/63/64/65_*.sh` scripts. Not
+  illustrations: real device counts (50 NMOS/39 PMOS/4 cap/5 res/1 diode on
+  the ADC, pulled from `netlist/layout/*.spice`), real pin lists (top
+  subckt/module declarations), real floorplan block identification (CDAC
+  array + switch columns + comparator on the ADC; bitcell array + dual
+  per-port decoders + sense-amp/write-driver rows on the SRAM).
+- New "메모리 셀 설계" (Memory Cell Design) sub-tab under Analog & Memory
+  (`my_dashboard/src/views/MemoryDesign.tsx`) using those SRAM renders, with
+  a design-considerations table (bitcell stability, sense-amp timing,
+  multi-port cost, precharge timing, power integrity, process matching) and
+  what a production SRAM would add that this generated macro doesn't
+  (redundancy/repair, ECC, BIST).
+- `RESULTS.md` updated with chan_top's full timing-improvement arc (see
+  below) and a "Parallel tracks the same day" pointer section crediting the
+  other sessions' work without duplicating their own writeups.
+
+**chan_top - real, substantial progress, not yet fully closed as of this
+paragraph's original writing - UPDATE below.**
+worst-corner setup WNS across the day's attempts: -8.4 ns (10/32, original)
+→ -2.73 ns (12/48) → -3.38 ns (12/52 alone, a regression - period-bumping
+past 48 ns stopped helping, see RESULTS.md for why) → **-0.496 ns** (12/52 +
+`chan_ctrl.sv`'s `ch_cause_o` changed from combinational to registered, +
+`DIODE_INSERTION_STRATEGY: 4` for a new antenna failure the 12/52 run hit).
+**A concurrent session (message name `진행 상황 확인`, session id
+`local_4ba89e49-...`) drove this track** - they isolated the one remaining
+violation to a single path across 3 corners (`_18284_/Q -> src_ready_o`,
+`skid_buffer`'s backpressure signal on `src_clk`) and were about to retry
+with `src_period` raised from 12 to 14 ns (deliberately not another
+register - `src_ready_o` is a live handshake signal, not a status output
+like `ch_cause_o` was).
+
+**UPDATE, same day, later:** the `ch_cause_o` RTL fix (lint 102/102, block
+TB 16/16, mutation 3/3, no regressions) **has since been committed and
+pushed**, as `b02cb4e` - do not treat it as pending or uncommitted, `git
+log`/`git status` on `rtl/stream/chan_ctrl.sv` will show it's already golden.
+That same commit also consolidated the other sessions' then-uncommitted
+work (`AnalogDesign.tsx`, `ParsacFloorplan.tsx`, `PhysicalDesignLive.tsx`,
+`analog_optimizer.py`, `parsac_runner.py`, `physical_design/`, `tests/`,
+`tools/parsac/`, `rtl/analog_if/adc_cal_lut.sv`) and added `.gitignore`
+entries for `/pdk/` (2GB SkyWater install, reinstallable) and
+`/bin/`/`/lib/`/`/pyvenv.cfg` (a Python venv accidentally created at the
+repo root by some tooling - not source, never commit it). The `src_period=14`
+retry mentioned above had not landed by the time of this update - check
+`asic/chan_top/runs/` for a run newer than `RUN_2026-09-20_21-14-08` before
+assuming it's still pending.
+
+**daq_subsystem - still hasn't completed a run, but further than ever
+before.** The worst-corner estimate at 48/12 ns (`RUN_2026-09-20_19-36-36`)
+was still alive at session end, **92+ minutes** into a single step
+(`ResizerTimingPostCTS`) - by far the longest single P&R step observed
+anywhere in this project, but genuinely still computing (98% CPU, not
+hung). Every earlier attempt (5 total across this and prior sessions) died
+from session/host teardown before reaching this point. If it's dead next
+session (check `ps aux | grep openroad`), that's environment teardown again,
+not a new failure mode - relaunch per the command above, now correctly
+targeting 48/12 ns since the SDC/config already carry that.
+
+**Other concurrent sessions' work, for reference (see RESULTS.md's
+"Parallel tracks" section and `git log` for full detail) - not this
+thread's to re-verify or re-explain:**
+- Phase 4 DMA engine (`dma_sched.sv`, `desc_fetch.sv`, `axi_rd_master.sv`)
+  and Phase 6 `daq_csr.sv` formal proof - committed.
+- `rtl/analog_if/sar_adc_ch.sv` (digital SAR-ADC bridge) plus a real LVS
+  root-cause fix on the catalogued ADC macro (two actual bugs in this
+  project's own `analog/` checkout, not the vendor IP) - committed
+  (`99a68d0`). LVS now runs and reports schematic/layout devices
+  electrically equivalent; one non-circuit issue remains (top-level pin
+  *order* mismatch).
+- A new "P&R Research" dashboard tab (flat vs. hierarchical P&R comparison,
+  funnel-filter exploration design) - committed (`b58c428`).
+- ParSAC (SA-based macro floorplanner) installed; DREAMPlace (GPU-accelerated
+  RePlAce alternative) being built from source in WSL as a comparison point
+  - isolated under `$HOME/eda-research/` and a project-root `analog/`
+  subtree, not affecting any run tracked in this document.
+- UPDATE: everything listed above as "uncommitted work from other
+  sessions" (`AnalogDesign.tsx`, `AnalogVsDigital.tsx`, `ParsacFloorplan.tsx`,
+  `PhysicalDesignLive.tsx`, `analog_optimizer.py`, `parsac_runner.py`,
+  `physical_design/`, `tests/`, `tools/parsac/`) is now committed - see
+  `b02cb4e` above. `pdk/`, `bin/`, `lib/`, `pyvenv.cfg` remain untracked, but
+  deliberately - they're now in `.gitignore` (2GB reinstallable PDK, and a
+  stray venv accidentally created at the repo root), not pending commits.
+
+**Next, in order:** (1) check whether daq_subsystem's estimate finished or
+died, read its `final/metrics.json` if so; (2) launch/check chan_top's
+`src_period=14ns` retry (`asic/chan_top/config.json` + `constraints/
+chan_top.sdc`, both still at 12/52 as of `b02cb4e` - this change has NOT
+been made yet, only proposed) and whether it fully closes `src_ready_o`;
+(3) once chan_top is confirmed fully closed at the worst corner, this is the
+trigger to revisit `RESULTS.md`'s "P&R optimization options" /
+hierarchical-macro section, since the precondition it names ("chan_top
+needs to be worst-corner timing-clean first") would finally be met.
+
 ## Storage constraint
 
 - C: drive has little free space. Do not install large tools, download dependencies, or place build caches/artifacts on C: unless the user explicitly approves it. Prefer the `D:\MyWork\Veriolg_MA` workspace or a user-designated non-C: location.

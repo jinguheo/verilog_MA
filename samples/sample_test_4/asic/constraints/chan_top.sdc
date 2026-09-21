@@ -95,15 +95,33 @@
 # THIRD CORRECTION (2026-09-18): the 12/48 from-scratch confirmation run
 # (RUN_2026-09-18_21-19-11) landed real - WNS -8.4ns/926 violations dropped
 # to WNS -2.73ns/5 violations, a massive improvement, but not fully closed.
-# All 5 remaining violations are exclusively axi_clk (ch_cause_o[0]/[2], the
-# same CRC/CDC-mux path documented above) across the ss corners - src_clk at
-# 12ns is already fully clean (0 violations at every corner, every run so
-# far). Bumping only axi_period to 52 ns (src_period stays 12.0, no reason
-# to touch a domain that's already clean) - a modest ~8% increase given the
-# gap is only -2.73 ns out of 48. See RESULTS.md for this run's outcome.
+# All 5 remaining violations were axi_clk (ch_cause_o[0]/[2], the same
+# CRC/CDC-mux path documented above) across the ss corners - src_clk at 12ns
+# was clean at THIS period combination. Bumped axi_period to 52ns to chase
+# that remaining gap - see RESULTS.md, it made axi_clk's own violation worse
+# (SDC uncertainty/transition margins scale with period) and closes out the
+# axi-period-sweep line of investigation.
+#
+# FOURTH CORRECTION (2026-09-20): axi_clk's own violation was separately
+# fixed in RTL, not by SDC - chan_ctrl.sv's ch_cause_o is now a registered
+# output instead of combinational (see that file's own header), cutting the
+# CRC chain's combinational depth in half. Re-run at 12/52 with that RTL fix
+# + DIODE_INSERTION_STRATEGY:4 (antenna, unrelated) landed at WNS -0.496ns -
+# axi_clk's own path is gone; the ENTIRE remaining violation moved to a
+# different, single src_clk path (`_18284_/Q -> src_ready_o`, skid_buffer's
+# backpressure output) across all 3 ss corners. That path was never touched
+# by anything above - it was simply never the worst path until axi_clk's own
+# was fixed. Since it's a live handshake signal (not a status output like
+# ch_cause_o), a register isn't a free fix here the way it was for
+# ch_cause_o - registering src_ready_o would delay backpressure by a cycle
+# without buffering, which pkt_align.sv is not sized to absorb. A period-only
+# fix is safer: src_clk's own margins (5%/2% of 12ns) are small in absolute
+# terms, so raising src_period has a much better ratio of budget-gained to
+# margin-cost than axi_period's own sweep did. Trying 14.0 (only 2ns up,
+# -0.496ns gap) before considering anything more invasive.
 set src_clk_name src_clk
 set axi_clk_name axi_clk
-set src_period   12.0
+set src_period   14.0
 set axi_period   52.0
 
 create_clock -name $src_clk_name -period $src_period [get_ports src_clk_i]
