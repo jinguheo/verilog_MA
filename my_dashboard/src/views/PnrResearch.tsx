@@ -28,10 +28,36 @@ const races = [
 ] as const
 
 const status = [
-  ['Flat 트랙 1~3단계', '검증됨', 'chan_ctrl/cnt_sat/skid_buffer로 1~3단계 전부 실행·검증 완료. chan_top은 2단계(재시간측정)까지 검증, 3단계(from-scratch 12/48 확인)는 지금 백그라운드 진행 중(2026-09-18 21:19 시작, hold-violation 수리 단계)'],
-  ['daq_subsystem — 2단계 적용', '진행 중 (2026-09-18)', '8채널 전체를 처음부터 32/10 ns로 완주 시도하던 4번째 런을 killed하고, chan_top의 확정된 48/12 ns로 SDC/config 갱신 후 재시작 — 전체 완주(수 시간) 전에 DEFAULT_CORNER=nom_ss_100C_1v60 오버라이드로 mid-flow 추정부터 먼저 확인 중(102_daq_subsystem_worst_corner_estimate.sh). 32/10 그대로 8시간 태웠으면 chan_top과 똑같은 실패를 8배 규모로 반복했을 것 — 이게 이 탭이 말하는 깔때기를 daq_subsystem 자신에게도 적용한 첫 사례'],
-  ['Hierarchical 트랙', '설계만 됨, 미착수', 'ParSAC(IntelLabs, Apache 2.0, archived지만 사용 가능) 조사 완료 — 매크로 floorplanning 전용 SA 도구, OpenLane MACROS와 연결하는 글루코드 필요. chan_top이 worst-corner까지 안 닫힌 상태라 아직 투입 시점 아님'],
+  ['Flat 트랙 1~3단계', '검증됨', 'chan_ctrl/cnt_sat/skid_buffer로 1~3단계 전부 실행·검증 완료. chan_top은 12ns/52ns 주기 + RTL 파이프라이닝(ch_cause_o 레지스터화)으로 worst-corner 거의 닫힘, src_ready_o 경로 마무리 중'],
+  ['daq_subsystem — 2단계 적용', '진행 중', '8채널 전체를 32/10ns로 완주 시도하던 시행착오를 거쳐, chan_top에서 확정된 주기로 SDC/config 갱신 후 재시작 — 이 탭이 말하는 깔때기를 daq_subsystem 자신에게도 적용한 사례'],
+  ['Hierarchical 트랙', '설계만 됨, 미착수', 'ParSAC(IntelLabs, Apache 2.0) 조사 완료 — 매크로 floorplanning 전용 SA 도구, OpenLane MACROS와 연결하는 글루코드 필요. chan_top이 worst-corner까지 안 닫힌 상태라 아직 투입 시점 아님'],
   ['4단계 맞대결', '미착수', 'Hierarchical 1단계부터 선행 필요'],
+] as const
+
+// RePlAce 대안(GPU 가속 DREAMPlace) 조사 — 실제 설치·빌드·실행까지 해봤으나
+// 이 프로젝트 규모엔 안 맞는다는 결론 (2026-09-21).
+const dreamplaceEval = [
+  ['설치·빌드', '완료', 'WSL에 소스 빌드 — 과정에서 CUDA 12.4 환경의 실제 버그 4개를 찾아 수정함: (1) 동봉된 구버전 CUB이 새 CUDA의 CCCL 기반 CUB과 네임스페이스 충돌 (2) 그 구버전 CUB이 CUDA 12에서 제거된 legacy texture reference API 사용 (3) DreamPlace가 하드코딩한 구버전 C++ ABI가 실제 torch 휠의 신버전 ABI와 불일치 (4) NumPy 2.0에서 제거된 np.string_ 사용. 전부 패치 완료, place_io/global_swap 등 컴파일된 CUDA 확장 모듈 전부 정상 로드 확인'],
+  ['실제 배치 테스트', '완료 — 결론은 부정적', 'chan_ctrl(116셀) 실제 sky130 LEF/DEF로 end-to-end 테스트: 1차 시도는 IO 핀 배치 전 단계(step 13) DEF를 잘못 써서 가비지 좌표로 실패, 원인 찾아 올바른 단계(step 24, ioplacement 이후)로 수정 후 재시도 — 파이프라인 자체는 정상 작동(LEF/DEF 파싱·GPU 연산 전부 성공)하지만 1000 iteration 안에 수렴 못 함(overflow 0.51, 목표 0.07). RePlAce는 같은 설계를 5.7초에 끝냄'],
+  ['최종 판단', '이 프로젝트엔 부적합', 'DreamPlace는 수만~수백만 셀 규모에서 GPU 병렬성으로 이득을 보는 도구. 이 프로젝트 최대 설계(daq_subsystem)도 ~10만 셀로 경계선이고, 실제 소블록들(chan_ctrl 등)은 수백 셀 — RePlAce가 이미 몇 초 안에 안정적으로 끝내는 규모라 GPU 가속의 이득보다 빌드 취약성(CUDA/ABI/NumPy 버전 의존)과 설계별 hyperparameter 재조정 비용이 더 큼. 이 세션에서 실제로 확인한 진짜 병목(daq_subsystem이 flat 방식으론 완주 자체를 못 함)도 placement 알고리즘 속도가 아니라 구조적 문제라 hierarchical 접근(ParSAC)이 더 맞는 방향'],
+] as const
+
+// ParSAC(매크로 floorplanner) — 설치는 완료했지만, 현재(flat) 구조에서는
+// "매크로"라는 개념 자체가 없어서 투입할 대상이 없다는 판단 (2026-09-21).
+const parsacEval = [
+  ['설치', '완료', 'WSL에 uv 기반 Python 3.9 venv, torch 2.7.1+cu126, RTX 3090 인식 확인 — 가볍게 끝남(C++ SA 코어는 첫 실행 시 자동 컴파일, DreamPlace 같은 CMake 풀빌드 불필요)'],
+  ['현재 구조에서의 용도', '없음 — 투입 대상 자체가 없음', 'ParSAC은 "이미 굳힌 매크로 N개를 어디에 배치할지" 푸는 도구. 지금 daq_subsystem은 8채널을 flat하게 통째로 재합성하는 방식이라 "매크로"라는 대상 자체가 존재하지 않음 — 도구 성능과 무관하게 풀 문제가 없는 상태'],
+  ['전제조건', 'chan_top worst-corner 완전히 닫혀야 함', '안 닫힌 블록을 매크로로 굳혀서 8번 복제하면 위반만 8배가 됨(RESULTS.md에 이미 기록된 교훈) — hierarchical 전환 자체가 이 전제조건에 걸려있어서, ParSAC 투입 여부도 자동으로 같이 대기 상태'],
+] as const
+
+// "언제 어떤 도구를 쓰나" — 지금까지 조사·실측한 것 종합한 선택 가이드.
+const toolGuide = [
+  ['표준셀(cell) 배치 — 지금 모든 블록', 'RePlAce (OpenROAD 기본)', '이미 검증됨. 이 프로젝트 규모(수백~10만 셀)에서 몇 초~수십 분 안에 안정적으로 끝남. 재고려할 이유 없음'],
+  ['GPU 가속 셀 배치가 필요한가?', '불필요 — DreamPlace 쓰지 않음', '실측 완료(위 표): 소블록에서 RePlAce보다 느리고 수렴도 안 됨. 재검토 시점: 단일 블록이 향후 50만 셀 이상으로 커지는 경우뿐 — 이 프로젝트 로드맵엔 없음'],
+  ['매크로(hardened block) 배치 위치 결정', 'ParSAC — 단, hierarchical 전환 후에만', '지금은 투입 대상(매크로) 자체가 없음. chan_top이 worst-corner까지 닫히고 hierarchical로 실제 전환할 때 재검토'],
+  ['daq_subsystem 8채널을 어떻게 P&R할까', '지금은 RePlAce 기반 flat 그대로 (배치 알고리즘 문제 아님)', '진짜 병목은 "flat 방식이 완주 자체가 안 됨"이라는 구조적 문제 — 어떤 placement 알고리즘을 쓰든 안 풀림. chan_top이 닫히면 그때 hierarchical+ParSAC로 재검토'],
+  ['합성 전략(SYNTH_STRATEGY) 탐색', 'OpenLane 내장 SynthesisExploration', '이미 검증·적용 완료(chan_ctrl/cnt_sat). 별도 외부 도구 불필요'],
+  ['클럭 주기 확정', 'sed로 주기만 바꿔 재시간측정(2단계 필터)', 'chan_top 12/48→52ns 확정에 실제로 쓴 방법. 새 P&R 없이 초 단위로 후보를 거를 수 있음'],
 ] as const
 
 export default function PnrResearch() {
@@ -58,6 +84,19 @@ export default function PnrResearch() {
     <section className="card"><div className="card-title"><div><small className="kicker">현재 진행 상태</small><h2>뭐가 검증됐고 뭐가 아직 설계만 됐는가</h2></div></div>
       <div className="data-table"><table><thead><tr><th>항목</th><th>상태</th><th>비고</th></tr></thead><tbody>{status.map(([item, stat, note]) => <tr key={item}><td><b>{item}</b></td><td>{stat === '검증됨' ? <span className="ok-badge">{stat}</span> : <span className="warning-badge">{stat}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
       <p className="rtl-guide-note">다음 구체적 실행 단계 — 이 순서로: (1) chan_top 12/48 from-scratch 확인 + daq_subsystem을 같은 48/12로 재타겟해서 2단계 필터(mid-flow 추정)부터 먼저 확인, 둘 다 지금 백그라운드 진행 중 → (2) daq_subsystem 2단계 추정이 나쁘지 않으면 그때 전체 완주(3단계) 커밋, 나쁘면 완주 전에 재튜닝 → (3) chan_top이 worst-corner까지 닫히면 hardening해서 macro LEF/GDS 확보 → (4) ParSAC venv 설치 + chan_top macro를 8개 배치하는 글루코드 작성(1단계 실행) → (5) 살아남은 배치 후보로 daq_subsystem hierarchical 3단계(전체 P&R) 실행 → (6) 같은 시점의 flat 3단계 결과와 4단계 맞대결.</p>
+    </section>
+
+    <section className="card"><div className="card-title"><div><small className="kicker">RePlAce 대안 조사 · DREAMPlace · 2026-09-21</small><h2>실제로 설치·실행까지 해봤지만 이 프로젝트엔 부적합</h2></div></div>
+      <div className="data-table"><table><thead><tr><th>단계</th><th>결과</th><th>근거</th></tr></thead><tbody>{dreamplaceEval.map(([step, result, note]) => <tr key={step}><td><b>{step}</b></td><td>{result.includes('완료') && !result.includes('부정') ? <span className="ok-badge">{result}</span> : <span className="warning-badge">{result}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
+    </section>
+
+    <section className="card"><div className="card-title"><div><small className="kicker">ParSAC 조사 · 2026-09-21</small><h2>설치는 완료, 현재 구조엔 투입 대상이 없음</h2></div></div>
+      <div className="data-table"><table><thead><tr><th>항목</th><th>상태</th><th>근거</th></tr></thead><tbody>{parsacEval.map(([item, stat, note]) => <tr key={item}><td><b>{item}</b></td><td>{stat === '완료' ? <span className="ok-badge">{stat}</span> : <span className="warning-badge">{stat}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
+    </section>
+
+    <section className="card"><div className="card-title"><div><small className="kicker">도구 선택 가이드</small><h2>언제 어떤 도구를 쓰나</h2></div></div>
+      <div className="data-table"><table><thead><tr><th>상황 / 목적</th><th>추천</th><th>이유 / 재검토 시점</th></tr></thead><tbody>{toolGuide.map(([situation, tool, why]) => <tr key={situation}><td>{situation}</td><td><b>{tool}</b></td><td>{why}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note"><b>"많이 돌려서 더 나은 걸 고른다"는 SA스러운 발상 자체는 여전히 유효하다</b> — 다만 ParSAC/DreamPlace 같은 SA/GPU 전용 도구가 아니라, <b>RePlAce를 여러 후보 설정으로 병렬 반복 실행</b>하는 방식으로 이미 하고 있다: SYNTH_STRATEGY 9개 × PL_TARGET_DENSITY_PCT 여러 값 × clock period 후보를 위 "탐색 구조" 섹션의 0~1단계에서 병렬로 돌려서 싸게 거르고, 살아남은 것만 3단계(전체 P&R, 곧 RePlAce 실행)로 확정하는 구조 자체가 "여러 후보를 굴려서 고른다"는 목적을 이미 만족한다 — 알고리즘을 SA로 바꾸는 게 아니라 <b>RePlAce 호출 횟수와 입력 조합을 늘리는 것</b>이 이 프로젝트 규모에 맞는 실현 방법.</p>
     </section>
   </>
 }
