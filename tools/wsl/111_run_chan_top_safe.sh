@@ -42,7 +42,7 @@ export PATH="$SHIM:$PATH"
 
 echo "working dir : $ROOT"
 echo "config      : $CFG"
-echo "sdc         : samples/sample_test_4/asic/constraints/chan_top.sdc (src=12ns/axi=48ns)"
+echo "sdc         : samples/sample_test_4/asic/constraints/chan_top.sdc (src=14ns/axi=52ns)"
 "$OL" --version
 echo
 

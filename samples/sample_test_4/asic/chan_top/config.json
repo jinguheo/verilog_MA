@@ -47,13 +47,14 @@
     "32/10-targeted run (verified twice, 2026-08-30 and 2026-09-12 - see",
     "RESULTS.md). Re-swept against that same real routed netlist's real",
     "parasitics, sourcing constraints/chan_top.sdc unmodified except for the",
-    "period values, found no plateau in either clock domain - src=12/axi=48",
-    "closes the whole design (worst slack +0.90 ns, TNS 0). This value only",
+    "period values. After registering ch_cause_o, the remaining signoff path",
+    "moved to src_ready_o; src=14/axi=52 is the current confirmation target.",
+    "This value only",
     "seeds early synthesis-stage estimates; the SDC's own create_clock calls",
     "are what actually govern P&R and signoff."
   ],
   "CLOCK_PORT": "axi_clk_i",
-  "CLOCK_PERIOD": 48,
+  "CLOCK_PERIOD": 52,
 
   "PNR_SDC_FILE": "dir::../constraints/chan_top.sdc",
   "SIGNOFF_SDC_FILE": "dir::../constraints/chan_top.sdc",
@@ -77,5 +78,19 @@
     "borderline nets over. Strategy 4 inserts diodes more liberally to leave",
     "headroom against exactly this."
   ],
-  "DIODE_INSERTION_STRATEGY": 4
+  "//DIODE_INSERTION_STRATEGY_v2": [
+    "Strategy 4 took 17/16 antenna violations to 0/0 at 12/52 ns. At 14/52",
+    "ns (RUN_2026-09-21_21-20-41, the run that finally closed setup timing",
+    "at this worst corner - WNS/TNS both 0.0), one new borderline violation",
+    "appeared on a different net (net1314, a post-CTS fanout buffer input,",
+    "1.21x over) - a different routing solution at the new period left this",
+    "one buffer's long wire unprotected.",
+    "",
+    "Tried 5 first - OpenLane 2 rejects it outright (only 0/3/4/6 are valid;",
+    "1/2/5 map to nothing and >6 doesn't exist - see config.py's own",
+    "DIODE_INSERTION_STRATEGY deprecation shim). 6 = union of 3 and 4",
+    "(GRT_REPAIR_ANTENNAS + RUN_HEURISTIC_DIODE_INSERTION both on,",
+    "DIODE_ON_PORTS=in) - strictly a superset of what 4 alone did."
+  ],
+  "DIODE_INSERTION_STRATEGY": 6
 }

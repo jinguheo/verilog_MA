@@ -79,7 +79,7 @@ export default function AnalogDesign() {
   const [active,setActive] = useState<Study|null>(null)
   const [error,setError] = useState('')
   const [busy,setBusy] = useState(false)
-  const [tab,setTab] = useState<'circuit' | 'requirements' | 'ppa_experiment' | 'vs_digital' | 'memory_design' | 'adc_dac'>('circuit')
+  const [tab,setTab] = useState<'circuit' | 'requirements' | 'ppa_experiment' | 'ppa_experiment_2' | 'vs_digital' | 'memory_design' | 'adc_dac'>('circuit')
   const formHydrated = useRef(false)
   const load = () => fetch(API + '/api/analog').then(async response => {
     if (!response.ok) throw new Error('Analog API 응답 오류')
@@ -160,6 +160,7 @@ export default function AnalogDesign() {
       <button role="tab" aria-selected={tab === 'circuit'} className={tab === 'circuit' ? 'active' : ''} onClick={() => setTab('circuit')}>전체 아날로그 회로도</button>
       <button role="tab" aria-selected={tab === 'requirements'} className={tab === 'requirements' ? 'active' : ''} onClick={() => setTab('requirements')}>현재 설계</button>
       <button role="tab" aria-selected={tab === 'ppa_experiment'} className={tab === 'ppa_experiment' ? 'active' : ''} onClick={() => setTab('ppa_experiment')}>PPA 실험 1</button>
+      <button role="tab" aria-selected={tab === 'ppa_experiment_2'} className={tab === 'ppa_experiment_2' ? 'active' : ''} onClick={() => setTab('ppa_experiment_2')}>PPA 실험 2</button>
       <button role="tab" aria-selected={tab === 'vs_digital'} className={tab === 'vs_digital' ? 'active' : ''} onClick={() => setTab('vs_digital')}>아날로그·메모리·디지털 차이</button>
       <button role="tab" aria-selected={tab === 'memory_design'} className={tab === 'memory_design' ? 'active' : ''} onClick={() => setTab('memory_design')}>메모리 셀 설계</button>
       <button role="tab" aria-selected={tab === 'adc_dac'} className={tab === 'adc_dac' ? 'active' : ''} onClick={() => setTab('adc_dac')}>ADC vs DAC 상세</button>
@@ -257,6 +258,7 @@ export default function AnalogDesign() {
     </section>
     </div>
     {tab === 'ppa_experiment' && <PpaExperimentOne onApply={applyBalancedPpaPreset}/>}
+    {tab === 'ppa_experiment_2' && <PpaExperimentTwo/>}
     {tab === 'vs_digital' && <AnalogVsDigital tools={installation.tools ?? []} catalog={installation.catalog}/>} 
     {tab === 'memory_design' && <MemoryDesign/>}
     {tab === 'adc_dac' && <AdcDacComparison/>}
@@ -289,12 +291,29 @@ function PpaExperimentOne({ onApply }: { onApply: () => void }) {
       <div className="card-title"><div><small className="kicker">LAYOUT FIX PLAN · ACTIVE</small><h3>현재 작업: CDAC 우선 배치 검토</h3></div><span className="analog-badge blocked">CDAC first</span></div>
       <p>103건 중 84건이 CDAC에 반복되어 있습니다. 동일한 단위 커패시터 배열을 먼저 고쳐야 한 번의 수정이 배열 전체에 일관되게 적용되고, 이후 비교기·상위 통합 배치를 다시 깨뜨리지 않습니다.</p>
       <div className="ppa-result-grid">
+        <article><small>CDAC 단독 DRC</small><b>84 violations</b><span className="warn-text">2026-09-21 완료 · 상위 조립 전부터 존재</span></article>
         <article><small>원인 규칙</small><b>diff/tap.18,20</b><span>MV nwell ↔ N-diff/P-tap ≥ 0.43 µm</span></article>
         <article><small>배치 제약</small><b>대칭 여유부 확보</b><span>CDAC 외곽의 MV nwell·guard ring을 양쪽 동일하게 확장/이동</span></article>
         <article><small>보존할 특성</small><b>매칭·공통중심</b><span>unit cap, dummy, 배선 길이와 기생성분의 좌우 균형 유지</span></article>
         <article><small>검증 순서</small><b>단위 → 배열 → 상위</b><span>Magic DRC 0 후 LVS, 그 다음 PEX/Pareto</span></article>
       </div>
       <p><b>왜 먼저 하는가:</b> CDAC의 커패시터 비율과 대칭은 12-bit 선형성(INL/DNL)에 직접 영향을 줍니다. 배치 단계에서 여유부를 예약하면 DRC 수정 때문에 나중에 커패시터 또는 guard ring을 비대칭으로 옮기는 위험과 재배선·기생 RC 증가를 줄일 수 있습니다.</p>
+    </section>
+    <section className="ppa-result-card">
+      <div className="card-title"><div><small className="kicker">CHECKPOINT · 2026-09-21</small><h3>작업 현황 및 재개 순서</h3></div><span className="connection">paused checkpoint</span></div>
+      <p>현재는 CDAC 원인 분리까지 완료한 중단 지점입니다. 실제 레이아웃 형상은 아직 변경하지 않았으며, 기존 공개 IP와 측정 결과를 보존한 상태입니다.</p>
+      <div className="ppa-result-grid">
+        <article><small>완료</small><b>후보·면적·LVS 확인</b><span>ADC 후보 선정 · 65,628.68 µm² · Netgen LVS match</span></article>
+        <article><small>완료</small><b>CDAC 원인 분리</b><span>단독 Magic DRC 84건 · <code>diff/tap.18,20</code></span></article>
+        <article><small>보류</small><b>PEX / Pareto</b><span>물리 하드 게이트가 열릴 때까지 측정하지 않음</span></article>
+      </div>
+      <div className="data-table"><table><thead><tr><th>순서</th><th>다음 할 일</th><th>완료 기준</th></tr></thead><tbody>
+        <tr><td>1</td><td>CDAC 단위 셀과 배열 경계에서 MV nwell·guard ring의 좌우 대칭 여유부 설계</td><td>커패시터 매칭·dummy·배선 대칭 보존</td></tr>
+        <tr><td>2</td><td>Magic에서 변경한 CDAC 단독 DRC 실행</td><td>84 → 0 violations</td></tr>
+        <tr><td>3</td><td>CDAC LVS 후 상위 ADC에 변경 반영</td><td>Netgen LVS match 유지</td></tr>
+        <tr><td>4</td><td>비교기 4건·상위 통합 15건 DRC를 같은 방식으로 정리</td><td>전체 Magic DRC 0</td></tr>
+        <tr><td>5</td><td>PEX로 기생 RC 포함 성능·전력 재측정, Pareto 비교 실행</td><td>PPA 실측값으로 후보 비교</td></tr>
+      </tbody></table></div>
     </section>
 
     <div className="data-table"><table><thead><tr><th>항목</th><th>설정값</th><th>판정</th></tr></thead><tbody>
@@ -305,6 +324,82 @@ function PpaExperimentOne({ onApply }: { onApply: () => void }) {
       <tr><td>Pareto</td><td>성능 : 전력 : 면적 = 2 : 1 : 1</td><td>지배 후보 제외</td></tr>
     </tbody></table></div>
     <button className="ppa-preset-button" type="button" onClick={onApply}>이 설정값을 요구사항 기반 회로에 적용</button>
+  </section>
+}
+
+function PpaExperimentTwo() {
+  return <section className="card ppa-experiment ppa-experiment-two">
+    <div className="card-title"><div><small className="kicker">PPA EXPERIMENT 2 · IMPLEMENTATION</small><h2>ADC Trigger Capture · 4 KB SRAM</h2></div><span className="analog-badge ok">RTL verified</span></div>
+    <p>아날로그 입력을 기존 12-bit SAR ADC로 변환하고, 이벤트 전후 파형을 4 KB SRAM에 보관한 뒤 필요한 시점에 전송하는 경로입니다. <b>32-bit는 ADC 해상도가 아니라 SRAM 저장 word 폭</b>이며, 16-bit 레코드 두 개를 한 word에 저장합니다.</p>
+    <div className="stats ppa-experiment-stats">
+      <div className="stat-card"><small>ADC 목표</small><strong>12-bit</strong><span>1 MS/s SAR byte stream</span></div>
+      <div className="stat-card"><small>저장 형식</small><strong>32-bit</strong><span>12-bit sample + 4-bit flags × 2</span></div>
+      <div className="stat-card"><small>버퍼 용량</small><strong>4 KB</strong><span>1,024 × 32 · 최대 2,048 samples</span></div>
+      <div className="stat-card"><small>관측 창</small><strong>2.048 ms</strong><span>1 MS/s 기준 · pre/post trigger</span></div>
+    </div>
+
+    <section className="ppa-result-card">
+      <div className="card-title"><div><small className="kicker">CURRENT DATA PATH</small><h3>재사용하는 검증 경로</h3></div><span className="connection">non-invasive to experiment 1</span></div>
+      <div className="capture-flow" role="img" aria-label="Analog input to SAR ADC, sample adapter, asynchronous FIFO, 4KB SRAM capture buffer, and readout interface">
+        <div className="capture-stage analog"><b>Analog front end</b><span>VIN → S/H</span></div><em>→</em>
+        <div className="capture-stage adc"><b>Existing SAR ADC</b><span>12-bit byte stream</span></div><em>→</em>
+        <div className="capture-stage digital"><b>Sample adapter</b><span>byte → 12-bit record</span></div><em>→</em>
+        <div className="capture-stage digital"><b>Async FIFO</b><span>ADC clk → system clk</span></div><em>→</em>
+        <div className="capture-stage memory"><b>Capture SRAM</b><span>1,024 × 32 circular</span></div><em>→</em>
+        <div className="capture-stage digital"><b>Readout</b><span>valid/ready + done</span></div>
+      </div>
+      <div className="ppa-result-grid">
+        <article><small>재사용</small><b>sar_adc_ch</b><span>기존 SAR ADC의 low/high byte stream 사용</span></article>
+        <article><small>재사용</small><b>prim_fifo_async</b><span>검증된 reset synchronizer와 CDC FIFO 사용</span></article>
+        <article><small>구현</small><b>adc_byte_to_sample</b><span className="ok-text">12-bit 복원 · unit test pass</span></article>
+        <article><small>구현</small><b>adc_capture_buffer</b><span className="ok-text">ring/pre-post/freeze/readout test pass</span></article>
+        <article><small>구현</small><b>adc_stream_capture</b><span className="ok-text">full wrapper lint pass</span></article>
+        <article><small>중요한 분리</small><b>캡처용 SRAM은 2번째 macro</b><span>기존 ADC calibration LUT의 4 KB와 별도 필요</span></article>
+      </div>
+    </section>
+
+    <section className="ppa-result-card">
+      <div className="card-title"><div><small className="kicker">LAYOUT EVIDENCE & FLOORPLAN INTENT</small><h3>실제 레이아웃 결과와 캡처 macro 배치 계획</h3></div><span className="analog-badge blocked">macro wrapper pending</span></div>
+      <p>왼쪽은 현재 공개 ADC와 SRAM macro에서 확보한 실제 배치 이미지입니다. 오른쪽은 실험 2에서 해당 macro를 분리 배치할 계획을 표현한 floorplan으로, 물리 구현 결과가 아니므로 추정 이미지와 혼동하지 않게 표시합니다.</p>
+      <div className="layout-evidence-grid">
+        <figure><img src="/analog/adc_mid.png" alt="현재 사용 중인 SKY130 ADC 레이아웃 결과"/><figcaption><b>실제 ADC layout</b><br/>SAR ADC는 아날로그 섬으로 유지하고, 데이터 경계에서만 CDC를 둡니다.</figcaption></figure>
+        <figure><img src="/analog/sram_mid.png" alt="현재 선택한 SRAM22 1024 by 32 macro 레이아웃 결과"/><figcaption><b>실제 SRAM22 layout</b><br/>1,024 × 32 macro의 물리 view를 재사용합니다. 캡처 buffer에는 별도 인스턴스가 필요합니다.</figcaption></figure>
+        <figure className="capture-floorplan"><svg viewBox="0 0 520 260" role="img" aria-label="Experiment 2 planned floorplan with ADC island, CDC, capture SRAM and readout logic"><rect x="8" y="8" width="504" height="244" rx="12" className="floorplan-frame"/><rect x="32" y="45" width="116" height="160" rx="10" className="floorplan-adc"/><text x="90" y="112">ADC island</text><text x="90" y="139">3.3 V</text><rect x="174" y="75" width="88" height="100" rx="10" className="floorplan-digital"/><text x="218" y="116">CDC</text><text x="218" y="141">FIFO</text><rect x="292" y="36" width="144" height="178" rx="10" className="floorplan-memory"/><text x="364" y="106">Capture SRAM</text><text x="364" y="132">1024 × 32</text><text x="364" y="158">4 KB</text><rect x="454" y="75" width="36" height="100" rx="8" className="floorplan-digital"/><text x="472" y="106" transform="rotate(90 472 106)">Readout</text><path d="M148 125 H174 M262 125 H292 M436 125 H454" className="floorplan-wire"/><text x="32" y="232" className="floorplan-note">planned placement · macro location and PDN/routing to be measured</text></svg><figcaption><b>실험 2 floorplan 계획</b><br/>ADC·SRAM을 고정 macro로 먼저 놓고, 짧은 CDC 경로와 readout을 주변 digital 영역에 배치합니다.</figcaption></figure>
+      </div>
+    </section>
+
+    <section className="ppa-result-card">
+      <div className="card-title"><div><small className="kicker">EXECUTION STRATEGY</small><h3>한 번에 최적화하지 않는 이유와 순서</h3></div><span className="connection">constraint-first</span></div>
+      <p>혼합신호 경로는 ADC 매칭·SRAM macro 배치·전원망·CDC·타이밍·라우팅이 서로 영향을 줍니다. 전부를 동시에 바꾸면 어느 변경이 PPA 또는 기능 악화의 원인인지 분리할 수 없고, 재현 가능한 기준점도 사라집니다. 그래서 불변 조건을 먼저 잠그고, 한 단계에서 하나의 위험만 줄입니다.</p>
+      <div className="strategy-grid">
+        <article><i>1</i><b>기능 기준점 고정</b><span>byte 조립, FIFO CDC, circular capture, backpressure를 RTL test/lint로 먼저 고정합니다.</span><small>현재: 완료</small></article>
+        <article><i>2</i><b>macro/전원 영역 예약</b><span>ADC와 4 KB SRAM의 위치, 전압 domain, keep-out 및 배선 입출구를 먼저 정합니다.</span><small>다음: floorplan</small></article>
+        <article><i>3</i><b>물리 경로 단위 검증</b><span>PDN → placement → CTS → detailed routing → DRC/LVS를 block별로 닫습니다.</span><small>그 다음: physical closure</small></article>
+        <article><i>4</i><b>추출 후 PPA 비교</b><span>PEX/STA/전력에서 실제 RC와 switching activity를 반영해 trade-off를 수치화합니다.</span><small>마지막: Pareto</small></article>
+      </div>
+      <div className="data-table"><table><thead><tr><th>미리 결정할 것</th><th>지금 확정하면 피하는 재작업</th><th>결정 기준</th></tr></thead><tbody>
+        <tr><td>SRAM macro 수·방향·pin side</td><td>후반 macro 이동, bus 재배선, congestion 재발</td><td>2번째 1,024 × 32 capture macro · readout 쪽 pin 접근성</td></tr>
+        <tr><td>ADC/SRAM 전원 domain과 guard/keep-out</td><td>디지털 PDN 수정이 ADC noise/매칭을 깨는 일</td><td>ADC 3.3 V island 분리 · macro PG 연결 계획</td></tr>
+        <tr><td>CDC 위치와 sample rate/clock budget</td><td>CTS 뒤 FIFO 이동, hold violation 재수정</td><td>ADC domain → FIFO → system domain 단일 경계</td></tr>
+        <tr><td>trigger window·flags·readout ABI</td><td>SRAM word format과 firmware protocol의 동시 재설계</td><td>16-bit record × 2 · pre/post trigger · valid/ready</td></tr>
+        <tr><td>block별 DRC/LVS gate</td><td>상위에서 원인 불명 수백 건을 되짚는 일</td><td>각 block DRC 0 · LVS match 후 상위 통합</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section className="ppa-result-card">
+      <div className="card-title"><div><small className="kicker">TOOL & VERIFICATION MATRIX</small><h3>단계별 실행 도구와 합격 조건</h3></div><span className="connection">measured, not assumed</span></div>
+      <div className="data-table"><table><thead><tr><th>단계</th><th>사용 도구</th><th>무엇을 검증하는가</th><th>통과 기준 / 현재 상태</th></tr></thead><tbody>
+        <tr><td>RTL 기능</td><td>Verilator · iverilog testbench</td><td>12-bit byte 복원, ring order, trigger pre/post, freeze, valid/ready</td><td><span className="ok-text">unit test pass</span> · capture buffer / byte adapter</td></tr>
+        <tr><td>정적 RTL</td><td>Verilator lint</td><td>폭·latch·미연결·합성 가능 구조, wrapper 포함</td><td><span className="ok-text">lint pass</span> · stream capture wrapper</td></tr>
+        <tr><td>합성 / STA</td><td>Yosys · OpenSTA</td><td>cell mapping, setup/hold, clock 정의와 timing budget</td><td>clock/IO 제약 확정 후 WNS ≥ 0, TNS = 0</td></tr>
+        <tr><td>배치 · CTS · routing</td><td>OpenLane 2 · OpenROAD</td><td>floorplan, PDN, macro placement, placement, clock tree, global/detail route</td><td>macro 고정 후 congestion·antenna·DRC clean</td></tr>
+        <tr><td>layout DRC</td><td>KLayout · Magic</td><td>제조 규칙, spacing/enclosure, antenna 및 physical geometry</td><td>각 block와 top 모두 <b>0 violations</b></td></tr>
+        <tr><td>LVS</td><td>Netgen · Magic extraction</td><td>layout netlist가 schematic/RTL-derived netlist와 동일한지</td><td><b>LVS match</b> · pin/PG 포함</td></tr>
+        <tr><td>기생 추출 / PPA</td><td>OpenRCX / SPEF · OpenSTA · OpenROAD reports</td><td>배선 RC를 포함한 timing, area, power proxy와 routing quality</td><td>PEX/STA 이후 PPA 수치 기록 · Pareto 비교</td></tr>
+        <tr><td>아날로그 signoff</td><td>Xschem · ngspice / Xyce</td><td>ADC noise·settling·INL/DNL 및 전원/온도 corner</td><td>12-bit·1 MS/s 목표를 corner별로 측정</td></tr>
+      </tbody></table></div>
+      <p><b>현재 물리 PPA는 아직 not measured입니다.</b> 실험 1이 사용 중인 OpenLane/OpenROAD 자원을 건드리지 않고, 위 RTL 기준점과 macro wrapper를 먼저 완성한 뒤 별도 run으로 측정합니다.</p>
+    </section>
   </section>
 }
 

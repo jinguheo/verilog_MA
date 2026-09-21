@@ -18,7 +18,7 @@ const funnelStages = [
 
 const concurrency = [
   ['1~2단계 (저가)', '거의 무제한 — 8코어 기준 8~16개 동시 실행 가능', '각 작업이 짧고 단일 스레드(OpenSTA 1회 실행) 또는 순수 CPU SA라서 서로 거의 경합 안 함'],
-  ['3단계 (전체 P&R)', '2~3개 동시가 한계로 보임 — 정확한 N은 아직 실측 안 함', 'SynthesisExploration 3개 동시 실행 실측: 8코어에서 1.43배 속도 향상(3배 아님) — 각 OpenLane 프로세스가 이미 내부적으로 스레드풀을 쓰기 때문에 외부에서 더 겹쳐도 같은 코어를 두고 경합함. 전체 P&R은 SynthesisExploration보다 무거우므로 3개 동시는 더 나쁠 가능성 — N=1,2,3 각각 실측 후 결정 필요(제안, 미실측)'],
+  ['3단계 (전체 P&R)', '사실상 1개 — 후보 여러 개를 동시에 돌려도 이득이 없을 가능성이 높음', 'SynthesisExploration 3개 동시 실행 실측: 8코어에서 1.43배 속도 향상(3배 아님)에 그쳤는데, 그건 그나마 가벼운 합성 단계였다. 전체 P&R 안에서 KLayout DRC 단계 자체가 실제로 `-threads 8`로 이미 8코어 전부를 씁니다(runtime.txt 실측: 이 한 단계만 6분08초) — 후보 하나의 P&R이 이미 이 순간 머신 전체를 쓰므로, 두 번째 후보를 동시에 돌리면 그 시점엔 8개 스레드를 16개로 나눠 쓰게 되어 오히려 각자 더 느려질 수 있다. 후보를 여러 개 찾아도 "동시에 다 돌리기"가 아니라 "빠른 필터(0~2단계)로 최대한 거른 뒤 3단계는 순차로 하나씩" 쪽이 이 머신 규모에 맞다 — 사용자 지적(2026-09-21)대로, CPU 자원이 병렬화의 실질적 한계다.'],
 ] as const
 
 const races = [
@@ -60,6 +60,48 @@ const toolGuide = [
   ['클럭 주기 확정', 'sed로 주기만 바꿔 재시간측정(2단계 필터)', 'chan_top 12/48→52ns 확정에 실제로 쓴 방법. 새 P&R 없이 초 단위로 후보를 거를 수 있음'],
 ] as const
 
+// RePlAce(전역 배치) 이후 실제 실행 구조 — chan_top 완주 런
+// (RUN_2026-09-20_21-14-08, 71분20초) 자체 runtime.txt에서 그대로 뽑은
+// 실측치. 추정이 아니라 실제 로그값. 2026-09-21 작성.
+const postReplaceSteps = [
+  ['0', 'RePlAce (Global Placement)', '2분06초', 125, '#7F77DD', '셀들을 칩 영역에 실제로 퍼뜨리는 전역 배치 — 이전 섹션에서 설명한 정전기 밀도 모델 + Nesterov 경사하강'],
+  ['1', '배치 마무리', '1분25초', 85, '#7F77DD', 'STA 체크포인트 → 배치 직후 타이밍 위반 1차 수리(RepairDesignPostGPL) → 합법화(DetailedPlacement, 표준 셀을 정확한 행/그리드에 정렬)'],
+  ['2', 'CTS (클록 트리 합성)', '53초', 53, '#7F77DD', '클록을 모든 플립플롭까지 균일한 지연으로 퍼뜨리는 버퍼 트리 생성'],
+  ['3', '포스트-CTS 타이밍 리페어', '23분10초', 1390, '#E24B4A', '실제 배선 지연이 반영된 뒤 남은 setup/hold 위반을 버퍼 삽입·셀 교체·핀 스왑으로 반복 수리 — 위반이 많을수록 반복 횟수가 늘어 시간이 비선형으로 증가. 이번 런 전체 시간의 약 1/3'],
+  ['4', '라우팅', '11분26초', 686, '#378ADD', 'Global Routing(대략 경로) → antenna 위반 체크 + 다이오드 삽입 → Detailed Routing(실제 금속 배선 확정)'],
+  ['5', '후처리 정리', '2분31초', 151, '#378ADD', '미사용 라우팅 영역에 필러 셀 삽입, 배선 길이·연결성 리포트'],
+  ['6', '기생성분 추출 + 최종 STA', '3분53초', 233, '#1D9E75', '실제 배선 형상에서 R/C 기생성분 추출(RCX) → 그 값으로 최종 signoff 타이밍 검증(STAPostPNR), IR drop 리포트'],
+  ['7', 'GDS 생성 + 물리 검증', '22분38초', 1358, '#E24B4A', 'Magic/KLayout으로 GDS 생성·XOR 비교 → Magic DRC(8분39초) + KLayout DRC(6분08초) 이중 검증 → SPICE 추출 → Netgen LVS. 이번 런 전체 시간의 또 다른 1/3'],
+  ['8', '최종 체크 리포트', '<1초', 1, '#888780', 'setup/hold/slew/cap 위반 집계, 제조 가능성 리포트'],
+] as const
+
+const parallelizationNotes = [
+  ['이 8단계 자체는 순차적으로만 가능', '각 단계가 이전 단계의 물리적 데이터베이스(배치 결과, 배선 결과)를 입력으로 받는다 — CTS를 라우팅보다 먼저 할 수 없는 것과 같은 이유. 병렬화 대상이 아니다.'],
+  ['이미 내부적으로 병렬화되어 있는 부분', 'STA 체크포인트(STAMidPNR 등)는 9개 PVT 코너를 이미 동시에 계산한다 — 별도 조치 불필요, 이미 최적.'],
+  ['이론적으로는 가능하지만 OpenLane 기본 flow가 안 하는 것', 'Magic DRC · KLayout DRC · Magic SPICE 추출은 GDS만 있으면 되는 서로 독립적인 작업이다 — 커스텀 flow로 동시 실행하면 8분39초+6분08초+2분58초(순차, 17분44초)를 최대값인 8분39초로 줄일 수 있다. OpenLane Classic flow는 이걸 순차 실행하도록 짜여 있어 직접 flow를 커스터마이징하지 않는 한 자동으로 얻어지지 않는다.'],
+  ['진짜 실현 가능한 병렬화는 설계 내부가 아니라 설계/후보 사이', '이미 이 프로젝트가 쓰고 있는 방식 — chan_top과 daq_subsystem을 동시에 돌리거나, SynthesisExploration의 9개 전략을 동시에 돌리는 것. "탐색 구조" 섹션의 0~1단계가 정확히 이 원리다.'],
+  ['23분(리페어) + 22분(물리검증), 두 병목을 줄이는 진짜 방법', '병렬화가 아니라 애초에 "고칠 위반 개수"를 줄이는 것 — RTL이 타이밍을 더 여유 있게 만족하면(이번에 chan_top에서 실제로 함: ch_cause_o 레지스터화) 리사이저가 반복할 위반 자체가 줄어 이 단계가 짧아진다. DRC 쪽은 antenna 위반을 미리 줄이면(DIODE_INSERTION_STRATEGY 등) 재작업 루프가 줄어든다 — 둘 다 이번 세션에 실제로 확인된 효과.'],
+] as const
+
+function PostReplaceTimeline() {
+  const totalSec = postReplaceSteps.reduce((sum, s) => sum + Number(s[3]), 0)
+  const pxPerSec = 900 / totalSec
+  let x = 20
+  return <svg viewBox="0 0 940 140" role="img" aria-label="RePlAce 이후 chan_top P&R 단계별 실제 소요시간">
+    <text x="20" y="20" style={{font: '600 13px sans-serif', fill: 'var(--text-primary)'}}>RePlAce 이후 실행 구조 — 실제 소요시간 비례 (전체 {Math.round(totalSec/60)}분, chan_top 완주 런 실측)</text>
+    {postReplaceSteps.map(([num, name, timeLabel, secStr, color]) => {
+      const w = Math.max(Number(secStr) * pxPerSec, 3)
+      const rect = <rect key={'r'+num} x={x} y={40} width={w} height={40} fill={color} stroke="var(--surface-2)" strokeWidth={1}/>
+      const showLabel = w > 26
+      const label = showLabel ? <text key={'t'+num} x={x + w/2} y={64} textAnchor="middle" dominantBaseline="central" style={{font: '600 12px sans-serif', fill: '#fff'}}>{num}</text> : null
+      x += w
+      return <g key={num}>{rect}{label}</g>
+    })}
+    <text x="20" y="105" style={{font: '400 11px sans-serif', fill: 'var(--text-secondary)'}}>■ 배치/CTS 계열 (보라)　■ 리페어·DRC 병목 (빨강, 두 구간이 전체의 약 64%)　■ 라우팅/추출 (파랑·초록)</text>
+    <text x="20" y="122" style={{font: '400 11px sans-serif', fill: 'var(--text-secondary)'}}>숫자 0-8은 아래 표의 단계 번호와 일치</text>
+  </svg>
+}
+
 export default function PnrResearch() {
   return <>
     <section className="card"><div className="card-title"><div><small className="kicker">P&R 연구 · 2026-09-18</small><h2>Flat vs Hierarchical — 두 접근을 나란히</h2></div></div>
@@ -74,7 +116,7 @@ export default function PnrResearch() {
 
     <section className="card"><div className="card-title"><div><small className="kicker">동시성 설계</small><h2>단계마다 다른 병렬도</h2></div></div>
       <div className="data-table"><table><thead><tr><th>단계</th><th>권장 동시 실행 수</th><th>근거</th></tr></thead><tbody>{concurrency.map(([stage, n, why]) => <tr key={stage}><td>{stage}</td><td><b>{n}</b></td><td>{why}</td></tr>)}</tbody></table></div>
-      <p className="rtl-guide-note">"최대한 병렬로"가 곧 "후보 수만큼 동시에"는 아니다 — 이 호스트가 8코어이고 OpenLane 자체가 내부적으로 이미 병렬화돼 있어서, 외부 동시 실행 수를 늘려도 어느 지점부터는 서로의 코어를 뺏을 뿐 순수 이득이 없다(실측: SynthesisExploration 3개 동시 = 1.43배, 3배 아님). 1~2단계는 가볍고 짧아서 거의 무제한으로 병렬화하고, 3단계(전체 P&R)만 동시 개수를 실측 기반으로 제한하는 게 맞다.</p>
+      <p className="rtl-guide-note">"최대한 병렬로"가 곧 "후보 수만큼 동시에"는 아니다 — 이 호스트가 8코어이고 OpenLane 자체가 내부적으로 이미 병렬화돼 있어서, 외부 동시 실행 수를 늘려도 어느 지점부터는 서로의 코어를 뺏을 뿐 순수 이득이 없다(실측: SynthesisExploration 3개 동시 = 1.43배, 3배 아님). 1~2단계는 가볍고 짧아서 거의 무제한으로 병렬화하고, <b>3단계(전체 P&R)는 사실상 병렬화 여지가 없다</b> — 아래 "실행 구조" 섹션에서 확인했듯 KLayout DRC 한 단계만으로도 8코어를 전부 쓰기 때문에, 후보를 여러 개 찾아내는 것과 그걸 동시에 다 돌리는 것은 별개 문제다. 여러 후보를 "찾는" 건 0~2단계(저렴)에서 병렬로 하고, 3단계는 순차로 하나씩 돌리는 구조가 이 머신 규모에 맞는 현실적인 답이다.</p>
     </section>
 
     <section className="card"><div className="card-title"><div><small className="kicker">병렬 실행 시 충돌 방지</small><h2>여러 후보/세션이 같은 리소스를 쓸 때</h2></div></div>
@@ -92,6 +134,19 @@ export default function PnrResearch() {
 
     <section className="card"><div className="card-title"><div><small className="kicker">ParSAC 조사 · 2026-09-21</small><h2>설치는 완료, 현재 구조엔 투입 대상이 없음</h2></div></div>
       <div className="data-table"><table><thead><tr><th>항목</th><th>상태</th><th>근거</th></tr></thead><tbody>{parsacEval.map(([item, stat, note]) => <tr key={item}><td><b>{item}</b></td><td>{stat === '완료' ? <span className="ok-badge">{stat}</span> : <span className="warning-badge">{stat}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
+    </section>
+
+    <section className="card"><div className="card-title"><div><small className="kicker">실행 구조 · RePlAce 이후 · 2026-09-21</small><h2>RePlAce부터 signoff까지, 각 단계 실제 소요시간</h2></div></div>
+      <p>chan_top 완주 런(<code>RUN_2026-09-20_21-14-08</code>, 71분20초)의 실제 <code>runtime.txt</code> 값을 그대로 합산한 것 — 추정이 아니다.</p>
+      <div className="analog-schematic-wrap"><PostReplaceTimeline/></div>
+      <div className="data-table"><table><thead><tr><th>#</th><th>단계</th><th>실제 소요</th><th>무엇을 하나</th></tr></thead><tbody>
+        {postReplaceSteps.map(([num, name, time, , , desc]) => <tr key={num}><td><b>{num}</b></td><td><b>{name}</b></td><td>{time}</td><td>{desc}</td></tr>)}
+      </tbody></table></div>
+      <p className="rtl-guide-note"><b>단 두 단계(3번 포스트-CTS 리페어 23분10초 + 7번 GDS/물리검증 22분38초)가 전체의 약 64%.</b> 나머지 6단계를 다 합쳐도 이 둘 중 하나에 못 미친다.</p>
+    </section>
+
+    <section className="card"><div className="card-title"><div><small className="kicker">병렬화 가능성 분석</small><h2>어디를 병렬로 돌릴 수 있고, 어디는 안 되나</h2></div></div>
+      <div className="check-list">{parallelizationNotes.map(([title, note]) => <p key={title}><b>{title}</b><span>{note}</span></p>)}</div>
     </section>
 
     <section className="card"><div className="card-title"><div><small className="kicker">도구 선택 가이드</small><h2>언제 어떤 도구를 쓰나</h2></div></div>

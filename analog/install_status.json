@@ -23,7 +23,7 @@
     "device_sizing_search": "OpenFASoC model search verified for temperature sensor and LDO",
     "analog_placement_search": "OpenFASoC macro adapter implemented; resource-gated while OpenLane runs",
     "analog_routing_search": "OpenFASoC macro adapter implemented; resource-gated while OpenLane runs",
-    "drc_lvs_gate": "ADC per-job LVS adapter verified: Netgen LVS match; KLayout DRC=0; Magic DRC=103 remains open",
+    "drc_lvs_gate": "ADC per-job LVS adapter verified: Netgen LVS match; KLayout DRC=0; Magic full DRC=103 remains open (single diff/tap.18,20 rule family: CDAC 84, comparator 4, top integration 15)",
     "memory_macro_selection": "Requirement-matched SRAM22/SKY130 selection with complete-view rejection and LEF area evidence",
     "pex_ppa_pareto": "planned",
     "macro_export": "artifact audit and OpenFASoC generation adapters implemented"

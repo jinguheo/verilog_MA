@@ -64,6 +64,9 @@ $tops = @(
     @{ name = 'irq_ctrl';         files = @("$daqRoot\filelist\rtl_phase5.f") }
     @{ name = 'perf_cnt';         files = @("$daqRoot\filelist\rtl_phase5.f") }
     @{ name = 'daq_subsystem';    files = @("$daqRoot\filelist\rtl_phase5.f") }
+    @{ name = 'adc_capture_buffer'; files = @("$daqRoot\filelist\pkg.f", "$daqRoot\rtl\analog_if\adc_capture_buffer.sv") }
+    @{ name = 'adc_byte_to_sample'; files = @("$daqRoot\filelist\pkg.f", "$daqRoot\rtl\analog_if\adc_byte_to_sample.sv") }
+    @{ name = 'adc_stream_capture'; files = @("$daqRoot\filelist\pkg.f", "$daqRoot\rtl\analog_if\adc_byte_to_sample.sv", "$daqRoot\rtl\analog_if\adc_capture_buffer.sv", "$daqRoot\rtl\analog_if\adc_stream_capture.sv") }
 )
 if ($Only) { $tops = $tops | Where-Object { $Only -contains $_.name } }
 
