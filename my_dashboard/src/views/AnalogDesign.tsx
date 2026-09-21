@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import AnalogVsDigital from './AnalogVsDigital'
 import MemoryDesign from './MemoryDesign'
+import AdcDacComparison from './AdcDacComparison'
 
 const API = 'http://127.0.0.1:8788'
 
@@ -78,7 +79,7 @@ export default function AnalogDesign() {
   const [active,setActive] = useState<Study|null>(null)
   const [error,setError] = useState('')
   const [busy,setBusy] = useState(false)
-  const [tab,setTab] = useState<'circuit' | 'requirements' | 'ppa_experiment' | 'vs_digital' | 'memory_design'>('circuit')
+  const [tab,setTab] = useState<'circuit' | 'requirements' | 'ppa_experiment' | 'vs_digital' | 'memory_design' | 'adc_dac'>('circuit')
   const formHydrated = useRef(false)
   const load = () => fetch(API + '/api/analog').then(async response => {
     if (!response.ok) throw new Error('Analog API 응답 오류')
@@ -161,6 +162,7 @@ export default function AnalogDesign() {
       <button role="tab" aria-selected={tab === 'ppa_experiment'} className={tab === 'ppa_experiment' ? 'active' : ''} onClick={() => setTab('ppa_experiment')}>PPA 실험 1</button>
       <button role="tab" aria-selected={tab === 'vs_digital'} className={tab === 'vs_digital' ? 'active' : ''} onClick={() => setTab('vs_digital')}>아날로그·메모리·디지털 차이</button>
       <button role="tab" aria-selected={tab === 'memory_design'} className={tab === 'memory_design' ? 'active' : ''} onClick={() => setTab('memory_design')}>메모리 셀 설계</button>
+      <button role="tab" aria-selected={tab === 'adc_dac'} className={tab === 'adc_dac' ? 'active' : ''} onClick={() => setTab('adc_dac')}>ADC vs DAC 상세</button>
     </div>
     {tab === 'circuit' && <AnalogCircuitOverview catalog={installation.catalog}/>} 
     <div hidden={tab !== 'requirements'}>
@@ -257,6 +259,7 @@ export default function AnalogDesign() {
     {tab === 'ppa_experiment' && <PpaExperimentOne onApply={applyBalancedPpaPreset}/>}
     {tab === 'vs_digital' && <AnalogVsDigital tools={installation.tools ?? []} catalog={installation.catalog}/>} 
     {tab === 'memory_design' && <MemoryDesign/>}
+    {tab === 'adc_dac' && <AdcDacComparison/>}
   </div>
 }
 
@@ -270,6 +273,30 @@ function PpaExperimentOne({ onApply }: { onApply: () => void }) {
       <div className="stat-card"><small>성능 목표</small><strong>1 MS/s</strong><span>성능 가중치 2</span></div>
       <div className="stat-card"><small>PPA 예산</small><strong>20 mW</strong><span>면적 ≤ 0.5 mm²</span></div>
     </div>
+    <section className="ppa-result-card">
+      <div className="card-title"><div><small className="kicker">EXECUTION RESULT · 2026-09-20</small><h3>실험 1 현재 상태</h3></div><span className="analog-badge blocked">physical gate blocked</span></div>
+      <p>후보 선정과 면적 측정은 완료됐지만, DRC/LVS 하드 게이트가 통과하지 않아 PEX와 Pareto 비교는 보류 상태입니다.</p>
+      <div className="ppa-result-grid">
+        <article><small>선정 후보</small><b>Efabless SKY130 12-bit SAR ADC</b><span>score 104 · selected</span></article>
+        <article><small>면적</small><b>65,628.68 µm²</b><span>0.0656 mm² · 예산 0.5 mm² 통과</span></article>
+        <article><small>KLayout DRC</small><b>0 violations</b><span className="ok-text">pass</span></article>
+        <article><small>Magic DRC</small><b>103 violations</b><span className="warn-text">fail · CDAC 84 · 비교기 4 · 상위 15</span></article>
+        <article><small>Netgen LVS</small><b>LVS match</b><span className="ok-text">pass · adapter fixed</span></article>
+        <article><small>다음 단계</small><b>PEX / Pareto</b><span>DRC 0 · LVS match 이후 실행</span></article>
+      </div>
+    </section>
+    <section className="ppa-result-card">
+      <div className="card-title"><div><small className="kicker">LAYOUT FIX PLAN · ACTIVE</small><h3>현재 작업: CDAC 우선 배치 검토</h3></div><span className="analog-badge blocked">CDAC first</span></div>
+      <p>103건 중 84건이 CDAC에 반복되어 있습니다. 동일한 단위 커패시터 배열을 먼저 고쳐야 한 번의 수정이 배열 전체에 일관되게 적용되고, 이후 비교기·상위 통합 배치를 다시 깨뜨리지 않습니다.</p>
+      <div className="ppa-result-grid">
+        <article><small>원인 규칙</small><b>diff/tap.18,20</b><span>MV nwell ↔ N-diff/P-tap ≥ 0.43 µm</span></article>
+        <article><small>배치 제약</small><b>대칭 여유부 확보</b><span>CDAC 외곽의 MV nwell·guard ring을 양쪽 동일하게 확장/이동</span></article>
+        <article><small>보존할 특성</small><b>매칭·공통중심</b><span>unit cap, dummy, 배선 길이와 기생성분의 좌우 균형 유지</span></article>
+        <article><small>검증 순서</small><b>단위 → 배열 → 상위</b><span>Magic DRC 0 후 LVS, 그 다음 PEX/Pareto</span></article>
+      </div>
+      <p><b>왜 먼저 하는가:</b> CDAC의 커패시터 비율과 대칭은 12-bit 선형성(INL/DNL)에 직접 영향을 줍니다. 배치 단계에서 여유부를 예약하면 DRC 수정 때문에 나중에 커패시터 또는 guard ring을 비대칭으로 옮기는 위험과 재배선·기생 RC 증가를 줄일 수 있습니다.</p>
+    </section>
+
     <div className="data-table"><table><thead><tr><th>항목</th><th>설정값</th><th>판정</th></tr></thead><tbody>
       <tr><td>후보 선정</td><td>SKY130A 호환 공개 ADC / 매크로</td><td>PDK·기능 조건 충족</td></tr>
       <tr><td>성능</td><td>12-bit · 1 MS/s</td><td>요구 성능 달성</td></tr>
@@ -305,7 +332,8 @@ function AnalogCircuitOverview({ catalog }: { catalog: CatalogItem[] }) {
     </div>
     <div className="analog-circuit-legend"><span><i className="legend-signal"/> analog signal</span><span><i className="legend-power"/> regulated power</span><span><i className="legend-digital"/> digital / memory bus</span><span><i className="legend-warning"/> signoff pending</span></div>
     <div className="analog-circuit-facts">
-      <article><b>ADC evidence</b><span>면적 65,628.68 µm² · KLayout DRC 0 · Netgen LVS match · Magic DRC 103</span></article>
+      <article><b>ADC evidence</b><span>면적 65,628.68 µm² · KLayout DRC 0 · Netgen LVS match · Magic DRC 103 (CDAC 84 / 비교기 4 / 상위 통합 15)</span></article>
+      <article><b>Magic DRC 진단</b><span><code>diff/tap.18,20</code> 단일 규칙군: MV nwell과 N-diff/P-tap 간격 0.43 µm. 반복 CDAC 배열 경계에 집중되어 PDK·레이아웃 검토가 필요합니다.</span></article>
       <article><b>SRAM integration</b><span>SRAM22 4KB·32bit·1-port · LEF/GDS/Liberty/SPICE/Verilog 준비</span></article>
       <article><b>Generator status</b><span>온도센서·LDO Verilog 생성 완료 · 물리 매크로 생성은 OpenLane 작업 종료 후 실행</span></article>
     </div>

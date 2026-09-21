@@ -176,6 +176,25 @@ export default function AnalogVsDigital({tools,catalog}:{tools:LiveTool[];catalo
     </section>
 
     <section className="card">
+      <div className="card-title"><div><small className="kicker">알아야 할 핵심 용어</small><h2>DAC와 CDAC는 무엇이 다른가</h2></div><span className="connection">CDAC ⊂ DAC</span></div>
+      <p><b>DAC</b>(Digital-to-Analog Converter)는 디지털 값을 아날로그 전압이나 전류로 바꾸는 회로 전체를 뜻합니다. <b>CDAC</b>(Capacitive DAC)는 그중 커패시터 배열로 변환값을 만드는 구현 방식입니다. 따라서 모든 CDAC는 DAC이지만, 저항식·전류원식 DAC는 CDAC가 아닙니다.</p>
+      <div className="data-table"><table><thead><tr><th>구분</th><th>DAC</th><th>CDAC</th></tr></thead><tbody>
+        <tr><td><b>범위</b></td><td>디지털→아날로그 변환기의 총칭</td><td>커패시터 방식 DAC</td></tr>
+        <tr><td><b>구현</b></td><td>저항, 전류원, 커패시터 등 여러 방식</td><td>이진 가중 또는 분할 커패시터 배열</td></tr>
+        <tr><td><b>주요 사용처</b></td><td>오디오 출력, 기준전압, 제어 신호</td><td>SAR ADC 내부의 비교 전압 생성</td></tr>
+        <tr><td><b>강점</b></td><td>목적에 따라 구조를 선택할 수 있음</td><td>정적 전력이 작고 CMOS 공정에 적합</td></tr>
+        <tr><td><b>주의점</b></td><td>구조별 선형성·속도·전력 특성이 다름</td><td>해상도가 커질수록 면적과 커패시터 매칭이 어려움</td></tr>
+      </tbody></table></div>
+      <div className="cdac-flow" aria-label="SAR ADC에서 CDAC가 동작하는 순서">
+        <div><i>1</i><b>SAR 로직</b><span>시험할 비트를 정함</span></div><em>→</em>
+        <div><i>2</i><b>CDAC</b><span>해당 아날로그 전압 생성</span></div><em>→</em>
+        <div><i>3</i><b>Comparator</b><span>입력 전압과 비교</span></div><em>→</em>
+        <div><i>4</i><b>SAR 로직</b><span>비트를 유지하거나 제거</span></div>
+      </div>
+      <p className="rtl-guide-note"><b>현재 12-bit SAR ADC에서:</b> 중앙의 반복 커패시터 배열이 CDAC이고, <code>adc_dac_val[11:0]</code>이 시험할 값을 전달합니다. 비교기의 <code>adc_comp_out</code> 결과를 받아 가장 높은 비트부터 하나씩 확정합니다.</p>
+    </section>
+
+    <section className="card">
       <div className="card-title"><div><small className="kicker">실제 선정 회로 · 2026-09-20</small><h2>Efabless SKY130 12-bit SAR ADC — 진짜 GDS를 열어봄</h2></div></div>
       <p>Analog &amp; Memory 탭에서 선정한 후보(<code>sky130_ef_adc3v_12bit</code>)의 실제 레이아웃(GDS)을 KLayout으로 그대로 렌더링했습니다. 아래 소자 개수·핀 이름은 전부 <code>netlist/layout/sky130_ef_ip__adc3v_12bit.spice</code>(추출된 실제 넷리스트)와 최상위 서브서킷 선언에서 가져온 실측치입니다 — 만들어낸 예시가 아닙니다.</p>
       <img src="/analog/adc_full.png" alt="ADC 전체 다이 레이아웃 (223.71 x 293.37 um)" style={{width:'100%', borderRadius:8, border:'1px solid var(--border)'}}/>
