@@ -19,7 +19,7 @@ const blocks = [
   ['skid_buffer', '완료 · signoff clean', 'DRC 0 · LVS 0 · XOR 0 · antenna 0 · SYNTH_STRATEGY 탐색 결과 이미 최적'],
   ['cnt_sat', '완료 · signoff clean', 'DRC 0 · LVS 0 · XOR 0 · antenna 0 · AREA 1 전환 후 전체 P&R 재검증'],
   ['chan_ctrl', '완료 · signoff clean (실제 SDC 적용)', '단일 클럭. AREA 2 전환 후 전체 P&R 재검증. 폴백 SDC 대비 setup 여유 4.25→1.98ns로 낮아짐 — IO 제약이 없어서 좋아 보였던 것'],
-  ['chan_top', '진행 중 · 셋업 타이밍 완전 클로징, 안테나 1건 재검증 중', 'ch_cause_o 레지스터화(9/20, b02cb4e) + src_period 14ns(9/21, 32a7395) → RUN_2026-09-21_21-20-41에서 전 코너 WNS/TNS 완전 양수/0 달성 — 주기 스윕이 아니라 RTL 파이프라이닝으로 닫힘. 남은 이슈는 안테나 위반 1건(net1314)뿐, DIODE_INSERTION_STRATEGY 4→6으로 재실행 중 (RUN_2026-09-23_12-48-47, 오늘 12:48 시작 · 라이브). 이전 두 검증 시도(9/21 21:22·23:03)는 CTS 이후 로그 없이 정지 — WSL 재시작 추정'],
+  ['chan_top', '완료 · 5개 게이트 전부 signoff clean', 'DRC Passed · LVS Passed · Antenna Passed · Setup WNS/TNS 0.0/0.0 (worst corner) · Hold WNS 0 — RUN_2026-09-23_12-48-47 (src=14ns/axi=52ns, DIODE_INSERTION_STRATEGY=6), 46,009 cells. ch_cause_o 레지스터화(9/20, b02cb4e)로 axi 도메인 CRC 병목 해결 → src_period 14ns(9/21, 32a7395)로 src_ready_o 마저 해결 → 안테나 신규 1건을 strategy 6으로 해결(9/23, 3d73bbd). 주기 스윕만으로는 안 닫혔고 RTL 파이프라이닝 + 정밀한 주기 조정의 조합으로 완전 클로징'],
   ['daq_subsystem (8채널 top)', '진행 중 · worst-corner 부분 검증 (RUN_2026-09-23_12-48-48, 라이브)', '12/48ns 목표로 재실행 중 — chan_top의 14/52ns 갱신은 아직 미반영. `--to OpenROAD.STAMidPNR-3` + DEFAULT_CORNER=nom_ss_100C_1v60로 전체 signoff 대신 worst corner 배치 후 타이밍부터 우선 확보하는 범위. 오늘 12:48 시작, 확인 시점 기준 yosys 합성 단계. ~107k 셀(chan_top의 3.6배)'],
 ] as const
 
@@ -39,7 +39,8 @@ const timingHistory = [
   ['12/48 ns 처음부터 재합성 (9/18)', 'RUN_2026-09-18_21-19-11', '위반 926→5, TNS −150→−3.4ns', '실제 결과. 방향은 맞았으나 WNS −2.73ns로 완전 클로징은 아님. 남은 5개는 전부 axi 도메인'],
   ['12/52 ns 처음부터 재합성 (9/20)', 'RUN_2026-09-20_19-36-35', '❌ 오히려 악화', 'WNS −2.73→−3.38ns, TNS −3.4→−5.3ns (같은 두 신호 ch_cause_o[0]/[2]). 원인: SDC의 clock_uncertainty/transition이 주기의 %로 커져서(axi 48→52ns면 마진도 2.4→2.6ns), 64단 CRC 체인에 누적되며 주기 증가분보다 마진 손해가 더 컸음. 안테나 위반도 새로 발생(핀17·넷16). 주기 스윕으로는 안 닫힘 — RTL 파이프라이닝만 남음'],
   ['ch_cause_o 레지스터화 + antenna strategy 4, 12/52ns 그대로 재실행 (9/20)', 'RUN_2026-09-20_21-14-08', 'WNS −3.38→−0.50ns, antenna 17→0', 'pkt_check.sv 64단 CRC 체인이 ch_cause_o[0]/[2]에 조합으로 물려 있던 것을 레지스터 1단 삽입으로 유효 깊이 절반으로 축소 — 주기 스윕이 아니라 RTL 파이프라이닝으로 실제 개선. 남은 1건은 axi 도메인이 아니라 별개의 src_clk 경로(skid_buffer의 src_ready_o)'],
-  ['src_period 12→14ns 재조정 (9/21)', 'RUN_2026-09-21_21-20-41', '셋업 타이밍 전 코너 완전 클로징 (WNS 0.97~4.14ns, TNS=0 전부)', 'src_ready_o 경로 하나만 남아 있었으므로 axi는 그대로 두고 src_period만 소폭 상향 — pkt_align.sv 버퍼링 확장 없이 해결. 대신 새 안테나 위반 1건(net1314, CTS 이후 팬아웃 버퍼 입력, 1.21x 초과) 발생 → DIODE_INSERTION_STRATEGY 4→6으로 대응, RUN_2026-09-23_12-48-47에서 재검증 진행 중(라이브)'],
+  ['src_period 12→14ns 재조정 (9/21)', 'RUN_2026-09-21_21-20-41', '셋업 타이밍 전 코너 완전 클로징 (worst corner WNS/TNS 0.0/0.0)', 'src_ready_o 경로 하나만 남아 있었으므로 axi는 그대로 두고 src_period만 소폭 상향 — pkt_align.sv 버퍼링 확장 없이 해결. 대신 새 안테나 위반 1건(net1314, CTS 이후 팬아웃 버퍼 입력, 1.21x 초과) 발생'],
+  ['DIODE_INSERTION_STRATEGY 6 (9/23) — 최종', 'RUN_2026-09-23_12-48-47', '✅ 5개 게이트 전부 clean', 'strategy 5는 OpenLane 2에서 아예 무효값(config.py의 deprecation shim이 {0,3,4,6}만 허용) — 6(=3+4 통합)으로 net1314까지 해결. DRC Passed · LVS Passed · Antenna Passed(0/0) · Setup WNS/TNS 0.0/0.0 · Hold 0. 8/28부터 이어진 chan_top 타이밍 조사 전체의 결말'],
 ] as const
 
 // 상용 EDA/파운드리 PDK vs 이 프로젝트가 실제 쓰는 오픈소스 스택.
