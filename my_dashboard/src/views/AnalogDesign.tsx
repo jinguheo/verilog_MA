@@ -32,6 +32,12 @@ const balancedPpaPreset = {
   max_power_mw: '20', max_area_um2: '500000', performance_weight: '2', power_weight: '1', area_weight: '1',
 }
 
+const ppa3PlacementPreset = {
+  function: 'adc', pdk: 'sky130A', supply_v: '3.3', resolution_bits: '12',
+  sample_rate_hz: '1000000', capacity_kb: '', word_width: '', ports: '',
+  max_power_mw: '15', max_area_um2: '100000', performance_weight: '2', power_weight: '1', area_weight: '2',
+}
+
 const optimalSramPreset = {
   function: 'sram', pdk: 'sky130A', supply_v: '1.8', resolution_bits: '',
   sample_rate_hz: '25000000', capacity_kb: '4', word_width: '32', ports: '1',
@@ -79,7 +85,7 @@ export default function AnalogDesign() {
   const [active,setActive] = useState<Study|null>(null)
   const [error,setError] = useState('')
   const [busy,setBusy] = useState(false)
-  const [tab,setTab] = useState<'circuit' | 'requirements' | 'ppa_experiment' | 'ppa_experiment_2' | 'vs_digital' | 'memory_design' | 'adc_dac'>('circuit')
+  const [tab,setTab] = useState<'circuit' | 'requirements' | 'ppa_experiment' | 'ppa_experiment_2' | 'ppa_experiment_3' | 'vs_digital' | 'memory_design' | 'adc_dac'>('circuit')
   const formHydrated = useRef(false)
   const load = () => fetch(API + '/api/analog').then(async response => {
     if (!response.ok) throw new Error('Analog API 응답 오류')
@@ -109,6 +115,10 @@ export default function AnalogDesign() {
   }
   const applyBalancedPpaPreset = () => {
     setForm(balancedPpaPreset)
+    setTab('requirements')
+  }
+  const applyPpa3PlacementPreset = () => {
+    setForm(ppa3PlacementPreset)
     setTab('requirements')
   }
   const restoreRecommendedValues = () => {
@@ -161,6 +171,7 @@ export default function AnalogDesign() {
       <button role="tab" aria-selected={tab === 'requirements'} className={tab === 'requirements' ? 'active' : ''} onClick={() => setTab('requirements')}>현재 설계</button>
       <button role="tab" aria-selected={tab === 'ppa_experiment'} className={tab === 'ppa_experiment' ? 'active' : ''} onClick={() => setTab('ppa_experiment')}>PPA 실험 1</button>
       <button role="tab" aria-selected={tab === 'ppa_experiment_2'} className={tab === 'ppa_experiment_2' ? 'active' : ''} onClick={() => setTab('ppa_experiment_2')}>PPA 실험 2</button>
+      <button role="tab" aria-selected={tab === 'ppa_experiment_3'} className={tab === 'ppa_experiment_3' ? 'active' : ''} onClick={() => setTab('ppa_experiment_3')}>PPA 실험 3</button>
       <button role="tab" aria-selected={tab === 'vs_digital'} className={tab === 'vs_digital' ? 'active' : ''} onClick={() => setTab('vs_digital')}>아날로그·메모리·디지털 차이</button>
       <button role="tab" aria-selected={tab === 'memory_design'} className={tab === 'memory_design' ? 'active' : ''} onClick={() => setTab('memory_design')}>메모리 셀 설계</button>
       <button role="tab" aria-selected={tab === 'adc_dac'} className={tab === 'adc_dac' ? 'active' : ''} onClick={() => setTab('adc_dac')}>ADC vs DAC 상세</button>
@@ -259,6 +270,7 @@ export default function AnalogDesign() {
     </div>
     {tab === 'ppa_experiment' && <PpaExperimentOne onApply={applyBalancedPpaPreset}/>}
     {tab === 'ppa_experiment_2' && <PpaExperimentTwo/>}
+    {tab === 'ppa_experiment_3' && <PpaExperimentThree onApply={applyPpa3PlacementPreset}/>}
     {tab === 'vs_digital' && <AnalogVsDigital tools={installation.tools ?? []} catalog={installation.catalog}/>} 
     {tab === 'memory_design' && <MemoryDesign/>}
     {tab === 'adc_dac' && <AdcDacComparison/>}
@@ -276,42 +288,43 @@ function PpaExperimentOne({ onApply }: { onApply: () => void }) {
       <div className="stat-card"><small>PPA 예산</small><strong>20 mW</strong><span>면적 ≤ 0.5 mm²</span></div>
     </div>
     <section className="ppa-result-card">
-      <div className="card-title"><div><small className="kicker">EXECUTION RESULT · 2026-09-20</small><h3>실험 1 현재 상태</h3></div><span className="analog-badge blocked">physical gate blocked</span></div>
+      <div className="card-title"><div><small className="kicker">BASELINE RESULT · 2026-09-20</small><h3>실험 1 기준 결과</h3></div><span className="analog-badge blocked">physical gate blocked</span></div>
       <p>후보 선정과 면적 측정은 완료됐지만, DRC/LVS 하드 게이트가 통과하지 않아 PEX와 Pareto 비교는 보류 상태입니다.</p>
       <div className="ppa-result-grid">
         <article><small>선정 후보</small><b>Efabless SKY130 12-bit SAR ADC</b><span>score 104 · selected</span></article>
         <article><small>면적</small><b>65,628.68 µm²</b><span>0.0656 mm² · 예산 0.5 mm² 통과</span></article>
-        <article><small>KLayout DRC</small><b>0 violations</b><span className="ok-text">pass</span></article>
-        <article><small>Magic DRC</small><b>103 violations</b><span className="warn-text">fail · CDAC 84 · 비교기 4 · 상위 15</span></article>
+        <article><small>KLayout DRC</small><b>0 violations</b><span>수정 전 GDS 기준 · 재검증 필요</span></article>
+        <article><small>Magic DRC</small><b>103 violations</b><span className="warn-text">기준값 · CDAC 84 · 비교기 4 · 상위 15</span></article>
         <article><small>Netgen LVS</small><b>LVS match</b><span className="ok-text">pass · adapter fixed</span></article>
         <article><small>다음 단계</small><b>PEX / Pareto</b><span>DRC 0 · LVS match 이후 실행</span></article>
       </div>
     </section>
     <section className="ppa-result-card">
-      <div className="card-title"><div><small className="kicker">LAYOUT FIX PLAN · ACTIVE</small><h3>현재 작업: CDAC 우선 배치 검토</h3></div><span className="analog-badge blocked">CDAC first</span></div>
-      <p>103건 중 84건이 CDAC에 반복되어 있습니다. 동일한 단위 커패시터 배열을 먼저 고쳐야 한 번의 수정이 배열 전체에 일관되게 적용되고, 이후 비교기·상위 통합 배치를 다시 깨뜨리지 않습니다.</p>
+      <div className="card-title"><div><small className="kicker">LAYOUT FIX PLAN · CHECKPOINT</small><h3>현재 작업: CDAC 잔여 경계 DRC 6건</h3></div><span className="analog-badge blocked">6 remaining</span></div>
+      <p>CACE는 GDS가 아니라 Magic 원본(.mag)을 우선 검사한다는 사실을 로그와 코드로 확인했습니다. analog-switch dependency를 공식 DRC/LVS 수정 커밋 <code>34a2361</code>로 올리고 EF_SW_RST stitching을 맞춰 CDAC Magic DRC를 84건에서 6건으로 줄였습니다.</p>
       <div className="ppa-result-grid">
-        <article><small>CDAC 단독 DRC</small><b>84 violations</b><span className="warn-text">2026-09-21 완료 · 상위 조립 전부터 존재</span></article>
+        <article><small>CDAC 단독 DRC</small><b>6 violations</b><span className="warn-text">84 → 9 → 6 · 2026-09-23</span></article>
         <article><small>원인 규칙</small><b>diff/tap.18,20</b><span>MV nwell ↔ N-diff/P-tap ≥ 0.43 µm</span></article>
-        <article><small>배치 제약</small><b>대칭 여유부 확보</b><span>CDAC 외곽의 MV nwell·guard ring을 양쪽 동일하게 확장/이동</span></article>
+        <article><small>원본 정합성</small><b>검사 경로 확인 완료</b><span>CACE .mag 우선 · stale GDS 감지 누락 확인</span></article>
         <article><small>보존할 특성</small><b>매칭·공통중심</b><span>unit cap, dummy, 배선 길이와 기생성분의 좌우 균형 유지</span></article>
         <article><small>검증 순서</small><b>단위 → 배열 → 상위</b><span>Magic DRC 0 후 LVS, 그 다음 PEX/Pareto</span></article>
       </div>
       <p><b>왜 먼저 하는가:</b> CDAC의 커패시터 비율과 대칭은 12-bit 선형성(INL/DNL)에 직접 영향을 줍니다. 배치 단계에서 여유부를 예약하면 DRC 수정 때문에 나중에 커패시터 또는 guard ring을 비대칭으로 옮기는 위험과 재배선·기생 RC 증가를 줄일 수 있습니다.</p>
     </section>
     <section className="ppa-result-card">
-      <div className="card-title"><div><small className="kicker">CHECKPOINT · 2026-09-21</small><h3>작업 현황 및 재개 순서</h3></div><span className="connection">paused checkpoint</span></div>
-      <p>현재는 CDAC 원인 분리까지 완료한 중단 지점입니다. 실제 레이아웃 형상은 아직 변경하지 않았으며, 기존 공개 IP와 측정 결과를 보존한 상태입니다.</p>
+      <div className="card-title"><div><small className="kicker">CHECKPOINT · 2026-09-23</small><h3>작업 현황 및 재개 순서</h3></div><span className="connection">paused checkpoint</span></div>
+      <p>공식 dependency 수정과 EF_SW_RST 경계 보정은 검증됐습니다. 남은 6건은 CDAC 상위 조립의 대칭 U자형 tap 경계이며, CACE의 하위 .mag 날짜 처리 오류를 우회한 뒤 새 GDS·LVS를 다시 닫아야 합니다.</p>
       <div className="ppa-result-grid">
         <article><small>완료</small><b>후보·면적·LVS 확인</b><span>ADC 후보 선정 · 65,628.68 µm² · Netgen LVS match</span></article>
-        <article><small>완료</small><b>CDAC 원인 분리</b><span>단독 Magic DRC 84건 · <code>diff/tap.18,20</code></span></article>
+        <article><small>완료</small><b>switch dependency 교정</b><span><code>34a2361</code> · simple switch DRC 0</span></article>
+        <article><small>완료</small><b>EF_SW_RST 경계 보정</b><span>단독 Magic DRC 3 → 0</span></article>
         <article><small>보류</small><b>PEX / Pareto</b><span>물리 하드 게이트가 열릴 때까지 측정하지 않음</span></article>
       </div>
       <div className="data-table"><table><thead><tr><th>순서</th><th>다음 할 일</th><th>완료 기준</th></tr></thead><tbody>
-        <tr><td>1</td><td>CDAC 단위 셀과 배열 경계에서 MV nwell·guard ring의 좌우 대칭 여유부 설계</td><td>커패시터 매칭·dummy·배선 대칭 보존</td></tr>
-        <tr><td>2</td><td>Magic에서 변경한 CDAC 단독 DRC 실행</td><td>84 → 0 violations</td></tr>
-        <tr><td>3</td><td>CDAC LVS 후 상위 ADC에 변경 반영</td><td>Netgen LVS match 유지</td></tr>
-        <tr><td>4</td><td>비교기 4건·상위 통합 15건 DRC를 같은 방식으로 정리</td><td>전체 Magic DRC 0</td></tr>
+        <tr><td>1</td><td>잔여 6건의 CDAC 상위 tap/nwell stitching 경계를 대칭 보정</td><td>CDAC Magic DRC 6 → 0</td></tr>
+        <tr><td>2</td><td>CACE 하위 .mag 날짜 처리 오류를 우회하고 GDS를 강제 재생성</td><td>현재 계층 해시와 GDS 일치</td></tr>
+        <tr><td>3</td><td>새 GDS에서 KLayout DRC와 CDAC LVS 재실행</td><td>DRC 0 · LVS match</td></tr>
+        <tr><td>4</td><td>비교기·상위 ADC DRC를 새 dependency 기준으로 재측정</td><td>전체 Magic/KLayout DRC 0</td></tr>
         <tr><td>5</td><td>PEX로 기생 RC 포함 성능·전력 재측정, Pareto 비교 실행</td><td>PPA 실측값으로 후보 비교</td></tr>
       </tbody></table></div>
     </section>
@@ -403,6 +416,45 @@ function PpaExperimentTwo() {
   </section>
 }
 
+function PpaExperimentThree({ onApply }: { onApply: () => void }) {
+  return <section className="card ppa-experiment">
+    <div className="card-title"><div><small className="kicker">PPA EXPERIMENT 3 · IMPLEMENTED</small><h2>ADC·CDAC·SRAM 재사용 배치 기준</h2></div><span className="analog-badge ok">RTL + config ready</span></div>
+    <p>PPA1의 실제 ADC 크기와 PPA2의 macro 분리 원칙을 재사용한 초기 placement 설정입니다. CDAC GDS 정합이 끝나기 전에는 자동 배치·라우팅을 실행하지 않고, 영역·여유부·핀 접근성만 고정합니다.</p>
+    <div className="stats ppa-experiment-stats">
+      <div className="stat-card"><small>ADC island</small><strong>0.0656 mm²</strong><span>PPA1 실측 · 223.71 × 293.37 µm</span></div>
+      <div className="stat-card"><small>CDAC 수리 여유</small><strong>0.0344 mm²</strong><span>총 아날로그 영역 ≤ 0.10 mm²</span></div>
+      <div className="stat-card"><small>SRAM 배치</small><strong>1024 × 32</strong><span>PPA2 capture macro · ADC 밖 digital 영역</span></div>
+      <div className="stat-card"><small>고정 목표</small><strong>1 MS/s · 15 mW</strong><span>3.3 V · TT/25 °C · 2:1:2</span></div>
+    </div>
+    <section className="ppa-result-card">
+      <div className="card-title"><div><small className="kicker">PLACEMENT CONSTRAINTS</small><h3>초기 floorplan 설정</h3></div><span className="connection">reuse PPA1 + PPA2</span></div>
+      <div className="ppa-result-grid">
+        <article><small>좌측</small><b>ADC / CDAC island</b><span>3.3 V 아날로그 영역 · CDAC 중심 대칭 보존</span></article>
+        <article><small>경계</small><b>guard ring keep-out</b><span>CDAC 외곽 양쪽 동일 여유부 · digital PDN 차단</span></article>
+        <article><small>중앙</small><b>CDC / sample adapter</b><span>ADC data pin 근처 · ADC clock ↔ system clock 단일 경계</span></article>
+        <article><small>우측</small><b>4 KB capture SRAM</b><span>PPA2 1024 × 32 macro · readout pin이 외곽을 향하도록 배치</span></article>
+      </div>
+    </section>
+    <section className="ppa-result-card">
+      <div className="card-title"><div><small className="kicker">PPA3 CHECKPOINT · ACTIVE</small><h3>현재 작업과 실행 게이트</h3></div><span className="analog-badge blocked">gate 1 / 5</span></div>
+      <p>PPA3의 floorplan 기준은 준비됐지만 자동 placement·routing은 아직 시작하지 않습니다. CDAC Magic DRC 잔여 6건과 새 GDS의 DRC/LVS가 닫혀야 배치 결과와 PPA 측정이 의미를 갖습니다.</p>
+      <div className="ppa-result-grid">
+        <article><small>구현 완료</small><b>RTL + OpenLane config</b><span className="ok-text">통합 top lint pass · 1250 × 600 µm · ADC/SRAM 고정 배치</span></article>
+        <article><small>현재 게이트</small><b>CDAC physical closure</b><span className="warn-text">Magic DRC 6 · 새 GDS DRC/LVS 재검증 필요</span></article>
+        <article><small>배치 실행 조건</small><b>CDAC DRC/LVS 통과</b><span>대칭축·dummy·guard ring·핀 접근성 보존</span></article>
+        <article><small>최종 산출물</small><b>PEX 기반 PPA3</b><span>기생 RC 포함 성능·전력·면적과 Pareto 비교</span></article>
+      </div>
+    </section>
+    <div className="data-table"><table><thead><tr><th>항목</th><th>PPA3 고정 설정</th><th>근거</th></tr></thead><tbody>
+      <tr><td>성능 / PVT</td><td>12-bit · 1 MS/s · 3.3 V · TT/25 °C</td><td>PPA1 기준점 유지</td></tr>
+      <tr><td>전력 / 면적</td><td>≤ 15 mW · ≤ 100,000 µm²</td><td>ADC 실측 65,628.68 µm² + CDAC 수리 여유</td></tr>
+      <tr><td>아날로그 macro</td><td>좌측 고정 · CDAC 대칭축과 dummy/guard ring 보존</td><td>배치 변경으로 INL/DNL·기생 RC를 악화시키지 않음</td></tr>
+      <tr><td>디지털 / SRAM</td><td>우측 분리 · CDC는 두 영역 사이</td><td>PPA2 capture path와 SRAM pin 접근성 재사용</td></tr>
+      <tr><td>실행 게이트</td><td>GDS 정합 → CDAC DRC/LVS → top DRC/LVS → PEX</td><td>물리 통과 전 PPA 측정 금지</td></tr>
+    </tbody></table></div>
+    <button className="ppa-preset-button" type="button" onClick={onApply}>이 PPA 실험 3 설정을 현재 설계에 적용</button>
+  </section>
+}
 function AnalogCircuitOverview({ catalog }: { catalog: CatalogItem[] }) {
   const installed = (id:string) => catalog.find(item => item.id === id)?.installed ? 'installed' : 'missing'
   return <section className="card analog-circuit-overview">

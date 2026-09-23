@@ -1,0 +1,55 @@
+{
+  "DESIGN_NAME": "ppa3_adc_capture_top",
+  "VERILOG_FILES": [
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_util_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_mubi_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_flop.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_flop_2sync.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_clock_mux2.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_rst_sync.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_fifo_async.sv",
+    "dir::../../rtl/analog_if/sar_adc_ch.sv",
+    "dir::../../rtl/analog_if/adc_byte_to_sample.sv",
+    "dir::../../rtl/analog_if/adc_capture_sram.sv",
+    "dir::../../rtl/analog_if/adc_capture_buffer.sv",
+    "dir::../../rtl/analog_if/adc_stream_capture.sv",
+    "dir::../../rtl/analog_if/ppa3_adc_capture_top.sv"
+  ],
+  "EXTRA_VERILOG_MODELS": [
+    "dir::../../../../analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.blackbox.v",
+    "dir::sram22_1024x32m8w8.blackbox.v"
+  ],
+  "VERILOG_INCLUDE_DIRS": [
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl"
+  ],
+  "USE_SYNLIG": true,
+  "VERILOG_DEFINES": ["ADC_CAPTURE_USE_SRAM22"],
+  "CLOCK_PORT": "sys_clk_i",
+  "CLOCK_PERIOD": 20.0,
+  "PNR_SDC_FILE": "dir::../constraints/ppa3_adc_capture_top.sdc",
+  "SIGNOFF_SDC_FILE": "dir::../constraints/ppa3_adc_capture_top.sdc",
+  "FP_SIZING": "absolute",
+  "DIE_AREA": [0, 0, 1250, 600],
+  "CORE_AREA": [20, 20, 1230, 580],
+  "PL_TARGET_DENSITY_PCT": 35,
+  "MACRO_PLACEMENT_CFG": "dir::macro_placement.cfg",
+  "MACROS": {
+    "sky130_ef_ip__adc3v_12bit": {
+      "gds": ["dir::../../../../analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.gds"],
+      "lef": ["dir::../../../../analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.lef"],
+      "instances": {"u_adc": {"location": [40.0, 150.0], "orientation": "N"}}
+    },
+    "sram22_1024x32m8w8": {
+      "gds": ["dir::../../../../analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8.gds.gz"],
+      "lef": ["dir::../../../../analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8.lef"],
+      "lib": {
+        "*tt_025C_1v80": ["dir::../../../../analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8_tt_025C_1v80.lib"],
+        "*ss_100C_1v60": ["dir::../../../../analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8_ss_100C_1v60.lib"],
+        "*ff_n40C_1v95": ["dir::../../../../analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8_ff_n40C_1v95.lib"]
+      },
+      "instances": {"u_capture_path.u_capture.u_capture_sram.u_sram22": {"location": [430.0, 65.0], "orientation": "N"}}
+    }
+  }
+}

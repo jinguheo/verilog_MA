@@ -44,6 +44,13 @@ lint_off -rule BLKSEQ       -file "*tb?tb_*.sv"
 lint_off -rule DECLFILENAME -file "*mutants?*"
 lint_off -rule UNUSEDSIGNAL -file "*mutants?*"
 
+// SRAM22's vendor simulation model treats rstb as a synchronous operation
+// gate, while the capture controller has an asynchronous functional reset.
+// The macro has no resettable state requirement and the controller never
+// enables its port during reset. Keep this narrowly scoped to the read-only
+// third-party macro view; project RTL remains subject to SYNCASYNCNET checks.
+lint_off -rule SYNCASYNCNET -file "*sram22_1024x32m8w8.v"
+
 // prim_reuse_smoke exists only to prove the prim mapping elaborates. Every
 // output is deliberately dangling from the point of view of a design, and the
 // unused-signal warnings that produces would drown the real ones.
