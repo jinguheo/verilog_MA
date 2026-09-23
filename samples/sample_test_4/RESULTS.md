@@ -1648,8 +1648,9 @@ from a combinational output to a registered one, breaking the ~64-stage
 `mutants/chan_ctrl_MUTANT.sv` kept structurally in sync; `tb_chan_ctrl.sv`/
 `tb_chan_top.sv` given a 1-cycle margin at the three cause-check sites this
 touches. Full regression re-run before trusting it: lint 102/102, block TB
-16/16, mutation 3/3 - no regressions. **Not yet committed as of this
-writing** - verified but pending that session's own commit.
+16/16, mutation 3/3 - no regressions. Committed as `b02cb4e` (do not treat
+as pending - `git log`/`git status` on `chan_ctrl.sv` will show it's
+already golden).
 
 Also carried in the same P&R attempt: `DIODE_INSERTION_STRATEGY: 4` added to
 `chan_top`'s config, targeting the new antenna failure the 12/52-alone run
@@ -1682,6 +1683,84 @@ different, smaller one is now the tallest pole, not full closure. Next step
 if picked up: `report_checks -path_delay max` on the worst corner in this
 exact run to confirm which net(s) the remaining 3 violations are actually
 on, before declaring chan_top closed or diagnosing a new bottleneck.
+
+## chan_top — FULLY CLOSED at the worst corner, all 5 signoff gates clean (2026-09-21/23)
+
+Follow-up on the open question above: `report_checks -path_delay max` on
+`RUN_2026-09-20_21-14-08` (the run with `ch_cause_o` registered) confirmed
+the remaining violation had indeed moved - a single path across all 3 `ss`
+corners, `_18284_/Q -> src_ready_o` (`skid_buffer`'s backpressure output on
+`src_clk`), worst-corner WNS -0.496 ns. Not the original CRC/`ch_cause_o`
+bottleneck at all - that one was genuinely fixed; this is a different,
+much smaller gap that was simply never the tallest pole until the first one
+was cut down.
+
+**Why not another register, this time:** `src_ready_o` is a live
+valid/ready handshake signal, not a status pulse like `ch_cause_o` - a
+consumer reads it every cycle to decide whether to keep driving data.
+Registering it would delay backpressure by a cycle without buffering to
+absorb the extra beat in flight, which `pkt_align.sv` is not sized for. A
+period bump is safe here in a way it was not for `axi_period`: `src_clk`'s
+own SDC margins (`clock_uncertainty`/`clock_transition`, both a % of the
+period) are small in absolute terms at 12 ns, so raising `src_period` has a
+far better budget-gained-vs-margin-cost ratio than the `axi_period` sweep
+that made things worse in the section above.
+
+**`src_period` 12.0 -> 14.0 ns** (`constraints/chan_top.sdc`, `axi_period`
+left at 52.0 - unrelated domain, already clean). From-scratch run
+`RUN_2026-09-21_21-20-41`:
+
+| | 12/52 ns + `ch_cause_o` register (`RUN_2026-09-20_21-14-08`) | 14/52 ns (`RUN_2026-09-21_21-20-41`) |
+|---|---|---|
+| setup WNS (worst corner) | -0.496 ns | **0.0 ns** |
+| setup TNS (worst corner) | -0.496 ns | **0.0 ns** |
+| setup violators | 1 path × 3 corners (`src_ready_o`) | **none** |
+| hold | clean | clean (0 every corner) |
+| DRC / LVS | clean | clean |
+| antenna | 0 | **1 new** (`net1314`, a post-CTS fanout buffer input, 1.21x over - a different routing solution at the new period left this one buffer's wire unprotected; unrelated to the timing fix) |
+
+Setup timing was now clean at every corner, but the run had a fresh,
+unrelated antenna violation to close before calling this a real signoff.
+`DIODE_INSERTION_STRATEGY: 5` was tried first and rejected outright by
+OpenLane 2 (`config.py`'s own deprecation shim only accepts `{0, 3, 4, 6}` -
+`1`, `2`, `5` are explicitly invalid, anything `>6` too).
+**`DIODE_INSERTION_STRATEGY: 6`** (the union of `3` and `4`:
+`GRT_REPAIR_ANTENNAS` + `RUN_HEURISTIC_DIODE_INSERTION` both on,
+`DIODE_ON_PORTS=in` - strictly a superset of what `4` alone did) closed it.
+From-scratch run `RUN_2026-09-23_12-48-47`:
+
+- Setup WNS/TNS (worst corner): **0.0 / 0.0**, no violators.
+- Hold WNS: **0**, clean at every corner.
+- Antenna: **0 pin / 0 net violations** after the routing-stage recheck
+  (`46-openroad-checkantennas-1`).
+- `75-misc-reportmanufacturability`: **DRC Passed, LVS Passed, Antenna
+  Passed.**
+- 46,009 cells, 640,000 um^2 die area (unchanged `DIE_AREA` from earlier).
+
+**All 5 signoff gates (DRC, LVS, Antenna, setup timing, hold timing) are
+clean at the worst corner (`max_ss_100C_1v60`) for a genuinely
+from-scratch synthesis+P&R run.** This closes out the entire chan_top
+timing investigation that ran across 2026-08-28 through 2026-09-23: WNS at
+the worst corner went -8.4 ns (10/32, the original, mis-diagnosed-twice
+baseline) -> -2.73 ns (12/48) -> -3.38 ns (12/52 alone, a regression) ->
+-0.496 ns (12/52 + `ch_cause_o` register + antenna strategy 4) -> **0.0 ns**
+(14/52 + antenna strategy 6). Both real bottlenecks found along the way -
+`pkt_check.sv`'s CRC chain feeding `ch_cause_o` combinationally, and
+`skid_buffer.sv`'s `ready_o` on `src_clk` - were closed by the appropriate
+fix for each (RTL pipelining for a status pulse with a tight IO budget;
+period relaxation for a live handshake signal with cheap margins), not by
+blindly sweeping one knob.
+
+Final `constraints/chan_top.sdc`: `src_period=14.0`, `axi_period=52.0`.
+Final `asic/chan_top/config.json`: `DIODE_INSERTION_STRATEGY=6`, plus the
+`ch_cause_o`-driven `chan_ctrl.sv` RTL change (`b02cb4e`) that made this
+possible in the first place. Full signoff artifacts (GDS/LEF/netlist/SPEF/
+SDF/5-corner .lib) under `asic/chan_top/runs/RUN_2026-09-23_12-48-47/final/`.
+
+**Precondition met for the next thing this document's own "P&R optimization
+options" section named**: chan_top needing to be worst-corner timing-clean
+before the hierarchical/macro-based P&R exploration (ParSAC, DREAMPlace)
+work makes sense to build on top of it - see that section further up.
 
 ## Parallel tracks the same day, for the record (2026-09-20)
 
