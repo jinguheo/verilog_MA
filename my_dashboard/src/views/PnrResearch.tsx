@@ -83,6 +83,194 @@ const parallelizationNotes = [
   ['23분(리페어) + 22분(물리검증), 두 병목을 줄이는 진짜 방법', '병렬화가 아니라 애초에 "고칠 위반 개수"를 줄이는 것 — RTL이 타이밍을 더 여유 있게 만족하면(이번에 chan_top에서 실제로 함: ch_cause_o 레지스터화) 리사이저가 반복할 위반 자체가 줄어 이 단계가 짧아진다. DRC 쪽은 antenna 위반을 미리 줄이면(DIODE_INSERTION_STRATEGY 등) 재작업 루프가 줄어든다 — 둘 다 이번 세션에 실제로 확인된 효과.'],
 ] as const
 
+// 체크포인트 재개 — OpenLane 2 소스(openlane/flows/flow.py Flow.start(),
+// openlane/flows/cli.py)에서 직접 확인함. --run-tag/--last-run으로 기존 run을
+// 지정하면(--overwrite 안 주면) 이미 끝난 단계는 재실행하지 않고 최신
+// state_out.json을 초기 상태로 불러온다 — 합성/배치/CTS처럼 안 바뀐 앞단을
+// 건너뛰고 바뀐 파라미터가 영향을 주는 단계부터만 다시 돈다. 2026-09-23 발견.
+const resumeMechanism = [
+  ['--run-tag <이름>', '특정 run 디렉터리를 재사용', '이미 끝난 단계는 그대로 두고 최신 state_out.json을 초기 상태로 로드 (Flow.start, overwrite=False일 때)'],
+  ['--last-run', '가장 최근 run을 자동으로 재사용', '--run-tag와 동일한 메커니즘, 이름을 수동 지정 안 해도 됨'],
+  ['-F / --from <step-id>', '그 run 안에서 지정한 단계부터 다시 실행', '이전 단계 산출물은 그대로, 여기부터만 새로 계산'],
+  ['-T / --to <step-id>', '지정한 단계까지만 실행하고 멈춤', '뒷단(특히 GDS/DRC/LVS)이 필요 없는 질문에 답할 때'],
+  ['--overwrite', '기존 run을 지우고 완전히 처음부터', '재개가 아니라 진짜 재시작이 필요할 때만'],
+] as const
+
+// chan_top RUN_2026-09-20_21-14-08 실측 71분20초를 74개 세부 step에 매핑해서
+// 시나리오별로 재개 시 절감량을 계산 (근거는 위 postReplaceSteps + flow.log의
+// step 번호). 2026-09-23.
+const resumeTiming = [
+  ['안테나 전략만 재검증 (예: strategy 4→6)', '71분 20초 (전 구간)', '--run-tag <이전> --from 38(GlobalRouting) → 40분 28초', '약 31분 (43%↓)'],
+  ['위 + "안테나 결과만" 빨리 확인', '71분 20초', '--from 38 --to 45(CheckAntennas-1) → 11분 26초', '약 60분 (84%↓)'],
+  ['배치 밀도(PL_TARGET_DENSITY_PCT) 변경', '71분 20초', '--from 27(GlobalPlacement) → 68분대', '약 3분 (미미)'],
+  ['클럭 주기(CLOCK_PERIOD) 변경', '71분 20초', '재개 불가 — 사실상 전체 재실행', '없음'],
+  ['RTL 변경 (예: ch_cause_o 레지스터화)', '71분 20초', '재개 불가 — 6번(합성)부터 전체', '없음'],
+] as const
+
+const resumeDecisionTable = [
+  ['DIODE_INSERTION_STRATEGY, 라우팅 옵션(GRT_*/DRT_*)', '38 (글로벌 라우팅)', '큼 (~43%)'],
+  ['PL_TARGET_DENSITY_PCT 등 GPL(배치) 관련', '27 (글로벌 배치)', '작음 (~3분)'],
+  ['DIE_AREA, FP_SIZING', '13 (floorplan)', '매우 작음'],
+  ['CLOCK_PERIOD / SDC 주기', '사실상 전체 (6번, 타이밍 기반 리사이징이 앞단부터 걸림)', '없음'],
+  ['RTL 파일 수정', '6 (합성)', '없음'],
+] as const
+
+// "많은 후보 + 보상학습"을 이 프로젝트에 쓸 수 있는지 검토 (RL vs Bayesian
+// Optimization). DreamPlace 때와 같은 방식으로 근거를 남김 — 규모 대비
+// 과한 기법은 채택하지 않는다. 2026-09-23.
+const learningSearchEval = [
+  ['딥 RL (Google Circuit Training류)', '이 프로젝트엔 부적합', '수백만 인스턴스 칩을 대상으로, 다른 칩 세대들로 이미 사전학습한 정책을 재사용하는 구조 — 여기서 새로 학습하는 게 아니다. 이 프로젝트는 완주한 실행이 10개 미만이라 사전학습할 데이터가 없고, RL은 보통 수백~수천 에피소드가 필요한데 시도 1회 11~71분으로는 예산이 절대적으로 부족. DreamPlace를 부적합 판정한 것과 같은 이유(규모 불일치)'],
+  ['Bayesian Optimization', '개념은 맞지만 지금은 이름', '20~30번의 실제 평가만으로 수렴하도록 설계된 기법이라 체크포인트 재개(시도당 11~40분) 예산과 맞음 — OpenROAD 프로젝트 자체도 ORFS AutoTuner라는 유사 도구가 있음. 다만 (a) 지금 튜닝할 파라미터가 몇 개 안 됨(다이오드 전략·밀도·주기), (b) 대리 모델을 검증할 과거 데이터가 부족 — 글로벌 배치 HPWL과 최종 signoff의 상관관계를 실측 3개로 확인했더니 무상관(아래 표 참고) — 지금 투입할 근거가 없음'],
+] as const
+
+const gplCorrelationCheck = [
+  ['RUN_2026-09-20_19-36-35', 'HPWL 249,621,517 · overflow 0.0989', 'WNS −3.38ns · 안테나 17건'],
+  ['RUN_2026-09-20_21-14-08', 'HPWL 249,650,949 · overflow 0.0990', 'WNS −0.50ns · 안테나 0건'],
+  ['RUN_2026-09-21_21-20-41', 'HPWL 249,827,006 · overflow 0.0987', 'WNS +0.97ns(완전 클로징) · 안테나 1건'],
+] as const
+
+// 위 세 발견(재개 메커니즘, 재개 판단표, RL/BO 검토)을 하나의 실행 순서로
+// 합친 것 — "속도를 어떻게 올리나"에 대한 종합 답. 2026-09-23.
+const speedupMethodology = [
+  ['1. 뭐가 바뀌었는지 분류', '재개 판단표(위)로 가장 이른 영향 단계 확인', 'RTL/주기 변경 → 전체 재실행 필요. 다이오드 전략·라우팅 옵션만 → 재개 가능'],
+  ['2. 재개 가능하면 체크포인트에서 시작', '--run-tag <가장 가까운 완주 run> --from <영향 단계>', '업스트림(합성~포스트CTS리페어, 최대 27분)을 통째로 건너뜀'],
+  ['3. 필요한 답이 전체 signoff가 아니면 --to로 조기 종료', '예: 안테나만 궁금하면 --to OpenROAD.CheckAntennas-1', 'GDS/DRC/LVS(22분38초) 등 불필요한 뒷단 생략'],
+  ['4. 후보가 1~2개 수준이면 여기서 끝 — 학습법 불필요', '위 1~3만으로 충분, 수동 판단', '지금 chan_top/daq_subsystem 규모에 해당'],
+  ['5. 탐색할 조합이 많아지면(채널별 파라미터 조합 등) 그때 Bayesian Optimization 재검토', '체크포인트 재개로 시도당 비용을 낮춘 뒤 BO로 20~30회', '지금은 이르다 — daq_subsystem이 채널마다 다른 조합을 반복 튜닝해야 하는 상황이 되면 재검토'],
+] as const
+
+// PPA(Power/Performance/Area) 민감도 분석 — "파레토냐?"는 질문에 답하며 정리한
+// 구분: 지금 하는 건 축 하나만 바꾸고 나머지 고정하는 민감도 분석이지, area×
+// period×전략을 조합으로 도는 진짜 파레토 프런티어가 아니다. chan_top이 거의
+// 닫힌 지금 단계엔 후자가 과함(18개 조합 × ~71분 ≈ 21시간) — 전자로 충분.
+// 2026-09-23 작성.
+const ppaAxes = [
+  ['Area (DIE_AREA)', '입력 — 직접 조절', '기준 800×800(utilization ~52%) → 700×700 / 950×950 후보', '아직 실측 없음 — 호스트가 라이브 실행 두 개로 바빠서 대기 중'],
+  ['Performance (CLOCK_PERIOD)', '입력 — 직접 조절', 'src/axi 주기, 면적·RTL은 고정', '실측 2점 이미 있음 (아래 표) — 새 실행 불필요'],
+  ['Power', '출력 — 위 두 축을 바꿀 때마다 관찰', 'OpenROAD 리포트(power__total 등)', 'OpenLane엔 "파워를 이 값으로 맞춰라" 같은 직접 조절 knob이 없음 — 독립 축이 아니라 종속 지표'],
+] as const
+
+// 면적·RTL 동일, 주기만 다른 두 완주 실행의 실측 비교 — 새로 돌릴 필요 없이
+// 이미 있는 metrics.json에서 뽑음.
+const performanceAxisData = [
+  ['src=12/axi=52ns (RUN_2026-09-20_21-14-08)', '7.161', '−0.50ns', '안테나 0건'],
+  ['src=14/axi=52ns (RUN_2026-09-21_21-20-41)', '6.149 (약 14%↓)', '+0.97ns (완전 클로징)', '안테나 1건'],
+] as const
+
+const areaAxisPlan = [
+  ['700×700 (더 빡빡하게)', '대기 — 호스트 사용 중', 'utilization 상승, 라우팅 자체가 안 될 가능성도 있음 — 그것도 결과'],
+  ['800×800 (기준)', '완료', 'RUN_2026-09-21_21-20-41 — utilization ~52%, 이미 위 표에 반영됨'],
+  ['950×950 (더 여유있게)', '대기 — 호스트 사용 중', 'utilization 하락, 배선 길어질 것으로 예상 — 실측 전까지는 추정일 뿐'],
+] as const
+
+// "가장 오래 걸리는 게 STA 아니냐"는 질문에 실제 runtime.txt로 답한 것 —
+// 단독 STA 체크포인트는 전부 30초~2분대로 빠르다. 느린 건 STA를 반복
+// 호출하는 "리페어 루프"(ResizerTimingPostCTS)이고, 그 반복 시간조차
+// "결과가 좋을수록 빠르다"는 단순 관계가 아니다. 2026-09-23 실측.
+const staStandaloneTiming = [
+  ['STAPrePNR (합성 직후)', '29.8초'],
+  ['STAMidPNR (배치 직후)', '36.6초'],
+  ['STAMidPNR-1 (CTS 직후)', '34.7초'],
+  ['STAMidPNR-2 (포스트CTS리페어 후)', '28.3초'],
+  ['STAMidPNR-3 (다이오드 삽입 후)', '30.9초'],
+  ['RCX (기생성분 추출)', '1분11.5초'],
+  ['STAPostPNR (최종 signoff STA, RCX 반영)', '2분07.7초'],
+] as const
+
+const repairTimeAcrossRuns = [
+  ['12/52ns, ch_cause_o 레지스터 전 (RUN_2026-09-20_19-36-35)', '36분54초', 'WNS −3.38ns (나쁨)'],
+  ['12/52ns, 레지스터 후 (RUN_2026-09-20_21-14-08)', '22분07초 (가장 빠름)', 'WNS −0.50ns'],
+  ['14/52ns, 레지스터 후 (RUN_2026-09-21_21-20-41)', '46분02초 (가장 느림)', 'WNS +0.97ns (가장 좋음, 완전 클로징)'],
+] as const
+
+// Hierarchical 트랙 실행 계획 — OpenLane 소스(openlane/config/variable.py의
+// Macro/Instance 클래스, openlane/steps/odb.py의 ManualMacroPlacement)를 직접
+// 읽어서 확인한 실제 메커니즘. "글루코드가 필요하다"고 여러 번 적었던 게
+// 과장이었음 — 실제로는 설정 객체 하나 채우는 정도. 2026-09-23.
+const macroMechanism = [
+  ['매크로 정의', '`MACROS` config 객체 — 이름별로 gds/lef(필수), nl/spef/lib(계층적 STA용, 있으면 좋음) 목록', 'chan_top의 완주 run이 `final/`에 이미 전부 생성해 둠 — 별도 하드닝 작업 불필요, 경로만 연결하면 됨'],
+  ['매크로 배치', '`MACROS.instances`에 인스턴스별 {location: (x,y), orientation} — 또는 더 간단히 `MACRO_PLACEMENT_CFG`(줄바꿈 구분 텍스트, `인스턴스명 X Y 방향`)', 'ParSAC의 SA 탐색 결과(8개 좌표+방향)를 그대로 이 형식으로 출력하면 끝 — "글루코드"가 아니라 좌표 변환 스크립트 수준'],
+  ['배치 고정', 'Odb.ManualMacroPlacement 스텝이 `--fixed`로 배치 — 이후 표준셀 배치·CTS·라우팅이 매크로를 건드리지 않음', '이미 검증된 chan_top 내부가 top 레벨 재실행 중에 다시 바뀔 걱정이 없다는 뜻'],
+] as const
+
+// ParSAC의 실제 제약 종류 — 소스/README(paper: PARSAC, arXiv 2405.05495) 직접
+// 확인. "grouping·인접·크기 변경도 되냐"는 질문에 답하며 정리. 2026-09-23.
+const parsacConstraintTypes = [
+  ['Grouping (묶음)', '지원됨', '`block_specs[:,3]`에 Group ID — 같은 ID인 블록들이 서로 가까워지도록 비용(`beta_cluster`)으로 유도. 채널을 2~4개씩 묶어 배치할 때 바로 사용 가능'],
+  ['경계 인접 (boundary)', '지원됨', '`block_specs[:,2]`, 블록별 boundary constraint — "이 블록은 이 변에 붙어라"를 직접 강제. IO 인접 채널에 정확히 맞음'],
+  ['블록 대 블록 인접 (touching)', '직접 지원 안 됨 — grouping으로 근사', '"A와 B가 반드시 맞닿아야 한다"는 별도 제약 타입이 없음 — grouping은 "가까워지도록" 유도할 뿐 "붙어라"를 강제하지 않음'],
+  ['가로세로 비율(aspect ratio) 변경', '지원되지만 하드닝 전에만 의미 있음', '`block_specs[:,5]`(고정 0/1) + `ar_search`로 SA가 탐색 가능 — 단 이미 GDS/LEF로 하드닝된 chan_top은 물리적으로 모양이 고정이라 "fixed"로 표시해야 함. 비율을 정말 바꾸려면 chan_top을 다른 DIE_AREA로 재하드닝해야 함(새 P&R 필요)'],
+  ['사전 고정 배치 (pre-placed)', '지원됨', '`hard_preplace_constraints` — 특정 매크로를 특정 좌표에 고정. 필요하면 일부 채널을 미리 정한 위치에 못박아둘 때 사용'],
+] as const
+
+const hierarchicalTodo = [
+  ['1', 'chan_top 최종 확인', '안테나 strategy 6이 0건으로 닫히는지 — 진행 중(라이브)', '진행 중'],
+  ['2', 'daq_subsystem 플로어플랜 크기 결정', '8개 chan_top 매크로(각 800×800µm) + top 로직(dma_sched 등)이 들어갈 DIE_AREA 산정', '대기'],
+  ['3', 'ParSAC로 8개 매크로 배치 탐색', '경계 제약(IO 인접) + 그룹 제약(대칭) 조건으로 SA 실행 — 이미 설치 완료, 조사 시점 결론(2026-09-21)대로 실행만 하면 됨', '대기'],
+  ['4', 'ParSAC 출력 → MACRO_PLACEMENT_CFG 변환', '좌표 변환 스크립트 (수 줄 수준)', '대기'],
+  ['5', 'daq_subsystem config.json에 MACROS 연결', 'chan_top final/의 gds·lef·nl·spef·lib 경로 + 위 배치 파일', '대기'],
+  ['6', 'top 레벨만 P&R', '8개 매크로는 고정, dma_sched/axi_rd_master/axi_wr_master/desc_fetch/wr_track/irq_ctrl/perf_cnt/daq_csr/axil_slave만 합성·배치·배선', '대기'],
+  ['7', '매크로 경계 IO 타이밍 budget 확정', 'daq_subsystem.sdc에 일부 이미 작성됨 — top-매크로 간 신호 경로 재검토', '대기'],
+  ['8', '전체 칩 레벨 DRC/LVS/안테나 재검증', '매크로 자체는 이미 검증됐어도, 매크로 경계 라우팅·전체 조립은 별도로 확인 필요', '대기'],
+  ['9', 'Flat(daq_subsystem worst-corner 부분 검증) 결과와 4단계 맞대결', 'PPA 직접 비교', '대기'],
+] as const
+
+const hierarchicalSpeedup = [
+  ['체크포인트 재개(`--run-tag`/`--from`/`--to`)', '적용 가능 — 그대로', 'top 레벨 P&R도 결국 같은 OpenLane 플로우라 동일한 메커니즘이 적용됨. 다이오드 전략 등 재검증 시 똑같이 씀'],
+  ['조기 종료(`--to`)로 빠른 스크리닝', '적용 가능 — 그대로', 'top 레벨 배치·안테나만 궁금하면 CheckAntennas-1까지만 돌리는 것도 동일하게 가능'],
+  ['hierarchical 고유의 시간 절감 (체크포인트와 별개)', '이게 진짜 핵심', 'top 레벨 넷리스트는 daq_subsystem 전체(~107k셀)가 아니라 glue 로직만 — 셀 수가 훨씬 적어지므로, 가장 비쌌던 "포스트-CTS 타이밍 리페어"(23분, 위반 개수에 비선형 비례) 자체가 근본적으로 작아질 것으로 예상. 다만 실측 전까지는 추정 — 8번째 실행 예정'],
+] as const
+
+// RePlAce 알고리즘 자체 설명 — 지금까지 이 파일 여러 곳에서 "이전 섹션에서
+// 설명한 정전기 밀도 모델 + Nesterov 경사하강"이라고 참조만 해뒀지, 그 설명
+// 본문이 실제로는 없었다. 그 자리를 채운다. OpenROAD의 gpl 모듈이 곧 RePlAce
+// 논문(Cheng et al., ICCAD'18/TCAD'19)의 구현체이고, 이 프로젝트의 모든
+// 블록(chan_ctrl~daq_subsystem)이 실제로 이걸 통해 배치됐다 — 교과서 설명이
+// 아니라 이 세션에서 실제로 관찰한 로그·수치에 근거를 둔다. 2026-09-24 작성.
+const replaceProblem = [
+  ['주어지는 것 (고정)', '넷리스트(셀 N개 + 셀 사이 연결=net), 이미 자리 잡은 매크로/IO, 코어 영역 크기', 'chan_top의 경우 45,000~46,000개 표준셀 — RTL 합성 결과 그대로, 이 단계에서 바꾸지 않음'],
+  ['최적화 변수', '각 표준셀의 좌표 (x, y) — 아직 정확한 행(row)/그리드에 안 붙어도 됨', '정확히 행에 정렬하는 건 이 다음 단계인 Detailed Placement의 일. RePlAce/gpl은 "대략 어디쯔음"까지만 정한다'],
+  ['목표(minimize)', '전체 wirelength(모든 net의 배선 길이 합)', '배선이 길어지면 지연·전력이 늘고, 다음 단계(CTS·라우팅)가 더 힘들어짐 — 이 프로젝트에서 실제로 반복 겪은 "포스트-CTS 리페어가 오래 걸리는" 문제의 씨앗이 여기서 뿌려짐'],
+  ['제약(constraint)', '어떤 국소 영역(bin)도 셀 밀도가 목표치를 넘지 않음', '이 프로젝트 config의 `PL_TARGET_DENSITY_PCT`(대부분 40)가 바로 이 목표치 — 넘으면 그 bin 안 셀들이 물리적으로 겹치게 되어 다음 단계에서 풀 수 없음'],
+] as const
+
+const replaceCostTerms = [
+  ['WL(x, y) — 배선 항', 'HPWL(반주변 길이)은 min/max로 정의돼서 미분이 안 됨 → log-sum-exp로 부드럽게 근사해서 경사(gradient)를 계산 가능하게 만듦', '"셀을 어느 방향으로 옮기면 배선이 짧아지는가"를 매 스텝 수치로 answer할 수 있게 하는 장치'],
+  ['D(x, y) — 밀도 항 (RePlAce의 핵심)', '각 셀을 면적에 비례하는 "전하(charge)"로 보고, bin별 밀도를 전하 밀도로 취급 — 정전기학의 Poisson 방정식(∇²φ = −ρ)을 FFT로 풀어서 과밀한 bin에서 셀을 밀어내는 힘(potential의 gradient)을 얻음', 'FFT를 쓰는 이유: 격자(bin) 전체에 대해 이 방정식을 한 번에 빠르게 풀 수 있어서 — 셀이 수만 개여도 이 힘의 계산 자체는 비싸지 않음'],
+  ['λ (penalty weight)', 'F(x,y) = WL(x,y) + λ·D(x,y) 하나의 숫자로 합칠 때, 밀도를 얼마나 중요하게 볼지 정하는 가중치 — 고정값이 아니라 반복마다 자동으로 올라감(밀도 위반이 아직 크면 다음 스텝은 밀도를 더 신경쓰게 λ를 키움)', 'ePlace(RePlAce의 전신)는 이 가중치를 수동으로 튜닝해야 했음 — RePlAce가 이걸 자동화한 게 논문의 핵심 기여. 이 프로젝트는 이 내부 튜닝을 건드리지 않고 OpenROAD 기본값을 그대로 씀'],
+] as const
+
+// 스케일 검증 — "셀 수가 많아져도 빠른가?"를 실측으로 답한다. 2026-09-24.
+// daq_subsystem의 27번(global placement) runtime.txt가 09:24:18(9시간24분)로
+// 나와서 처음엔 "RePlAce가 25만 셀에서 느려진다"로 보였으나, 앞뒤 스테이지
+// (23~26, 28)의 mtime을 대조해서 확인한 결과 이 스테이지 도중 호스트가 절전
+// 상태로 들어갔다가 나중에 깨어난 것 — 진짜 계산 시간이 아니라 벽시계 시간이
+// 부풀려진 것으로 판명. 그래서 "빠르다"고 성급히 결론 내리지 않고, 정직하게
+// "아직 확인 못 함"으로 기록한다.
+const scaleCheck = [
+  ['chan_top (~46,000 셀)', '00:01:55 ~ 00:02:06 (두 번의 정상 완주 런에서 일관됨)', '신뢰 가능 — 두 값이 비슷해서 정상 변동 범위로 보임'],
+  ['daq_subsystem (~257,000 셀, 5.6배)', '기록값 09:24:18 — 그러나 오염됨', '신뢰 불가 — 아래 "오염 판정 근거" 참고. 진짜 계산 시간 미확인'],
+] as const
+const scaleCheckEvidence = [
+  ['23 (GlobalPlacementSkipIo)', '00:04:23', '정상'],
+  ['24 (IOPlacement)', '00:02:21', '정상'],
+  ['25 (CustomIOPlacement)', '00:00:00.005', '정상 (거의 즉시)'],
+  ['26 (ApplyDefTemplate)', '00:00:00.006', '정상 (거의 즉시)'],
+  ['27 (GlobalPlacement) ← 문제', '09:24:18.404', '이상 — 13:16:44 시작, 22:41:03 완료 기록'],
+  ['28 (WriteVerilogHeader)', '00:00:31', '정상 (27 종료 직후 다시 정상 속도로 복귀)'],
+] as const
+
+const replaceStepLoop = [
+  ['0 (준비, 1회만)', 'InitialPlace — 밀도는 무시하고 순수 wirelength만 최소화하는 이차식을 Conjugate Gradient(CG)로 풀어서, 저렴하게 "적당히 괜찮은" 시작점을 확보', '이 프로젝트 chan_top 로그 실측: `[InitialPlace] Iter: 1 CG residual: 0.00013173 HPWL: 358,105,888` → `Iter: 3 ... HPWL: 190,130,627` — CG 3번만으로 HPWL이 거의 반토막. 이 시작점이 나쁘면 이후 Nesterov 단계가 훨씬 더 오래 걸림'],
+  ['1', '현재 배치를 bin 격자에 투영해서 bin별 밀도 계산', '이 프로젝트 로그: `[GPL-0016] CoreArea: 613,701 um^2`, `[GPL-0019] Util: 28.771%` 처럼 셀 면적/코어 면적 비율이 여기서 나옴'],
+  ['2', 'WL 항의 gradient 계산 — 셀마다 "이 방향으로 옮기면 배선이 짧아진다"는 벡터', '앞서 log-sum-exp로 부드럽게 만든 덕에 이 계산이 해석적(analytic)으로 바로 나옴'],
+  ['3', 'density 항의 gradient 계산 — Poisson 방정식을 FFT로 풀어서, 과밀한 bin의 셀들이 빈 이웃 bin 쪽으로 밀리는 힘', '이게 "제약을 만족시키는" 실제 메커니즘 — 규칙을 어기면 안 된다고 막는 게 아니라, 어길수록 더 세게 밀어내는 부드러운 힘으로 표현'],
+  ['4', '두 gradient를 F = WL + λ·D 기준으로 합침', '이 시점의 λ 값 — 아직 밀도가 많이 위반 중이면 큰 값'],
+  ['5', 'Nesterov 가속 경사하강으로 모든 셀의 좌표를 동시에 갱신', '일반 경사하강("지금 위치에서 gradient만큼 이동")과 다르게, "이전 이동 방향으로 미리 한 걸음 더 나가본 지점"에서 gradient를 재서 그 방향으로 이동 — 매 스텝의 실제 이동량이 더 정확해져서 같은 반복 수로 더 빨리 수렴함'],
+  ['6', '이번 스텝 후 밀도 위반이 얼마나 남았는지 측정 ("overflow" = 목표 밀도를 넘는 면적의 비율)', '이 프로젝트 실측(아래 "PPA 민감도" 섹션 표): chan_top 세 실행 모두 overflow 0.0987~0.0990 근방에서 수렴 — DreamPlace 비교 때 언급된 목표치(0.07)보다는 느슨하지만, OpenROAD 기본 설정으로 안정적으로 도달하는 수준'],
+  ['7', 'overflow가 아직 크면 λ를 올리고 1번으로 돌아감. overflow가 충분히 작아지고 wirelength도 더 줄지 않으면 종료', '이 반복 전체가 "RePlAce (Global Placement)" 한 단계 — 이 프로젝트 chan_top 완주 런에서 2분06초 걸림(위 "실행 구조" 표의 0번)'],
+] as const
+
 function PostReplaceTimeline() {
   const totalSec = postReplaceSteps.reduce((sum, s) => sum + Number(s[3]), 0)
   const pxPerSec = 900 / totalSec
@@ -134,6 +322,24 @@ export default function PnrResearch() {
 
     <section className="card"><div className="card-title"><div><small className="kicker">ParSAC 조사 · 2026-09-21</small><h2>설치는 완료, 현재 구조엔 투입 대상이 없음</h2></div></div>
       <div className="data-table"><table><thead><tr><th>항목</th><th>상태</th><th>근거</th></tr></thead><tbody>{parsacEval.map(([item, stat, note]) => <tr key={item}><td><b>{item}</b></td><td>{stat === '완료' ? <span className="ok-badge">{stat}</span> : <span className="warning-badge">{stat}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
+    </section>
+
+    <section className="card"><div className="card-title"><div><small className="kicker">RePlAce 알고리즘 설명 · 2026-09-24</small><h2>전역 배치가 실제로 무엇을 계산하는가</h2></div></div>
+      <p>위 "탐색 구조"·"동시성" 섹션은 <b>RePlAce를 언제·몇 번 부르는지</b>를 다뤘다. 이 섹션은 <b>RePlAce 자체가 매 호출마다 무엇을 계산하는지</b>를 다룬다. OpenROAD의 <code>gpl</code> 모듈이 곧 RePlAce 논문(Cheng et al., ICCAD'18/TCAD'19)의 구현체이고, 이 프로젝트의 모든 블록이 실제로 이걸 통해 배치됐다 — 아래는 chan_top 실행 로그에서 그대로 뽑은 실측치를 근거로 한다.</p>
+      <p><b>1. 무엇을 풀고 있는 문제인가:</b></p>
+      <div className="data-table"><table><thead><tr><th>구분</th><th>내용</th><th>이 프로젝트에서의 의미</th></tr></thead><tbody>{replaceProblem.map(([kind, content, note]) => <tr key={kind}><td><b>{kind}</b></td><td>{content}</td><td>{note}</td></tr>)}</tbody></table></div>
+      <p><b>2. cost function을 어떻게 만드는가 — F(x, y) = WL(x, y) + λ·D(x, y):</b></p>
+      <div className="data-table"><table><thead><tr><th>항</th><th>어떻게 계산하나</th><th>왜 이렇게 하나</th></tr></thead><tbody>{replaceCostTerms.map(([term, how, why]) => <tr key={term}><td><b>{term}</b></td><td>{how}</td><td>{why}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note">핵심 아이디어를 한 문장으로: <b>"밀도 위반을 하지 마라"는 딱딱한 규칙을, "위반할수록 더 세게 밀어내는 부드러운 힘"으로 바꿔서 wirelength 항과 똑같이 미분·최적화할 수 있게 만든 것</b>이 RePlAce(의 전신 ePlace)의 트릭이다. 힘이 부드럽기 때문에 "배선을 줄이는 방향"과 "밀도를 지키는 방향"을 매 스텝 하나의 숫자(F)로 저울질할 수 있다.</p>
+      <p><b>3. 매 스텝마다 실제로 하는 일 — wirelength를 줄이면서 constraint를 만족시키는 반복 루프:</b></p>
+      <div className="data-table"><table><thead><tr><th>스텝</th><th>하는 일</th><th>이 프로젝트 실측/근거</th></tr></thead><tbody>{replaceStepLoop.map(([step, what, evidence]) => <tr key={step}><td><b>{step}</b></td><td>{what}</td><td>{evidence}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note"><b>"현재 구현된 수준"에서 짚어둘 것:</b> 이 프로젝트는 RePlAce/gpl 내부의 λ 스케줄링·bin 크기·수렴 기준 같은 하이퍼파라미터를 하나도 직접 건드리지 않는다 — OpenLane이 노출하는 건 <code>PL_TARGET_DENSITY_PCT</code>(밀도 제약의 목표치, 위 표의 "제약"에 들어가는 입력값) 정도뿐이고, 나머지(λ를 얼마나 빨리 올릴지, Nesterov의 step size를 어떻게 잡을지)는 OpenROAD 기본값 그대로다. 즉 이 섹션은 "이 프로젝트가 커스텀 구현한 것"이 아니라 "이미 잘 만들어진 알고리즘을 그대로 호출해서 쓰고 있다"는 사실 자체를 정확히 설명하는 것이 목적이다.</p>
+      <p><b>4. 셀 수가 많아져도 빠른가? — 실측으로 확인, 결과는 "아직 모름":</b></p>
+      <p>이론적으로는 그래야 한다 — 밀도 항을 FFT로 풀기 때문에 이 부분은 대략 O(N log N), 배선 항도 net 개수에 선형이라, 옛날식(모든 셀 쌍을 직접 계산하는 O(N²)) 배치 방식보다 훨씬 잘 스케일해야 한다. 이 프로젝트의 실제 완주 데이터로 검증을 시도했다:</p>
+      <div className="data-table"><table><thead><tr><th>설계 (셀 수)</th><th>RePlAce 단계 실제 소요</th><th>신뢰도</th></tr></thead><tbody>{scaleCheck.map(([design, time, trust]) => <tr key={design}><td><b>{design}</b></td><td>{time}</td><td>{trust.startsWith('신뢰 가능') ? <span className="ok-badge">{trust}</span> : <span className="warning-badge">{trust}</span>}</td></tr>)}</tbody></table></div>
+      <p><b>오염 판정 근거</b> — daq_subsystem의 27번 스테이지 앞뒤를 실제 <code>runtime.txt</code>로 대조:</p>
+      <div className="data-table"><table><thead><tr><th>스테이지</th><th>기록된 소요시간</th><th>판정</th></tr></thead><tbody>{scaleCheckEvidence.map(([stage, time, verdict]) => <tr key={stage}><td>{stage}</td><td>{time}</td><td>{verdict === '정상' || verdict.startsWith('정상') ? verdict : <span className="warning-badge">{verdict}</span>}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note"><b>왜 9시간24분을 그대로 못 믿는가:</b> 27번 바로 앞 4개 스테이지(23~26)는 13:14~13:16 사이에 전부 정상 속도(몇 초~4분)로 끝났고, 27번이 끝난 직후 28번도 13:16:44(27번 시작 시각) 기준이 아니라 22:41:34 — 27번이 끝나자마자 곧바로 31초 만에 정상 속도로 복귀했다. 즉 "느려진 건 27번 딱 하나뿐이고, 그 앞뒤는 멀쩡하다"는 패턴 — 이 프로젝트에서 여러 번 겪은 호스트 절전/WSL 재시작 문제와 정확히 같은 모양이다(중간에 절전 → 벽시계 시간만 몇 시간 부풀려짐 → 컴퓨터가 깨어나서 마지막 남은 계산을 마치고 정상적으로 다음 단계로 넘어감). <b>정직한 결론: 이 프로젝트는 아직 "25만 셀 규모에서도 RePlAce가 빠르다"를 실측으로 증명하지 못했다</b> — 증명하려면 daq_subsystem 27번 스테이지가 호스트 절전 없이 끝까지 도는 걸 한 번은 봐야 한다. 지금 확실히 말할 수 있는 건 "4.6만 셀에서는 일관되게 2분 안팎"이라는 것뿐이다.</p>
     </section>
 
     <section className="card"><div className="card-title"><div><small className="kicker">실행 구조 · RePlAce 이후 · 2026-09-21</small><h2>RePlAce부터 signoff까지, 각 단계 실제 소요시간</h2></div></div>
