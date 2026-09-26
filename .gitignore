@@ -23,6 +23,7 @@ samples/**/uvm/uvm-regression*
 # the generated runs/ trees and stray render output are excluded.
 samples/**/asic/*/runs/
 samples/**/asic/*/layout/
+samples/**/asic/*/*.log
 samples/**/slpp_all/
 
 # Diagnostic script output from tools/wsl/*.sh - reproducible, not source.

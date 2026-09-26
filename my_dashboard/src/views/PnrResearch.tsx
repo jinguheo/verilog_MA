@@ -4,8 +4,8 @@
 // "검증됨"인지 "제안됨"인지를 명시한다. 2026-09-18 작성.
 
 const approaches = [
-  ['현재 (Flat)', 'daq_subsystem 8채널 전체를 매번 통째로 재합성·재배치·재라우팅', '단순함, 전역 최적화 가능(매크로 경계에 갇히지 않음)', '셀 수 증가에 비선형으로 시간 증가 실측(chan_ctrl→chan_top 약 22배 셀에 22배보다 훨씬 큰 시간) · 4번째 시도까지 한 번도 완주 못 함(세션/호스트 종료로 중단, 실제 flow 에러 아님) · 위반이 있으면 원인 위치를 8채널 전체에서 다시 찾아야 함'],
-  ['Hierarchical (Macro)', 'chan_top을 1번만 hardening → GDS/LEF/LIB/SPEF 확보 → daq_subsystem에서 OpenLane MACROS로 8번 배치, 나머지 로직(dma_sched 등)만 top에서 새로 P&R', '1회 P&R + 8회 저렴한 매크로 배치로 시간 절감 예상 · 각 채널 타이밍이 독립적으로 확정(전체 재검증 불필요) · chan_top 자체가 이미 검증된 블록이라 위반 원인 추적 범위가 좁아짐', '매크로 경계를 넘는 경로는 수동 IO 타이밍 budget 필요(daq_subsystem.sdc에 이미 일부 작성됨) · chan_top이 먼저 worst-corner까지 닫혀야 의미 있음(안 닫힌 블록 8배 복제는 위반만 8배) · 매크로 배치(어디에 8개를 놓을지) 자체가 별도 최적화 문제 — OpenROAD 내장 배치기보다 ParSAC(SA 기반) 같은 전용 floorplanner가 더 잘 풀 가능성'],
+  ['현재 (Flat)', 'daq_subsystem 8채널 전체를 매번 통째로 재합성·재배치·재라우팅', '단순함, 전역 최적화 가능(매크로 경계에 갇히지 않음)', '셀 수 증가에 비선형으로 시간 증가 실측(chan_ctrl→chan_top 약 22배 셀에 22배보다 훨씬 큰 시간) · 4번째 시도까지 한 번도 완주 못 함(세션/호스트 종료로 중단, 실제 flow 에러 아님) · 위반이 있으면 원인 위치를 8채널 전체에서 다시 찾아야 함 · 향후 기능 변경/면적 조정도 매번 전체 재합성(체크포인트 재개 불가)'],
+  ['Hierarchical (Macro)', 'chan_top을 1번만 hardening → GDS/LEF/LIB/SPEF 확보 → daq_subsystem에서 OpenLane MACROS로 8번 배치, 나머지 로직(dma_sched 등)만 top에서 새로 P&R', '1회 P&R + 8회 저렴한 매크로 배치로 시간 절감 예상 · 각 채널 타이밍이 독립적으로 확정(전체 재검증 불필요) · chan_top 자체가 이미 검증된 블록이라 위반 원인 추적 범위가 좁아짐 · top 레벨만 바뀌는 향후 기능 변경/ECO 시 8개 매크로는 그대로 재사용(2026-09-23 확인 — flat은 이게 불가능)', '매크로 경계를 넘는 경로는 수동 IO 타이밍 budget 필요(daq_subsystem.sdc에 이미 일부 작성됨) · chan_top이 먼저 worst-corner까지 닫혀야 의미 있음(안 닫힌 블록 8배 복제는 위반만 8배) — 셋업 타이밍은 닫힘, 안테나 1건 재검증 중(2026-09-23) · 매크로 배치(어디에 8개를 놓을지) 자체가 별도 최적화 문제 — ParSAC(SA 기반)로 풀 예정'],
 ] as const
 
 const funnelStages = [
@@ -28,10 +28,10 @@ const races = [
 ] as const
 
 const status = [
-  ['Flat 트랙 1~3단계', '검증됨', 'chan_ctrl/cnt_sat/skid_buffer로 1~3단계 전부 실행·검증 완료. chan_top은 12ns/52ns 주기 + RTL 파이프라이닝(ch_cause_o 레지스터화)으로 worst-corner 거의 닫힘, src_ready_o 경로 마무리 중'],
-  ['daq_subsystem — 2단계 적용', '진행 중', '8채널 전체를 32/10ns로 완주 시도하던 시행착오를 거쳐, chan_top에서 확정된 주기로 SDC/config 갱신 후 재시작 — 이 탭이 말하는 깔때기를 daq_subsystem 자신에게도 적용한 사례'],
-  ['Hierarchical 트랙', '설계만 됨, 미착수', 'ParSAC(IntelLabs, Apache 2.0) 조사 완료 — 매크로 floorplanning 전용 SA 도구, OpenLane MACROS와 연결하는 글루코드 필요. chan_top이 worst-corner까지 안 닫힌 상태라 아직 투입 시점 아님'],
-  ['4단계 맞대결', '미착수', 'Hierarchical 1단계부터 선행 필요'],
+  ['Flat 트랙 1~3단계', '검증됨', 'chan_ctrl/cnt_sat/skid_buffer로 1~3단계 전부 실행·검증 완료. chan_top은 RTL 파이프라이닝(ch_cause_o 레지스터화) + src_period 14ns로 전 코너 셋업 타이밍 완전 클로징, 안테나 위반 1건 strategy 6으로 재검증 중(라이브)'],
+  ['daq_subsystem — flat, worst-corner 부분 검증', '진행 중 (참고용)', '12/48ns 목표로 라이브 실행 중(`--to STAMidPNR-3`) — hierarchical을 기본 방향으로 정한 뒤에도 완주까지 지켜보고 4단계 맞대결의 flat측 데이터로 사용. 능동적으로 더 투자하진 않음'],
+  ['Hierarchical 트랙', '결정됨 — 기본 방향, chan_top 최종 확인 대기 중', '2026-09-23: daq_subsystem의 기본 구현 방향을 hierarchical로 확정(사용자 결정). ParSAC(IntelLabs, Apache 2.0) 설치 완료 — 매크로 floorplanning 전용 SA 도구, OpenLane MACROS와 연결하는 글루코드가 다음 실제 작업. 게이트: chan_top의 안테나 위반 1건이 strategy 6으로 닫히는지 확인 후 매크로로 굳힘'],
+  ['4단계 맞대결', '미착수', 'Hierarchical 1단계부터 선행 필요 — daq_subsystem flat 결과가 나오면 비교 기준으로 사용'],
 ] as const
 
 // RePlAce 대안(GPU 가속 DREAMPlace) 조사 — 실제 설치·빌드·실행까지 해봤으나
@@ -294,7 +294,20 @@ export default function PnrResearch() {
   return <>
     <section className="card"><div className="card-title"><div><small className="kicker">P&R 연구 · 2026-09-18</small><h2>Flat vs Hierarchical — 두 접근을 나란히</h2></div></div>
       <div className="data-table"><table><thead><tr><th>방식</th><th>정의</th><th>장점</th><th>단점 / 전제조건</th></tr></thead><tbody>{approaches.map(([name, def_, pro, con]) => <tr key={name}><td><b>{name}</b></td><td>{def_}</td><td>{pro}</td><td>{con}</td></tr>)}</tbody></table></div>
-      <p className="rtl-guide-note">둘 중 하나를 "정답"으로 미리 정하지 않는다 — daq_subsystem처럼 반복 구조(8채널 동일)가 강한 설계는 hierarchical이 유리할 가능성이 높지만, 실측(4단계) 없이는 가정일 뿐이다. 이 탭의 목적은 그 실측을 최소 비용으로 빨리 얻는 것.</p>
+      <p className="rtl-guide-note">2026-09-23: daq_subsystem의 기본 구현 방향을 hierarchical로 확정(사용자 결정) — 반복 구조(8채널 동일)가 강한 설계라는 점, 그리고 작은 기능 변경/면적 조정 시에도 이미 굳힌 매크로를 재사용할 수 있다는 점을 근거로 삼음. 다만 4단계(flat vs hierarchical 맞대결) 실측은 아직 안 끝났으므로, 이 결정이 최종 PPA 수치로 증명된 것은 아니다 — flat 트랙(daq_subsystem worst-corner 부분 검증)도 완주까지 지켜보고 비교 기준으로 남겨둔다.</p>
+    </section>
+
+    <section className="card"><div className="card-title"><div><small className="kicker">Hierarchical 실행 계획 · 2026-09-23</small><h2>매크로 메커니즘 확인 — "글루코드"는 과장이었다</h2></div></div>
+      <p>OpenLane 소스(<code>config/variable.py</code>의 <code>Macro</code>/<code>Instance</code> 클래스, <code>steps/odb.py</code>의 <code>ManualMacroPlacement</code>)를 직접 읽어서 실제 메커니즘을 확인함:</p>
+      <div className="data-table"><table><thead><tr><th>단계</th><th>메커니즘</th><th>이 프로젝트에 의미</th></tr></thead><tbody>{macroMechanism.map(([step, mech, note]) => <tr key={step}><td><b>{step}</b></td><td>{mech}</td><td>{note}</td></tr>)}</tbody></table></div>
+      <p><b>ParSAC 제약 종류 — grouping·인접·크기 변경 지원 여부 (소스/README 확인):</b></p>
+      <div className="data-table"><table><thead><tr><th>제약 종류</th><th>지원 여부</th><th>근거 / 주의점</th></tr></thead><tbody>{parsacConstraintTypes.map(([kind, support, note]) => <tr key={kind}><td><b>{kind}</b></td><td>{support === '지원됨' ? <span className="ok-badge">{support}</span> : <span className="warning-badge">{support}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note">가장 중요한 구분: aspect ratio 탐색은 <b>아직 하드닝 안 된 "말랑한" 블록에만 의미가 있다.</b> chan_top이 오늘 800×800으로 하드닝을 마치면, 8개 배치 탐색 단계에선 이걸 "fixed aspect ratio"로 표시해야 한다 — SA가 실제로 존재하지 않는 모양으로 바꾸려 들면 안 되기 때문. 정말 다른 비율(예: 640×1000, 같은 면적)을 원하면 chan_top을 그 DIE_AREA로 다시 하드닝해야 하고, 이는 area 축 실험(700×700/950×950)을 정사각형이 아닌 비율로 확장하는 것과 같은 작업이다.</p>
+      <p><b>실행 계획 (순서대로):</b></p>
+      <div className="data-table"><table><thead><tr><th>#</th><th>할 일</th><th>내용</th><th>상태</th></tr></thead><tbody>{hierarchicalTodo.map(([num, task, detail, stat]) => <tr key={num}><td><b>{num}</b></td><td>{task}</td><td>{detail}</td><td>{stat === '진행 중' ? <span className="warning-badge">{stat}</span> : stat}</td></tr>)}</tbody></table></div>
+      <p><b>시간 단축 기법 적용 가능 여부:</b></p>
+      <div className="data-table"><table><thead><tr><th>기법</th><th>적용 가능?</th><th>근거</th></tr></thead><tbody>{hierarchicalSpeedup.map(([tech, applicable, note]) => <tr key={tech}><td>{tech}</td><td>{applicable.includes('가능') ? <span className="ok-badge">{applicable}</span> : applicable}</td><td>{note}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note">체크포인트 재개·조기 종료는 top 레벨 P&R에도 그대로 쓸 수 있다 — 별도 구현이 필요 없다. 진짜 시간 절감은 hierarchical 구조 자체(top 레벨 넷리스트가 작아짐)에서 오고, 이 둘은 배타적이지 않고 누적된다: top 레벨 P&R 자체가 이미 더 짧고, 그 위에 체크포인트 재개까지 쓰면 다이오드 전략 재검증 같은 반복 작업은 더 빨라진다.</p>
     </section>
 
     <section className="card"><div className="card-title"><div><small className="kicker">탐색 구조</small><h2>깔때기(funnel) — 비쌀수록 후보 수를 줄인다</h2></div></div>
@@ -351,6 +364,15 @@ export default function PnrResearch() {
       <p className="rtl-guide-note"><b>단 두 단계(3번 포스트-CTS 리페어 23분10초 + 7번 GDS/물리검증 22분38초)가 전체의 약 64%.</b> 나머지 6단계를 다 합쳐도 이 둘 중 하나에 못 미친다.</p>
     </section>
 
+    <section className="card"><div className="card-title"><div><small className="kicker">"제일 오래 걸리는 게 STA 아니냐" · 2026-09-23</small><h2>아니다 — STA는 빠르다, 느린 건 STA를 반복 호출하는 리페어 루프</h2></div></div>
+      <p>단독 STA 체크포인트들의 실제 <code>runtime.txt</code>:</p>
+      <div className="data-table"><table><thead><tr><th>단계</th><th>실제 시간</th></tr></thead><tbody>{staStandaloneTiming.map(([step, time]) => <tr key={step}><td>{step}</td><td>{time}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note">단독 STA는 어디서도 30초~2분을 넘지 않는다. 반면 "포스트-CTS 타이밍 리페어"(ResizerTimingPostCTS) 하나가 22분07초 — STA보다 10~40배 걸린다. 이 단계는 STA를 한 번 도는 게 아니라 <b>"STA로 위반 확인 → 버퍼 삽입/셀 교체/핀 스왑으로 고침 → 다시 STA로 확인"을 반복</b>(실측 7회)하는 루프다 — 시간을 먹는 건 STA 계산 자체가 아니라 그 사이 "고치는" 작업(배치 재조정, 셀 교체, 재합법화).</p>
+      <p><b>이 리페어 시간을 3개 실행에서 비교:</b></p>
+      <div className="data-table"><table><thead><tr><th>실행</th><th>리페어 시간</th><th>최종 결과</th></tr></thead><tbody>{repairTimeAcrossRuns.map(([run, time, result]) => <tr key={run}><td>{run}</td><td>{time}</td><td>{result}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note">"결과가 좋을수록 리페어가 빠르다"는 단순 관계가 아니다 — 가장 좋은 최종 결과(14/52ns, 완전 클로징)가 오히려 가장 오래 걸렸다(46분). 주기를 늦추면 리사이저가 여유를 활용해 더 많은 탐색/최적화를 시도하는 것으로 보이나, 정확한 원인은 이 로그만으로 단정하지 않는다. 실용적 결론: STA 자체를 더 빠르게 할 여지는 거의 없고(이미 30초~2분), 이 단계를 줄이는 진짜 방법은 애초에 고칠 위반 수를 줄이는 것(RTL 파이프라이닝) — 다만 위 표처럼 항상 예측대로 가지는 않는다.</p>
+    </section>
+
     <section className="card"><div className="card-title"><div><small className="kicker">병렬화 가능성 분석</small><h2>어디를 병렬로 돌릴 수 있고, 어디는 안 되나</h2></div></div>
       <div className="check-list">{parallelizationNotes.map(([title, note]) => <p key={title}><b>{title}</b><span>{note}</span></p>)}</div>
     </section>
@@ -358,6 +380,42 @@ export default function PnrResearch() {
     <section className="card"><div className="card-title"><div><small className="kicker">도구 선택 가이드</small><h2>언제 어떤 도구를 쓰나</h2></div></div>
       <div className="data-table"><table><thead><tr><th>상황 / 목적</th><th>추천</th><th>이유 / 재검토 시점</th></tr></thead><tbody>{toolGuide.map(([situation, tool, why]) => <tr key={situation}><td>{situation}</td><td><b>{tool}</b></td><td>{why}</td></tr>)}</tbody></table></div>
       <p className="rtl-guide-note"><b>"많이 돌려서 더 나은 걸 고른다"는 SA스러운 발상 자체는 여전히 유효하다</b> — 다만 ParSAC/DreamPlace 같은 SA/GPU 전용 도구가 아니라, <b>RePlAce를 여러 후보 설정으로 병렬 반복 실행</b>하는 방식으로 이미 하고 있다: SYNTH_STRATEGY 9개 × PL_TARGET_DENSITY_PCT 여러 값 × clock period 후보를 위 "탐색 구조" 섹션의 0~1단계에서 병렬로 돌려서 싸게 거르고, 살아남은 것만 3단계(전체 P&R, 곧 RePlAce 실행)로 확정하는 구조 자체가 "여러 후보를 굴려서 고른다"는 목적을 이미 만족한다 — 알고리즘을 SA로 바꾸는 게 아니라 <b>RePlAce 호출 횟수와 입력 조합을 늘리는 것</b>이 이 프로젝트 규모에 맞는 실현 방법.</p>
+    </section>
+
+    <section className="card"><div className="card-title"><div><small className="kicker">체크포인트 재개 · 2026-09-23</small><h2>OpenLane 소스에서 확인 — 안 바뀐 앞단은 다시 안 돈다</h2></div></div>
+      <p>OpenLane 2 소스(<code>openlane/flows/flow.py</code>의 <code>Flow.start()</code>, <code>openlane/flows/cli.py</code>)를 직접 읽어서 확인함 — 추정이 아니다. 기존 run 디렉터리를 <code>--overwrite</code> 없이 다시 지정하면, 이미 끝난 step은 그대로 두고 최신 <code>state_out.json</code>을 초기 상태로 불러온다.</p>
+      <div className="data-table"><table><thead><tr><th>플래그</th><th>동작</th><th>근거</th></tr></thead><tbody>{resumeMechanism.map(([flag, what, why]) => <tr key={flag}><td><code>{flag}</code></td><td>{what}</td><td>{why}</td></tr>)}</tbody></table></div>
+      <p><b>실제 시간 비교</b> — chan_top 완주 런(71분20초)을 74개 세부 step으로 나눠 시나리오별 절감량을 계산:</p>
+      <div className="data-table"><table><thead><tr><th>시나리오</th><th>기존(매번 처음부터)</th><th>재개 시</th><th>절감</th></tr></thead><tbody>{resumeTiming.map(([scenario, before, after, saved]) => <tr key={scenario}><td>{scenario}</td><td>{before}</td><td>{after}</td><td><b>{saved}</b></td></tr>)}</tbody></table></div>
+      <p><b>재개 가능 여부 판단표</b> — 바꾸는 파라미터에 따라 재개로 얻는 이득이 크게 다르다:</p>
+      <div className="data-table"><table><thead><tr><th>바꾸는 것</th><th>영향 시작 단계</th><th>재개 시 절감</th></tr></thead><tbody>{resumeDecisionTable.map(([what, step, saved]) => <tr key={what}><td>{what}</td><td>{step}</td><td>{saved}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note">핵심 제약: 재개 지점 <i>이전</i> 단계에 영향을 주는 파라미터(주기, RTL, 배치 밀도)는 그 지점부터 다시 돌아야 해서 이득이 작거나 없다 — 재개가 크게 이득인 건 라우팅 이후 단계에만 영향을 주는 파라미터(다이오드 전략 등)뿐이다.</p>
+    </section>
+
+    <section className="card"><div className="card-title"><div><small className="kicker">위반 하나만 고쳐서 이어가기(ECO) · 2026-09-23</small><h2>조사 중 — 전체 재실행 없이 특정 넷/셀만 패치 가능한가</h2></div></div>
+      <p className="rtl-guide-note">조사 중입니다 — OpenLane 2의 Step 기반 flow(<code>OpenROAD.RepairAntennas</code>, <code>OpenROAD.ResizerTimingPostCTS</code> 등)는 기본적으로 설계 전체를 대상으로 위반을 고치도록 짜여 있고, 특정 넷 하나만 골라 고치는 first-class 옵션이 있는지는 아직 OpenLane 쪽 소스에서 확인 전입니다. 다만 이 프로젝트가 실제로 써 온 가장 효과적인 "그 부분만 고치기"는 도구 레벨 ECO가 아니라 <b>RTL 소스 자체를 타겟팅해서 고치는 것</b>이었습니다 — <code>ch_cause_o</code>를 레지스터화해서 그 신호로 끝나는 경로 하나만 고친 것이 실제로 WNS를 −3.38→−0.50ns로 개선한 사례입니다. OpenROAD Tcl 레벨에서 특정 넷에만 다이오드를 삽입하거나 특정 경로에만 버퍼를 넣는 수동 스크립트가 가능한지는 다음 조사에서 확인해서 이 섹션을 갱신하겠습니다.</p>
+    </section>
+
+    <section className="card"><div className="card-title"><div><small className="kicker">학습 기반 탐색(RL/BO) 검토 · 2026-09-23</small><h2>강화학습은 과함 — Bayesian Optimization이 규모에 맞지만 지금은 이름</h2></div></div>
+      <div className="data-table"><table><thead><tr><th>기법</th><th>판단</th><th>근거</th></tr></thead><tbody>{learningSearchEval.map(([method, verdict, note]) => <tr key={method}><td><b>{method}</b></td><td>{verdict.includes('부적합') ? <span className="warning-badge">{verdict}</span> : verdict}</td><td>{note}</td></tr>)}</tbody></table></div>
+      <p><b>대리 모델(surrogate) 신뢰성 실측</b> — "글로벌 배치 단계 지표로 최종 결과를 예측할 수 있는가"를 완주된 chan_top 3개 실행으로 직접 확인:</p>
+      <div className="data-table"><table><thead><tr><th>실행</th><th>글로벌 배치 단계 지표</th><th>최종 signoff 결과</th></tr></thead><tbody>{gplCorrelationCheck.map(([run, gpl, final]) => <tr key={run}><td><code>{run}</code></td><td>{gpl}</td><td>{final}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note">HPWL/overflow는 세 실행 모두 0.5% 이내로 거의 동일한데, 최종 WNS는 −3.38ns~+0.97ns(4.35ns 차이), 안테나 위반은 0~17건까지 벌어짐 — <b>배치 단계 지표는 이 설계(utilization ~27%)의 최종 결과와 무상관.</b> 실제 차이는 RTL 구조(레지스터 추가)와 다이오드 전략처럼 배치 단계에는 안 보이는 요인에서 옴. DreamPlace 때와 같은 패턴 — 그럴듯한 대리 지표였지만 실측하니 이 프로젝트엔 안 맞아서 여기서 접는다.</p>
+    </section>
+
+    <section className="card"><div className="card-title"><div><small className="kicker">속도 개선 방법론 · 종합 · 2026-09-23</small><h2>지금까지 발견한 것을 하나의 실행 순서로</h2></div></div>
+      <div className="data-table"><table><thead><tr><th>단계</th><th>방법</th><th>비고</th></tr></thead><tbody>{speedupMethodology.map(([step, method, note]) => <tr key={step}><td><b>{step}</b></td><td>{method}</td><td>{note}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note">이 방법론의 전제는 "탐색 구조"(퍼널) 섹션과 같다 — 비쌀수록 후보 수를 줄인다. 다른 점은 이번에 찾은 체크포인트 재개가 <b>퍼널의 3단계(전체 P&R) 자체의 비용을 낮춘다</b>는 것 — 후보 하나당 71분이 아니라, 바뀐 파라미터에 따라 11~68분으로 줄어들 수 있다. RL/BO 같은 학습 기법은 탐색할 조합이 지금보다 훨씬 많아지기 전까지는 투입 근거가 없다.</p>
+    </section>
+
+    <section className="card"><div className="card-title"><div><small className="kicker">PPA 민감도 분석 · 2026-09-23</small><h2>Area·Performance 축을 하나씩 — 파레토 스윕은 아직 아님</h2></div></div>
+      <p>"이게 파레토 측정인가?"라는 질문에 답하며 정리한 구분 — 지금 하는 건 축 하나만 바꾸고 나머지를 고정하는 <b>민감도 분석</b>이다. area×period×전략을 조합으로 도는 진짜 <b>파레토 프런티어</b>는 18개 조합 × 후보당 ~71분 ≈ 21시간이 필요해서, chan_top이 거의 닫힌 지금 단계엔 과하다 — 민감도 분석으로 충분하고, 파레토는 설계가 안정화된 뒤(예: daq_subsystem 최종 설정 확정 시점)로 미룬다.</p>
+      <div className="data-table"><table><thead><tr><th>축</th><th>종류</th><th>범위</th><th>상태</th></tr></thead><tbody>{ppaAxes.map(([axis, kind, range, stat]) => <tr key={axis}><td><b>{axis}</b></td><td>{kind}</td><td>{range}</td><td>{stat}</td></tr>)}</tbody></table></div>
+      <p><b>Performance 축 — 실측 2점 (면적·RTL 고정, 새 실행 불필요):</b></p>
+      <div className="data-table"><table><thead><tr><th>조건</th><th>power_total</th><th>성능(WNS)</th><th>위반</th></tr></thead><tbody>{performanceAxisData.map(([cond, power, perf, viol]) => <tr key={cond}><td>{cond}</td><td>{power}</td><td>{perf}</td><td>{viol}</td></tr>)}</tbody></table></div>
+      <p><b>Area 축 — 실행 계획 (호스트 여유 생기면 시작):</b></p>
+      <div className="data-table"><table><thead><tr><th>후보</th><th>상태</th><th>비고</th></tr></thead><tbody>{areaAxisPlan.map(([cand, stat, note]) => <tr key={cand}><td>{cand}</td><td>{stat === '완료' ? <span className="ok-badge">{stat}</span> : <span className="warning-badge">{stat}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note">Performance 축에서 이미 드러난 패턴: 주기를 늦추면(12→14ns) power는 내려가고 타이밍은 좋아졌지만, 안테나 위반은 0→1건으로 늘었다 — <b>세 지표가 한 방향으로만 움직이지 않는다</b>는 걸 실측으로 확인함(안테나 증가는 주기 자체가 아니라 그로 인한 다른 라우팅 솔루션의 부작용). Area 축도 실측 전까지는 같은 가정을 하면 안 된다 — 지난번 "배치 단계 지표 무상관" 교훈과 같은 이유로, 실제로 돌려보기 전엔 방향조차 단정하지 않는다.</p>
     </section>
   </>
 }

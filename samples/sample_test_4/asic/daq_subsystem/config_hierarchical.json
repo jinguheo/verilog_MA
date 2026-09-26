@@ -1,0 +1,145 @@
+{
+  "DESIGN_NAME": "daq_subsystem",
+
+  "//": [
+    "Hierarchical variant of config.json (2026-09-24) - chan_top is treated",
+    "as a pre-hardened MACRO (GDS/LEF/LIB/SPEF/VH from its own completed,",
+    "fully-closed run RUN_2026-09-23_12-48-47 - DRC/LVS/Antenna/Setup/Hold",
+    "all clean, see PhysicalDesignStatus.tsx) instead of being re-synthesized",
+    "8x as part of daq_subsystem itself. This is the hierarchical track from",
+    "the P&R Research dashboard tab's flat-vs-hierarchical comparison.",
+
+    "VERILOG_FILES below omits chan_top.sv and its exclusive internal",
+    "dependencies (chan_ctrl.sv, pkt_align.sv, pkt_check.sv, skid_buffer.sv -",
+    "confirmed via grep that none of these are referenced by any other",
+    "daq_subsystem top-level module). Only the top-level glue (dma_sched,",
+    "desc_fetch, axi_rd_master, axi_wr_master, wr_track, csr, irq_ctrl,",
+    "perf_cnt) plus daq_subsystem.sv itself get synthesized/placed/routed",
+    "here - the 8 chan_top instances are read as blackboxes via MACROS below",
+    "(OpenLane's synthesis step auto-blackboxes any MACROS entry through",
+    "get_macro_views_by_priority - confirmed by reading openlane/steps/",
+    "yosys.py directly, no custom glue script needed).",
+
+    "prim_flop/prim_flop_2sync/prim_clock_mux2 are left in VERILOG_FILES",
+    "even though no current top-level module references them directly -",
+    "they may be pulled in transitively by prim_fifo_async's own internals",
+    "and are harmless if unused (yosys simply won't instantiate them).",
+
+    "Instance names below (gen_chan[0..7].u_chan_top) come directly from",
+    "daq_subsystem.sv's own generate-for block: `for (genvar c = 0; c <",
+    "NumCh; c++) begin : gen_chan  chan_top u_chan_top (...); end`.",
+
+    "FIRST PASS: instance locations are left unset ('automatic placement'",
+    "per OpenLane's own Instance dataclass docs) so OpenLane's built-in",
+    "placer positions the 8 macros itself - this validates the blackbox+",
+    "macro mechanism end-to-end before layering ParSAC's constraint-based",
+    "placement on top. See config_hierarchical_parsac.json for the second",
+    "pass once ParSAC produces real coordinates.",
+
+    "Launched the same way as config.json (from /mnt/d/MyWork, see",
+    "tools/wsl/1XX_run_daq_subsystem.sh) - OpenLane won't read above its",
+    "working dir, and prim/chan_top's run dir both live outside this repo's",
+    "immediate ancestry from asic/daq_subsystem/."
+  ],
+
+  "VERILOG_FILES": [
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_util_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_mubi_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_flop.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_flop_2sync.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_clock_mux2.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_rst_sync.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_fifo_async.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_arbiter_tree.sv",
+
+    "dir::../../rtl/pkg/axi_pkg.sv",
+    "dir::../../rtl/pkg/daq_pkg.sv",
+    "dir::../../rtl/common/cnt_sat.sv",
+    "dir::../../rtl/dma/dma_sched.sv",
+    "dir::../../rtl/dma/desc_fetch.sv",
+    "dir::../../rtl/dma/axi_rd_master.sv",
+    "dir::../../rtl/dma/axi_wr_master.sv",
+    "dir::../../rtl/dma/wr_track.sv",
+    "dir::../../rtl/csr/axil_slave.sv",
+    "dir::../../rtl/csr/daq_csr.sv",
+    "dir::../../rtl/irq/irq_ctrl.sv",
+    "dir::../../rtl/stat/perf_cnt.sv",
+    "dir::../../rtl/daq_subsystem.sv"
+  ],
+
+  "VERILOG_INCLUDE_DIRS": [
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl"
+  ],
+
+  "USE_SYNLIG": true,
+
+  "CLOCK_PORT": "clk_i",
+  "CLOCK_PERIOD": 48,
+
+  "PNR_SDC_FILE": "dir::../constraints/daq_subsystem.sdc",
+  "SIGNOFF_SDC_FILE": "dir::../constraints/daq_subsystem.sdc",
+
+  "FP_SIZING": "absolute",
+  "//DIE_AREA": [
+    "Same budget as the flat config: 3200x3200 (~10.24M um^2). 8x chan_top's",
+    "own die (800x800 = 640,000 um^2 each) is 5.12M um^2 - leaves ~5.1M um^2",
+    "for the top-level glue logic (dma_sched/csr/irq/perf_cnt etc.) plus",
+    "spacing between macros.",
+
+    "CORRECTION (2026-09-24, first attempt failed): leaving MACROS.instances",
+    "location unset does NOT mean 'auto-placed' in OpenLane's Classic flow -",
+    "it failed at stage 20 (GeneratePDN) with [PDN-0235] Design has unplaced",
+    "macros. The 3200x3200 budget also turned out to be exactly 4x800=3200",
+    "wide with zero room for spacing if packed edge-to-edge in a 4x2 grid.",
+    "Widened to 3700x2100 (7.77M um^2) and gave every instance an explicit",
+    "location below - a simple 4x2 grid with 100um margins/gaps and a 300um",
+    "channel between the two rows for glue logic + routing. Real synthesis",
+    "data from the failed run's completed steps (06-yosys-synthesis,",
+    "13-openroad-floorplan) showed design__instance__utilization__stdcell =",
+    "0.0389 against design__core__area = 1.013e7 um^2 -> glue logic is only",
+    "~394,000 um^2, far smaller than the 8 macros combined (5.12M um^2) - so",
+    "this is a macro-dominated floorplan with the glue logic essentially",
+    "filling in around the 8 blocks. This is a first-pass grid, not an",
+    "optimized placement - ParSAC's placement is the comparison point once",
+    "this run proves the mechanism works end to end."
+  ],
+  "DIE_AREA": [0, 0, 3700, 2100],
+  "PL_TARGET_DENSITY_PCT": 40,
+
+  "MACROS": {
+    "chan_top": {
+      "gds": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/gds/chan_top.gds"],
+      "lef": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lef/chan_top.lef"],
+      "vh": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/vh/chan_top.vh"],
+      "nl": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/nl/chan_top.nl.v"],
+      "spef": {
+        "min_*": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/spef/min/chan_top.min.spef"],
+        "nom_*": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/spef/nom/chan_top.nom.spef"],
+        "max_*": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/spef/max/chan_top.max.spef"]
+      },
+      "lib": {
+        "max_ff_n40C_1v95": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/max_ff_n40C_1v95/chan_top__max_ff_n40C_1v95.lib"],
+        "max_ss_100C_1v60": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/max_ss_100C_1v60/chan_top__max_ss_100C_1v60.lib"],
+        "max_tt_025C_1v80": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/max_tt_025C_1v80/chan_top__max_tt_025C_1v80.lib"],
+        "min_ff_n40C_1v95": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/min_ff_n40C_1v95/chan_top__min_ff_n40C_1v95.lib"],
+        "min_ss_100C_1v60": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/min_ss_100C_1v60/chan_top__min_ss_100C_1v60.lib"],
+        "min_tt_025C_1v80": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/min_tt_025C_1v80/chan_top__min_tt_025C_1v80.lib"],
+        "nom_ff_n40C_1v95": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/nom_ff_n40C_1v95/chan_top__nom_ff_n40C_1v95.lib"],
+        "nom_ss_100C_1v60": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/nom_ss_100C_1v60/chan_top__nom_ss_100C_1v60.lib"],
+        "nom_tt_025C_1v80": ["dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/nom_tt_025C_1v80/chan_top__nom_tt_025C_1v80.lib"]
+      },
+      "instances": {
+        "gen_chan[0].u_chan_top": {"location": [100, 100], "orientation": "N"},
+        "gen_chan[1].u_chan_top": {"location": [1000, 100], "orientation": "N"},
+        "gen_chan[2].u_chan_top": {"location": [1900, 100], "orientation": "N"},
+        "gen_chan[3].u_chan_top": {"location": [2800, 100], "orientation": "N"},
+        "gen_chan[4].u_chan_top": {"location": [100, 1200], "orientation": "N"},
+        "gen_chan[5].u_chan_top": {"location": [1000, 1200], "orientation": "N"},
+        "gen_chan[6].u_chan_top": {"location": [1900, 1200], "orientation": "N"},
+        "gen_chan[7].u_chan_top": {"location": [2800, 1200], "orientation": "N"}
+      }
+    }
+  }
+}

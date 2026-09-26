@@ -111,6 +111,25 @@ because Ubuntu's Magic 8.3.105 is too old for the current SKY130 techfile.
 Electrical PPA remains unmeasured where an IP repository only supplies
 physical checks and no power/performance testbench.
 
+## 2026-09-23 PPA1 CDAC checkpoint
+
+The earlier assumption that the editable CDAC `.mag` was clean while only the
+CACE GDS had 84 errors was disproved: CACE prefers and directly checks the
+Magic hierarchy.  The CDAC pinned an older analog-switch dependency.  Moving
+that nested checkout from `2dc44dd` to the upstream DRC/LVS fix `34a2361`
+reduced Magic DRC from 84 to 9.  Extending the stale `EF_SW_RST` nwell/dnwell
+stitching edges to the updated child-cell boundary made that cell DRC-clean and
+reduced the CDAC total to 6 repeated `diff/tap.18,20` errors.
+
+The remaining six errors are at the CDAC top-level symmetric tap/nwell
+integration boundary.  A freshly generated GDS exposed that the previous
+KLayout zero-error result was stale; before the `EF_SW_RST` stitching fix the
+new GDS reported two well-spacing errors in that cell.  Re-run GDS generation,
+KLayout DRC, and LVS after the final six Magic errors are closed.  CACE 2.11.0
+currently also raises a `datetime.date` string-concatenation error while
+checking the modified child `.mag` timestamp, so the adapter needs a small
+regeneration-path workaround before the next full signoff run.
+
 ## 2026-09-21: what the SRAM is for — ADC calibration LUT
 
 The catalogued `sram22_1024x32m8w8` macro (above) now has an architectural

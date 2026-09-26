@@ -1,0 +1,191 @@
+{
+  "DESIGN_NAME": "daq_subsystem",
+  "//": [
+    "Macro Tetris candidate (2026-09-25) - identical to config_hierarchical.json except",
+    "MACROS.chan_top.instances. Coordinates come from the Macro Tetris dashboard tab",
+    "(my_dashboard/src/views/MacroTetris.tsx) running Rip-up & Re-place from the real",
+    "grid after the gap=0 abutment bug was fixed: the top row moves down 200um",
+    "(y 100 -> 300), shrinking the inter-row channel from 300um to 100um.",
+    "The tab predicted weighted-WL 59,600 -> 55,600 (-6.7%) on its own approximate",
+    "cost model; this run exists to check that prediction against real OpenLane.",
+    "Baseline for comparison: runs/hierarchical_auto_20260924_142552 (same config,",
+    "grid coordinates, reached 61-checker-xor before the host stopped it)."
+  ],
+  "VERILOG_FILES": [
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_util_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_mubi_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_flop.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_flop_2sync.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_clock_mux2.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_rst_sync.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_fifo_async.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_arbiter_tree.sv",
+    "dir::../../rtl/pkg/axi_pkg.sv",
+    "dir::../../rtl/pkg/daq_pkg.sv",
+    "dir::../../rtl/common/cnt_sat.sv",
+    "dir::../../rtl/dma/dma_sched.sv",
+    "dir::../../rtl/dma/desc_fetch.sv",
+    "dir::../../rtl/dma/axi_rd_master.sv",
+    "dir::../../rtl/dma/axi_wr_master.sv",
+    "dir::../../rtl/dma/wr_track.sv",
+    "dir::../../rtl/csr/axil_slave.sv",
+    "dir::../../rtl/csr/daq_csr.sv",
+    "dir::../../rtl/irq/irq_ctrl.sv",
+    "dir::../../rtl/stat/perf_cnt.sv",
+    "dir::../../rtl/daq_subsystem.sv"
+  ],
+  "VERILOG_INCLUDE_DIRS": [
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl"
+  ],
+  "USE_SYNLIG": true,
+  "CLOCK_PORT": "clk_i",
+  "CLOCK_PERIOD": 48,
+  "PNR_SDC_FILE": "dir::../constraints/daq_subsystem.sdc",
+  "SIGNOFF_SDC_FILE": "dir::../constraints/daq_subsystem.sdc",
+  "FP_SIZING": "absolute",
+  "//DIE_AREA": [
+    "Same budget as the flat config: 3200x3200 (~10.24M um^2). 8x chan_top's",
+    "own die (800x800 = 640,000 um^2 each) is 5.12M um^2 - leaves ~5.1M um^2",
+    "for the top-level glue logic (dma_sched/csr/irq/perf_cnt etc.) plus",
+    "spacing between macros.",
+    "CORRECTION (2026-09-24, first attempt failed): leaving MACROS.instances",
+    "location unset does NOT mean 'auto-placed' in OpenLane's Classic flow -",
+    "it failed at stage 20 (GeneratePDN) with [PDN-0235] Design has unplaced",
+    "macros. The 3200x3200 budget also turned out to be exactly 4x800=3200",
+    "wide with zero room for spacing if packed edge-to-edge in a 4x2 grid.",
+    "Widened to 3700x2100 (7.77M um^2) and gave every instance an explicit",
+    "location below - a simple 4x2 grid with 100um margins/gaps and a 300um",
+    "channel between the two rows for glue logic + routing. Real synthesis",
+    "data from the failed run's completed steps (06-yosys-synthesis,",
+    "13-openroad-floorplan) showed design__instance__utilization__stdcell =",
+    "0.0389 against design__core__area = 1.013e7 um^2 -> glue logic is only",
+    "~394,000 um^2, far smaller than the 8 macros combined (5.12M um^2) - so",
+    "this is a macro-dominated floorplan with the glue logic essentially",
+    "filling in around the 8 blocks. This is a first-pass grid, not an",
+    "optimized placement - ParSAC's placement is the comparison point once",
+    "this run proves the mechanism works end to end."
+  ],
+  "DIE_AREA": [
+    0,
+    0,
+    3700,
+    2100
+  ],
+  "PL_TARGET_DENSITY_PCT": 40,
+  "MACROS": {
+    "chan_top": {
+      "gds": [
+        "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/gds/chan_top.gds"
+      ],
+      "lef": [
+        "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lef/chan_top.lef"
+      ],
+      "vh": [
+        "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/vh/chan_top.vh"
+      ],
+      "nl": [
+        "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/nl/chan_top.nl.v"
+      ],
+      "spef": {
+        "min_*": [
+          "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/spef/min/chan_top.min.spef"
+        ],
+        "nom_*": [
+          "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/spef/nom/chan_top.nom.spef"
+        ],
+        "max_*": [
+          "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/spef/max/chan_top.max.spef"
+        ]
+      },
+      "lib": {
+        "max_ff_n40C_1v95": [
+          "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/max_ff_n40C_1v95/chan_top__max_ff_n40C_1v95.lib"
+        ],
+        "max_ss_100C_1v60": [
+          "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/max_ss_100C_1v60/chan_top__max_ss_100C_1v60.lib"
+        ],
+        "max_tt_025C_1v80": [
+          "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/max_tt_025C_1v80/chan_top__max_tt_025C_1v80.lib"
+        ],
+        "min_ff_n40C_1v95": [
+          "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/min_ff_n40C_1v95/chan_top__min_ff_n40C_1v95.lib"
+        ],
+        "min_ss_100C_1v60": [
+          "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/min_ss_100C_1v60/chan_top__min_ss_100C_1v60.lib"
+        ],
+        "min_tt_025C_1v80": [
+          "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/min_tt_025C_1v80/chan_top__min_tt_025C_1v80.lib"
+        ],
+        "nom_ff_n40C_1v95": [
+          "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/nom_ff_n40C_1v95/chan_top__nom_ff_n40C_1v95.lib"
+        ],
+        "nom_ss_100C_1v60": [
+          "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/nom_ss_100C_1v60/chan_top__nom_ss_100C_1v60.lib"
+        ],
+        "nom_tt_025C_1v80": [
+          "dir::../chan_top/runs/RUN_2026-09-23_12-48-47/final/lib/nom_tt_025C_1v80/chan_top__nom_tt_025C_1v80.lib"
+        ]
+      },
+      "instances": {
+        "gen_chan[0].u_chan_top": {
+          "location": [
+            100,
+            300
+          ],
+          "orientation": "N"
+        },
+        "gen_chan[1].u_chan_top": {
+          "location": [
+            1000,
+            300
+          ],
+          "orientation": "N"
+        },
+        "gen_chan[2].u_chan_top": {
+          "location": [
+            1900,
+            300
+          ],
+          "orientation": "N"
+        },
+        "gen_chan[3].u_chan_top": {
+          "location": [
+            2800,
+            300
+          ],
+          "orientation": "N"
+        },
+        "gen_chan[4].u_chan_top": {
+          "location": [
+            100,
+            1200
+          ],
+          "orientation": "N"
+        },
+        "gen_chan[5].u_chan_top": {
+          "location": [
+            1000,
+            1200
+          ],
+          "orientation": "N"
+        },
+        "gen_chan[6].u_chan_top": {
+          "location": [
+            1900,
+            1200
+          ],
+          "orientation": "N"
+        },
+        "gen_chan[7].u_chan_top": {
+          "location": [
+            2800,
+            1200
+          ],
+          "orientation": "N"
+        }
+      }
+    }
+  }
+}
