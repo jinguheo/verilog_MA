@@ -1355,3 +1355,116 @@ the dashboard's status table + timing-history table. If 12/52 closes, chan_top
 needs no RTL pipelining at all. Then the actual P&R optimization work per
 RESULTS.md's "P&R optimization options in this OpenLane 2.3.10 install"
 section (line ~1202).
+
+## Session 2026-09-25/26/27 — "Macro Tetris" macro-placement optimizer built and validated against real OpenLane; two candidates found and both failed for different real reasons; grid baseline still the only proven hierarchical daq_subsystem floorplan
+
+Built out `my_dashboard/src/views/MacroTetris.tsx` (+ new
+`my_dashboard/src/game/macroTetrisModel.ts`/`macroTetrisWorker.ts`) from a
+static visualization into a real interactive/automated placement optimizer
+for daq_subsystem's 8 `chan_top` macros: HARD (fixed 800×800, matches the
+real hardened GDS) vs SOFT (resizable, what-if) macros with utilization
+checked against the real chan_top cell area (319,066µm² from
+`RUN_2026-09-23_12-48-47/final/metrics.json`); a standard-cell "glue" tile
+placement pass sized from the real post-route
+`design__instance__area__stdcell` (460,614µm² in
+`runs/hierarchical_auto_20260924_142552`); a greedy "stacking play" mode;
+and a Web Worker-based parallel search (N lanes, some restarting from the
+global-best candidate, some randomizing from scratch, each running
+RePlAce→SA) that persists the best-known legal candidate across reloads
+(`localStorage`, keyed by macro-shape signature, re-validated against the
+current legality rules on every load so a rule tightening can't leave a
+stale invalid "best" on display).
+
+**Two real bugs found while building this, both fixed before committing**:
+`overlapAmount`'s spacing check used `gap > 0` (not `>= 0`), so the solver
+could satisfy "legal" by abutting two macros at gap=0 — this inflated an
+early "real→improved candidate, −19.7% cost" claim; the honest number after
+the fix is −6.7%. Separately, `ripUpReplace` had `for (i=0; i<N; i++)`
+hardcoding the full macro count instead of the array's actual length,
+which crashed the moment the new stacking-play auto-tidy feature called it
+on a partial (<8 macro) state.
+
+**The real finding, from actually validating a candidate against OpenLane**:
+a candidate that narrows the inter-row channel from 300µm to 100µm (moving
+the top row of 4 macros down 200µm) looked strictly better in every
+heuristic the tool had at the time, but real `OpenLane` (config
+`config_hierarchical_macrotetris.json`, run tag
+`macrotetris_20260925_203844`, resumed twice by different sessions after the
+host slept mid-run both times — same daq_subsystem sleep-death pattern
+documented earlier in this file) failed identically both times at
+`OpenROAD.ResizerTimingPostCTS`: hold-violation repair (6301 violations)
+inserted hold buffers that couldn't find legal detailed-placement sites —
+300 of them — `[DPL-0034]`/`[DPL-0036]`. The grid baseline (channel=300µm,
+`hierarchical_auto_20260924_142552`) passed the equivalent stage cleanly.
+Added a hard legality gate for this (`CHANNEL_SAFE_MARGIN=300` in
+`macroTetrisModel.ts`) — the *first* version checked every pairwise
+macro-to-macro gap and this **broke the grid baseline itself** (flagged its
+normal same-row 100µm packing gaps as "channel violations"); fixed by only
+checking gaps on whichever axis splits the macros into *fewer* merged
+groups (the true row-separating channel, not column-to-column packing).
+
+A concurrent session doing the parallel "Macro Area Tetris" tab
+(`game/macroAreaModel.ts`, its own file) ported the same gate into their
+die-shrink search and found the current 3700×2100 daq_subsystem die is an
+*exact* geometric floor for the 2-row×4-column topology
+(800+300+800+100+100=2100) — every shrink attempt now fails the channel
+check immediately. Documented honestly in `PnrResearch.tsx`'s new "다이
+면적 하한" section: this conclusion **only holds for this specific
+topology** — a single-row arrangement has no "channel" in this model's
+sense at all (so passes every current rule) and would be ~27% smaller by
+bounding-box area, but the model has zero concept of IO/power-ring edge
+margins or realistic aspect-ratio limits, so this reads as *unexplored
+search space*, not a proven-smaller real design.
+
+**A second real validation, by the same concurrent session, using the
+tool's own parallel-search output** (a non-grid, scattered 8-macro
+candidate at weighted-WL 55,752 vs. the grid's 59,600 — legal under every
+current rule including the new channel gate): config
+`config_hierarchical_macrotetris_v2.json`, run tag
+`macrotetris_v2_20260926_133315`. This one *passed* `ResizerTimingPostCTS`
+(no channel problem) but died later at `OpenROAD.GlobalRouting` with
+`[GRT-0118] Routing congestion too high` / `[GRT-0097] No global routing
+found for nets` — a different real failure mode entirely. The model's own
+congestion heuristic (`congestionCells`/`routabilityRisk`) flagged *both*
+this candidate and the known-good grid baseline as "HIGH" risk, so it
+isn't discriminating enough to have caught this in advance — not fixed,
+since one failure isn't enough evidence to derive a clean threshold from
+(unlike the channel case, which had a clean pass/fail pair either side of
+exactly 300µm).
+
+**Net status, honestly**: two different model-legal, lower-approximate-cost
+candidates have each now failed real OpenLane for two different real
+reasons. **The grid baseline (`hierarchical_auto_20260924_142552`, macros
+at y=100/1200) remains the only proven-viable hierarchical daq_subsystem
+floorplan** — Macro Tetris has not yet produced a real improvement over it,
+only two educational failures that improved the tool's own legality model
+each time (channel margin, and — still open — routing congestion).
+
+Verified via `npx tsc --noEmit` (clean each time) and live browser checks
+(parallel search, stacking play, resize/HARD-SOFT toggle, localStorage
+persistence + revalidation across reload) throughout. Committed:
+`2ae6443` (Macro Tetris feature), `802d334` (PnrResearch die-floor
+writeup), `474905e` (exported two helper functions for the concurrent
+session's reuse) — all on `codex/ppa-checkpoints`, pushed. One-line fix
+also applied to the concurrent session's own `macroAreaModel.ts` (added a
+`channelViolations: 0` field their `costD` was missing after my `Cost`
+type gained that field) since my own change broke their build first.
+
+Also worth remembering: `dashboard_server.py` (the raw
+`ThreadingHTTPServer`-based backend on port 8787, imports
+`layout_candidate_runner.py` among others) was found down mid-session with
+no crash in its own code (ran clean for 5s standalone) — just not running.
+Restarted it (`python dashboard_server.py --port 8787`, backgrounded). If
+it goes down again, that's the fix: it isn't launched by
+`.claude/launch.json` (only the Vite dev server is), so nothing auto-starts
+it — whoever's terminal was running it likely just closed or the host
+slept.
+
+**Next**: if pursuing a real improvement over the grid baseline is still
+wanted, the routing-congestion failure needs its own real-vs-model
+evidence pair (like the channel case had) before a general rule can be
+derived — that means finding or generating an OpenLane-validated
+*passing* non-grid candidate to compare against this failing one, not
+guessing a threshold from n=1. Otherwise, the grid baseline can be treated
+as the accepted hierarchical daq_subsystem floorplan and this track
+considered closed for now.
