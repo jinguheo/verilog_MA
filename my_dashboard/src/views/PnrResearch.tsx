@@ -221,6 +221,20 @@ const hierarchicalSpeedup = [
   ['hierarchical 고유의 시간 절감 (체크포인트와 별개)', '이게 진짜 핵심', 'top 레벨 넷리스트는 daq_subsystem 전체(~107k셀)가 아니라 glue 로직만 — 셀 수가 훨씬 적어지므로, 가장 비쌌던 "포스트-CTS 타이밍 리페어"(23분, 위반 개수에 비선형 비례) 자체가 근본적으로 작아질 것으로 예상. 다만 실측 전까지는 추정 — 8번째 실행 예정'],
 ] as const
 
+// daq_subsystem 다이 면적 하한 — 2026-09-26, Macro Tetris 대시보드 탭(별도)에서
+// 실제 OpenLane으로 8개 매크로 배치 후보를 검증하다가 발견한 것. 위쪽 행을
+// 200µm 내려 행간 채널을 300µm→100µm로 좁힌 후보를 실제로 돌렸더니
+// ResizerTimingPostCTS의 hold 위반(6301건) 리페어가 hold 버퍼 300개를 legal한
+// 자리에 못 앉혀 Detailed Placement 자체가 실패했다(DPL-0034/0036) — 반면 채널
+// 300µm인 실제 baseline(hierarchical_auto_20260924_142552)은 이 단계를 통과했다.
+// 이 실측을 근거로 "매크로 그룹을 가르는 채널은 300µm 이상"을 하드 legal
+// 규칙으로 Macro Tetris 모델(game/macroTetrisModel.ts)에 추가했다.
+const daqFloorplanFloor = [
+  ['2행×4열 격자(지금 실제 배치)', '3700 × 2100 µm', '높이 = 800(위 행) + 300(채널, 실측 하한) + 800(아래 행) + 100 + 100(위아래 여백) = 2100 — 정확히 지금 다이 높이와 같다. 이 격자 형태를 유지하는 한 더 줄일 여지가 없다(다른 세션이 같은 채널 게이트를 자기 면적-축소 탐색에 넣어 확인 — 모든 축소 시도가 즉시 채널 위반으로 막힘)'],
+  ['4행×2열 격자 (계산만, 미검증)', '1700 × 4100 µm (bbox 기준) — 면적 6.97M µm², 지금보다 큼', '행이 4개라 채널이 3개 필요 → 세로로 더 길어짐. 이 모델의 "더 적은 그룹으로 가르는 축" 휴리스틱이 이번엔 열(2개) 사이 100µm 간격을 채널로 잡아 실제로는 illegal — 열 사이도 300µm씩 벌려야 legal, 그러면 면적이 더 커진다'],
+  ['1행×8열 (계산만, 미검증)', '7100 × 800 µm (여백 0) — 면적 5.68M µm², 지금보다 27% 작음', '행이 하나뿐이라 이 모델 정의상 "채널"이 아예 없음(채널 위반 0) — 모델이 아는 규칙만 보면 legal. 하지만 극단적인 종횡비(8.9:1)와 IO/전원 링에 필요한 실제 여백을 이 모델이 전혀 안 보므로, 실제 OpenLane으로 검증 전까지는 "면적이 작다"가 아니라 "이 모델이 못 잡아내는 실패 모드가 있을 가능성이 크다"로 읽어야 한다'],
+] as const
+
 // RePlAce 알고리즘 자체 설명 — 지금까지 이 파일 여러 곳에서 "이전 섹션에서
 // 설명한 정전기 밀도 모델 + Nesterov 경사하강"이라고 참조만 해뒀지, 그 설명
 // 본문이 실제로는 없었다. 그 자리를 채운다. OpenROAD의 gpl 모듈이 곧 RePlAce
@@ -308,6 +322,12 @@ export default function PnrResearch() {
       <p><b>시간 단축 기법 적용 가능 여부:</b></p>
       <div className="data-table"><table><thead><tr><th>기법</th><th>적용 가능?</th><th>근거</th></tr></thead><tbody>{hierarchicalSpeedup.map(([tech, applicable, note]) => <tr key={tech}><td>{tech}</td><td>{applicable.includes('가능') ? <span className="ok-badge">{applicable}</span> : applicable}</td><td>{note}</td></tr>)}</tbody></table></div>
       <p className="rtl-guide-note">체크포인트 재개·조기 종료는 top 레벨 P&R에도 그대로 쓸 수 있다 — 별도 구현이 필요 없다. 진짜 시간 절감은 hierarchical 구조 자체(top 레벨 넷리스트가 작아짐)에서 오고, 이 둘은 배타적이지 않고 누적된다: top 레벨 P&R 자체가 이미 더 짧고, 그 위에 체크포인트 재개까지 쓰면 다이오드 전략 재검증 같은 반복 작업은 더 빨라진다.</p>
+    </section>
+
+    <section className="card"><div className="card-title"><div><small className="kicker">다이 면적 하한 · 2026-09-26</small><h2>2행 격자는 이미 최소다 — 단, "이 구조 안에서만"</h2></div></div>
+      <p>실제 OpenLane 실패(DPL-0034/0036, Macro Tetris 대시보드 탭에서 발견)를 근거로 "매크로 그룹을 가르는 채널 ≥300µm"를 하드 legal 규칙으로 세운 뒤, 지금 쓰는 2행×4열 격자와 대안 구조 몇 가지를 이 규칙으로 다시 계산해봤다:</p>
+      <div className="data-table"><table><thead><tr><th>구조</th><th>다이 크기</th><th>근거 / 주의점</th></tr></thead><tbody>{daqFloorplanFloor.map(([kind, size, note]) => <tr key={kind}><td><b>{kind}</b></td><td>{size}</td><td>{note}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note"><b>사용자 질문("현재 구조가 최소인지, 더 탐색할 공간이 없는지")에 대한 정직한 답</b>: 2행×4열 격자 <i>안에서는</i> 지금 다이가 진짜 하한이 맞다(다른 세션이 같은 채널 게이트로 면적-축소 탐색을 돌려 모든 축소 시도가 즉시 막히는 걸 확인). 하지만 격자를 벗어난 배치(1행×8열 등)까지 보면 이 모델 자체는 "채널이 아예 없어서 legal"이라고 답한다 — 이건 탐색 공간이 아직 안 닫혔다는 뜻이지, 실제로 더 작게 만들 수 있다는 뜻이 아니다. 이 모델은 IO 링·전원 링에 필요한 다이 가장자리 여백, 극단적 종횡비(1행×8열은 8.9:1)의 실제 라우팅/제조 가능성을 전혀 모델링하지 않는다 — 두 실패(채널 부족, 여백 부족)는 서로 다른 실패 모드라 하나를 실측했다고 다른 하나도 안전하다고 볼 근거가 없다. 결론: <b>"2행 격자 안에서는 바닥, 격자 밖은 아직 미탐색"</b>이 지금까지 실제로 확인된 전부다. 격자 밖 구조를 진지하게 보려면 먼저 이 모델에 다이 가장자리 여백 규칙을 추가하고, 그다음 실제 OpenLane으로 검증해야 한다.</p>
     </section>
 
     <section className="card"><div className="card-title"><div><small className="kicker">탐색 구조</small><h2>깔때기(funnel) — 비쌀수록 후보 수를 줄인다</h2></div></div>
