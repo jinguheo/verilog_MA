@@ -34,15 +34,18 @@
   "DIE_AREA": [0, 0, 1250, 600],
   "CORE_AREA": [20, 20, 1230, 580],
   "PL_TARGET_DENSITY_PCT": 35,
+  "PDN_MACRO_CONNECTIONS": [
+    "u_capture_path.u_capture.u_capture_sram.u_sram22 vccd vssd vdd vss"
+  ],
   "MACRO_PLACEMENT_CFG": "dir::macro_placement.cfg",
   "MACROS": {
     "sky130_ef_ip__adc3v_12bit": {
-      "gds": ["dir::../../../../analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.gds"],
+      "gds": ["dir::../../../../analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit_prboundary.gds"],
       "lef": ["dir::../../../../analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.lef"],
       "instances": {"u_adc": {"location": [40.0, 150.0], "orientation": "N"}}
     },
     "sram22_1024x32m8w8": {
-      "gds": ["dir::../../../../analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8.gds.gz"],
+      "gds": ["dir::../../../../analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8_prboundary.gds"],
       "lef": ["dir::../../../../analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8.lef"],
       "lib": {
         "*tt_025C_1v80": ["dir::../../../../analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8_tt_025C_1v80.lib"],
