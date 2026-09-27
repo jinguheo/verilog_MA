@@ -1,7 +1,6 @@
 import { useState, type CSSProperties } from 'react'
 
 type View = 'iso' | 'top' | 'side'
-type Piece = 'pmos' | 'nmos' | 'tap' | 'dummy'
 const layers = [
   { name: 'met5', z: 156, color: '#f6c445', direction: '가로', pitch: '3.40 µm', width: '1.60 µm', use: '상위 전원망·클럭' },
   { name: 'met4', z: 126, color: '#a86cf4', direction: '세로', pitch: '0.92 µm', width: '0.30 µm', use: '수직 전원망(PDN)' },
@@ -37,42 +36,6 @@ function MetalStack() {
   </section>
 }
 
-const ROWS = 12, COLS = 20
-function makeLevel(level: number): Array<Piece | null> {
-  return Array.from({ length: ROWS * COLS }, (_, i) => {
-    const row = Math.floor(i / COLS), col = i % COLS
-    if ((i * 7 + level * 11) % 9 < 3) return null
-    if (col % 10 === 0) return 'tap'
-    return row < ROWS / 2 ? 'pmos' : 'nmos'
-  })
-}
-function PlacementGame() {
-  const [level, setLevel] = useState(1)
-  const [board, setBoard] = useState<Array<Piece | null>>(() => makeLevel(1))
-  const [piece, setPiece] = useState<Piece>('pmos')
-  const [score, setScore] = useState(0)
-  const [message, setMessage] = useState('빈 슬롯을 선택해 규칙에 맞는 소자를 놓으세요.')
-  const [deviceCount, setDeviceCount] = useState(2048)
-  const placed = board.filter(Boolean).length
-  const represented = Math.round(placed / board.length * deviceCount)
-  const place = (index: number) => {
-    const row = Math.floor(index / COLS), col = index % COLS
-    if (board[index]) { setMessage('⛔ 이미 사용 중인 슬롯입니다 — overlap 금지.'); setScore(s => Math.max(0, s - 5)); return }
-    if (piece === 'pmos' && row >= ROWS / 2) { setMessage('⛔ PMOS는 N-well(위쪽)에만 배치할 수 있습니다.'); setScore(s => Math.max(0, s - 5)); return }
-    if (piece === 'nmos' && row < ROWS / 2) { setMessage('⛔ NMOS는 P-sub/P-well(아래쪽)에만 배치할 수 있습니다.'); setScore(s => Math.max(0, s - 5)); return }
-    if (piece === 'tap' && col % 5 !== 0) { setMessage('⛔ tap은 전원 rail과 연결되는 지정 열에 놓으세요.'); setScore(s => Math.max(0, s - 3)); return }
-    const next = [...board]; next[index] = piece; setBoard(next)
-    setScore(s => s + (piece === 'tap' ? 20 : 10)); setMessage(`✅ ${piece.toUpperCase()} 합법 배치 — spacing/overlap 검사 통과`)
-  }
-  const nextLevel = () => { const n = level + 1; setLevel(n); setBoard(makeLevel(n)); setScore(0); setMessage(`LEVEL ${n}: 새로운 netlist 배치 시작`) }
-  return <section className="tetris-section">
-    <div className="game-hud"><div><small>TRANSISTOR TETRIS</small><b>LEVEL {level}</b></div><div><span>SCORE</span><strong>{score.toLocaleString()}</strong></div><div><span>DRC</span><strong className="pass-text">0</strong></div></div>
-    <p className="layout3d-intro">수천 개 소자는 클러스터로 압축 표시합니다. 조각을 고른 뒤 빈 칸을 누르면 overlap, well, tap 위치를 즉시 검사합니다.</p>
-    <div className="game-toolbar"><div className="piece-palette">{(['pmos','nmos','tap','dummy'] as Piece[]).map(x => <button key={x} className={`${x} ${piece === x ? 'selected' : ''}`} onClick={() => setPiece(x)}><i/>{x.toUpperCase()}</button>)}</div><label>규모 <select value={deviceCount} onChange={e => setDeviceCount(Number(e.target.value))}><option>1024</option><option>2048</option><option>4096</option></select></label><button className="game-action" onClick={nextLevel}>새 레벨</button></div>
-    <div className="tetris-grid"><div className="placement-board"><div className="well-label nwell">N-WELL · PMOS ZONE</div><div className="well-label pwell">P-SUB / P-WELL · NMOS ZONE</div><div className="power-rail vdd">VDD</div><div className="placement-cells">{board.map((cell, i) => <button key={i} className={cell ? `device-cluster ${cell}` : 'device-slot'} onClick={() => place(i)} title={cell ?? 'empty slot'}/>)}</div><div className="power-rail vss">VSS</div></div><div className="game-panel"><strong>{represented.toLocaleString()} / {deviceCount.toLocaleString()}</strong><span>표현된 transistor · {placed}/{board.length} clusters</span><div className="game-message">{message}</div><ul><li>PMOS는 위 N-well</li><li>NMOS는 아래 P-well/substrate</li><li>같은 칸 중복 배치 금지</li><li>tap은 지정 열에 주기적으로 배치</li></ul><p>실제 placer는 이 검사를 공간 인덱스와 legalizer로 수천~수백만 소자에 적용합니다.</p></div></div>
-  </section>
-}
-
 const cells = {
   inv: { name: 'INV (인버터)', p: 1, n: 1, pins: 'A → Y', desc: 'PMOS 1 + NMOS 1. 입력을 반전하는 가장 작은 논리셀.' },
   nand: { name: 'NAND2', p: 2, n: 2, pins: 'A, B → Y', desc: 'PMOS 병렬 + NMOS 직렬. 두 입력이 모두 1일 때만 0.' },
@@ -88,5 +51,5 @@ function StandardCellAnatomy() {
   </section>
 }
 export default function Layout3DStack() {
-  return <div className="layout-lab"><MetalStack/><PlacementGame/><StandardCellAnatomy/><section className="manufacturing-rules"><div className="layout3d-heading"><div><small>MANUFACTURING GATES</small><h3>제조 전에 반드시 통과할 규칙</h3></div><span>PDK DRC deck가 최종 기준</span></div><div className="rule-grid">{mustRules.map(([title,text],i)=><div key={title}><i>{i+1}</i><p><b>{title}</b><span>{text}</span></p></div>)}</div><p className="signoff-note"><b>주의:</b> 게임의 DRC 0은 교육용 내부 검사입니다. 실제 제조 가능 판정은 추출한 GDS에 Magic/KLayout DRC, Netgen LVS, antenna·density·IR/EM 검사를 수행한 결과로 확정합니다.</p></section></div>
+  return <div className="layout-lab"><MetalStack/><StandardCellAnatomy/><section className="manufacturing-rules"><div className="layout3d-heading"><div><small>MANUFACTURING GATES</small><h3>제조 전에 반드시 통과할 규칙</h3></div><span>PDK DRC deck가 최종 기준</span></div><div className="rule-grid">{mustRules.map(([title,text],i)=><div key={title}><i>{i+1}</i><p><b>{title}</b><span>{text}</span></p></div>)}</div><p className="signoff-note"><b>주의:</b> AI Chip Tetris의 rule flag는 교육용 내부 검사입니다. 실제 제조 가능 판정은 추출한 GDS에 Magic/KLayout DRC, Netgen LVS, antenna·density·IR/EM 검사를 수행한 결과로 확정합니다.</p></section></div>
 }

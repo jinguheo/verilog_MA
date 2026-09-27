@@ -995,6 +995,52 @@ export default function MacroTetris() {
       </article>
     </section>
 
+    <section className="chip-analysis-grid">
+      <article className="chip-card" style={{ gridColumn: '1 / -1' }}>
+        <div className="chip-card-title"><div><small>MACRO AREA TETRIS 리뷰 · 2026-09-27</small><h3>다이 축소 사다리 탐색기 코드 리뷰</h3></div><span>대상: Macro Area Tetris 탭</span></div>
+        <p className="chip-note">이 카드는 옆 탭 <b>Macro Area Tetris</b>(<code>game/macroAreaModel.ts</code> · <code>views/MacroAreaTetris.tsx</code>)에 대한 리뷰입니다 — 이 Macro Tetris 탭과는 별도 모델이지만, "다이를 줄이면서 legal 후보를 찾는다"는 같은 문제를 다루고 있어 여기 함께 정리합니다.</p>
+
+        <h4 style={{ marginTop: 16, marginBottom: 6 }}>잘 구현된 부분</h4>
+        <ul className="strategy-list">
+          <li><b>5→4→3→2→1% 축소 사다리</b><span>1% 축소까지 실패해야 수렴시키므로 큰 단계만 쓰는 것보다 안정적입니다. (macroAreaModel.ts:624)</span></li>
+          <li><b>형상 비교</b><span>비율 유지·가로 축소·세로 축소 세 가지를 모두 비교합니다. (macroAreaModel.ts:637)</span></li>
+          <li><b>항목별 진단 분리</b><span>overlap·spacing·boundary·channel·pin escape·power access·표준셀 용량을 따로 분리해서 진단합니다.</span></li>
+          <li><b>원인별 순차 복구</b><span>실패 원인에 따라 legalize → shelf repack → 여유 재분배 → target rip-up을 순차 적용하며 중간 layout까지 저장합니다.</span></li>
+          <li><b>300µm 채널 게이트</b><span>실제 OpenLane DPL-0034/0036 실패 경험을 반영한 hard gate — 이 Macro Tetris 탭의 <code>CHANNEL_SAFE_MARGIN</code>과 같은 계열의 실증 기반 안전장치입니다.</span></li>
+          <li><b>Web Worker 분리</b><span>무거운 계산을 Web Worker로 분리해 UI 정지를 줄였습니다.</span></li>
+          <li><b>후보 관리</b><span>signature 중복 제거, 재발견 횟수, 후보 생성 히스토리를 관리하는 구조가 좋습니다.</span></li>
+        </ul>
+
+        <h4 style={{ marginTop: 16, marginBottom: 6 }}>가장 먼저 개선할 부분</h4>
+        <ol className="strategy-list">
+          <li><b>1. DRC/LVS 대기열을 실제 실행과 연결</b><span>현재 "DRC/LVS 검증 목록"은 JSON을 만들고 상태를 <code>queued</code>로 바꾸는 데서 끝납니다 — 실제 OpenLane은 실행되지 않습니다. (MacroAreaTetris.tsx:392) 권장 구조: 후보 최대 10개 → 공통 합성 checkpoint 재사용 → OpenROAD placement + global route → wirelength·overflow·WNS로 Top 3 → detailed route + DRC/LVS → PASS 후보 registry. PPA3에 추가한 절약형 검증 퍼널을 이 화면에도 재사용하는 것이 가장 효과적입니다.</span></li>
+          <li><b>2. 배선 비용을 실제 netlist 기반으로 변경</b><span>현재 비용은 모든 macro를 모든 hub에 연결해 Manhattan 거리를 더합니다. (macroAreaModel.ts:149) 실제로 연결되지 않은 net도 계산되어 순위가 왜곡될 수 있습니다. macro별 실제 연결 hub, 연결 폭/net criticality, timing-critical path 가중치, macro pin 위치, high-fanout net 분리가 필요합니다 — 최소한 <code>macro × hub connectivity matrix</code>를 두고 존재하는 연결만 비용에 포함해야 합니다.</span></li>
+          <li><b>3. 후보 다양성 확장</b><span>후보 생성 함수에 random seed 경로가 있지만 실제 호출은 <code>seeds: 0</code>입니다. (MacroAreaTetris.tsx:351) 그래서 지금 후보군은 채널 폭 분할·위아래 여유 배분·가로 slack 배분·deterministic repair 조합에 집중돼 있습니다. random legal seed 8~16개, macro Re-place + SA, 행 순서 permutation, channel 폭 비대칭 변형, 통과 best 주변 ±10/±20/±50µm mutation을 추가하고, 개별 후보마다 signoff하지 않고 fast screening을 먼저 거쳐야 합니다.</span></li>
+          <li><b>4. 다이 형상 후보도 2차원으로 탐색</b><span>수렴 이후 후보 생성은 최소 다이의 폭을 고정하고 높이만 10µm씩 증가시킵니다. (macroAreaModel.ts:765) "세로만 줄이는" 지금 구조엔 맞지만 일반적인 탐색은 아닙니다 — 같은 면적의 width/height 조합, 현재 aspect ratio 주변 ±2~10%, 폭 감소·높이 증가 교환, 높이 감소·폭 증가 교환 후보도 함께 유지해야 합니다.</span></li>
+          <li><b>5. "best" 기준을 utilization 단독에서 변경</b><span>현재 최고 결과는 legal 후보 중 utilization이 가장 높으면 승격됩니다. (MacroAreaTetris.tsx:224) 하지만 utilization 최대 후보가 congestion 증가·WNS 악화·routing detour 증가·buffer 삽입 공간 부족·PDN/pin access 악화를 동반할 수 있습니다. <code>minimum-area best</code> · <code>minimum-wire best</code> · <code>best-routability</code> · <code>signoff-pass PPA best</code>로 나누고, 최종 best는 반드시 DRC/LVS PASS 후보에서만 승격해야 합니다.</span></li>
+        </ol>
+
+        <h4 style={{ marginTop: 16, marginBottom: 6 }}>모델 정확도 개선</h4>
+        <ul className="strategy-list">
+          <li><b>300µm 채널 hard gate</b><span>모든 후보에 동일하게 적용 중입니다. 한 번의 실제 실패에 근거한 안전한 기준이지만 다소 보수적일 수 있습니다.</span></li>
+          <li><b>표준셀 수용 가능성</b><span>주로 "남는 면적 대비 필요 density"로 판정 — 실제 usable row 단절, macro halo, PDN obstruction, pin density는 반영하지 못합니다.</span></li>
+          <li><b>혼잡도(congestion)</b><span>20×12 격자와 고정 L자 경로를 사용하므로 FastRoute 결과와 차이가 날 수 있습니다.</span></li>
+          <li><b>매크로 orientation</b><span>항상 <code>N</code>으로 내보냅니다. (macroAreaModel.ts:780)</span></li>
+        </ul>
+        <p className="chip-note">추천 개선 순서: ① 실제 pin·net 연결 반영 → ② macro halo와 PDN blockage 반영 → ③ OpenROAD global-route heatmap feedback → ④ 후보별 WNS/TNS 반영 → ⑤ 통과/실패 결과로 300µm threshold 재보정.</p>
+
+        <h4 style={{ marginTop: 16, marginBottom: 6 }}>UI·운영 개선</h4>
+        <ul className="strategy-list">
+          <li><b>그룹 이동</b><span>현재 macro 하나만 drag할 수 있습니다. AI Chip Tetris처럼 복수 선택·그룹 이동을 추가할 수 있습니다.</span></li>
+          <li><b>Undo/redo</b><span>Undo/redo와 manual edit snapshot이 필요합니다.</span></li>
+          <li><b>취소된 작업의 Worker 점유</b><span>작업 취소 시 <code>jobRef</code>로 결과는 무시하지만 기존 Worker 계산은 계속됩니다 — 큰 후보 생성 도중 새 작업을 시작하면 이전 작업이 CPU를 계속 점유할 수 있습니다.</span></li>
+          <li><b>저장소</b><span>후보 800개와 단계별 macro 좌표를 <code>localStorage</code>에 저장하므로 용량 초과 시 저장이 조용히 실패할 수 있습니다. IndexedDB나 백엔드 파일 registry가 더 안전합니다.</span></li>
+          <li><b>회귀 테스트 없음</b><span>Macro Area 모델 전용 자동 테스트가 없습니다. 최소한 overlap/spacing/boundary 판정, 300µm channel 경계값, 축소 사다리 수렴, signature 중복 제거, repair 후 legal 보장, export config 좌표 일치는 테스트가 필요합니다.</span></li>
+        </ul>
+        <p className="rule-disclaimer">가장 가치가 큰 다음 작업 순서: <b>실제 net 연결 기반 비용함수 → SA 후보 확장 → PPA3와 같은 10→Top 3 검증 퍼널 연결</b>.</p>
+      </article>
+    </section>
+
     <section className="chip-card">
       <div className="chip-card-title"><div><small>참고</small><h3>3D 배선 층 구조 — 실제로는 평면이 아니라 6개 금속층 위</h3></div></div>
       <p className="chip-note">위 캔버스의 배선 표시는 전부 평면(X-Y) 근사치입니다. 실제로는 트랜지스터 위에 <b>li1부터 met5까지 6개 라우팅 레이어</b>가 쌓여 있고, chan_top의 실제 완주 실행도 이 전체 스택(<code>RT_MIN_LAYER=met1</code>, <code>RT_MAX_LAYER=met5</code>, li1 포함)을 씁니다.</p>

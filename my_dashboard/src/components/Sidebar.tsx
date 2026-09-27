@@ -1,6 +1,6 @@
 interface Props { tabs: Array<{id:string; label:string; count?:number}>; current:string; onSelect:(id:string)=>void }
 
-const icons: Record<string, string> = { pipeline: '◈', requirements: 'R', architecture: 'A', rtl: '⌘', verification: '✓', formal: 'F', manufacturing: 'P', review: '↗', sample: '1', analog: 'A', knowledge: 'K' }
+const icons: Record<string, string> = { pipeline: '◈', requirements: 'R', architecture: 'A', rtl: '⌘', verification: '✓', formal: 'F', manufacturing: 'P', review: '↗', sample: '1', sample2: '2', sample3: '3', sample4: '4', analog: 'A', chipgame: '▦', macroarea: '⤡', knowledge: 'K', tools: 'T' }
 
 export default function Sidebar({tabs,current,onSelect}: Props) {
   return <aside className="sidebar">
