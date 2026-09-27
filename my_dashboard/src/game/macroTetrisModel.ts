@@ -155,7 +155,7 @@ export const CHANNEL_SAFE_MARGIN = 300 // µm — 실측 경계값(300=통과, 1
 // (예: 격자 baseline의 매크로0↔매크로1)까지 채널로 오인해 baseline 자체를
 // illegal로 만드는 버그가 있었다 - 그건 "채널"이 아니라 그냥 같은 행 안의 패킹
 // 간격이라, 투영이 다이 전체 폭/높이를 가로지르는지까지 봐야 한다.
-function mergedIntervals(macros: Macro[], axis: 'x' | 'y'): [number, number][] {
+export function mergedIntervals(macros: Macro[], axis: 'x' | 'y'): [number, number][] {
   const intervals = macros
     .map(m => (axis === 'y' ? [m.y, m.y + m.h] : [m.x, m.x + m.w]) as [number, number])
     .sort((a, b) => a[0] - b[0])
@@ -176,7 +176,7 @@ function mergedIntervals(macros: Macro[], axis: 'x' | 'y'): [number, number][] {
 // 더 적은 수의 큰 그룹으로 가르는 축(=더 굵直게 나뉘는 쪽)이므로, 그 축의
 // 내부 간격만 확인한다. 두 축의 그룹 수가 같으면(예: 정사각형에 가까운 배치)
 // 모호하니 둘 다 본다 - 놓치는 것보다 과검출이 낫다.
-function internalProjectionGaps(macros: Macro[]): number[] {
+export function internalProjectionGaps(macros: Macro[]): number[] {
   const mx = mergedIntervals(macros, 'x'), my = mergedIntervals(macros, 'y')
   const pick: Array<[number, number][]> = mx.length < my.length ? [mx] : my.length < mx.length ? [my] : [mx, my]
   const gaps: number[] = []
