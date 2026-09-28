@@ -103,8 +103,18 @@ export type Candidate = { id: string; label: string; state: State; c: Cost }
 // insertion (CHANNEL_SAFE_MARGIN - see its own comment for the real OpenLane
 // failure that grounds this number). This last one is a hard gate, not just a
 // cost term, because it's an observed real placement failure, not a heuristic.
+//
+// pinAccessViolations === 0 is a second real-evidence hard gate, added
+// 2026-09-28. Re-scoring the three known real OpenLane outcomes for this
+// design (grid layout = PASS; the 100um-channel layout = FAIL DPL-0036; the
+// scattered layout = FAIL GRT-0118) showed pinAccessViolations was the only
+// metric that matched all three: 0 for the passing grid, 4 for both failures.
+// Without this gate the scattered candidate scored BETTER than the real
+// passing layout on every other metric (lower cost, lower congestionCells,
+// higher usableLeftoverPct, higher preSignoffProxy confidence) even though it
+// actually failed real routing — see regression test in macroTetrisModel.test.ts.
 export function isLegal(c: Cost): boolean {
-  return c.overlapPenalty === 0 && c.spacingViolations === 0 && c.boundsPenalty === 0 && c.infeasibleMacros === 0 && c.channelViolations === 0
+  return c.overlapPenalty === 0 && c.spacingViolations === 0 && c.boundsPenalty === 0 && c.infeasibleMacros === 0 && c.channelViolations === 0 && c.pinAccessViolations === 0
 }
 
 // Candidates are ranked legality first, wirelength second - a short-wire
@@ -652,6 +662,15 @@ export function toMacroPlacementCfg(macros: Macro[]): string {
 // 36,000µm²가 들어가 460,614µm²에는 13개가 필요하다. 타일을 어느 신호 그룹
 // 허브(dma_sched/csr/irq_perf)에 붙일지는 허브 가중치(3:1:1)로 나눈 근사다.
 export const REAL_GLUE = { cellArea: 460614, cellCount: 74975, synthArea: 194797, synthCells: 15152, targetDensity: 0.4 } as const
+// tap·타이밍 리페어·hold 버퍼는 RTL이 작성한 로직이 아니라 P&R 도구가 나중에 끼워 넣은
+// 구조적 오버헤드다 (AI Chip Tetris의 filler·decap·tap과 같은 개념 — "다른 용도"). 위
+// 74,975셀 중 이 세 종류만 74,125개(98.9%)이고 나머지 850개(1.1%)가 합성 단계 로직의
+// 잔여분에 가깝다. 카테고리별 실제 면적은 라우팅 후 flatten돼 남아있지 않아, 평균 셀
+// 면적(460,614/74,975 ≈ 6.14µm²)을 곱한 근사치로만 추정한다.
+export const REAL_GLUE_OTHER_PURPOSE = { tapCells: 32798, timingRepairBuffers: 21492, holdBuffers: 19835 } as const
+export const REAL_GLUE_OTHER_PURPOSE_CELLS = REAL_GLUE_OTHER_PURPOSE.tapCells + REAL_GLUE_OTHER_PURPOSE.timingRepairBuffers + REAL_GLUE_OTHER_PURPOSE.holdBuffers
+export const REAL_GLUE_OTHER_PURPOSE_RATIO = REAL_GLUE_OTHER_PURPOSE_CELLS / REAL_GLUE.cellCount
+export const REAL_GLUE_OTHER_PURPOSE_AREA = Math.round(REAL_GLUE.cellArea * REAL_GLUE_OTHER_PURPOSE_RATIO)
 export const GLUE_TILE = USABLE_SQUARE * LO_CELL
 export const GLUE_TILE_CAP = GLUE_TILE * GLUE_TILE * REAL_GLUE.targetDensity
 export const GLUE_TILES_NEEDED = Math.ceil(REAL_GLUE.cellArea / GLUE_TILE_CAP)

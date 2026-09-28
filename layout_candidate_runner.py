@@ -20,6 +20,7 @@ OPTIMIZATION_HISTORY = JOBS_ROOT.parent / "optimization_history.json"
 WSL_RUNNER = ROOT / "tools" / "wsl" / "104_run_layout_candidate.sh"
 _threads: dict[str, threading.Thread] = {}
 _verification_batches: dict[str, dict] = {}
+_optimization_tasks: dict[str, dict] = {}
 _lock = threading.Lock()
 
 SCREEN_STEP = "OpenROAD.STAMidPNR-3"
@@ -28,6 +29,43 @@ SIGNOFF_SHORTLIST = 3
 
 def _now():
     return datetime.now(timezone.utc).isoformat()
+
+def _optimization_update(task_id, **values):
+    if not task_id:
+        return
+    with _lock:
+        task = _optimization_tasks.setdefault(task_id, {
+            "id": task_id, "status": "running", "stage": "준비", "progress": 0,
+            "current": 0, "total": 1, "seed": 0, "iteration": 0,
+            "created_at": _now(), "cancel_requested": False,
+        })
+        task.update(values)
+        task["updated_at"] = _now()
+
+def optimization_status(task_id):
+    with _lock:
+        task = _optimization_tasks.get(str(task_id))
+        return dict(task) if task else None
+
+def cancel_optimization(task_id):
+    task_id = str(task_id)
+    with _lock:
+        task = _optimization_tasks.get(task_id)
+        if not task:
+            return None
+        task["cancel_requested"] = True
+        task["stage"] = "중지 요청 처리 중"
+        task["updated_at"] = _now()
+        return dict(task)
+
+def _optimization_checkpoint(task_id):
+    if not task_id:
+        return
+    with _lock:
+        cancelled = bool(_optimization_tasks.get(task_id, {}).get("cancel_requested"))
+    if cancelled:
+        _optimization_update(task_id, status="cancelled", stage="사용자가 중지함")
+        raise ValueError("SA candidate generation cancelled.")
 
 def _read(path: Path, default=None):
     try:
@@ -236,6 +274,9 @@ def optimize_candidate(body):
     mode = str(body.get("mode", "hybrid")).lower()
     if mode not in {"constrained", "sa", "hybrid"}:
         raise ValueError("mode must be constrained, sa, or hybrid.")
+    task_id = str(body.get("_optimization_id", "")).strip()
+    _optimization_update(task_id, status="running", mode=mode, stage="입력 및 기준 배치 확인", progress=1, current=0, total=32, seed=0, iteration=0)
+    _optimization_checkpoint(task_id)
     baseline = _baseline()
     source = body.get("placements") or baseline["macros"]
     current = _validate(source, baseline)
@@ -246,13 +287,24 @@ def optimize_candidate(body):
     core = baseline["core"]
     halo = 40.0
     step = 10
-    adc_xs = range(int(core["x0"]), min(321, int(core["x1"] - adc["width"])) + 1, step)
-    adc_ys = range(int(core["y0"]), int(core["y1"] - adc["height"]) + 1, step)
-    sram_xs = range(max(350, int(core["x0"])), int(core["x1"] - sram["width"]) + 1, step)
-    sram_ys = range(int(core["y0"]), int(core["y1"] - sram["height"]) + 1, step)
+    # Named once so the grid enumeration below and evaluate()'s on-the-fly
+    # bounds later (used by SA's sub-grid refinement) can never desync -
+    # range().stop is off by up to `step` from the true inclusive bound and
+    # is not a safe way to recover it.
+    adc_x_min, adc_x_max = int(core["x0"]), min(321, int(core["x1"] - adc["width"]))
+    adc_y_min, adc_y_max = int(core["y0"]), int(core["y1"] - adc["height"])
+    sram_x_min, sram_x_max = max(350, int(core["x0"])), int(core["x1"] - sram["width"])
+    sram_y_min, sram_y_max = int(core["y0"]), int(core["y1"] - sram["height"])
+    adc_xs = range(adc_x_min, adc_x_max + 1, step)
+    adc_ys = range(adc_y_min, adc_y_max + 1, step)
+    sram_xs = range(sram_x_min, sram_x_max + 1, step)
+    sram_ys = range(sram_y_min, sram_y_max + 1, step)
     evaluated = 0
     legal = []
-    for ax in adc_xs:
+    adc_x_values = list(adc_xs)
+    for ax_index, ax in enumerate(adc_x_values):
+        _optimization_checkpoint(task_id)
+        _optimization_update(task_id, stage="Legal 격자 후보 탐색", progress=5 + round((ax_index + 1) / max(1, len(adc_x_values)) * 40), current=ax_index + 1, total=len(adc_x_values), evaluated=evaluated)
         for ay in adc_ys:
             acx, acy = ax + adc["width"] / 2, ay + adc["height"] / 2
             for sx in sram_xs:
@@ -260,6 +312,8 @@ def optimize_candidate(body):
                     continue
                 for sy in sram_ys:
                     evaluated += 1
+                    if evaluated % 2048 == 0:
+                        _optimization_checkpoint(task_id)
                     scx, scy = sx + sram["width"] / 2, sy + sram["height"] / 2
                     wire = abs(acx - scx) + abs(acy - scy)
                     vertical_misalignment = abs(acy - scy)
@@ -271,7 +325,29 @@ def optimize_candidate(body):
     if not legal:
         raise ValueError("AI found no legal actual-layout placement.")
     legal.sort(key=lambda item: item[0])
-    legal_by_position = {(item[1], item[2], item[3], item[4]): item for item in legal}
+    _optimization_update(task_id, stage="Re-place 기준 후보 정리", progress=48, current=0, total=32, evaluated=evaluated)
+    _optimization_checkpoint(task_id)
+
+    def evaluate(ax, ay, sx, sy):
+        """On-the-fly legality + cost for an arbitrary (ax, ay, sx, sy), not
+        just points already enumerated by the grid pass. Unlike a lookup into
+        a pre-built legal-position table, this lets SA refine BETWEEN grid
+        points (sub-10um) instead of only re-sampling the same 40,500 points
+        the grid pass already covers exhaustively - the grid alone can't be
+        beaten on its own resolution, so any real gain has to come from here."""
+        if ax < adc_x_min or ax > adc_x_max or ay < adc_y_min or ay > adc_y_max:
+            return None
+        if sx < sram_x_min or sx > sram_x_max or sy < sram_y_min or sy > sram_y_max:
+            return None
+        if ax + adc["width"] + halo > sx:
+            return None
+        acx, acy = ax + adc["width"] / 2, ay + adc["height"] / 2
+        scx, scy = sx + sram["width"] / 2, sy + sram["height"] / 2
+        wire = abs(acx - scx) + abs(acy - scy)
+        vertical_misalignment = abs(acy - scy)
+        edge = max(0, 30 - (ax - core["x0"])) + max(0, 30 - (ay - core["y0"]))
+        cost = wire + vertical_misalignment * 2.5 + edge * 4 + abs(ax - 40) * 0.15 + abs(sx - 430) * 0.1
+        return (cost, ax, ay, sx, sy, wire, vertical_misalignment)
 
     def re_place(state):
         """Coordinate-descent rip-up/re-place of one hard macro at a time."""
@@ -283,18 +359,36 @@ def optimize_candidate(body):
             selected = min(same_adc, key=lambda item: item[0], default=selected)
         return selected
 
-    def anneal(seed, start, iterations=240):
+    def anneal(seed, start, iterations=240, seed_index=0):
         rng = random.Random(seed)
         state = re_place(start)
         best = state
         for iteration in range(iterations):
+            if iteration % 12 == 0:
+                _optimization_checkpoint(task_id)
+                _optimization_update(
+                    task_id,
+                    stage="SA 기반 후보 생성",
+                    progress=50 + round((seed_index + iteration / max(1, iterations)) / 32 * 45),
+                    current=seed_index + 1,
+                    total=32,
+                    seed=seed_index + 1,
+                    iteration=iteration,
+                    iterations_per_seed=iterations,
+                    evaluated=evaluated,
+                )
+            progress = iteration / max(1, iterations - 1)
+            # Coarse-to-fine: start at the grid's own 10um step (matching its
+            # original behavior) and shrink to 1um by the end of the run, so
+            # late iterations refine BETWEEN grid points instead of only
+            # jumping among the same 40,500 already-enumerated positions.
+            move_step = max(1, round(step * (1 - progress) + 1 * progress))
             position = [state[1], state[2], state[3], state[4]]
             dimension = rng.randrange(4)
-            position[dimension] += step if rng.random() < 0.5 else -step
-            candidate = legal_by_position.get(tuple(position))
+            position[dimension] += move_step if rng.random() < 0.5 else -move_step
+            candidate = evaluate(*position)
             if candidate is None:
                 continue
-            progress = iteration / max(1, iterations - 1)
             temperature = 70.0 * math.pow(0.5 / 70.0, progress)
             delta = candidate[0] - state[0]
             if delta <= 0 or rng.random() < math.exp(-delta / temperature):
@@ -306,9 +400,10 @@ def optimize_candidate(body):
     grid_candidates = legal[:10]
     sa_candidates = []
     for seed in range(32):
+        _optimization_checkpoint(task_id)
         rng = random.Random(0x5A17 + seed)
         start = legal[rng.randrange(len(legal))]
-        best_sa, final_sa = anneal(seed + 1, start)
+        best_sa, final_sa = anneal(seed + 1, start, seed_index=seed)
         sa_candidates.extend((best_sa, final_sa))
     reserved_grid = grid_candidates[:5] if mode == "hybrid" else []
     unique_grid = {(item[1], item[2], item[3], item[4]) for item in reserved_grid}
@@ -395,7 +490,45 @@ def optimize_candidate(body):
     result["saved_to_history"] = bool(history_entries)
     result["history_entry"] = history_entry
     result["history_entries"] = history_entries
+    # Not marked status="complete" here on purpose: the caller (see
+    # _optimize_worker below) attaches `result` in the SAME update that flips
+    # status to "complete", so a poller can never observe complete-without-result.
+    _optimization_update(task_id, stage="결과 정리 중", progress=99, current=32, total=32, seed=32, iteration=240, iterations_per_seed=240, evaluated=evaluated)
     return result
+
+def _optimize_worker(task_id, body):
+    try:
+        result = optimize_candidate({**body, "_optimization_id": task_id})
+        # Attach the payload the poller needs to finish the UI flow (placements,
+        # candidate pool, metrics, history entries) atomically with the status
+        # flip, so a client can never poll "complete" with result still None.
+        _optimization_update(task_id, status="complete", stage="SA 후보 생성 완료", progress=100, result=result)
+    except ValueError as error:
+        with _lock:
+            already_cancelled = _optimization_tasks.get(task_id, {}).get("status") == "cancelled"
+        # _optimization_checkpoint() already set status="cancelled" before raising
+        # on a user-requested stop; only a genuine failure should overwrite that.
+        if not already_cancelled:
+            _optimization_update(task_id, status="failed", stage="실패", error=str(error))
+    except Exception as error:  # pragma: no cover - defensive: never leave a task hanging as "running"
+        _optimization_update(task_id, status="failed", stage="실패", error=str(error))
+
+def start_optimization(body):
+    """Run optimize_candidate (32 seeds x 240 SA iterations, or the grid-only
+    mode) on a background thread instead of the request-handling thread, so a
+    client Stop click can actually halt the CPU work via cancel_optimization()
+    instead of merely dropping an HTTP connection whose server-side computation
+    keeps running to completion regardless."""
+    mode = str(body.get("mode", "hybrid")).lower()
+    if mode not in {"constrained", "sa", "hybrid"}:
+        raise ValueError("mode must be constrained, sa, or hybrid.")
+    task_id = _new_id()
+    _optimization_update(task_id, status="queued", mode=mode, stage="대기 중", progress=0, current=0, total=32, seed=0, iteration=0)
+    thread = threading.Thread(target=_optimize_worker, args=(task_id, body), daemon=True, name=f"layout-optimize-{task_id}")
+    with _lock:
+        _threads[task_id] = thread
+    thread.start()
+    return optimization_status(task_id)
 
 def get_job(candidate_id):
     return _read(_job_path(candidate_id)) if _valid_id(candidate_id) else None

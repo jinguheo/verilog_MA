@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react'
 import {
-  applyAiPlan, applyBestReplacement, BLOCKS, BOARD_COLS, BOARD_ROWS, cellsFor, chooseAiPlan, configureBlockSizes, createEliteMutation, createGame, createPpa3SeedGame, DIE_HEIGHT_UM, DIE_WIDTH_UM, evaluatePlacement, getBlockSizes, GRID_UM, movePlacedInstances, placeActive, runReplaceThenAnnealing, TOTAL_REQUIRED_BLOCKS,
-  holdActive, measureBoard, moveActive, PLACEMENT_SEQUENCE, preSignoffReport, rotateActive, type ActiveBlock, type BlockCell, type BlockId, type GameState,
+  applyAiPlan, applyBestReplacement, BLOCKS, BOARD_COLS, BOARD_ROWS, cellsFor, chooseAiPlan, configureBlockSizes, createEliteMutation, createGame, createPpa3SeedGame, DIE_HEIGHT_UM, DIE_WIDTH_UM, evaluatePlacement, getBlockSizes, GRID_UM, movePlacedInstances, placementSignature, placeActive, runReplaceThenAnnealing, TOTAL_REQUIRED_BLOCKS,
+  holdActive, measureBoard, moveActive, PLACEMENT_SEQUENCE, preSignoffReport, rotateActive, type ActiveBlock, type AiPlan, type BlockCell, type BlockId, type GameState,
 } from '../game/chipTetrisEngine'
 import ActualLayoutFlow from './ActualLayoutFlow'
+import type { ChipTetrisWorkerResponse } from '../game/chipTetrisWorker'
 
 type SimpleActionType = 'left' | 'right' | 'down' | 'rotate' | 'place' | 'hold' | 'ai' | 'replace' | 'hybrid' | 'reset'
-type Action = { type: SimpleActionType } | { type: 'candidate'; seed: number } | { type: 'mutate'; state: GameState; seed: number } | { type: 'load'; state: GameState } | { type: 'move-group'; instances: number[]; dx: number; dy: number }
+type Action = { type: SimpleActionType } | { type: 'candidate'; seed: number } | { type: 'mutate'; state: GameState; seed: number } | { type: 'load'; state: GameState } | { type: 'move-group'; instances: number[]; dx: number; dy: number } | { type: 'ai-plan'; plan: AiPlan | null }
 
 function reducer(state: GameState, action: Action): GameState {
   if (action.type === 'reset') return createPpa3SeedGame()
@@ -14,6 +15,7 @@ function reducer(state: GameState, action: Action): GameState {
   if (action.type === 'mutate') return createEliteMutation(action.state, action.seed)
   if (action.type === 'load') return action.state
   if (action.type === 'move-group') return movePlacedInstances(state, action.instances, action.dx, action.dy)
+  if (action.type === 'ai-plan') return applyAiPlan(state, action.plan ?? undefined)
   if (action.type === 'left') return moveActive(state, -1, 0)
   if (action.type === 'right') return moveActive(state, 1, 0)
   if (action.type === 'down') return moveActive(state, 0, 1)
@@ -47,6 +49,10 @@ function BlockShape({ id, compact = false, physicalSize }: { id: BlockId; compac
 }
 
 const CANDIDATE_COUNT = 8
+const COARSE_POOL_SIZE = 1
+const GENERATION_POOL_SIZE = CANDIDATE_COUNT * COARSE_POOL_SIZE
+const SA_ITERATIONS = 6
+const SA_INITIAL_ESTIMATE_MS = 3000
 const STD_SUBDIVISIONS = 5
 const STD_GRID_UM = GRID_UM / STD_SUBDIVISIONS
 // Real OpenLane evidence for this exact 1250x600um die (samples/sample_test_4/asic/
@@ -64,6 +70,15 @@ const STD_REGION_TILES: Partial<Record<BlockId, readonly [number, number]>> = {
 }
 const candidateProfiles = ['좌측 압축', '중앙 균형', '하단 압축', '분산 탐색', '좌측 변형', '중앙 변형', '하단 변형', '분산 변형']
 type CandidateResult = { generation: number; index: number; profile: string; score: number; violations: number; congestion: number; replacements: number; savedAt: number; state: GameState }
+type SaUiProgress = {
+  stage: 'idle' | 'replace' | 'sa' | 'complete'
+  iteration: number
+  total: number
+  elapsedMs: number
+  estimatedMs: number
+  accepted: number
+  attempted: number
+}
 const SAVED_CANDIDATES_KEY = 'chip-tetris-legal-candidates-v2'
 const MAX_SAVED_CANDIDATES = 64
 const loadSavedCandidates = (): CandidateResult[] => {
@@ -125,7 +140,7 @@ export default function ChipTetris() {
   const [initRevision, setInitRevision] = useState(0)
   const [aiEnabled, setAiEnabled] = useState(false)
   const [autoReplace, setAutoReplace] = useState(true)
-  const [speed, setSpeed] = useState(20)
+  const [speed, setSpeed] = useState(80)
   const [stdFillCount, setStdFillCount] = useState(0)
   const [searchPasses, setSearchPasses] = useState(0)
   const [finalCandidate, setFinalCandidate] = useState(false)
@@ -137,6 +152,10 @@ export default function ChipTetris() {
   const [stagnantGenerations, setStagnantGenerations] = useState(0)
   const [failedAttempts, setFailedAttempts] = useState(0)
   const [savedCandidates, setSavedCandidates] = useState<CandidateResult[]>(loadSavedCandidates)
+  const [saRunning, setSaRunning] = useState(false)
+  const [saProgress, setSaProgress] = useState<SaUiProgress>({ stage: 'idle', iteration: 0, total: SA_ITERATIONS, elapsedMs: 0, estimatedMs: SA_INITIAL_ESTIMATE_MS, accepted: 0, attempted: 0 })
+  const saWorkerRef = useRef<Worker | null>(null)
+  const saJobIdRef = useRef(0)
   const lastReplaceAt = useRef(0)
   const [best, setBest] = useState(() => Number(localStorage.getItem('chip-tetris-best') ?? 0))
   const plan = useMemo(() => chooseAiPlan(game), [game])
@@ -159,6 +178,11 @@ export default function ChipTetris() {
     )
   }, [game.board])
   const stdFillTarget = Math.ceil(stdCellCandidates.length * STD_CELL_LEFTOVER_FILL_RATIO)
+  // 실제 배치가 끝난 뒤의 "다른 용도" 실측치 — 위 추정치(otherPurpose*)와 같은 계산이지만
+  // 지금 이 후보의 실제 board.length 기준이라 매 후보마다 조금씩 다를 수 있다.
+  const otherPurposeLiveSubCells = Math.max(0, stdCellCandidates.length - stdFillTarget)
+  const otherPurposeLiveAreaUm2 = otherPurposeLiveSubCells * STD_GRID_UM * STD_GRID_UM
+  const otherPurposeLivePct = (otherPurposeLiveAreaUm2 / (DIE_WIDTH_UM * DIE_HEIGHT_UM)) * 100
   const standardCellsDone = game.floorplanReady && stdFillCount >= stdFillTarget
   const stdFillDone = standardCellsDone && finalCandidate
   const filledStdCells = useMemo(() => new Set(stdCellCandidates.slice(0, stdFillCount).map(({ x, y, subX, subY }) => `${x}:${y}:${subX}:${subY}`)), [stdCellCandidates, stdFillCount])
@@ -171,9 +195,63 @@ export default function ChipTetris() {
   const futurePlacementStages = [
     { id: 'std-cells', label: 'STD CELLS', detail: `${STD_GRID_UM}µm sub-grid · 실측 7.8%`, done: standardCellsDone },
     { id: 'replace', label: 'RE-PLACE', detail: 'rip-up 이동', done: searchPasses > 0 || finalCandidate },
-    { id: 'sa', label: 'SA SEARCH', detail: 'local 탈출', done: finalCandidate },
+    { id: 'sa', label: 'SA SEARCH', detail: saRunning ? `${saProgress.iteration}/${saProgress.total} iter` : `${SA_ITERATIONS} iter · ~${(saProgress.estimatedMs / 1000).toFixed(1)}s`, done: finalCandidate },
     { id: 'score', label: 'CANDIDATE SCORE', detail: `G${generation} #${candidateIndex}`, done: candidateRecorded },
   ]
+
+  const handleSaWorkerMessage = useCallback((event: MessageEvent<ChipTetrisWorkerResponse>) => {
+    const message = event.data
+    if (message.id !== saJobIdRef.current) return
+    if (message.kind === 'progress') {
+      const { progress, elapsedMs } = message
+      const estimatedMs = progress.stage === 'sa' && progress.iteration > 0
+        ? Math.max(elapsedMs, elapsedMs / progress.iteration * progress.total)
+        : SA_INITIAL_ESTIMATE_MS
+      setSaProgress({ stage: progress.stage, iteration: progress.iteration, total: progress.total, elapsedMs, estimatedMs, accepted: progress.accepted, attempted: progress.attempted })
+      return
+    }
+    dispatch({ type: 'load', state: message.state })
+    setSaRunning(false)
+    setFinalCandidate(true)
+    setSaProgress(current => ({ ...current, stage: 'complete', iteration: current.total, elapsedMs: message.elapsedMs, estimatedMs: message.elapsedMs }))
+  }, [])
+
+  const createSaWorker = useCallback(() => {
+    const worker = new Worker(new URL('../game/chipTetrisWorker.ts', import.meta.url), { type: 'module' })
+    worker.onmessage = handleSaWorkerMessage
+    return worker
+  }, [handleSaWorkerMessage])
+
+  useEffect(() => {
+    const worker = createSaWorker()
+    saWorkerRef.current = worker
+    return () => {
+      saWorkerRef.current?.terminate()
+      saWorkerRef.current = null
+    }
+  }, [createSaWorker])
+
+  const startHybrid = useCallback(() => {
+    if (!saWorkerRef.current || saRunning) return
+    const id = ++saJobIdRef.current
+    setSearchPasses(1)
+    setFinalCandidate(false)
+    setSaRunning(true)
+    setSaProgress({ stage: 'replace', iteration: 0, total: SA_ITERATIONS, elapsedMs: 0, estimatedMs: SA_INITIAL_ESTIMATE_MS, accepted: 0, attempted: 0 })
+    saWorkerRef.current.postMessage({ id, state: game, iterations: SA_ITERATIONS })
+  }, [game, saRunning])
+
+  const stopEvolution = useCallback(() => {
+    saJobIdRef.current += 1
+    saWorkerRef.current?.terminate()
+    saWorkerRef.current = createSaWorker()
+    setRunning(false)
+    setAiEnabled(false)
+    setSaRunning(false)
+    setSearchPasses(0)
+    setFinalCandidate(false)
+    setSaProgress(current => ({ ...current, stage: 'idle', iteration: 0, elapsedMs: 0, estimatedMs: current.elapsedMs > 0 ? current.elapsedMs : SA_INITIAL_ESTIMATE_MS, accepted: 0, attempted: 0 }))
+  }, [createSaWorker])
 
   const advanceSearch = useCallback((completedResults: CandidateResult[]) => {
     setStdFillCount(0)
@@ -198,8 +276,14 @@ export default function ChipTetris() {
     const winner = [...pool].sort((a, b) => b.score - a.score || a.violations - b.violations)[0]
     if (winner) {
       const improved = !champion || winner.score > champion.score
+      const nextStagnant = improved ? 0 : stagnantGenerations + 1
       setChampion(winner)
-      setStagnantGenerations(value => improved ? 0 : value + 1)
+      setStagnantGenerations(nextStagnant)
+      if (nextStagnant >= 3) {
+        dispatch({ type: 'load', state: winner.state })
+        setRunning(false)
+        return
+      }
     }
 
     const nextGeneration = generation + 1
@@ -231,20 +315,17 @@ export default function ChipTetris() {
       if (game.floorplanReady) {
         if (!standardCellsDone) {
           setStdFillCount(stdFillTarget)
-        } else if (!finalCandidate && searchPasses === 0) {
-          setSearchPasses(1)
-          dispatch({ type: 'hybrid' })
-        }
+        } else if (!finalCandidate && searchPasses === 0) startHybrid()
         return
       }
       if (!aiEnabled) return
       if (autoReplace && game.placements - lastReplaceAt.current >= 6) {
         lastReplaceAt.current = game.placements
         dispatch({ type: 'replace' })
-      } else dispatch({ type: 'ai' })
+      } else dispatch({ type: 'ai-plan', plan })
     }, aiEnabled ? speed : Math.max(140, 850 - game.level * 55))
     return () => window.clearInterval(timer)
-  }, [aiEnabled, autoReplace, finalCandidate, game.floorplanReady, game.gameOver, game.level, game.placements, running, searchPasses, speed, standardCellsDone, stdFillDone, stdFillTarget])
+  }, [aiEnabled, autoReplace, finalCandidate, game.floorplanReady, game.gameOver, game.level, game.placements, plan, running, searchPasses, speed, standardCellsDone, startHybrid, stdFillDone, stdFillTarget])
 
   useEffect(() => {
     if (game.floorplanReady && searchPasses > 0 && game.lastEvent.startsWith('Hybrid complete')) setFinalCandidate(true)
@@ -278,7 +359,13 @@ export default function ChipTetris() {
     const updated = [...candidateResults, result]
     setCandidateResults(updated)
     setSavedCandidates(current => {
-      const next = [result, ...current]
+      const unique = new Map<string, CandidateResult>()
+      ;[result, ...current].forEach(candidate => {
+        const signature = placementSignature(candidate.state.board)
+        const previous = unique.get(signature)
+        if (!previous || candidate.score > previous.score) unique.set(signature, candidate)
+      })
+      const next = [...unique.values()]
         .sort((a, b) => b.score - a.score || b.savedAt - a.savedAt)
         .slice(0, MAX_SAVED_CANDIDATES)
       localStorage.setItem(SAVED_CANDIDATES_KEY, JSON.stringify(next))
@@ -340,9 +427,9 @@ export default function ChipTetris() {
   const stepAi = () => {
     if (!game.floorplanReady) { dispatch({ type: 'ai' }); return }
     if (!standardCellsDone) { setStdFillCount(stdFillTarget); return }
-    if (!finalCandidate && searchPasses === 0) { setSearchPasses(1); dispatch({ type: 'hybrid' }) }
+    if (!finalCandidate && searchPasses === 0) startHybrid()
   }
-  const reset = () => { lastReplaceAt.current = 0; setStdFillCount(0); setSearchPasses(0); setFinalCandidate(false); setCandidateIndex(1); setCandidateResults([]); setCandidateRecorded(false); setGeneration(1); setChampion(null); setStagnantGenerations(0); setFailedAttempts(0); setSelectedInstances(new Set()); dispatch({ type: 'reset' }); setAiEnabled(false); setRunning(false) }
+  const reset = () => { saJobIdRef.current += 1; lastReplaceAt.current = 0; setStdFillCount(0); setSearchPasses(0); setFinalCandidate(false); setSaRunning(false); setSaProgress({ stage: 'idle', iteration: 0, total: SA_ITERATIONS, elapsedMs: 0, estimatedMs: SA_INITIAL_ESTIMATE_MS, accepted: 0, attempted: 0 }); setCandidateIndex(1); setCandidateResults([]); setCandidateRecorded(false); setGeneration(1); setChampion(null); setStagnantGenerations(0); setFailedAttempts(0); setSelectedInstances(new Set()); dispatch({ type: 'reset' }); setAiEnabled(false); setRunning(false) }
   const startAi = () => {
     setAiEnabled(true)
     setRunning(true)
@@ -353,6 +440,13 @@ export default function ChipTetris() {
   const availableGridCells = Math.max(0, BOARD_COLS * BOARD_ROWS - requiredGridCells)
   const estimatedStdBlocks = Math.ceil(availableGridCells * STD_SUBDIVISIONS * STD_SUBDIVISIONS * STD_CELL_LEFTOVER_FILL_RATIO)
   const estimatedTotalBlocks = TOTAL_REQUIRED_BLOCKS + estimatedStdBlocks
+  // "다른 용도" = 로직(STD CELL)으로 채우지 않는 나머지 sub-cell — filler·decap·tap·라우팅 채널이
+  // 실제로 차지하는 자리. 빈 화면이 아니라 이미 정해진 목적이 있는 면적이라는 걸 수치로 보여준다.
+  const dieAreaUm2 = DIE_WIDTH_UM * DIE_HEIGHT_UM
+  const totalStdSubCells = availableGridCells * STD_SUBDIVISIONS * STD_SUBDIVISIONS
+  const otherPurposeSubCells = Math.max(0, totalStdSubCells - estimatedStdBlocks)
+  const otherPurposeAreaUm2 = otherPurposeSubCells * STD_GRID_UM * STD_GRID_UM
+  const otherPurposePct = dieAreaUm2 > 0 ? (otherPurposeAreaUm2 / dieAreaUm2) * 100 : 0
   const updateSize = (id: InitBlockId, key: 'widthUm' | 'heightUm', value: number) => setSizeDraft(current => {
     if (BLOCKS[id].physicalKind !== 'neighbor-region') return { ...current, [id]: { ...current[id], [key]: value } }
     const areaCells = Math.max(1, Math.round(current[id].widthUm / STD_GRID_UM) * Math.round(current[id].heightUm / STD_GRID_UM))
@@ -392,10 +486,13 @@ export default function ChipTetris() {
     })
   }
   const moveGroup = (dx: number, dy: number) => dispatch({ type: 'move-group', instances: [...selectedInstances], dx, dy })
+  const saStageLabel = saProgress.stage === 'replace' ? 'RE-PLACE 정리' : saProgress.stage === 'sa' ? 'SA 후보 탐색' : saProgress.stage === 'complete' ? '후보 평가 완료' : 'SA 대기'
+  const saPercent = saProgress.stage === 'complete' ? 100 : saProgress.stage === 'replace' ? Math.min(20, saProgress.iteration / 2 * 20) : saProgress.stage === 'sa' ? 20 + saProgress.iteration / Math.max(1, saProgress.total) * 80 : 0
+  const saRemainingMs = Math.max(0, saProgress.estimatedMs - saProgress.elapsedMs)
 
   return <div className="chip-tetris-page">
     <section className="chip-game-hero">
-      <div><small>EMPTY-SPACE FILL · FUNCTION CLUSTERING · REPLACE → SA</small><h2>AI Chip Tetris</h2><p>블록을 위에서 떨어뜨리지 않고 모든 legal 빈 공간을 직접 탐색해 채웁니다. legal 후보는 자동 저장하고, 실패한 seed는 건너뛰며 Pause할 때까지 새 후보를 계속 탐색합니다.</p></div>
+      <div><small>FAST SEEDS · BEAM SEARCH · EARLY STOP · REPLACE → SA</small><h2>AI Chip Tetris</h2><p>세대마다 {GENERATION_POOL_SIZE}개의 seed 후보를 단계별로 탐색합니다. 이미 계산한 최적 위치를 실제 배치에 재사용하고 위치별 Beam은 2개로 제한하며, 동일 배치를 제거하고 3세대 동안 개선이 없으면 자동 정지합니다.</p></div>
       <div className={`ai-status ${running && aiEnabled ? 'live' : ''}`}><i/><span>{game.gameOver && running ? `RETRYING · FAILED ${failedAttempts + 1}` : !running ? 'PRESS AI START' : !game.floorplanReady ? game.placements < 2 ? `G${generation} · ${candidateIndex}/8 · MACROS` : `G${generation} · ${candidateIndex}/8 · STD REGIONS` : !standardCellsDone ? `G${generation} · ${candidateIndex}/8 · STD CELLS` : `G${generation} · ${candidateIndex}/8 · FINAL SEARCH`}</span></div>
     </section>
 
@@ -406,6 +503,7 @@ export default function ChipTetris() {
       <div className="init-facts">
         <div><span>필수 블록</span><b>5</b><small>hard macro 2 + 이웃 region 3</small></div>
         <div><span>예상 STD 조각</span><b>{estimatedStdBlocks}</b><small>{STD_GRID_UM}×{STD_GRID_UM} µm · 빈 영역 실측 7.8%</small></div>
+        <div><span>다른 용도 사용 (추정)</span><b>{otherPurposeAreaUm2.toLocaleString()} µm²</b><small>필러·decap·tap·라우팅 채널 · 다이의 {otherPurposePct.toFixed(1)}% · {otherPurposeSubCells.toLocaleString()}개 sub-cell</small></div>
         <div><span>예상 총 블록</span><b>{estimatedTotalBlocks}</b><small>필수 5 + STD cluster</small></div>
         <div><span>배치 격자</span><b>{GRID_UM} / {STD_GRID_UM} µm</b><small>macro / STD sub-grid</small></div>
       </div>
@@ -425,7 +523,7 @@ export default function ChipTetris() {
     </section>
 
     <section className="chip-scorebar">
-      <div><span>SCORE</span><b>{game.score.toLocaleString()}</b></div><div><span>BEST</span><b>{best.toLocaleString()}</b></div><div><span>GEN / CANDIDATE</span><b>{generation} · {candidateIndex}/{CANDIDATE_COUNT}</b></div><div><span>PRE-SIGNOFF</span><b className={precheck.confidence >= 90 ? 'pass' : 'warn'}>{precheck.confidence}%</b></div><div><span>REQUIRED / RE-PLACE</span><b>{game.placements} / {TOTAL_REQUIRED_BLOCKS} · {game.replacements}</b></div><div><span>RULE FLAGS</span><b className={metrics.violations ? 'warn' : 'pass'}>{metrics.violations}</b></div>
+      <div><span>SCORE</span><b>{game.score.toLocaleString()}</b></div><div><span>BEST</span><b>{best.toLocaleString()}</b></div><div><span>GEN / CANDIDATE</span><b>{generation} · {candidateIndex}/{CANDIDATE_COUNT}</b></div><div><span>PRE-SIGNOFF</span><b className={precheck.confidence >= 90 ? 'pass' : 'warn'}>{precheck.confidence}%</b></div><div><span>REQUIRED / RE-PLACE</span><b>{game.placements} / {TOTAL_REQUIRED_BLOCKS} · {game.replacements}</b></div><div><span>RULE FLAGS</span><b className={metrics.violations ? 'warn' : 'pass'}>{metrics.violations}</b></div><div><span>다른 용도 사용</span><b>{game.floorplanReady ? otherPurposeLivePct.toFixed(1) : otherPurposePct.toFixed(1)}%</b><small>filler·decap·tap·route</small></div>
     </section>
 
     <section className="chip-game-layout">
@@ -464,10 +562,11 @@ export default function ChipTetris() {
               const subY = Math.floor(subIndex / STD_SUBDIVISIONS)
               return localTileX * STD_SUBDIVISIONS + subX < regionCols && localTileY * STD_SUBDIVISIONS + subY < regionRows
             }) : []
-            return <div key={index} role="gridcell" onClick={() => cell && togglePlacedInstance(cell.instance)} className={`chip-cell ${zone} ${cell ? `filled ${cell.category} ${BLOCKS[cell.id].physicalKind}` : ''} ${selected ? 'group-selected' : ''} ${active ? game.placements < 2 ? 'macro-preview' : 'gap-fill' : ''} ${standardCell ? 'std-cell-fill' : ''} ${standardCellOpen ? 'std-cell-open' : ''}`} style={cellStyle} title={cell ? `${BLOCKS[cell.id].label} · #${cell.instance} · ${regionSize ? `${regionSize.widthUm}×${regionSize.heightUm} µm` : 'macro'} · 클릭하여 그룹 선택` : standardCell ? `Placed ${STD_GRID_UM}µm standard-cell clusters` : standardCellOpen ? `Available ${STD_GRID_UM}µm standard-cell sub-grid` : `${zone.replace('-', ' ')} empty`}>{regionSize ? <><span className="neighbor-subcell-grid" aria-hidden="true">{regionSlots.map((occupied, subIndex) => <i key={subIndex} className={occupied ? 'occupied' : ''}/>)}</span>{localTileX === 0 && localTileY === 0 && <b className="neighbor-region-label">{BLOCKS[cell!.id].label}</b>}</> : cell ? <span>{BLOCKS[cell.id].label}</span> : standardCellOpen ? <span className="std-subcell-grid" aria-hidden="true">{standardCellSlots.map((filled, subIndex) => <i key={subIndex} className={filled ? 'placed' : ''}/>)}</span> : null}</div>
+            return <div key={index} role="gridcell" onClick={() => cell && togglePlacedInstance(cell.instance)} className={`chip-cell ${zone} ${cell ? `filled ${cell.category} ${BLOCKS[cell.id].physicalKind}` : ''} ${selected ? 'group-selected' : ''} ${active ? game.placements < 2 ? 'macro-preview' : 'gap-fill' : ''} ${standardCell ? 'std-cell-fill' : ''} ${standardCellOpen ? 'std-cell-open' : ''}`} style={cellStyle} title={cell ? `${BLOCKS[cell.id].label} · #${cell.instance} · ${regionSize ? `${regionSize.widthUm}×${regionSize.heightUm} µm` : 'macro'} · 클릭하여 그룹 선택` : standardCell ? `Placed ${STD_GRID_UM}µm standard-cell clusters` : standardCellOpen ? `다른 용도로 쓰일 것으로 추정 (${STD_GRID_UM}µm sub-cell) — filler·decap·tap·라우팅 채널, 빈 공간 아님` : `${zone.replace('-', ' ')} empty`}>{regionSize ? <><span className="neighbor-subcell-grid" aria-hidden="true">{regionSlots.map((occupied, subIndex) => <i key={subIndex} className={occupied ? 'occupied' : ''}/>)}</span>{localTileX === 0 && localTileY === 0 && <b className="neighbor-region-label">{BLOCKS[cell!.id].label}</b>}</> : cell ? <span>{BLOCKS[cell.id].label}</span> : standardCellOpen ? <span className="std-subcell-grid" aria-hidden="true">{standardCellSlots.map((filled, subIndex) => <i key={subIndex} className={filled ? 'placed' : ''}/>)}</span> : null}</div>
           })}
           {game.gameOver && running && <div className="game-over"><b>AUTO RETRY</b><span>이 seed는 legal 배치를 만들지 못했습니다. 저장된 후보는 유지하고 다음 후보를 자동 탐색합니다.</span></div>}
         </div>
+        <p className="chip-note" style={{ marginTop: 8 }}>보라색 점이 안 켜진 sub-cell도 <b>빈 공간이 아닙니다</b> — STD CELL 로직은 이 자리의 7.8%만 차지하고(<code>STD_CELL_LEFTOVER_FILL_RATIO</code>), 나머지 {game.floorplanReady ? otherPurposeLivePct.toFixed(1) : otherPurposePct.toFixed(1)}%(다이 전체 기준)는 filler·decap·tap 셀과 라우팅 채널이 실제로 차지합니다. 이 자리는 항상 채워지는 자리라 게임이 목표로 삼을 필요가 없습니다.</p>
       </div>
 
       <aside className="chip-control-panel">
@@ -475,9 +574,10 @@ export default function ChipTetris() {
         <div className="next-grid"><div><span>{!game.floorplanReady ? game.placements < 2 ? 'MACRO' : 'STD REGION' : !standardCellsDone ? 'STD CELLS' : 'SEARCH PASS'}</span>{game.floorplanReady ? <div className="chip-mini"><b>{!standardCellsDone ? `${stdFillCount}/${stdFillTarget}` : searchPasses}</b><small>{!standardCellsDone ? 'PLACING' : finalCandidate ? 'CONVERGED' : 'SEARCHING'}</small></div> : <MiniBlock id={game.active.id} physicalSize={BLOCKS[game.active.id].physicalKind === 'neighbor-region' ? appliedRegionSizes[game.active.id as InitBlockId] : undefined}/>}</div><div><span>CANDIDATE PROFILE</span><div className="chip-mini"><b>G{generation} #{candidateIndex} · {candidateProfiles[game.candidateSeed % candidateProfiles.length]}</b><small>ELITE {champion ? champion.score.toLocaleString() : 'NONE'} · SAVED {savedCandidates.length} · FAILED {failedAttempts}</small></div></div></div>
         <div className="full-next-queue"><span className="panel-label">ALL REMAINING PLACEMENT</span><div className="next-row all-items">{remainingRequired.map((id, index) => <div className={`queued-block ${index === 0 ? 'current' : ''}`} key={`${id}-${index}`}><em>{index === 0 ? 'NOW' : `NEXT ${index}`}</em><MiniBlock id={id} physicalSize={BLOCKS[id].physicalKind === 'neighbor-region' ? appliedRegionSizes[id as InitBlockId] : undefined}/></div>)}{futurePlacementStages.map((stage, index) => <div className={`queued-stage ${stage.done ? 'done' : !game.floorplanReady && index === 0 ? 'waiting' : ''}`} key={stage.id}><em>{stage.done ? 'DONE' : `STEP ${remainingRequired.length + index + 1}`}</em><b>{stage.label}</b><small>{stage.detail}</small></div>)}</div><small className="queue-note">현재 블록부터 필수 영역, 표준셀 채우기, Re-place, SA, 후보 평가까지 모두 표시합니다.</small></div>
         <div className="placement-progress">{PLACEMENT_SEQUENCE.map((id, index) => <div key={id} className={index < game.placements ? 'done' : index === game.placements && !game.floorplanReady ? 'current' : ''}><i>{index < game.placements ? '✓' : index + 1}</i><span>{BLOCKS[id].label}</span><small>{index < 2 ? 'MACRO' : 'STD REGION'}</small></div>)}</div>
+        <div className={`sa-progress-panel ${saRunning ? 'running' : saProgress.stage === 'complete' ? 'complete' : ''}`}><div className="sa-progress-head"><div><span className="panel-label">SA PROGRESS</span><b>{saStageLabel}</b></div><strong>{Math.round(saPercent)}%</strong></div><div className="sa-progress-track"><i style={{ width: `${saPercent}%` }}/></div><div className="sa-progress-metrics"><span><small>ITERATION</small><b>{saProgress.stage === 'replace' ? `R ${saProgress.iteration}/2` : `${saProgress.iteration}/${saProgress.total}`}</b></span><span><small>경과</small><b>{(saProgress.elapsedMs / 1000).toFixed(1)}s</b></span><span><small>예상 총시간</small><b>~{(saProgress.estimatedMs / 1000).toFixed(1)}s</b></span><span><small>예상 잔여</small><b>~{(saRemainingMs / 1000).toFixed(1)}s</b></span></div><small className="sa-progress-note">{saRunning ? `accepted ${saProgress.accepted}/${saProgress.attempted} · Worker에서 계산 중이라 화면 조작은 유지됩니다.` : saProgress.stage === 'complete' ? `SA 완료 · 실제 ${(saProgress.elapsedMs / 1000).toFixed(1)}초` : `후보당 ${SA_ITERATIONS} iteration · 최근 실측 기준 약 ${(SA_INITIAL_ESTIMATE_MS / 1000).toFixed(1)}초 예상`}</small></div>
         {(champion || savedCandidates.length > 0) && <div className="candidate-results">{champion && <div className="winner"><b>ELITE</b><span>G{champion.generation} #{champion.index}</span><strong>{champion.score.toLocaleString()}</strong><small>현재 실행 최고</small></div>}{savedCandidates.slice(0, 7).map(result => <div key={result.savedAt}><b>G{result.generation}</b><span>#{result.index} · {result.profile}</span><strong>{result.score.toLocaleString()}</strong><small>LEGAL · C{result.congestion}</small></div>)}</div>}
         <div className="ai-decision"><span className="panel-label">NOW / NEXT</span>{game.gameOver && running ? <><b>illegal 후보 자동 폐기</b><p>저장된 legal 후보는 유지한 채 다음 seed로 즉시 넘어갑니다.</p></> : game.floorplanReady ? !standardCellsDone ? <><b>후보 #{candidateIndex} · 표준셀 자동 배치</b><p>{stdFillCount}/{stdFillTarget} · 목표 이용률 실측 7.8%</p></> : <><b>후보 #{candidateIndex} · 최종 탐색 pass {searchPasses + 1}</b><p>Replace→SA로 탐색하고, legal 후보를 저장한 뒤 다음 후보를 계속 만듭니다.</p></> : plan ? <><b>{running ? '배치 중' : '대기 중'} · {BLOCKS[plan.id].label} → ({plan.x + 1}, {plan.y + 1})</b><p>{game.placements < 2 ? '매크로를 하나씩 완료합니다.' : '매크로 완료 후 표준셀 이웃 영역을 직접 배치합니다.'}</p></> : <b>legal move 없음</b>}<small>{running ? game.lastEvent : 'AI START를 누르면 저장된 후보를 유지하며 탐색을 계속합니다.'}</small></div>
-        <div className="chip-switches"><button className={running && aiEnabled ? 'active' : ''} onClick={startAi}>{running && aiEnabled ? 'FAST EVOLUTION' : 'START EVOLUTION'}</button><button className="active replace" disabled>REPLACE → SA</button><button onClick={() => setRunning(false)} disabled={!running}>Pause</button><button onClick={stepAi} disabled={game.gameOver}>AI step</button><button onClick={() => dispatch({ type: 'replace' })} disabled={game.gameOver || game.placements < 2}>Re-place now</button><button onClick={reset}>Reset</button></div>
+        <div className="chip-switches"><button className={running && aiEnabled ? 'active' : ''} onClick={startAi}>{running && aiEnabled ? 'FAST EVOLUTION' : 'START EVOLUTION'}</button><button className="active replace" disabled>REPLACE → SA</button><button onClick={() => setRunning(false)} disabled={!running}>Pause</button><button className="stop" onClick={stopEvolution} disabled={!running && !saRunning}>STOP</button><button onClick={stepAi} disabled={game.gameOver || saRunning}>AI step</button><button onClick={() => dispatch({ type: 'replace' })} disabled={game.gameOver || game.placements < 2 || saRunning}>Re-place now</button><button onClick={reset}>Reset</button></div>
         <label className="speed-control">빠른 자동 간격 <input type="range" min="10" max="200" step="10" value={speed} onChange={event => setSpeed(Number(event.target.value))}/><b>{speed} ms</b></label>
         <p className="key-help"><b>Continuous evolution:</b> 저장된 상위 후보를 번갈아 변형하고 정체되면 랜덤 시작으로 탐색 영역을 넓힙니다. legal 후보는 상위 {MAX_SAVED_CANDIDATES}개까지 브라우저에 저장되며, 실패해도 Restart 없이 다음 seed를 계속 탐색합니다.</p>
       </aside>

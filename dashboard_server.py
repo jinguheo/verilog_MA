@@ -21,11 +21,13 @@ from parsac_runner import get_job as get_parsac_job, jobs as parsac_jobs, start_
 from layout_candidate_runner import (
     asset_path as layout_candidate_asset,
     baseline_asset as layout_baseline_asset,
+    cancel_optimization as cancel_layout_optimization,
     get_job as get_layout_candidate_job,
     get_verification_batch as get_layout_verification_batch,
-    optimize_candidate as optimize_layout_candidate,
+    optimization_status as get_layout_optimization_status,
     prepare_candidate as prepare_layout_candidate,
     start_job as start_layout_candidate_job,
+    start_optimization as start_layout_optimization,
     start_verification_batch as start_layout_verification_batch,
     status as layout_candidate_status,
 )
@@ -305,6 +307,12 @@ class Handler(BaseHTTPRequestHandler):
         if route == '/api/layout-candidates':
             payload = json.dumps(layout_candidate_status(), ensure_ascii=False).encode('utf-8')
             self.send_response(200); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
+        if route.startswith('/api/layout-candidates/optimize/'):
+            task = get_layout_optimization_status(route.rsplit('/', 1)[-1])
+            if not task:
+                self.send_error(404, 'Unknown optimization task'); return
+            payload = json.dumps(task, ensure_ascii=False).encode('utf-8')
+            self.send_response(200); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
         if route.startswith('/api/layout-candidates/jobs/'):
             job = get_layout_candidate_job(route.rsplit('/', 1)[-1])
             if not job:
@@ -354,6 +362,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         route = urlparse(self.path).path
+        if route.startswith('/api/layout-candidates/optimize/') and route.endswith('/cancel'):
+            task = cancel_layout_optimization(route.split('/')[-2])
+            if not task:
+                self.send_error(404, 'Unknown optimization task'); return
+            payload = json.dumps(task, ensure_ascii=False).encode('utf-8')
+            self.send_response(200); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
         if route not in {'/api/physical-design/configure', '/api/physical-design/parsac/run', '/api/layout-candidates/optimize', '/api/layout-candidates/prepare', '/api/layout-candidates/run', '/api/layout-candidates/verify-history', '/api/analog/select', '/api/analog/run'}:
             self.send_error(404, 'Not Found'); return
         try:
@@ -366,7 +380,7 @@ class Handler(BaseHTTPRequestHandler):
             elif route == '/api/physical-design/parsac/run':
                 result = start_parsac_job(body)
             elif route == '/api/layout-candidates/optimize':
-                result = optimize_layout_candidate({**body, '_record_history': True})
+                result = start_layout_optimization({**body, '_record_history': True})
             elif route == '/api/layout-candidates/prepare':
                 result = prepare_layout_candidate(body)
             elif route == '/api/layout-candidates/run':

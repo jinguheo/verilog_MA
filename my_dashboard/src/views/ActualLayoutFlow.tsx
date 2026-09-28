@@ -25,6 +25,32 @@ interface Baseline {
   flow: string[]
 }
 
+interface OptimizationResult {
+  status: string
+  placements: Macro[]
+  candidate_pool: Array<{ rank: number; method: string; cost: number; estimated_manhattan_um: number; centerline_misalignment_um: number; placements: Macro[] }>
+  metrics: Record<string, unknown>
+  comparison?: unknown
+  saved_to_history: boolean
+  history_entries: OptimizationHistoryEntry[]
+}
+
+interface OptimizationTask {
+  id: string
+  status: 'queued' | 'running' | 'complete' | 'failed' | 'cancelled'
+  stage: string
+  progress: number
+  current: number
+  total: number
+  seed: number
+  iteration: number
+  iterations_per_seed?: number
+  evaluated?: number
+  mode?: string
+  error?: string
+  result?: OptimizationResult
+}
+
 interface LayoutJob {
   id: string
   status: 'prepared' | 'queued' | 'running' | 'complete' | 'failed'
@@ -80,6 +106,7 @@ export default function ActualLayoutFlow() {
   const [baseline, setBaseline] = useState<Baseline | null>(null)
   const [placements, setPlacements] = useState<Macro[]>([])
   const [job, setJob] = useState<LayoutJob | null>(null)
+  const [optimizationTask, setOptimizationTask] = useState<OptimizationTask | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [image, setImage] = useState('')
@@ -129,6 +156,34 @@ export default function ActualLayoutFlow() {
     return () => window.clearInterval(timer)
   }, [job])
   useEffect(() => {
+    // SA/constrained candidate generation runs on the backend as a cancellable
+    // background job (32 seeds x 240 SA iterations) instead of one blocking
+    // POST - a client-side Stop can only drop the HTTP connection, it cannot
+    // halt server-side CPU work that isn't checking a cancellation flag. This
+    // polls task status/progress and picks up the result once complete.
+    if (!optimizationTask || !['queued', 'running'].includes(optimizationTask.status)) return
+    const timer = window.setInterval(async () => {
+      try {
+        const updated: OptimizationTask = await request(`/api/layout-candidates/optimize/${optimizationTask.id}`)
+        setOptimizationTask(updated)
+        if (updated.status === 'complete' && updated.result) {
+          const result = updated.result
+          setPlacements(result.placements)
+          setOptimization(result.metrics)
+          setJob(null)
+          if (result.saved_to_history && result.history_entries?.length) {
+            const ids = new Set(result.history_entries.map(item => item.id))
+            setHistory(items => [...result.history_entries, ...items.filter(item => !ids.has(item.id))])
+            setHistoryOpen(true)
+          }
+        }
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : String(reason))
+      }
+    }, 400)
+    return () => window.clearInterval(timer)
+  }, [optimizationTask])
+  useEffect(() => {
     if (!verificationBatch || !['queued', 'running'].includes(verificationBatch.status)) return
     const timer = window.setInterval(async () => {
       try {
@@ -157,15 +212,17 @@ export default function ActualLayoutFlow() {
   const optimize = async (mode: 'constrained' | 'sa') => {
     setBusy(true)
     try {
-      const result = await request('/api/layout-candidates/optimize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, mode }) })
-      setPlacements(result.placements); setOptimization(result.metrics); setJob(null); setError('')
-      if (result.saved_to_history && result.history_entries?.length) {
-        const ids = new Set(result.history_entries.map((item: OptimizationHistoryEntry) => item.id))
-        setHistory(items => [...result.history_entries, ...items.filter(item => !ids.has(item.id))])
-        setHistoryOpen(true)
-      }
+      const task: OptimizationTask = await request('/api/layout-candidates/optimize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, mode }) })
+      setOptimizationTask(task); setError('')
     } catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)) }
     finally { setBusy(false) }
+  }
+  const cancelOptimize = async () => {
+    if (!optimizationTask) return
+    try {
+      const updated: OptimizationTask = await request(`/api/layout-candidates/optimize/${optimizationTask.id}/cancel`, { method: 'POST' })
+      setOptimizationTask(updated)
+    } catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)) }
   }
   const run = async () => {
     setBusy(true)
@@ -215,6 +272,7 @@ export default function ActualLayoutFlow() {
     const saved = item.placements?.find(placement => placement.instance === macro.instance)
     return saved ? { ...macro, ...saved } : macro
   })
+  const optimizing = optimizationTask ? ['queued', 'running'].includes(optimizationTask.status) : false
   const visibleHistory = verificationOnly ? history.filter(item => item.verification?.status === 'passed') : history
   const passedHistory = history.filter(item => item.verification?.status === 'passed')
   const candidateState = (item: OptimizationHistoryEntry) => item.verification?.status === 'passed' ? 'DRC/LVS PASS' : item.verification?.status === 'failed' ? 'DRC/LVS FAIL' : item.screening?.status === 'shortlisted' ? `SCREEN TOP ${item.screening.rank ?? ''}` : item.screening?.status === 'screened-out' ? `SCREEN OUT · #${item.screening.rank ?? '-'}` : '검증 대기'
@@ -228,7 +286,7 @@ export default function ActualLayoutFlow() {
           <header><div><small>현재 적용·전환 방식 · V2</small><b>Routing-feedback 반복 최적화</b></div><span>PASS-ONLY</span></header>
           <ol className="detailed-flow-list">
             <li className="active"><i>1</i><p><b>격자 탐색으로 macro 후보군 생성</b><span>10 µm 좌표에서 boundary·overlap·40 µm halo를 먼저 제거해 비싼 툴 실행 전 legal 후보만 만듭니다.</span><em>GRID SEARCH</em></p></li>
-            <li className="active"><i>2</i><p><b>Macro Re-place + SA로 후보 변형</b><span>Re-place는 macro 하나를 rip-up한 뒤 legal 위치 중 cost가 좋아지는 위치로 이동합니다. SA는 exp(Δ/T) 확률로 일부 나쁜 이동도 받아 local minimum을 벗어나고 best-ever를 보존합니다.</span><em>RE-PLACE · SIMULATED ANNEALING</em></p></li>
+            <li className="active"><i>2</i><p><b>Macro Re-place + SA로 후보 변형</b><span>Re-place는 macro 하나를 rip-up한 뒤 legal 위치 중 cost가 좋아지는 위치로 이동합니다. SA는 exp(Δ/T) 확률로 일부 나쁜 이동도 받아 local minimum을 벗어나고 best-ever를 보존합니다. 이동 폭을 10µm(격자 그대로) → 1µm로 coarse-to-fine 축소하며 그때그때 cost를 직접 계산해서, 10µm 격자 40,500개 전수조사로는 못 찾는 격자 사이 좌표까지 정밀화합니다(실측: grid 최적 566.4 → SA 정밀화 후 550.8, −2.8%). 32 seed × 240 iteration을 백엔드 background job으로 돌리며 seed/iteration 진행률을 폴링으로 보여주고, 협력적 취소 체크로 중지 버튼이 실제로 CPU 계산을 멈춥니다(브라우저 요청만 끊는 게 아님).</span><em>RE-PLACE · SIMULATED ANNEALING · COARSE-TO-FINE · ASYNC JOB</em></p></li>
             <li className="next"><i>3</i><p><b>OpenROAD RePlAce 표준셀 배치</b><span>현재 실제 P&R은 일반 RePlAce 배치입니다. 게임에는 기능군 clustering이 구현됐지만, 실제 flow의 adapter·CDC·capture·readout soft-region constraint 연결은 다음 개선 항목입니다.</span><em>OPENROAD GPL · CLUSTER NEXT</em></p></li>
             <li className="next"><i>4</i><p><b>빠른 global routing 평가</b><span>상세배선 전에 wirelength·routing overflow/congestion·setup timing을 측정해 실제 배선 가능성이 낮은 후보를 탈락시킵니다.</span><em>FASTROUTE · STA</em></p></li>
             <li className="active"><i>5</i><p><b>10개 빠른 선별 → Top 3</b><span>공통 합성 checkpoint와 기존 signature·screen 결과를 재사용하고, post-global-route wirelength·WNS가 좋은 최대 3개만 signoff로 보냅니다.</span><em>FUNNEL · CACHE</em></p></li>
@@ -253,12 +311,12 @@ export default function ActualLayoutFlow() {
           </ol>
         </article>
       </div>
-      <div className="flow-implementation-status"><span className="done"><b>현재 사용 가능</b> 후보 10개 fast GRT/STA · 합성/checkpoint/결과 재사용 · Top 3 signoff · 기존 기준+PASS 후보 영구 관리</span><span className="next"><b>다음 개선</b> 실제 PPA best 자동 승격 · 통과 best를 다음 세대 SA seed로 자동 연결</span></div>
+      <div className="flow-implementation-status"><span className="done"><b>현재 사용 가능</b> 후보 10개 fast GRT/STA · 합성/checkpoint/결과 재사용 · Top 3 signoff · 기존 기준+PASS 후보 영구 관리 · SA/제약기반 생성이 취소 가능한 background job(진행률 폴링, 협력적 취소)으로 실행</span><span className="next"><b>다음 개선</b> 실제 PPA best 자동 승격 · 통과 best를 다음 세대 SA seed로 자동 연결</span></div>
       <section className="future-optimization-roadmap">
         <div className="roadmap-head"><div><small>NEXT IMPROVEMENTS · ACTUAL P&amp;R</small><h4>현재 방식에서 추가로 개선할 부분</h4></div><span>게임 구현과 실제 툴 연결을 구분</span></div>
         <div className="roadmap-grid">
           <article className="game-done"><header><b>표준셀 기능 clustering</b><em>GAME DONE · P&amp;R NEXT</em></header><p>게임은 adapter·CDC·capture·readout 기능군을 모아 평가합니다. 다음에는 합성 hierarchy로 셀 목록을 만들고 OpenROAD group/region constraint를 적용한 뒤, unconstrained 배치와 congestion·timing을 비교합니다.</p><small>검증: RePlAce → GlobalRoute overflow → STA WNS/TNS</small></article>
-          <article className="game-done"><header><b>SA 탐색 범위 확장</b><em>MACRO DONE · STD-CELL NEXT</em></header><p>현재 SA는 ADC·SRAM macro 좌표를 변형합니다. 다음에는 soft-cluster의 중심·크기·밀도도 state에 포함하되 개별 표준셀 전체를 SA로 직접 움직이지 않아 탐색 폭발을 막습니다.</p><small>검증: SA outer-loop + RePlAce inner-loop</small></article>
+          <article className="game-done"><header><b>SA 탐색 범위 확장</b><em>GRID-DECOUPLED · MACRO-COUNT NEXT</em></header><p>SA는 원래 grid 단계가 미리 만든 legal-position 표(legal_by_position)에서 조회만 했습니다 — grid가 이미 전수조사(40,500개)한 것과 같은 공간이라 새 위치를 발견할 수 없었습니다. 지금은 그때그때 cost를 직접 계산(evaluate)하고 이동 폭을 10µm→1µm로 줄여가며 격자 사이 좌표까지 찾습니다. 다만 여전히 macro는 ADC·SRAM 정확히 2개로 하드코딩돼 있어(analog 1개·memory 1개가 아니면 에러) macro 개수를 늘리려면 별도 재작성이 필요합니다. 그다음엔 soft-cluster의 중심·크기·밀도도 state에 포함하되 개별 표준셀 전체를 SA로 직접 움직이지 않아 탐색 폭발을 막습니다.</p><small>검증: grid top-1(566.4) vs SA 정밀화(550.8, −2.8%) 비교</small></article>
           <article><header><b>Congestion heatmap feedback</b><em>NEXT</em></header><p>GRT overflow가 난 tile을 다음 세대 cost에 penalty로 되돌려 같은 혼잡 배치를 반복 생성하지 않도록 합니다.</p><small>검증: FastRoute congestion report</small></article>
           <article><header><b>PPA best 자동 승격</b><em>NEXT</em></header><p>DRC/LVS PASS 후보만 area·wirelength·worst-corner timing으로 정규화해 best를 정하고, 그 배치를 다음 SA seed로 자동 사용합니다.</p><small>검증: signoff metrics + pass-only gate</small></article>
           <article><header><b>변경 영향 기반 선택 검증</b><em>LATER</em></header><p>macro/cluster 이동 폭이 작은 후보는 full LVS 전에 incremental route·local DRC를 먼저 수행합니다. 최종 승격 전에는 full DRC/LVS를 생략하지 않습니다.</p><small>검증: incremental precheck → full signoff</small></article>
@@ -291,7 +349,18 @@ export default function ActualLayoutFlow() {
       </div>
       <div className="actual-controls">
         {placements.map(item => <fieldset key={item.instance}><legend>{item.kind.toUpperCase()} · {item.module}</legend><small>{item.width.toFixed(2)} × {item.height.toFixed(2)} µm</small><div><label>X <input type="number" step="1" value={item.x} onChange={event => update(item.instance, 'x', event.target.value)}/></label><label>Y <input type="number" step="1" value={item.y} onChange={event => update(item.instance, 'y', event.target.value)}/></label><label>Orient <select value={item.orientation} onChange={event => update(item.instance, 'orientation', event.target.value)}><option>N</option><option>S</option><option>FN</option><option>FS</option></select></label></div><code>{item.instance}</code></fieldset>)}
-        <div className="actual-actions"><button onClick={initialize} disabled={busy} title="offline PPA3 OpenLane 결과를 반영한 config의 MACROS 좌표와 ADC/SRAM LEF 크기로 복원">Offline PPA3로 초기화</button><button onClick={() => optimize('constrained')} disabled={busy}>제약기반 후보 생성</button><button onClick={() => optimize('sa')} disabled={busy}>SA 기반 후보 생성</button><small className="actual-init-source"><b>초기값 출처</b> 별도 offline PPA3 OpenLane 실행 → ppa3_adc_capture/config.json MACROS 좌표 + ADC/SRAM LEF 실제 크기</small><button onClick={prepare} disabled={busy}>후보 DEF 설정 준비</button><button className="run" onClick={run} disabled={busy || job?.status === 'running' || job?.status === 'queued'}>OpenLane 끝까지 실행</button><button className="history-button" onClick={() => setHistoryOpen(value => !value)}>개선 히스토리 ({history.length})</button></div>
+        <div className="actual-actions"><button onClick={initialize} disabled={busy} title="offline PPA3 OpenLane 결과를 반영한 config의 MACROS 좌표와 ADC/SRAM LEF 크기로 복원">Offline PPA3로 초기화</button><button onClick={() => optimize('constrained')} disabled={busy || optimizing}>제약기반 후보 생성</button><button onClick={() => optimize('sa')} disabled={busy || optimizing}>SA 기반 후보 생성</button>{optimizing && <button className="stop" onClick={cancelOptimize}>중지</button>}<small className="actual-init-source"><b>초기값 출처</b> 별도 offline PPA3 OpenLane 실행 → ppa3_adc_capture/config.json MACROS 좌표 + ADC/SRAM LEF 실제 크기</small><button onClick={prepare} disabled={busy}>후보 DEF 설정 준비</button><button className="run" onClick={run} disabled={busy || job?.status === 'running' || job?.status === 'queued'}>OpenLane 끝까지 실행</button><button className="history-button" onClick={() => setHistoryOpen(value => !value)}>개선 히스토리 ({history.length})</button></div>
+        {optimizationTask && <div className={`actual-job ${optimizationTask.status}`}>
+          <div><b>{optimizationTask.status.toUpperCase()}</b><span>{optimizationTask.stage}</span></div>
+          <progress max="100" value={optimizationTask.progress}/>
+          <small>
+            {optimizationTask.mode === 'sa' || optimizationTask.mode === 'hybrid'
+              ? `seed ${optimizationTask.seed}/32 · iteration ${optimizationTask.iteration}/${optimizationTask.iterations_per_seed ?? 240}`
+              : `격자 후보 ${optimizationTask.current}/${optimizationTask.total}`}
+            {optimizationTask.evaluated !== undefined && ` · ${optimizationTask.evaluated.toLocaleString()} legal 평가`}
+          </small>
+          {optimizationTask.error && <p>{optimizationTask.error}</p>}
+        </div>}
         {optimization && <div className="optimization-result"><b>{optimization.generation_mode === 'sa' ? 'MACRO RE-PLACE + SA' : 'CONSTRAINT-BASED GRID SEARCH'}</b><span>pool {String(optimization.candidate_pool_size)}</span><span>grid {String(optimization.grid_candidates)}</span><span>SA {String(optimization.replace_sa_candidates)}</span><span>{Number(optimization.candidates_evaluated).toLocaleString()} legal evaluations</span><span>wire {String(optimization.estimated_manhattan_um)} µm</span><span>alignment {String(optimization.centerline_misalignment_um)} µm</span><span>halo {String(optimization.halo_um)} µm</span></div>}
         {error && <p className="actual-error">{error}</p>}
       </div>

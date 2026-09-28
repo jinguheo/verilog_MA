@@ -86,6 +86,15 @@ export interface AiPlan {
   metrics: BoardMetrics
 }
 
+export interface HybridProgress {
+  stage: 'replace' | 'sa' | 'complete'
+  iteration: number
+  total: number
+  accepted: number
+  attempted: number
+  bestValue: number
+}
+
 interface ReplacePlan extends AiPlan {
   instance: number
   gain: number
@@ -537,8 +546,15 @@ const candidateBias = (active: ActiveBlock, seed: number): number => {
 
 export const evaluatePlacement = (board: Board): number => placementValue(board, 0).value
 
+export const placementSignature = (board: Board): string => board
+  .flat()
+  .map(cell => cell ? `${cell.id}:${cell.instance}` : '.')
+  .join('|')
+
+const ENUMERATE_BEAM_WIDTH = 2
+
 const enumerate = (board: Board, id: BlockId, useHold: boolean, candidateSeed = 0): AiPlan[] => {
-  const plans: AiPlan[] = []
+  const coarse: Array<{ active: ActiveBlock; cleared: number; quickValue: number }> = []
   rotationsFor(id).forEach((points, rotation) => {
     const width = Math.max(...points.map(([x]) => x)) + 1
     const height = Math.max(...points.map(([, y]) => y)) + 1
@@ -550,12 +566,23 @@ const enumerate = (board: Board, id: BlockId, useHold: boolean, candidateSeed = 
         if (!isValid(board, active) || !respectsHardPlacementRules(board, active)) continue
         const placed = writeBlock(board, active)
         const completed = Math.max(0, countFullRows(placed) - countFullRows(board))
-        const result = placementValue(placed, completed)
-        plans.push({ id, rotation, x, y, value: result.value + candidateBias(active, candidateSeed) - (useHold ? 0.8 : 0), cleared: completed, useHold, metrics: result.metrics })
+        const centerX = x + width / 2
+        const centerY = y + height / 2
+        const edgeDistance = Math.min(centerX, BOARD_COLS - centerX, centerY, BOARD_ROWS - centerY)
+        const quickValue = completed * 120 + candidateBias(active, candidateSeed) + edgeDistance * 0.03
+        coarse.push({ active, cleared: completed, quickValue })
       }
     }
   })
-  return plans
+  return coarse
+    .sort((a, b) => b.quickValue - a.quickValue)
+    .slice(0, ENUMERATE_BEAM_WIDTH)
+    .map(({ active, cleared }) => {
+      const placed = writeBlock(board, active)
+      const result = placementValue(placed, cleared)
+      return { id, rotation: active.rotation, x: active.x, y: active.y, value: result.value + candidateBias(active, candidateSeed) - (useHold ? 0.8 : 0), cleared, useHold, metrics: result.metrics }
+    })
+    .sort((a, b) => b.value - a.value)
 }
 
 export const chooseAiPlan = (state: GameState): AiPlan | null => {
@@ -568,13 +595,39 @@ export const chooseAiPlan = (state: GameState): AiPlan | null => {
   return plans.sort((a, b) => b.value - a.value)[0] ?? null
 }
 
-export const applyAiPlan = (state: GameState): GameState => {
+export const applyAiPlan = (state: GameState, selectedPlan?: AiPlan): GameState => {
   if (state.gameOver || state.floorplanReady) return state
-  const plan = chooseAiPlan(state)
+  const plan = selectedPlan ?? chooseAiPlan(state)
   if (!plan) return { ...state, gameOver: true, lastEvent: 'AI found no legal floorplan' }
   const active: ActiveBlock = { id: plan.id, rotation: plan.rotation, x: plan.x, y: plan.y }
   const mode = state.placements < 2 ? 'macro' : 'gap-fill'
   return lockActive({ ...state, lastEvent: `AI ${mode} selected (${plan.x + 1}, ${plan.y + 1})` }, active)
+}
+
+export const createBeamCandidate = (baseSeed: number, poolSize = 2, beamWidth = 2): GameState => {
+  const beam: Array<{ state: GameState; score: number }> = []
+  const signatures = new Set<string>()
+  for (let offset = 0; offset < poolSize; offset += 1) {
+    const seed = baseSeed * poolSize + offset
+    let state = createGame(seed)
+    for (let step = 0; step < TOTAL_REQUIRED_BLOCKS + 2 && !state.floorplanReady && !state.gameOver; step += 1) state = applyAiPlan(state)
+    if (!state.floorplanReady || state.gameOver) continue
+    const metrics = measureBoard(state.board)
+    if (metrics.violations !== 0) continue
+    const signature = placementSignature(state.board)
+    if (signatures.has(signature)) continue
+    signatures.add(signature)
+    beam.push({ state, score: evaluatePlacement(state.board) })
+    beam.sort((a, b) => b.score - a.score)
+    if (beam.length > beamWidth) beam.length = beamWidth
+  }
+  const selected = beam[baseSeed % Math.max(1, beam.length)]
+  if (!selected) return { ...createGame(baseSeed), gameOver: true, lastEvent: `Coarse pool ${poolSize}: legal candidate unavailable` }
+  return {
+    ...selected.state,
+    candidateSeed: baseSeed,
+    lastEvent: `Coarse pool ${poolSize} → beam ${beam.length} · rank ${(baseSeed % beam.length) + 1}`,
+  }
 }
 
 export const createEliteMutation = (elite: GameState, candidateSeed: number): GameState => {
@@ -653,9 +706,10 @@ export const applyBestReplacement = (state: GameState): GameState => {
 }
 
 
-export const runReplaceThenAnnealing = (initial: GameState, iterations = 32): GameState => {
+export const runReplaceThenAnnealing = (initial: GameState, iterations = 6, onProgress?: (progress: HybridProgress) => void): GameState => {
   let baseline = initial
-  for (let pass = 0; pass < 24; pass += 1) {
+  for (let pass = 0; pass < 2; pass += 1) {
+    onProgress?.({ stage: 'replace', iteration: pass + 1, total: 2, accepted: 0, attempted: 0, bestValue: evaluatePlacement(baseline.board) })
     const before = baseline.replacements
     const next = applyBestReplacement(baseline)
     baseline = next
@@ -674,8 +728,12 @@ export const runReplaceThenAnnealing = (initial: GameState, iterations = 32): Ga
   let bestValue = currentValue
   let accepted = 0
   let attempted = 0
+  let staleSteps = 0
+  let completedIterations = 0
 
   for (let step = 0; step < iterations; step += 1) {
+    completedIterations = step + 1
+    onProgress?.({ stage: 'sa', iteration: completedIterations, total: iterations, accepted, attempted, bestValue })
     const instances = new Map<number, BlockId>()
     currentBoard.forEach(row => row.forEach(cell => { if (cell && cell.instance > 0) instances.set(cell.instance, cell.id) }))
     const entries = [...instances.entries()]
@@ -702,9 +760,17 @@ export const runReplaceThenAnnealing = (initial: GameState, iterations = 32): Ga
       if (candidateValue > bestValue) {
         bestBoard = candidateBoard
         bestValue = candidateValue
+        staleSteps = 0
+      } else {
+        staleSteps += 1
       }
+    } else {
+      staleSteps += 1
     }
+    if (staleSteps >= 4) break
   }
+
+  onProgress?.({ stage: 'complete', iteration: completedIterations, total: iterations, accepted, attempted, bestValue })
 
   return {
     ...baseline,
