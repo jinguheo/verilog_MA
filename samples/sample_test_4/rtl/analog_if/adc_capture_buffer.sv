@@ -2,7 +2,8 @@
 //
 // Two 12-bit samples plus four status bits per sample are packed into one
 // 32-bit word. The synchronous single-port array matches the selected SRAM22
-// 4 KiB (1024x32) macro behavior and can later be replaced by its wrapper.
+// 4 KiB SRAM22 behavior through adc_capture_sram. The readout FSM explicitly
+// accounts for the macro's registered (one-cycle) read response.
 // Before trigger it is circular; after PostTriggerSamples accepted samples it
 // freezes. Readout is only allowed while frozen, so single-port collisions are
 // impossible by construction.
@@ -44,18 +45,49 @@ module adc_capture_buffer #(
       $fatal(1, "PostTriggerSamples outside buffer capacity");
   end
 
-  logic [31:0] mem [DepthWords];
   logic [AddrW-1:0] wr_ptr_q, read_base_q, read_addr_q;
   logic [AddrW:0] valid_words_q, read_words_q, read_index_q;
   logic half_valid_q;
   logic [15:0] half_sample_q;
   logic [PostCntW-1:0] post_remaining_q;
   logic [15:0] sample16;
+  typedef enum logic [1:0] {RdIdle, RdIssue, RdWait, RdValid} read_state_e;
+  read_state_e read_state_q;
+  logic mem_en, mem_we;
+  logic [9:0] mem_addr;
+  logic [31:0] mem_wdata, mem_rdata;
+  logic capture_stop_now, capture_commit_word;
 
   assign sample16 = {sample_flags_i, sample_i};
   assign sample_ready_o = armed_o && !capture_done_o && !read_valid_o;
   wire sample_fire = sample_valid_i && sample_ready_o;
   wire read_fire = read_valid_o && read_ready_i;
+
+  always_comb begin
+    capture_stop_now = 1'b0;
+    if (!triggered_o && trigger_i) capture_stop_now = (PostTriggerSamples == 1);
+    else if (triggered_o) capture_stop_now = (post_remaining_q <= PostCntW'(1));
+    capture_commit_word = sample_fire && (half_valid_q || capture_stop_now);
+  end
+
+  // Capture and readout cannot overlap: when frozen, only the read FSM owns
+  // the one SRAM port. DepthWords is deliberately fixed to the selected macro.
+  always_comb begin
+    mem_en = 1'b0; mem_we = 1'b0; mem_addr = {10{1'b0}}; mem_wdata = '0;
+    if (capture_commit_word) begin
+      mem_en = 1'b1; mem_we = 1'b1;
+      mem_addr = 10'(wr_ptr_q);
+      mem_wdata = half_valid_q ? {sample16, half_sample_q} : {16'h0, sample16};
+    end else if (read_state_q == RdIssue) begin
+      mem_en = 1'b1;
+      mem_addr = 10'(read_addr_q);
+    end
+  end
+
+  adc_capture_sram u_capture_sram (
+    .clk_i, .en_i(mem_en), .we_i(mem_we), .wmask_i(4'hf),
+    .addr_i(mem_addr), .wdata_i(mem_wdata), .rdata_o(mem_rdata)
+  );
 
   function automatic logic [AddrW-1:0] ptr_next(input logic [AddrW-1:0] ptr);
     ptr_next = (ptr == AddrW'(DepthWords - 1)) ? '0 : ptr + AddrW'(1);
@@ -69,12 +101,14 @@ module adc_capture_buffer #(
       read_base_q <= '0; read_addr_q <= '0; read_words_q <= '0;
       read_index_q <= '0; read_valid_o <= 1'b0; read_data_o <= '0;
       read_first_o <= 1'b0; read_last_o <= 1'b0; read_done_o <= 1'b0;
+      read_state_q <= RdIdle;
     end else begin
       read_done_o <= 1'b0;
       if (arm_i) begin
         armed_o <= 1'b1; triggered_o <= 1'b0; capture_done_o <= 1'b0;
         sample_count_o <= '0; wr_ptr_q <= '0; valid_words_q <= '0;
         half_valid_q <= 1'b0; post_remaining_q <= '0; read_valid_o <= 1'b0;
+        read_state_q <= RdIdle;
       end else begin
         if (armed_o && !capture_done_o && trigger_i && !triggered_o) begin
           triggered_o <= 1'b1;
@@ -84,7 +118,6 @@ module adc_capture_buffer #(
         if (sample_fire) begin : capture_sample
           logic stop_now;
           logic commit_word;
-          logic [31:0] write_word;
           logic [AddrW-1:0] next_wr;
           logic [AddrW:0] next_valid_words;
 
@@ -102,9 +135,9 @@ module adc_capture_buffer #(
             sample_count_o <= sample_count_o + SampleCntW'(1);
 
           commit_word = half_valid_q || stop_now;
-          write_word = half_valid_q ? {sample16, half_sample_q} : {16'h0, sample16};
           if (commit_word) begin
-            mem[wr_ptr_q] <= write_word;
+            // The storage port is driven in this same clock edge through a
+            // registered write below; values are latched here for it.
             next_wr = ptr_next(wr_ptr_q);
             wr_ptr_q <= next_wr;
             next_valid_words = (valid_words_q < (AddrW+1)'(DepthWords))
@@ -123,20 +156,26 @@ module adc_capture_buffer #(
           end
         end
 
-        if (read_start_i && capture_done_o && !read_valid_o && read_words_q != '0) begin
+        if (read_start_i && capture_done_o && read_state_q == RdIdle && read_words_q != '0) begin
           read_addr_q <= read_base_q; read_index_q <= '0;
-          read_data_o <= mem[read_base_q]; read_valid_o <= 1'b1;
-          read_first_o <= 1'b1; read_last_o <= (read_words_q == (AddrW+1)'(1));
+          read_state_q <= RdIssue;
+        end else if (read_state_q == RdIssue) begin
+          read_state_q <= RdWait;
+        end else if (read_state_q == RdWait) begin
+          read_data_o <= mem_rdata; read_valid_o <= 1'b1;
+          read_first_o <= (read_index_q == '0);
+          read_last_o <= (read_index_q + (AddrW+1)'(1) == read_words_q);
+          read_state_q <= RdValid;
         end else if (read_fire) begin
           if (read_last_o) begin
             read_valid_o <= 1'b0; read_first_o <= 1'b0; read_last_o <= 1'b0;
             read_done_o <= 1'b1;
+            read_state_q <= RdIdle;
           end else begin
             read_index_q <= read_index_q + (AddrW+1)'(1);
             read_addr_q <= ptr_next(read_addr_q);
-            read_data_o <= mem[ptr_next(read_addr_q)];
-            read_first_o <= 1'b0;
-            read_last_o <= (read_index_q + (AddrW+1)'(2) == read_words_q);
+            read_valid_o <= 1'b0;
+            read_state_q <= RdIssue;
           end
         end
       end

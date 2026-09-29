@@ -64,9 +64,10 @@ $tops = @(
     @{ name = 'irq_ctrl';         files = @("$daqRoot\filelist\rtl_phase5.f") }
     @{ name = 'perf_cnt';         files = @("$daqRoot\filelist\rtl_phase5.f") }
     @{ name = 'daq_subsystem';    files = @("$daqRoot\filelist\rtl_phase5.f") }
-    @{ name = 'adc_capture_buffer'; files = @("$daqRoot\filelist\pkg.f", "$daqRoot\rtl\analog_if\adc_capture_buffer.sv") }
+    @{ name = 'adc_capture_buffer'; files = @("$daqRoot\filelist\pkg.f", "$daqRoot\rtl\analog_if\adc_capture_sram.sv", "$daqRoot\rtl\analog_if\adc_capture_buffer.sv") }
     @{ name = 'adc_byte_to_sample'; files = @("$daqRoot\filelist\pkg.f", "$daqRoot\rtl\analog_if\adc_byte_to_sample.sv") }
-    @{ name = 'adc_stream_capture'; files = @("$daqRoot\filelist\pkg.f", "$daqRoot\rtl\analog_if\adc_byte_to_sample.sv", "$daqRoot\rtl\analog_if\adc_capture_buffer.sv", "$daqRoot\rtl\analog_if\adc_stream_capture.sv") }
+    @{ name = 'adc_stream_capture'; files = @("$daqRoot\filelist\pkg.f", "$daqRoot\rtl\analog_if\adc_byte_to_sample.sv", "$daqRoot\rtl\analog_if\adc_capture_sram.sv", "$daqRoot\rtl\analog_if\adc_capture_buffer.sv", "$daqRoot\rtl\analog_if\adc_stream_capture.sv") }
+    @{ name = 'ppa3_adc_capture_top'; lint_args = @('-Wno-UNUSEDSIGNAL', '-Wno-UNDRIVEN'); defines = @('ADC_CAPTURE_USE_SRAM22'); files = @("$daqRoot\filelist\pkg.f", "$workspace\analog\build\sky130_ef_ip__adc3v_12bit\sky130_ef_ip__adc3v_12bit.blackbox.v", "$workspace\analog\third_party\sram22_sky130_macros\sram22_1024x32m8w8\sram22_1024x32m8w8.v", "$daqRoot\rtl\analog_if\sar_adc_ch.sv", "$daqRoot\rtl\analog_if\adc_byte_to_sample.sv", "$daqRoot\rtl\analog_if\adc_capture_sram.sv", "$daqRoot\rtl\analog_if\adc_capture_buffer.sv", "$daqRoot\rtl\analog_if\adc_stream_capture.sv", "$daqRoot\rtl\analog_if\ppa3_adc_capture_top.sv") }
 )
 if ($Only) { $tops = $tops | Where-Object { $Only -contains $_.name } }
 
@@ -88,6 +89,8 @@ foreach ($ch in $NumCh) {
                 '--top-module', $t.name,
                 "$daqRoot\filelist\waivers.vlt"
             )
+            foreach ($lintArg in $t.lint_args) { $args += $lintArg }
+            foreach ($define in $t.defines) { $args += "+define+$define" }
             foreach ($f in $t.files) {
                 if ($f -like '*.f') { $args += @('-f', $f) } else { $args += $f }
             }

@@ -4,6 +4,7 @@ __pycache__/
 
 node_modules/
 my_dashboard/dist/
+my_dashboard/dev-server.*.log
 
 # Generated verification artifacts and local operational files
 logs/
@@ -23,7 +24,13 @@ samples/**/uvm/uvm-regression*
 # the generated runs/ trees and stray render output are excluded.
 samples/**/asic/*/runs/
 samples/**/asic/*/layout/
+samples/**/asic/*/*.log
+samples/sample_test_4/asic/ppa3_adc_capture/candidate_*.json
+samples/sample_test_4/asic/ppa3_adc_capture/candidate_*.cfg
 samples/**/slpp_all/
+
+# AI layout candidate job state, logs, copied configs and rendered GDS images.
+physical_design/layout_candidates/jobs/
 
 # Diagnostic script output from tools/wsl/*.sh - reproducible, not source.
 tools/wsl/logs/

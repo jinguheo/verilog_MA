@@ -410,11 +410,16 @@ def _update_study(job):
 
 def _run_cace(job, candidate):
     relative_project, datasheet = CACE_PROJECTS[candidate["id"]]
-    project = ROOT / relative_project
+    source_project = ROOT / relative_project
+    project = JOBS_ROOT / job["id"] / "project"
+    # CACE may regenerate GDS from Magic when the source layout is newer.
+    # Run against a per-job copy so verification never rewrites vendored IP
+    # and every result retains the exact source/GDS pair that produced it.
+    shutil.copytree(source_project, project, dirs_exist_ok=True)
     run_path = JOBS_ROOT / job["id"] / "cace_runs"
-    wsl_project = "/mnt/d/MyWork/Veriolg_MA/" + relative_project.replace("\\", "/")
+    wsl_project = "/mnt/d/MyWork/Veriolg_MA/analog/jobs/" + job["id"] + "/project"
     wsl_runs = "/mnt/d/MyWork/Veriolg_MA/analog/jobs/" + job["id"] + "/cace_runs"
-    source_datasheet = project / datasheet
+    source_datasheet = source_project / datasheet
     runtime_datasheet = JOBS_ROOT / job["id"] / "datasheet.yaml"
     runtime_text = source_datasheet.read_text(encoding="utf-8")
     runtime_text = re.sub(

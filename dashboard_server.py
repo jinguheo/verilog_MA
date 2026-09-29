@@ -18,6 +18,19 @@ from design_flow import readiness
 from analog_optimizer import create_study, installation_status as analog_installation_status, studies
 from analog_runner import get_job as get_analog_job, jobs as analog_jobs, start_job as start_analog_job
 from parsac_runner import get_job as get_parsac_job, jobs as parsac_jobs, start_job as start_parsac_job
+from layout_candidate_runner import (
+    asset_path as layout_candidate_asset,
+    baseline_asset as layout_baseline_asset,
+    cancel_optimization as cancel_layout_optimization,
+    get_job as get_layout_candidate_job,
+    get_verification_batch as get_layout_verification_batch,
+    optimization_status as get_layout_optimization_status,
+    prepare_candidate as prepare_layout_candidate,
+    start_job as start_layout_candidate_job,
+    start_optimization as start_layout_optimization,
+    start_verification_batch as start_layout_verification_batch,
+    status as layout_candidate_status,
+)
 
 
 MAX_SCAN_FILES = 5_000
@@ -291,6 +304,40 @@ class Handler(BaseHTTPRequestHandler):
         if route == '/api/physical-design':
             payload = json.dumps(physical_design_status(), ensure_ascii=False).encode('utf-8')
             self.send_response(200); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
+        if route == '/api/layout-candidates':
+            payload = json.dumps(layout_candidate_status(), ensure_ascii=False).encode('utf-8')
+            self.send_response(200); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
+        if route.startswith('/api/layout-candidates/optimize/'):
+            task = get_layout_optimization_status(route.rsplit('/', 1)[-1])
+            if not task:
+                self.send_error(404, 'Unknown optimization task'); return
+            payload = json.dumps(task, ensure_ascii=False).encode('utf-8')
+            self.send_response(200); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
+        if route.startswith('/api/layout-candidates/jobs/'):
+            job = get_layout_candidate_job(route.rsplit('/', 1)[-1])
+            if not job:
+                self.send_error(404, 'Unknown layout candidate job'); return
+            payload = json.dumps(job, ensure_ascii=False).encode('utf-8')
+            self.send_response(200); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
+        if route.startswith('/api/layout-candidates/verification-batches/'):
+            batch = get_layout_verification_batch(route.rsplit('/', 1)[-1])
+            if not batch:
+                self.send_error(404, 'Unknown verification batch'); return
+            payload = json.dumps(batch, ensure_ascii=False).encode('utf-8')
+            self.send_response(200); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
+        if route.startswith('/api/layout-candidates/assets/'):
+            parts = route.split('/')
+            path = layout_candidate_asset(parts[-2], parts[-1]) if len(parts) >= 6 else None
+            if not path:
+                self.send_error(404, 'Unknown layout image'); return
+            payload = path.read_bytes()
+            self.send_response(200); self.send_header('Content-Type', 'image/png'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
+        if route.startswith('/api/layout-candidates/baseline-assets/'):
+            path = layout_baseline_asset(route.rsplit('/', 1)[-1])
+            if not path:
+                self.send_error(404, 'Unknown baseline layout image'); return
+            payload = path.read_bytes()
+            self.send_response(200); self.send_header('Content-Type', 'image/png'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
         if route.startswith('/api/physical-design/parsac/jobs/'):
             job = get_parsac_job(route.rsplit('/', 1)[-1])
             if not job:
@@ -315,7 +362,13 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         route = urlparse(self.path).path
-        if route not in {'/api/physical-design/configure', '/api/physical-design/parsac/run', '/api/analog/select', '/api/analog/run'}:
+        if route.startswith('/api/layout-candidates/optimize/') and route.endswith('/cancel'):
+            task = cancel_layout_optimization(route.split('/')[-2])
+            if not task:
+                self.send_error(404, 'Unknown optimization task'); return
+            payload = json.dumps(task, ensure_ascii=False).encode('utf-8')
+            self.send_response(200); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
+        if route not in {'/api/physical-design/configure', '/api/physical-design/parsac/run', '/api/layout-candidates/optimize', '/api/layout-candidates/prepare', '/api/layout-candidates/run', '/api/layout-candidates/verify-history', '/api/analog/select', '/api/analog/run'}:
             self.send_error(404, 'Not Found'); return
         try:
             length = int(self.headers.get('Content-Length', '0'))
@@ -326,6 +379,14 @@ class Handler(BaseHTTPRequestHandler):
                 result = create_physical_design_config(body)
             elif route == '/api/physical-design/parsac/run':
                 result = start_parsac_job(body)
+            elif route == '/api/layout-candidates/optimize':
+                result = start_layout_optimization({**body, '_record_history': True})
+            elif route == '/api/layout-candidates/prepare':
+                result = prepare_layout_candidate(body)
+            elif route == '/api/layout-candidates/run':
+                result = start_layout_candidate_job(body)
+            elif route == '/api/layout-candidates/verify-history':
+                result = start_layout_verification_batch(body)
             elif route == '/api/analog/select':
                 result = create_study(body)
             else:

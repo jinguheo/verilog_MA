@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import Layout3DStack from './Layout3DStack'
 
 type Tab = 'overview' | 'architecture' | 'verification' | 'synthesis' | 'layout' | 'documents'
 const tabs: Array<{ id: Tab; label: string }> = [
@@ -248,7 +249,7 @@ function Detail({ tab }: { tab: Tab }) {
       <div><b>왜 이 샘플이 있는가</b><p>Sample Test 3(229줄, 단일 파일)는 교육용이지, 실제 IP 리허설이 아닙니다. Test 4는 file list, block-level vs integration 검증, regression 관리, parameter sweep이 실제로 문제가 되는 규모(목표 ~5천줄 RTL, 24 모듈, 6 phase)를 겨냥합니다.</p></div>
       <div><b>가장 중요한 결정</b><p>계획된 <code>rtl/common/</code> 11개 모듈 중 9개를 직접 작성하는 대신 OpenTitan <code>hw/ip/prim</code>에서 재사용하기로 했고, <code>tb/prim_reuse_smoke.sv</code>로 그 매핑이 실제로 동작함을 증명했습니다.</p></div>
       <div><b>지금까지 검증</b><p>lint sweep 102/102, block TB 16/16, mutation 40/40 — phase 1(패키지·common), phase 2(AXI4-Lite CSR), phase 3(스트림 경로), phase 4(DMA 엔진), phase 5(top 통합) 전부 완료·검증. phase 6(블록별 formal)은 3개 블록 k-induction 무한 증명 완료, 나머지 진행 중 — 통합 UVM 환경은 phase 5 smoke 테스트로 대체 가능하다고 판단해 보류 결정.</p></div>
-      <div><b>검증 이후 목표는 ASIC</b><p>FPGA가 아니라 오픈소스 sky130 PDK로 실제 GDS까지 합성하기로 결정 — 이후 P&R 최적화가 메인 작업으로 이어짐. OpenLane2를 WSL 네이티브 venv로 설치·검증했고(초기 Docker에서 전환), 검증 완료된 블록 3개(skid_buffer, cnt_sat, chan_ctrl)가 DRC/LVS/Antenna 전부 통과하며 합성됐습니다. chan_top(첫 멀티클럭 대상)은 12/48ns 재합성으로 setup 위반을 926→5개까지 줄였고 지금 12/52ns로 완전 클로징을 재시도 중이며, daq_subsystem(8채널 top)은 첫 전체-IP 합성을 4번째로 시도하는 중입니다.</p></div>
+      <div><b>검증 이후 목표는 ASIC</b><p>FPGA가 아니라 오픈소스 sky130 PDK로 실제 GDS까지 합성하기로 결정 — 이후 P&R 최적화가 메인 작업으로 이어짐. OpenLane2를 WSL 네이티브 venv로 설치·검증했고(초기 Docker에서 전환), 검증 완료된 블록 3개(skid_buffer, cnt_sat, chan_ctrl)가 DRC/LVS/Antenna 전부 통과하며 합성됐습니다. chan_top(첫 멀티클럭 대상)은 RTL 파이프라이닝(ch_cause_o 레지스터화) + src_period 14ns로 전 코너 셋업 타이밍을 완전히 닫았고, 남은 안테나 위반 1건을 strategy 6으로 재검증 중(라이브)입니다. daq_subsystem(8채널 top)은 chan_top의 12/48ns 기준 worst-corner 부분 검증(STAMidPNR-3)이 라이브로 진행 중 — 상세·PPA 민감도 분석은 <b>General RTL Pipeline → P&R Research</b> 탭.</p></div>
     </div></Card>
     <Card kicker="PHASE PROGRESS" title="6-phase 계획 + ASIC 합성 트랙 대비 현황"><div className="pipeline-flow">
       <div className="pipeline-step pass"><span>01</span><b>pkg/ + common/</b><small>파일 리스트, 빌드 스크립트, lint gate</small><em>DONE</em></div>
@@ -257,7 +258,7 @@ function Detail({ tab }: { tab: Tab }) {
       <div className="pipeline-step pass"><span>04</span><b>DMA 엔진</b><small>dma_sched, desc_fetch, axi_rd_master, axi_wr_master, wr_track 전부 완료</small><em>DONE</em></div>
       <div className="pipeline-step pass"><span>05</span><b>top</b><small>irq_ctrl, perf_cnt, daq_subsystem — smoke 통합 테스트로 end-to-end 확인</small><em>DONE</em></div>
       <div className="pipeline-step blocked"><span>06</span><b>통합</b><small>블록별 formal 3/15+ 완료 · 통합 UVM은 보류 결정 · regression/mutation 대기</small><em>진행중</em></div>
-      <div className="pipeline-step blocked"><span>ASIC</span><b>sky130 합성</b><small>skid_buffer, cnt_sat, chan_ctrl(FSM) 완료 · chan_top 12/52ns 재합성 중 · daq_subsystem 4번째 시도 중 · dma_sched 대기</small><em>진행중</em></div>
+      <div className="pipeline-step blocked"><span>ASIC</span><b>sky130 합성</b><small>skid_buffer, cnt_sat, chan_ctrl(FSM) 완료 · chan_top 셋업 타이밍 완전 클로징(안테나 1건 재검증 중) · daq_subsystem worst-corner 부분 검증 진행 중 · dma_sched 대기</small><em>진행중</em></div>
     </div><p className="rtl-guide-note">각 phase는 parameter sweep 전체에서 lint clean이 나와야 다음 phase로 넘어갑니다 — 지금까지 어긴 적 없습니다. ASIC 합성 트랙은 RTL 검증(lint→TB→mutation)이 끝난 블록부터 phase 진행과 별도로 병행합니다. 전체 근거: <code>samples/sample_test_4/RESULTS.md</code>. 실시간 상세: 검증은 위 Verification 탭, formal은 Architecture 탭의 STATUS 카드와 <b>General RTL Pipeline → Verification/Formal</b> 탭, ASIC은 <b>General RTL Pipeline → Physical Design</b> 탭.</p></Card>
   </>
 }
@@ -269,6 +270,9 @@ function LayoutGallery() {
   const d = layoutDesigns.find(x => x.id === design) ?? layoutDesigns[0]
   const z = layoutZooms.find(x => x.key === zoom) ?? layoutZooms[2]
   return <>
+    <Card kicker="3D LAYOUT GAME" title="다층 배선과 트랜지스터 배치">
+      <Layout3DStack />
+    </Card>
     <Card kicker="GDS LAYOUT" title="완성된 레이아웃 보기">
       <div className="layout-controls">
         <div className="layout-pills" role="tablist" aria-label="design">
