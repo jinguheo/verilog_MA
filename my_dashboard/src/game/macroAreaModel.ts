@@ -769,6 +769,43 @@ export function candidateDies(minDie: Die, maxH: number): Die[] {
   for (let h = minDie.h; h <= maxH; h += DIE_SNAP) out.push({ w: minDie.w, h })
   return out
 }
+
+// 2차원 다이 형상 탐색: 세로만 늘리는 candidateDies와 달리 행 수 자체를 바꾼다.
+//
+// 처음 버전은 "수렴한 면적을 고정한 채 종횡비만 바꾸기"였는데, 실측해 보니 legal
+// 후보가 0개 나왔다 — 디버깅해 보니 원인은 면적을 고정한 게 틀린 전제였다. 이
+// 8-매크로 위상은 행 수(R)가 바뀌면 필요한 최소 면적 자체가 다르다(직접 계산: 2행
+// 7.77mm² < 4행 8.17mm² < 3행 8.96mm²) — 그런데 종횡비 sweep은 모든 형상에 같은
+// 면적(2행 기준 7.77mm²)을 강제했으니, 3·4행이 필요한 형상은 애초에 기하학적으로
+// 안 들어갈 좁은 다이를 만들고 있었다(예: 2780×2790 면적은 7.76mm²인데 4행에
+// 8.17mm²가 필요). squeeze()도 800폭 매크로를 그 좁은 폭에 비례 압축해 넣으려다
+// 매크로끼리 겹치는 배치를 만들었다.
+//
+// 고쳐서: 행 수 R(1~maxRows)마다 shelfRepack(perRow개씩 R행)이 실제로 요구하는
+// "빈틈없이 꽉 채운 최소 다이"를 closed form으로 직접 계산한다 — 가로는
+// perRow*매크로폭 + (perRow-1)*최소간격 + 가장자리×2, 세로는 R*매크로높이 +
+// (R-1)*채널폭(실측 하드 게이트) + 가장자리×2. 이 식 자체가 곧 legal한 배치이므로
+// (rows=2를 넣으면 정확히 실제 3700×2100이 나온다), squeeze로 욱여넣지 않고 이
+// 치수 그대로 후보 다이로 낸다.
+export function shapeVariantDies(macros: Macro[], maxRows = 4): Die[] {
+  if (macros.length === 0) return []
+  const w0 = macros[0].w, h0 = macros[0].h
+  if (!macros.every(m => m.w === w0 && m.h === h0)) return [] // 모든 매크로가 같은 크기라는 전제(현재 chan_top×8만 해당)
+  const out: Die[] = []
+  const seen = new Set<string>()
+  for (let rows = 1; rows <= Math.min(maxRows, macros.length); rows += 1) {
+    const perRow = Math.ceil(macros.length / rows)
+    const w = Math.ceil((2 * EDGE_MARGIN + perRow * w0 + (perRow - 1) * MIN_SPACING) / DIE_SNAP) * DIE_SNAP
+    const h = Math.ceil((2 * EDGE_MARGIN + rows * h0 + (rows - 1) * CHANNEL_SAFE_MARGIN) / DIE_SNAP) * DIE_SNAP
+    if (Math.max(w / h, h / w) > MAX_ASPECT) continue
+    const key = `${w}x${h}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push({ w, h })
+  }
+  return out
+}
+
 export function baseFor(d: Die, from: { die: Die; state: State }): { die: Die; state: State } {
   return { die: d, state: { macros: squeeze(from.state.macros, from.die, d), hubs: scaleHubs(from.state.hubs, from.die, d) } }
 }
