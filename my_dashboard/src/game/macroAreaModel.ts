@@ -580,7 +580,7 @@ export function repairFrom(d: Die, init: Macro[], hubs: Pos[], opts: AreaOpts, f
       for (const rows of [2, 1, 3, 4]) {
         const p = shelfRepack(d, m, rows)
         if (!p) continue
-        const spread = distributeAxis(d, p, 'y', 'channel')
+        const spread = distributeAxis(d, p, 'y', 'channel', CHANNEL_SAFE_MARGIN)
         packed = spread.feasible ? distributeAxis(d, spread.macros, 'x', 'even').macros : p
         rowsUsed = rows; break
       }
