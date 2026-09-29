@@ -657,11 +657,14 @@ export function toMacroPlacementCfg(macros: Macro[]): string {
 // 타이밍 리페어 버퍼 21,492 · hold 버퍼 19,835 포함), 합성 직후 glue 면적
 // 194,797µm²(15,152셀, 06-yosys-synthesis/reports/stat.rpt). config의
 // PL_TARGET_DENSITY_PCT=40.
-// 모듈별 면적은 합성이 flatten돼 남아 있지 않으므로, glue 전체를 300µm×300µm
-// 타일(=쓸만한 여유 공간 판정과 같은 크기)로 나눈다. 타일 하나에 40% 밀도로
-// 36,000µm²가 들어가 460,614µm²에는 13개가 필요하다. 타일을 어느 신호 그룹
-// 허브(dma_sched/csr/irq_perf)에 붙일지는 허브 가중치(3:1:1)로 나눈 근사다.
+// 모듈별 면적은 합성이 flatten돼 남아 있지 않으므로, glue 전체를 신호 그룹
+// 허브(dma_sched/csr/irq_perf)별 가중치(3:1:1)로 나눈 근사다.
 export const REAL_GLUE = { cellArea: 460614, cellCount: 74975, synthArea: 194797, synthCells: 15152, targetDensity: 0.4 } as const
+// 실측 sky130_fd_sc_hd row 치수 — samples/sample_test_4/asic/chan_ctrl의 실제 완주
+// run(RUN_2026-09-14_22-03-02) final DEF의 ROW 문에서 직접 읽음: 연속 ROW의 Y좌표
+// 간격(13.600−10.880)이 row 높이, STEP 값(460/1000)이 site 폭.
+export const STD_CELL_ROW_HEIGHT_UM = 2.72
+export const STD_CELL_SITE_WIDTH_UM = 0.46
 // tap·타이밍 리페어·hold 버퍼는 RTL이 작성한 로직이 아니라 P&R 도구가 나중에 끼워 넣은
 // 구조적 오버헤드다 (AI Chip Tetris의 filler·decap·tap과 같은 개념 — "다른 용도"). 위
 // 74,975셀 중 이 세 종류만 74,125개(98.9%)이고 나머지 850개(1.1%)가 합성 단계 로직의
@@ -674,6 +677,10 @@ export const REAL_GLUE_OTHER_PURPOSE_AREA = Math.round(REAL_GLUE.cellArea * REAL
 export const GLUE_TILE = USABLE_SQUARE * LO_CELL
 export const GLUE_TILE_CAP = GLUE_TILE * GLUE_TILE * REAL_GLUE.targetDensity
 export const GLUE_TILES_NEEDED = Math.ceil(REAL_GLUE.cellArea / GLUE_TILE_CAP)
+// 타일이 정사각형(GLUE_TILE×GLUE_TILE)에서 가변 폭 row 조각으로 바뀌면서, 턴당
+// 목표 면적(GLUE_TILE_CAP)은 그대로 두고 폭만 그 면적에 맞게 늘렸다 — 높이가
+// LO_CELL(100)로 줄었으니 같은 면적을 채우려면 폭은 GLUE_TILE보다 넓어진다.
+export const GLUE_TILE_MAX_WIDTH_UM = Math.round(GLUE_TILE_CAP / (LO_CELL * REAL_GLUE.targetDensity))
 
 // 가중치 비례(최대 잉여법)로 허브별 타일 수를 정하고, 쌓는 순서는 매번 "할당량
 // 대비 가장 뒤처진 허브"를 골라 섞는다 — 게임에서 한 허브만 몰아서 쌓이지 않도록.
@@ -692,31 +699,46 @@ export const GLUE_TILE_HUBS: number[] = (() => {
   return order
 })()
 
-export type GlueTile = { x: number; y: number; hub: number }
+// 정사각형(3×3 칸) 타일은 실제 표준셀 배치와 안 맞는 모양이었다 — 실제로는
+// OpenROAD가 매크로와 겹치는 std-cell row만 잘라내고(cutrows 단계) 남은 조각은
+// 길든 짧든 그대로 다 쓴다. 그래서 타일도 "정사각형"이 아니라 "한 줄(LO_CELL
+// 높이) 안에서 옆으로 이어진 빈 칸"을 폭 그대로 쓰는 가변 폭 조각으로 바꿨다 —
+// 실측: 이 다이에서 정사각형 규칙은 13개 중 12개만 들어간다고 나왔지만(총 필요
+// 면적의 2.3배가 남는 공간에 이미 있는데도), 가변 폭 규칙은 같은 다이에서
+// 100% 다 들어간다(회귀 테스트로 고정).
+export type GlueTile = { x: number; y: number; w: number; hub: number }
 
-// 매크로·기존 타일과 겹치지 않는 300µm 빈 정사각형 중 자기 허브에 가장 가까운 곳.
+// 턴당 목표량(GLUE_TILE_CAP, 기존과 동일 — 허브 배분 연속성 유지)만큼 채우되,
+// 그 자리에 정사각형이 들어갈 필요 없이 실제 남은 폭만큼만 쓴다. 짧은 조각밖에
+// 없으면 그만큼만 채우고(면적은 목표보다 작아짐), fillGlue가 다음 턴에 이어서 채운다.
 export function placeGlueTile(macros: Macro[], tiles: GlueTile[], hub: number, hubs: Pos[]): GlueTile | null {
-  const occ = occupancyGrid([...macros, ...tiles.map(t => ({ x: t.x, y: t.y, w: GLUE_TILE, h: GLUE_TILE }))])
-  const W = LO_COLS + 1
-  const pre = new Int32Array(W * (LO_ROWS + 1))
-  for (let r = 0; r < LO_ROWS; r++) for (let c = 0; c < LO_COLS; c++) {
-    pre[(r + 1) * W + (c + 1)] = occ[r * LO_COLS + c] + pre[r * W + (c + 1)] + pre[(r + 1) * W + c] - pre[r * W + c]
+  const occ = occupancyGrid([...macros, ...tiles.map(t => ({ x: t.x, y: t.y, w: t.w, h: LO_CELL }))])
+  const target = hubs[hub]
+  const targetCells = Math.max(1, Math.round(GLUE_TILE_MAX_WIDTH_UM / LO_CELL))
+  let best: { row: number; c0: number; len: number; d: number } | null = null
+  for (let r = 0; r < LO_ROWS; r++) {
+    let start = -1
+    for (let c = 0; c <= LO_COLS; c++) {
+      const free = c < LO_COLS && !occ[r * LO_COLS + c]
+      if (free && start < 0) start = c
+      if (!free && start >= 0) {
+        const len = c - start
+        const cx = (start + len / 2) * LO_CELL, cy = (r + 0.5) * LO_CELL
+        const d = Math.abs(cx - target.x) + Math.abs(cy - target.y)
+        if (!best || d < best.d) best = { row: r, c0: start, len, d }
+        start = -1
+      }
+    }
   }
-  const K = USABLE_SQUARE, target = hubs[hub]
-  let best: GlueTile | null = null, bestD = Infinity
-  for (let r = 0; r + K <= LO_ROWS; r++) for (let c = 0; c + K <= LO_COLS; c++) {
-    if (pre[(r + K) * W + (c + K)] - pre[r * W + (c + K)] - pre[(r + K) * W + c] + pre[r * W + c] !== 0) continue
-    const x = c * LO_CELL, y = r * LO_CELL
-    const d = Math.abs(x + GLUE_TILE / 2 - target.x) + Math.abs(y + GLUE_TILE / 2 - target.y)
-    if (d < bestD) { bestD = d; best = { x, y, hub } }
-  }
-  return best
+  if (!best) return null
+  const useCells = Math.min(best.len, targetCells)
+  return { x: best.c0 * LO_CELL, y: best.row * LO_CELL, w: useCells * LO_CELL, hub }
 }
 
 export type GlueResult = { tiles: GlueTile[]; needed: number; wl: number; complete: boolean }
 
 export function glueWirelength(tiles: GlueTile[], hubs: Pos[]): number {
-  return tiles.reduce((s, t) => s + Math.abs(t.x + GLUE_TILE / 2 - hubs[t.hub].x) + Math.abs(t.y + GLUE_TILE / 2 - hubs[t.hub].y), 0)
+  return tiles.reduce((s, t) => s + Math.abs(t.x + t.w / 2 - hubs[t.hub].x) + Math.abs(t.y + LO_CELL / 2 - hubs[t.hub].y), 0)
 }
 
 // 13개를 순서대로 한 번에 채운다. 들어갈 자리가 없으면 거기서 멈춘다(complete=false).

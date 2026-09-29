@@ -12,7 +12,7 @@
 import {
   DIE_W, DIE_H, MIN_SPACING, UTIL_WARN, impliedUtil, hubDefs, N_HUBS,
   GRID_COLS, GRID_ROWS, HOTSPOT_RATIO, PIN_ESCAPE_MARGIN, POWER_RING_MARGIN,
-  LO_CELL, USABLE_SQUARE, GLUE_TILE, REAL_GLUE, REAL_RUN_MACROS, REAL_RUN_HUBS,
+  LO_CELL, USABLE_SQUARE, GLUE_TILE, GLUE_TILE_CAP, REAL_GLUE, REAL_RUN_MACROS, REAL_RUN_HUBS,
   gapBetween, overlapAmount, rasterizeSegment, mulberry32, internalProjectionGaps, CHANNEL_SAFE_MARGIN,
   type Macro, type Pos, type State, type Cost, type GlueTile,
 } from './macroTetrisModel'
@@ -334,44 +334,51 @@ export function glueHubOrder(needed: number): number[] {
 
 export type GlueResultD = { tiles: GlueTile[]; needed: number; complete: boolean; mode: 'hub' | 'pack' }
 
-function freeSquares(d: Die, macros: Macro[], tiles: GlueTile[]): { x: number; y: number }[] {
+// 정사각형(3×3칸) 규칙은 실제 표준셀 row 배치와 안 맞았다 — OpenROAD는 macro와
+// 겹치는 row만 잘라내고(cutrows) 남은 조각은 길든 짧든 그대로 다 쓰는데, 정사각형
+// 규칙은 "완전히 빈 300×300 정사각형"만 인정해서 남는 공간이 총량은 충분해도
+// (이 다이 기준 필요량의 2.3배) 필요한 13개 중 12개만 들어간다고 잘못 나왔다.
+// 대신 "한 줄(LO_CELL 높이) 안에서 옆으로 이어진 빈 칸"을 폭 그대로 쓰는 가변
+// 폭 조각으로 바꿨다 — macroTetrisModel.ts의 placeGlueTile과 같은 방식.
+function freeRunsD(d: Die, macros: Macro[], tiles: GlueTile[]): { row: number; c0: number; len: number }[] {
   const { cols, rows } = loDims(d)
-  const occ = occupancy(d, [...macros, ...tiles.map(t => ({ x: t.x, y: t.y, w: GLUE_TILE, h: GLUE_TILE }))])
-  const pre = prefixSum(occ, cols, rows)
-  const K = USABLE_SQUARE, out: { x: number; y: number }[] = []
-  for (let r = 0; r + K <= rows; r++) for (let c = 0; c + K <= cols; c++) {
-    if (squareFilled(pre, cols, r, c, K) === 0) out.push({ x: c * LO_CELL, y: r * LO_CELL })
+  const occ = occupancy(d, [...macros, ...tiles.map(t => ({ x: t.x, y: t.y, w: t.w, h: LO_CELL }))])
+  const runs: { row: number; c0: number; len: number }[] = []
+  for (let r = 0; r < rows; r++) {
+    let start = -1
+    for (let c = 0; c <= cols; c++) {
+      const free = c < cols && !occ[r * cols + c]
+      if (free && start < 0) start = c
+      if (!free && start >= 0) { runs.push({ row: r, c0: start, len: c - start }); start = -1 }
+    }
   }
-  return out
+  return runs
 }
 
-// 1순위: 자기 허브에 가장 가까운 빈 300µm 자리(배선 짧게). 탐욕이라 판을 쪼개
-// 뒤 타일이 못 들어갈 수 있으므로, 실패하면 2순위로 위→아래·왼→오른쪽 순서의
-// 빈틈없는 패킹(들어가는지 여부 우선)을 시도한다.
-export function fillGlueD(d: Die, macros: Macro[], hubs: Pos[], needed: number): GlueResultD {
+// 자기 허브에 가장 가까운 빈 조각부터, 턴당 목표 폭(GLUE_TILE_CAP과 같은 면적,
+// 기존과 동일 기준)까지 채운다. 짧은 조각밖에 없으면 그만큼만 채우고 다음
+// 허브 차례로 넘어간다 — 정사각형이 아니라서 대부분의 자리를 실제로 쓸 수 있다.
+export function fillGlueD(d: Die, macros: Macro[], hubs: Pos[], needed: number, density: number = REAL_GLUE.targetDensity): GlueResultD {
   const order = glueHubOrder(needed)
+  // 턴당 목표 "면적"은 GLUE_TILE_CAP(고정 기준 밀도)으로 기존과 동일하게 유지하고,
+  // 그 면적을 채우는 데 필요한 "폭"만 지금 선택된 density로 환산한다 — density가
+  // 높을수록 같은 폭에 더 많은 면적이 들어가므로 필요한 폭(targetCells)은 줄어든다.
+  const targetCells = Math.max(1, Math.round(GLUE_TILE_CAP / (LO_CELL * LO_CELL * density)))
   const tiles: GlueTile[] = []
   for (const hub of order) {
-    const free = freeSquares(d, macros, tiles)
+    const free = freeRunsD(d, macros, tiles)
     if (free.length === 0) break
     const t = hubs[hub]
     let best = free[0], bestD = Infinity
     for (const f of free) {
-      const dd = Math.abs(f.x + GLUE_TILE / 2 - t.x) + Math.abs(f.y + GLUE_TILE / 2 - t.y)
+      const cx = (f.c0 + f.len / 2) * LO_CELL, cy = (f.row + 0.5) * LO_CELL
+      const dd = Math.abs(cx - t.x) + Math.abs(cy - t.y)
       if (dd < bestD) { bestD = dd; best = f }
     }
-    tiles.push({ ...best, hub })
+    const useCells = Math.min(best.len, targetCells)
+    tiles.push({ x: best.c0 * LO_CELL, y: best.row * LO_CELL, w: useCells * LO_CELL, hub })
   }
-  if (tiles.length === needed) return { tiles, needed, complete: true, mode: 'hub' }
-
-  const packed: GlueTile[] = []
-  for (const hub of order) {
-    const free = freeSquares(d, macros, packed)
-    if (free.length === 0) break
-    packed.push({ ...free[0], hub })
-  }
-  const best = packed.length > tiles.length ? packed : tiles
-  return { tiles: best, needed, complete: best.length === needed, mode: best === packed ? 'pack' : 'hub' }
+  return { tiles, needed, complete: tiles.length === needed, mode: 'hub' }
 }
 
 // ---- 면적 탐색 공통 타입 ----
@@ -662,7 +669,7 @@ export function attemptDie(prev: State, prevDie: Die, d: Die, opts: AreaOpts): {
   const c = costD(state, d)
   return {
     attempt: { die: d, ok: true, reason: '통과', steps: r.steps, cost: c.total },
-    accept: { die: d, state, glue: fillGlueD(d, r.macros, hubs, glueTilesNeeded(opts.density)), c, util: dieUtil(d, r.macros), reqDensity: requiredDensity(d, r.macros), steps: r.steps },
+    accept: { die: d, state, glue: fillGlueD(d, r.macros, hubs, glueTilesNeeded(opts.density), opts.density), c, util: dieUtil(d, r.macros), reqDensity: requiredDensity(d, r.macros), steps: r.steps },
   }
 }
 

@@ -9,7 +9,7 @@
 // 배선이 짧은 순으로 실제 OpenLane DRC/LVS 검증 대상으로 내보낸다.
 // 모델: game/macroAreaModel.ts, 계산: 웹 워커.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { hubDefs, N_HUBS, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, GLUE_TILE, LO_CELL, MIN_SPACING, CHANNEL_SAFE_MARGIN, REAL_CHAN_TOP, cloneState, type State, type GlueTile, type Macro, type Pos } from '../game/macroTetrisModel'
+import { hubDefs, N_HUBS, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, LO_CELL, MIN_SPACING, CHANNEL_SAFE_MARGIN, REAL_CHAN_TOP, cloneState, type State, type GlueTile, type Macro, type Pos } from '../game/macroTetrisModel'
 import {
   BASE_DIE, EDGE_MARGIN, SHRINK_LADDER, SHAPE_LABEL, ISSUE_LABEL, CHANNEL_SAMPLES, analyzeLeftoverD, costD, gateReason, diagnoseD,
   summarizeIssues, requiredDensity, dieArea, dieUtil, glueTilesNeeded, fillGlueD, realStart, toAreaCfg, candidateDies, shapeVariantDies, baseFor, metricsOf, layoutSig, scaleHubs,
@@ -129,11 +129,12 @@ function drawArea(ctx: CanvasRenderingContext2D, v: BoardView, glue: GlueTile[],
     ctx.beginPath(); ctx.moveTo((a.x + a.w / 2) * s, (a.y + a.h / 2) * s); ctx.lineTo((b.x + b.w / 2) * s, (b.y + b.h / 2) * s); ctx.stroke(); ctx.setLineDash([])
   }
 
+  // 이제 정사각형이 아니라 가변 폭(row 조각)이라 t.w를 그대로, 높이는 LO_CELL.
   glue.forEach((t, i) => {
     ctx.fillStyle = 'rgba(126,104,215,0.55)'
-    ctx.fillRect(t.x * s + 1, t.y * s + 1, GLUE_TILE * s - 2, GLUE_TILE * s - 2)
+    ctx.fillRect(t.x * s + 1, t.y * s + 1, t.w * s - 2, LO_CELL * s - 2)
     ctx.strokeStyle = hubDefs[t.hub].color; ctx.lineWidth = 1.5
-    ctx.strokeRect(t.x * s + 1, t.y * s + 1, GLUE_TILE * s - 2, GLUE_TILE * s - 2)
+    ctx.strokeRect(t.x * s + 1, t.y * s + 1, t.w * s - 2, LO_CELL * s - 2)
     ctx.fillStyle = '#fff'; ctx.font = 'bold 8px sans-serif'
     ctx.fillText(`S${i + 1}`, t.x * s + 3, t.y * s + 10)
   })
@@ -188,7 +189,13 @@ export default function MacroAreaTetris() {
   const [narration, setNarration] = useState(`${start.label}에서 시작합니다. ▶ 면적 탐색을 누르면 −${SHRINK_LADDER[0]}%부터 시도하고, 실패하면 같은 배치에서 ${SHRINK_LADDER.slice(1).map(p => `−${p}%`).join('→')}로 폭을 줄여 재시도합니다. 성공하면 그 배치에서 다시 −${SHRINK_LADDER[0]}%부터 이어갑니다.`)
   const [best, setBest] = useState<Best | null>(() => readJson<Best>(bestKey(initialOpts)))
   const [cands, setCands] = useState<Cand[]>(() => validCands(readJson<Cand[]>(candKey(initialOpts)) ?? [], initialOpts))
-  const [utilMin, setUtilMin] = useState(0.75)
+  // 75%가 기본값이었는데, 실제 신호 격자(3700×2100)에서 나오는 모든 후보의
+  // utilization은 71.82%다(macro+glue 면적은 고정, 다이 면적도 같은 다이 크기 안에서는
+  // 전부 같으므로 위치가 달라도 util은 동일) — 그래서 후보를 108개 만들어도 기본
+  // 필터가 전부 숨겨서 "CANDIDATE POOL"이 텅 비어 보였다(실측 재현: 사용자 리포트
+  // "상태 화면에는 있는데 실재 후보는 없어"). 지금까지 알려진 형상(2행 71.8%, 4행
+  // 68.3%, 3행 62.3% — 4행/3행은 아직 legal화가 안 되지만) 전부 보이도록 60%로 낮춤.
+  const [utilMin, setUtilMin] = useState(0.6)
   const [genProgress, setGenProgress] = useState<{ done: number; total: number; found: number } | null>(null)
   const [selCand, setSelCand] = useState<string | null>(null)
   const [checked, setChecked] = useState<Set<string>>(new Set())
@@ -536,9 +543,9 @@ export default function MacroAreaTetris() {
           </div>
           {genProgress && <p className="key-help" style={{ marginTop: 4 }}>후보 생성 다이 {genProgress.done}/{genProgress.total} · 통과 배치 {genProgress.found}개</p>}
           <div className="chip-switches" style={{ marginTop: 5, gridTemplateColumns: '1fr' }}>
-            <button onClick={() => { const r = fillGlueD(cur.die, cur.state.macros, cur.state.hubs, glueTilesNeeded(opts.density)); setGlue(r.tiles); setBoard(null) }} disabled={locked}>표준셀 타일 표시 (표시용)</button>
+            <button onClick={() => { const r = fillGlueD(cur.die, cur.state.macros, cur.state.hubs, glueTilesNeeded(opts.density), opts.density); setGlue(r.tiles); setBoard(null) }} disabled={locked}>표준셀 타일 표시 (표시용)</button>
           </div>
-          <p className="key-help" style={{ marginTop: 4 }}>후보 만들기 = ① 지금 다이부터 3700×2100 높이까지 10µm마다(같은 폭) ② 같은 면적에서 종횡비만 바꾼 다이(2차원 형상 sweep, MAX_ASPECT 안에서 최대 9개) — 각 다이마다 세로 여유 분할(채널 폭 {CHANNEL_SAMPLES + 1}단계 × 위/아래 배분 3) × 가로 분배 4가지를 진단→처리 알고리즘에 통과시킵니다. 폭이 좁아 4개씩 2행으로 못 들어가는 형상은 처리 알고리즘이 3·4행으로 재구성하거나 실패로 걸러집니다. 탐색이 수렴하면 자동으로 실행됩니다.</p>
+          <p className="key-help" style={{ marginTop: 4 }}>후보 만들기 = ① 지금 다이부터 3700×2100 높이까지 10µm마다(같은 폭) ② 행 수(1~4)별로 필요한 최소 다이를 closed form으로 계산한 형상(2차원 형상 sweep, MAX_ASPECT 안에서 최대 3개 — 3·4행은 아직 legal 후보 미생성) — 각 다이마다 세로 여유 분할(채널 폭 {CHANNEL_SAMPLES + 1}단계 × 위/아래 배분 3) × 가로 분배 4가지를 진단→처리 알고리즘에 통과시킵니다. 폭이 좁아 4개씩 2행으로 못 들어가는 형상은 처리 알고리즘이 3·4행으로 재구성하거나 실패로 걸러집니다. 탐색이 수렴하면 자동으로 실행됩니다.</p>
         </div>
 
         <label className="speed-control">시도 간격 <input type="range" min={0} max={1500} step={100} value={speed} onChange={e => setSpeed(Number(e.target.value))}/><b>{speed}ms</b></label>
@@ -671,19 +678,19 @@ export default function MacroAreaTetris() {
         <article><b>후보·히스토리 관리</b><span>좌표 signature 중복 제거, 재발견 누적, 처리 단계별 layout 보존</span></article>
         <article><b>Worker·수동 편집·출력</b><span>백그라운드 계산, macro drag, 후보 저장과 OpenLane config JSON 출력</span></article>
       </div>
-      <div className="roadmap-section-title future"><div><small>FUTURE IMPROVEMENTS</small><h5>추후 개선 사항 요약</h5></div><span>아직 Macro Area에 미연결</span></div>
+      <div className="roadmap-section-title future"><div><small>ROADMAP STATUS</small><h5>완료·부분 구현·미연결 항목</h5></div><span>2026-09-29 코드 기준</span></div>
       <div className="roadmap-grid">
         <article className="game-done"><header><b>random legal start 연결</b><em>DONE · 2026-09-29</em></header><p>후보 생성이 <code>seeds: 0</code>으로 호출돼 무작위 시작점이 전혀 없었습니다 — 이제 12개(로드맵 권장 8~16개 범위)를 실제로 흩뿌려 deterministic 여유 분할 후보에 더합니다. 다만 지금 붙은 건 Macro Tetris의 <b>Rip-up(greedy 다듬기)</b>까지고, 온도 기반으로 일부 나쁜 이동도 받아들이는 <b>SA 자체는 아직</b>입니다 — local minimum 탈출력은 SA를 실제로 붙여야 더 좋아집니다.</p><small>남은 일: repairFrom의 polish를 SA로 교체</small></article>
-        <article className="game-done"><header><b>복수 선택·그룹 이동</b><em>GAME PATTERN READY</em></header><p>현재는 macro 하나만 drag합니다. 그룹 선택 패턴을 적용해 행·기능군을 상대 위치 그대로 이동하고 수동 후보 snapshot을 남깁니다.</p><small>목표: channel 행 전체 수동 조정</small></article>
+        <article><header><b>복수 선택·그룹 이동</b><em>P2 · NOT IMPLEMENTED</em></header><p>현재는 macro 하나만 drag할 수 있습니다. 그룹 선택 패턴은 다른 게임에 있지만 Macro Area에는 아직 연결되지 않았습니다.</p><small>목표: channel 행 전체 수동 조정 + snapshot</small></article>
         <article><header><b>실제 net 연결 비용</b><em>P0 · NEXT</em></header><p>모든 macro를 모든 hub에 연결하는 근사 비용을 macro↔hub connectivity와 criticality 가중치로 교체합니다. pin 위치가 있으면 HPWL도 함께 계산합니다.</p><small>검증: proxy 순위 ↔ GlobalRoute wirelength 상관도</small></article>
-        <article><header><b>2차원 다이 형상 탐색</b><em>PARTIAL · 2026-09-29</em></header><p><code>shapeVariantDies</code>가 행 수(1~4)별로 필요한 최소 다이를 closed form으로 계산해 <code>generate()</code>에 더했습니다 — 이 값 자체는 실측과 정확히 일치합니다(2행 3700×2100=7.77mm², 3행 2800×3200=8.96mm², 4행 1900×4300=8.17mm², 1행은 종횡비 7.3으로 MAX_ASPECT 제외). <b>다만 3·4행은 아직 legal 후보를 못 만듭니다</b> — 디버깅해 보니 <code>repairFrom</code>의 ② 행 재구성 단계가 <code>distributeAxis(d,p,'y','channel')</code>를 target 없이 불러 기본값 200µm(PIN_ESCAPE_MARGIN)까지만 채널을 벌리고, ③ 여유 재분배가 300µm로 재시도해도 행별 x-band 그룹핑 때문에 일부 채널만 닫힙니다. 지금은 안전합니다(못 들어가는 형상은 그냥 0개로 걸러짐, 크래시나 오탐 없음) — 다음 세션에서 ② 단계에 <code>CHANNEL_SAFE_MARGIN</code> target을 명시하는 것부터 시도.</p><small>재현: macroAreaModel.regression.ts에 아직 미반영 — 다음에 추가</small></article>
+        <article><header><b>2차원 다이 형상 탐색</b><em>PARTIAL · 2026-09-29</em></header><p><code>shapeVariantDies</code>가 행 수(1~4)별로 필요한 최소 다이를 closed form으로 계산해 <code>generate()</code>에 더했습니다 — 2행 3700×2100=7.77mm², 3행 2800×3200=8.96mm², 4행 1900×4300=8.17mm²이며 1행은 종횡비 제한으로 제외됩니다. <b>다만 3·4행은 아직 legal 후보를 못 만듭니다</b> — repairFrom의 행 재구성이 200µm까지만 채널을 벌려 300µm gate를 통과하지 못합니다. 잘못 통과시키지는 않고 후보 0개로 안전하게 제외됩니다.</p><small>크기 계산은 macroAreaModel.regression.ts에서 회귀 검사 중 · 남은 일: 3·4행 legalize</small></article>
         <article><header><b>10→Top 3 실제 검증 퍼널</b><em>P0 · SIGNOFF</em></header><p>상위 10개는 공통 합성 checkpoint를 재사용해 placement·global route·STA까지만 실행하고, 상위 3개만 detailed route·DRC/LVS로 이어갑니다.</p><small>도구: OpenROAD · TritonRoute · Magic/KLayout · Netgen</small></article>
         <article><header><b>PASS-only PPA best</b><em>P0 · SIGNOFF</em></header><p>utilization 단독 best 대신 DRC/LVS PASS 후보만 area·wirelength·WNS/TNS로 Pareto 관리하고, 실제 best를 다음 SA seed로 되돌립니다.</p><small>목표: proxy best와 signoff best 분리</small></article>
         <article><header><b>채널 기준 자동 보정</b><em>P1 · FEEDBACK</em></header><p>현재 300µm hard gate를 유지하되 여러 실제 실행의 DPL·congestion·timing 결과를 축적해 macro group별 안전 폭을 보정합니다.</p><small>주의: 1회 실패값의 과적합 방지</small></article>
         <article><header><b>실제 표준셀 수용성</b><em>P1 · FEEDBACK</em></header><p>단순 남는 면적 density 외에 usable row 단절, halo, PDN obstruction과 pin-access 밀도를 빠른 placement 결과로 평가합니다.</p><small>도구: RePlAce · DPL · FastRoute</small></article>
-        <article><header><b>작업 취소·후보 저장 강화</b><em>P2 · QUALITY</em></header><p>오래된 Worker 결과만 무시하지 말고 실제 계산을 취소하며, 최대 800개 후보와 단계 기록은 localStorage 대신 IndexedDB 또는 파일 registry로 옮깁니다.</p><small>추가: gate·repair·export 회귀 테스트</small></article>
+        <article><header><b>후보 저장 강화</b><em>P2 · QUALITY</em></header><p>작업 중 Reset 시 Worker를 terminate/restart하는 실제 취소는 완료됐습니다. 남은 일은 최대 800개 후보와 단계 기록을 localStorage 대신 IndexedDB 또는 파일 registry로 옮기는 것입니다.</p><small>완료: Worker 취소·기본 회귀 테스트 · 남음: 영속 저장소</small></article>
       </div>
-      <div className="flow-implementation-status"><span className="done"><b>현재 구현</b> 면적 축소 사다리 · 3종 형상 · 물리 gate · 실패별 repair · 후보 중복 제거 · 단계별 layout</span><span className="next"><b>추후 우선순위</b> 실제 net 비용 → SA seed 8~16개 → 10개 GRT/STA → Top 3 signoff → PASS-only best</span></div>
+      <div className="flow-implementation-status"><span className="done"><b>현재 구현</b> 면적 축소 사다리 · 형상/행 수 후보 · random seed 12개 · 물리 gate · Worker 취소 · 회귀 테스트</span><span className="next"><b>추후 우선순위</b> 실제 net 비용 → 온도 기반 SA → 3·4행 legalize → 10개 GRT/STA → Top 3 signoff → PASS-only best</span></div>
     </section>
 
     <section className="chip-analysis-grid">

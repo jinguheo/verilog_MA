@@ -10,7 +10,7 @@
 // scattered (actually-failed) layout BETTER than the real passing grid layout
 // on every metric except channel width - this script exists so that kind of
 // mis-ranking can never silently come back after a future cost-function edit.
-import { cost, isLegal, preSignoffProxy, REAL_RUN_HUBS, REAL_RUN_MACROS, type Macro } from './macroTetrisModel'
+import { cost, isLegal, preSignoffProxy, REAL_RUN_HUBS, REAL_RUN_MACROS, fillGlue, REAL_GLUE, type Macro } from './macroTetrisModel'
 
 type RealRun = { name: string; expectLegal: boolean; why: string; locations: [number, number][] }
 
@@ -68,6 +68,18 @@ if (gridEntry?.legal) {
       failures++
     }
   }
+}
+
+// Glue-tile fit at the real signed-off grid layout: square (3x3-cell) tiles
+// only fit 12/13 there even though the leftover space totals 2.3x the needed
+// area (fragmentation, not shortage) - the row-run fix should fit all of them.
+{
+  const gridRun = REAL_RUNS.find(r => r.name.startsWith('grid'))!
+  const macros = runToMacros(gridRun.locations)
+  const glue = fillGlue(macros, REAL_RUN_HUBS.map(h => ({ ...h })))
+  const ok = glue.complete && glue.tiles.length === glue.needed
+  console.log(`${ok ? 'PASS' : 'FAIL'}  glue-tile row-run fit at real grid: ${glue.tiles.length}/${glue.needed} tiles placed (needed area ${REAL_GLUE.cellArea}um^2)`)
+  if (!ok) failures++
 }
 
 if (failures > 0) {

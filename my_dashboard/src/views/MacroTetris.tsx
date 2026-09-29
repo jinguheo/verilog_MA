@@ -56,7 +56,7 @@
 // 근사치다. 여기서 찾은 후보는 daq_subsystem/config_hierarchical_parsac.json
 // 으로 만들어 실제 OpenLane 실행을 돌려야 최종 확정된다.
 import { useEffect, useRef, useState } from 'react'
-import { DIE_W, DIE_H, N, MIN_SPACING, MACRO_MIN_SIDE, MACRO_MAX_SIDE, REAL_CHAN_TOP, CORE_RATIO, UTIL_WARN, impliedUtil, hubDefs, N_HUBS, type Pos, type Macro, REAL_RUN_MACROS, MIXED_MACROS, REAL_RUN_HUBS, type Cost, type State, type Candidate, isLegal, compareCandidates, LO_CELL, LO_COLS, LO_ROWS, analyzeLeftover, cost, LEFTOVER_CLEAN_PCT, CHANNEL_SAFE_MARGIN, preSignoffProxy, mulberry32, cloneState, clampMacro, stepSA, type RipUpResult, ripUpReplace, remainingStillFit, referenceCandidate, toMacroPlacementCfg, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, GLUE_TILE, GLUE_TILE_CAP, GLUE_TILES_NEEDED, GLUE_TILE_HUBS, type GlueTile, placeGlueTile, fillGlue, glueWirelength, bestMacroSpot, macrosSignature } from '../game/macroTetrisModel'
+import { DIE_W, DIE_H, N, MIN_SPACING, MACRO_MIN_SIDE, MACRO_MAX_SIDE, REAL_CHAN_TOP, CORE_RATIO, UTIL_WARN, impliedUtil, hubDefs, N_HUBS, type Pos, type Macro, REAL_RUN_MACROS, MIXED_MACROS, REAL_RUN_HUBS, type Cost, type State, type Candidate, isLegal, compareCandidates, LO_CELL, LO_COLS, LO_ROWS, analyzeLeftover, cost, LEFTOVER_CLEAN_PCT, CHANNEL_SAFE_MARGIN, preSignoffProxy, mulberry32, cloneState, clampMacro, stepSA, type RipUpResult, ripUpReplace, remainingStillFit, referenceCandidate, toMacroPlacementCfg, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, GLUE_TILE, GLUE_TILE_CAP, GLUE_TILES_NEEDED, GLUE_TILE_HUBS, GLUE_TILE_MAX_WIDTH_UM, type GlueTile, placeGlueTile, fillGlue, glueWirelength, bestMacroSpot, macrosSignature } from '../game/macroTetrisModel'
 import type { ReplaceSAResult, SolverJob, SolverProgress, SolverRequest } from '../game/macroTetrisWorker'
 
 type Glue = { tiles: GlueTile[]; sig: string }
@@ -93,17 +93,17 @@ const problemFacts = [
   ['chan_top 내부 실측', '다이 640,000 · 코어 613,701 · 셀 319,066 µm² (46,009셀, util 52%)', 'final/metrics.json의 design__die__area / core__area / instance__area__stdcell / instance__count / instance__utilization'],
   ['표준셀(glue) 면적', `라우팅 후 ${REAL_GLUE.cellArea.toLocaleString()} µm² (${REAL_GLUE.cellCount.toLocaleString()}셀) · 합성 직후 ${REAL_GLUE.synthArea.toLocaleString()} µm²`, '격자 baseline hierarchical_auto_20260924_142552의 design__instance__area__stdcell(탭셀·리페어/hold 버퍼 포함)과 06-yosys-synthesis/reports/stat.rpt'],
   ['↳ 그중 다른 용도(탭·타이밍/hold 버퍼)', `${REAL_GLUE_OTHER_PURPOSE_CELLS.toLocaleString()}셀 (${(REAL_GLUE_OTHER_PURPOSE_RATIO * 100).toFixed(1)}%) · 약 ${REAL_GLUE_OTHER_PURPOSE_AREA.toLocaleString()} µm²`, `탭셀 ${REAL_GLUE_OTHER_PURPOSE.tapCells.toLocaleString()} + 타이밍 리페어 버퍼 ${REAL_GLUE_OTHER_PURPOSE.timingRepairBuffers.toLocaleString()} + hold 버퍼 ${REAL_GLUE_OTHER_PURPOSE.holdBuffers.toLocaleString()} — RTL이 작성한 로직이 아니라 P&R이 나중에 끼워 넣은 것. 면적은 평균 셀 크기로 추정(카테고리별 실측 없음)`],
-  ['표준셀 타일', `${GLUE_TILE}×${GLUE_TILE} µm × ${GLUE_TILES_NEEDED}개`, `PL_TARGET_DENSITY_PCT=40 → 타일당 ${GLUE_TILE_CAP.toLocaleString()} µm². 모듈별 면적은 flatten돼 없어서 전체를 타일로 나누고 허브 가중치(3:1:1)로 배분한 근사`],
+  ['표준셀 타일', `최대 ${GLUE_TILE_MAX_WIDTH_UM}×${LO_CELL} µm(가변 폭) × 최대 ${GLUE_TILES_NEEDED}개`, `PL_TARGET_DENSITY_PCT=40 → 턴당 목표 ${GLUE_TILE_CAP.toLocaleString()} µm². 정사각형(${GLUE_TILE}×${GLUE_TILE}) 규칙은 실측 결과 남는 공간이 충분해도 13개 중 12개만 들어가 실제 row 배치처럼 가변 폭 조각으로 바꿈(회귀 테스트로 100% 배치 확인). 모듈별 면적은 flatten돼 없어서 전체를 타일로 나누고 허브 가중치(3:1:1)로 배분한 근사`],
   ['신호 그룹(넷)', 'dma_sched(가중치 3) · csr(1) · irq_perf(1)', 'daq_subsystem.sv의 실제 per-channel fan-out 배열을 3그룹으로 단순화'],
   ['최소 spacing', `${MIN_SPACING} µm`, '실제 성공한 config_hierarchical.json 격자 배치와 같은 수준 — "legal"이 실제 signoff 사례와 비슷한 여유를 의미하도록 맞춤'],
   ['배선 층', 'li1 ~ met5 (6개 라우팅 레이어)', 'chan_top 실제 실행의 RT_MIN_LAYER=met1 / RT_MAX_LAYER=met5 (+li1) — resolved.json에서 확인'],
 ] as const
 
-// Sample Test 4의 실제 signoff 현황 — 2026-09-24 14:5x 기준 최신 확인.
+// Sample Test 4의 실제 signoff 현황 — 2026-09-29 저장된 run 재감사 기준.
 const signoffStatus = [
   ['chan_top', '완료 · 5개 게이트 전부 clean', 'DRC 0 · LVS 0 · Antenna 0/0 · Setup ws +0.99ns(TNS 0) · Hold ws +0.125ns(TNS 0, 전 코너 위반 0건) — RUN_2026-09-23_12-48-47(final/metrics.json 직접 확인). 이 탭의 8개 매크로가 바로 이 완료된 블록', true],
-  ['daq_subsystem (flat)', '진행 중 · worst-corner 부분 검증', 'RUN_2026-09-24_13-44-52, 지금 CTS 단계(34번) 라이브. `--to STAMidPNR-3` — 전체 signoff 아니고 배치 후 타이밍 우선 확인 범위', false],
-  ['daq_subsystem (hierarchical, 이 탭의 실제 실행)', '진행 중 · 격자 배치 전체 실행', 'hierarchical_auto_20260924_142552, 지금 ResizerTimingPostCTS 단계(36번) 라이브. 1차 시도(자동배치 가정)는 PDN-0235로 실패 → 명시적 좌표로 수정 후 재실행 중 — "실제 실행" 후보 카드가 이 좌표', false],
+  ['daq_subsystem (flat)', '중단 · CTS 이후 STA까지만', 'RUN_2026-09-24_13-44-52는 35-openroad-stamidpnr-1까지 진행됐고 현재 실행 중인 프로세스가 없습니다. 전체 signoff 결과는 없습니다.', false],
+  ['daq_subsystem (hierarchical, 이 탭의 실제 실행)', '부분 검증 · signoff 실패', 'hierarchical_auto_20260924_142552는 detailed routing·post-PNR STA·XOR까지 도달했습니다. setup WNS −6.44ns, hold WNS −0.15ns, antenna 121 nets가 남았고 Magic DRC/LVS 완료 전 중단됐습니다.', false],
 ] as const
 
 function draw(ctx: CanvasRenderingContext2D, w: number, h: number, state: State, c: Cost, highlightIdx: number | null, glue: GlueTile[] = []) {
@@ -170,18 +170,19 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, state: State,
     ctx.fillText(`util ${Math.round(u * 100)}%`, p.x * sx + 3, p.y * sy + 31)
   })
 
-  // 표준셀 타일 — 자기 허브 색 테두리 + 허브까지 가는 연결선.
+  // 표준셀 타일 — 이제 정사각형이 아니라 가변 폭(row 조각)이라 t.w를 그대로 쓴다.
+  // 자기 허브 색 테두리 + 허브까지 가는 연결선.
   glue.forEach((t, i) => {
     const def = hubDefs[t.hub], hub = state.hubs[t.hub]
-    const cx = t.x + GLUE_TILE / 2, cy = t.y + GLUE_TILE / 2
+    const cx = t.x + t.w / 2, cy = t.y + LO_CELL / 2
     ctx.strokeStyle = def.color + '88'
     ctx.lineWidth = 1
     ctx.beginPath(); ctx.moveTo(cx * sx, cy * sy); ctx.lineTo(hub.x * sx, hub.y * sy); ctx.stroke()
     ctx.fillStyle = 'rgba(126,104,215,0.55)'
-    ctx.fillRect(t.x * sx + 1, t.y * sy + 1, GLUE_TILE * sx - 2, GLUE_TILE * sy - 2)
+    ctx.fillRect(t.x * sx + 1, t.y * sy + 1, t.w * sx - 2, LO_CELL * sy - 2)
     ctx.strokeStyle = def.color
     ctx.lineWidth = 1.5
-    ctx.strokeRect(t.x * sx + 1, t.y * sy + 1, GLUE_TILE * sx - 2, GLUE_TILE * sy - 2)
+    ctx.strokeRect(t.x * sx + 1, t.y * sy + 1, t.w * sx - 2, LO_CELL * sy - 2)
     ctx.fillStyle = '#fff'
     ctx.font = 'bold 8px sans-serif'
     ctx.fillText(`S${i + 1}`, t.x * sx + 3, t.y * sy + 10)
@@ -783,7 +784,7 @@ export default function MacroTetris() {
           {hubDefs.map(hd => <span key={hd.name}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 4, background: hd.color, marginRight: 4 }}/>{hd.name} (×{hd.weight})</span>)}
           <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: 'rgba(29,158,117,0.45)', marginRight: 4 }}/>표준셀 넣기 좋은 여유</span>
           <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: 'rgba(230,120,78,0.7)', marginRight: 4 }}/>조각난 여유(쓰기 어려움)</span>
-          <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: 'rgba(126,104,215,0.8)', marginRight: 4 }}/>표준셀 타일(300µm, 셀 {GLUE_TILE_CAP.toLocaleString()}µm²)</span>
+          <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: 'rgba(126,104,215,0.8)', marginRight: 4 }}/>표준셀 타일(최대 {GLUE_TILE_MAX_WIDTH_UM}×{LO_CELL}µm 가변 폭, 턴당 {GLUE_TILE_CAP.toLocaleString()}µm²)</span>
         </div>
       </div>
 
@@ -872,7 +873,7 @@ export default function MacroTetris() {
           <button style={{ gridColumn: '1 / -1' }} onClick={exportCfg} disabled={partial}>실제 config로 내보내기</button>
         </div>
 
-        <p className="key-help">드래그·화살표 키(20µm, Shift 100µm)로 이동, Tab으로 다음 매크로 선택. <b>HARD</b>(실선, 파랑)는 이미 하드닝된 GDS라 크기 고정·위치만 이동, <b>SOFT</b>(점선, 보라)는 W/H로 모양 변경 가능. 매크로 안쪽 점선은 실제 chan_top 셀 면적 {REAL_CHAN_TOP.cellArea.toLocaleString()}µm²({REAL_CHAN_TOP.cellCount.toLocaleString()}셀)을 같은 비율로 그린 것. <b>Rip-up+모양</b>은 SOFT 블록의 모양(util ≤{Math.round(UTIL_WARN * 100)}%, 가로세로비 1:2~2:1)까지 AI가 탐색합니다. SOFT 크기는 what-if — 실제로 쓰려면 그 크기로 chan_top을 다시 하드닝해야 합니다. 표준셀 타일은 허브(신호 그룹 중심)에 가장 가까운 빈 300µm 자리부터 채웁니다.</p>
+        <p className="key-help">드래그·화살표 키(20µm, Shift 100µm)로 이동, Tab으로 다음 매크로 선택. <b>HARD</b>(실선, 파랑)는 이미 하드닝된 GDS라 크기 고정·위치만 이동, <b>SOFT</b>(점선, 보라)는 W/H로 모양 변경 가능. 매크로 안쪽 점선은 실제 chan_top 셀 면적 {REAL_CHAN_TOP.cellArea.toLocaleString()}µm²({REAL_CHAN_TOP.cellCount.toLocaleString()}셀)을 같은 비율로 그린 것. <b>Rip-up+모양</b>은 SOFT 블록의 모양(util ≤{Math.round(UTIL_WARN * 100)}%, 가로세로비 1:2~2:1)까지 AI가 탐색합니다. SOFT 크기는 what-if — 실제로 쓰려면 그 크기로 chan_top을 다시 하드닝해야 합니다. 표준셀 타일은 허브(신호 그룹 중심)에 가장 가까운 빈 자리부터, 한 줄(100µm 높이) 안에서 이어진 폭만큼(최대 {GLUE_TILE_MAX_WIDTH_UM}µm) 채웁니다 — 실제 OpenROAD가 매크로와 겹치는 std-cell row만 잘라내고 남는 조각을 그대로 쓰는 것과 같은 방식입니다.</p>
       </aside>
     </section>
 
@@ -950,7 +951,7 @@ export default function MacroTetris() {
       <article className="chip-card">
         <div className="chip-card-title"><div><small>HEURISTIC SEARCH</small><h3>AI가 하는 일</h3></div><span>쌓기 · SA · RePlAce · Rip-up</span></div>
         <ol className="strategy-list">
-          <li><b>▶ 쌓기 플레이 (탐욕 + 선검사)</b><span>빈 다이에 매크로를 하나씩, 부분 배치 비용이 가장 낮은 legal 자리에 놓습니다. 남은 매크로가 더 들어갈 수 없게 막는 자리는 빠른 패킹 검사로 미리 뺍니다(이게 없으면 매크로 3에서 GAME OVER). 매크로가 다 놓이면 표준셀 타일 {GLUE_TILES_NEEDED}개를 각자 허브에 가장 가까운 빈 300µm 자리에 채웁니다.</span></li>
+          <li><b>▶ 쌓기 플레이 (탐욕 + 선검사)</b><span>빈 다이에 매크로를 하나씩, 부분 배치 비용이 가장 낮은 legal 자리에 놓습니다. 남은 매크로가 더 들어갈 수 없게 막는 자리는 빠른 패킹 검사로 미리 뺍니다(이게 없으면 매크로 3에서 GAME OVER). 매크로가 다 놓이면 표준셀 타일 최대 {GLUE_TILES_NEEDED}개를 각자 허브에 가장 가까운 빈 자리에, 한 줄 안에서 이어진 폭만큼(정사각형이 아니라 가변 폭) 채웁니다.</span></li>
           <li><b>SA 자동 진행 (확률적)</b><span>매 스텝 무작위로 하나를 옮겨보고 비용이 낮아지면 수락, 높아져도 온도에 비례한 확률로 수락 — 식으면 다시 데워서 끝나지 않고 계속 돕니다.</span></li>
           <li><b>RePlAce 스타일 (결정론적, 즉시)</b><span>전역 배치(허브로 당기기+서로 반발) → 합법화(밀어내기) 2단계로 한 번에 수렴 — 실제 RePlAce의 정전기 밀도 모델+Nesterov 경사하강 성격을 흉내.</span></li>
           <li><b>Rip-up &amp; Re-place (전수 탐색)</b><span>AI Chip Tetris와 동일한 원리 — 매크로를 하나씩 뽑아 100µm 격자의 모든 legal 위치를 평가하고, 실제로 비용이 낮아질 때만 옮깁니다. 개선되는 이동이 없으면 스스로 멈추는 결정론적 종료.</span></li>
@@ -1016,8 +1017,8 @@ export default function MacroTetris() {
         <ol className="strategy-list">
           <li><b>DRC/LVS 대기열을 실제 실행과 연결</b><span>현재 "DRC/LVS 검증 목록"은 JSON을 만들고 상태를 <code>queued</code>로 바꾸는 데서 끝납니다 — 실제 OpenLane은 실행되지 않습니다. (MacroAreaTetris.tsx:392) 권장 구조: 후보 최대 10개 → 공통 합성 checkpoint 재사용 → OpenROAD placement + global route → wirelength·overflow·WNS로 Top 3 → detailed route + DRC/LVS → PASS 후보 registry. PPA3에 추가한 절약형 검증 퍼널을 이 화면에도 재사용하는 것이 가장 효과적입니다.</span></li>
           <li><b>배선 비용을 실제 netlist 기반으로 변경</b><span>현재 비용은 모든 macro를 모든 hub에 연결해 Manhattan 거리를 더합니다. (macroAreaModel.ts:149) 실제로 연결되지 않은 net도 계산되어 순위가 왜곡될 수 있습니다. macro별 실제 연결 hub, 연결 폭/net criticality, timing-critical path 가중치, macro pin 위치, high-fanout net 분리가 필요합니다 — 최소한 <code>macro × hub connectivity matrix</code>를 두고 존재하는 연결만 비용에 포함해야 합니다.</span></li>
-          <li><b>후보 다양성 확장</b><span>후보 생성 함수에 random seed 경로가 있지만 실제 호출은 <code>seeds: 0</code>입니다. (MacroAreaTetris.tsx:351) 그래서 지금 후보군은 채널 폭 분할·위아래 여유 배분·가로 slack 배분·deterministic repair 조합에 집중돼 있습니다. random legal seed 8~16개, macro Re-place + SA, 행 순서 permutation, channel 폭 비대칭 변형, 통과 best 주변 ±10/±20/±50µm mutation을 추가하고, 개별 후보마다 signoff하지 않고 fast screening을 먼저 거쳐야 합니다.</span></li>
-          <li><b>다이 형상 후보도 2차원으로 탐색</b><span>수렴 이후 후보 생성은 최소 다이의 폭을 고정하고 높이만 10µm씩 증가시킵니다. (macroAreaModel.ts:765) "세로만 줄이는" 지금 구조엔 맞지만 일반적인 탐색은 아닙니다 — 같은 면적의 width/height 조합, 현재 aspect ratio 주변 ±2~10%, 폭 감소·높이 증가 교환, 높이 감소·폭 증가 교환 후보도 함께 유지해야 합니다.</span></li>
+          <li><b>후보 다양성 — 부분 개선</b><span>Macro Area 후보 생성에 random legal seed 12개가 실제 연결됐고 deterministic 여유 분할 후보와 함께 탐색합니다. 다만 이 경로의 다듬기는 greedy Rip-up이며, 온도 기반으로 나쁜 이동도 확률적으로 수용하는 실제 SA는 아직 없습니다. 다음 단계는 random seed 수 추가가 아니라 repairFrom polish를 SA로 교체하고 signoff best 주변 mutation을 연결하는 것입니다.</span></li>
+          <li><b>다이 형상 후보 — 부분 구현</b><span><code>shapeVariantDies</code>가 1~4행별 최소 W×H를 계산하고 후보 생성에 포함합니다. 2행 3700×2100은 legal하지만 3행·4행은 repairFrom의 행 재구성이 300µm 채널을 만들지 못해 아직 후보를 내지 못합니다. 크기 계산은 회귀 테스트로 고정됐고, 남은 일은 3·4행 legalize입니다.</span></li>
           <li><b>"best" 기준을 utilization 단독에서 변경</b><span>현재 최고 결과는 legal 후보 중 utilization이 가장 높으면 승격됩니다. (MacroAreaTetris.tsx:224) 하지만 utilization 최대 후보가 congestion 증가·WNS 악화·routing detour 증가·buffer 삽입 공간 부족·PDN/pin access 악화를 동반할 수 있습니다. <code>minimum-area best</code> · <code>minimum-wire best</code> · <code>best-routability</code> · <code>signoff-pass PPA best</code>로 나누고, 최종 best는 반드시 DRC/LVS PASS 후보에서만 승격해야 합니다.</span></li>
         </ol>
 
@@ -1034,9 +1035,9 @@ export default function MacroTetris() {
         <ul className="strategy-list">
           <li><b>그룹 이동</b><span>현재 macro 하나만 drag할 수 있습니다. AI Chip Tetris처럼 복수 선택·그룹 이동을 추가할 수 있습니다.</span></li>
           <li><b>Undo/redo</b><span>Undo/redo와 manual edit snapshot이 필요합니다.</span></li>
-          <li><b>취소된 작업의 Worker 점유</b><span>작업 취소 시 <code>jobRef</code>로 결과는 무시하지만 기존 Worker 계산은 계속됩니다 — 큰 후보 생성 도중 새 작업을 시작하면 이전 작업이 CPU를 계속 점유할 수 있습니다.</span></li>
+          <li><b>Worker 취소 — 해결됨</b><span>Reset 중 작업이 있으면 기존 Worker를 <code>terminate()</code>하고 새 Worker로 교체합니다. 결과만 무시하면서 CPU 계산이 남던 문제는 2026-09-29 수정됐습니다.</span></li>
           <li><b>저장소</b><span>후보 800개와 단계별 macro 좌표를 <code>localStorage</code>에 저장하므로 용량 초과 시 저장이 조용히 실패할 수 있습니다. IndexedDB나 백엔드 파일 registry가 더 안전합니다.</span></li>
-          <li><b>회귀 테스트 없음</b><span>Macro Area 모델 전용 자동 테스트가 없습니다. 최소한 overlap/spacing/boundary 판정, 300µm channel 경계값, 축소 사다리 수렴, signature 중복 제거, repair 후 legal 보장, export config 좌표 일치는 테스트가 필요합니다.</span></li>
+          <li><b>회귀 테스트 — 기본 세트 추가됨</b><span><code>macroAreaModel.regression.ts</code>가 실제 기준 배치 legality, 300µm channel gate, 축소 사다리 수렴, signature, config export, 2·3·4행 크기 계산을 검사합니다. 아직 Worker 취소 UI와 3·4행 legalization 성공은 테스트 대상이 아닙니다.</span></li>
         </ul>
         <p className="rule-disclaimer">가장 가치가 큰 다음 작업 순서: <b>실제 net 연결 기반 비용함수 → SA 후보 확장 → PPA3와 같은 10→Top 3 검증 퍼널 연결</b>.</p>
       </article>
