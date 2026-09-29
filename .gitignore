@@ -4,6 +4,7 @@ __pycache__/
 
 node_modules/
 my_dashboard/dist/
+my_dashboard/dev-server.*.log
 
 # Generated verification artifacts and local operational files
 logs/

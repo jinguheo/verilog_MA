@@ -1,5 +1,6 @@
 import json
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -7,6 +8,18 @@ import layout_candidate_runner as runner
 
 
 class LayoutCandidateRunnerTest(unittest.TestCase):
+    def test_optimization_status_reports_total_iterations_and_eta(self):
+        task_id = "timing-test"
+        runner._optimization_update(task_id, status="running", stage="SA 기반 후보 생성", progress=50, completed_iterations=120, total_iterations=7680)
+        time.sleep(0.01)
+        runner._optimization_update(task_id, progress=51, completed_iterations=240, total_iterations=7680)
+        status = runner.optimization_status(task_id)
+        self.assertEqual(status["completed_iterations"], 240)
+        self.assertEqual(status["total_iterations"], 7680)
+        self.assertGreaterEqual(status["elapsed_seconds"], 0)
+        self.assertGreaterEqual(status["estimated_total_seconds"], status["elapsed_seconds"])
+        self.assertGreaterEqual(status["estimated_remaining_seconds"], 0)
+
     def test_baseline_uses_actual_lef_dimensions(self):
         baseline = runner._baseline()
         self.assertEqual(baseline["design"], "ppa3_adc_capture_top")

@@ -7,6 +7,7 @@ import random
 import re
 import subprocess
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -38,14 +39,35 @@ def _optimization_update(task_id, **values):
             "id": task_id, "status": "running", "stage": "준비", "progress": 0,
             "current": 0, "total": 1, "seed": 0, "iteration": 0,
             "created_at": _now(), "cancel_requested": False,
+            "_started_at_epoch": time.time(),
         })
         task.update(values)
+        now_epoch = time.time()
+        elapsed = max(0.0, now_epoch - task["_started_at_epoch"])
+        task["elapsed_seconds"] = round(elapsed, 1)
+        progress = max(0.0, min(100.0, float(task.get("progress", 0))))
+        completed_iterations = int(task.get("completed_iterations", 0) or 0)
+        total_iterations = int(task.get("total_iterations", 0) or 0)
+        if total_iterations and "_sa_started_at_epoch" not in task and task.get("stage") == "SA 기반 후보 생성":
+            task["_sa_started_at_epoch"] = now_epoch
+        if completed_iterations > 0 and total_iterations >= completed_iterations:
+            sa_elapsed = max(0.0, now_epoch - task.get("_sa_started_at_epoch", now_epoch))
+            remaining = sa_elapsed / completed_iterations * (total_iterations - completed_iterations)
+            task["estimated_remaining_seconds"] = round(remaining, 1)
+            task["estimated_total_seconds"] = round(elapsed + remaining, 1)
+        elif progress > 1 and task.get("status") in {"queued", "running"}:
+            estimated_total = elapsed / (progress / 100.0)
+            task["estimated_total_seconds"] = round(estimated_total, 1)
+            task["estimated_remaining_seconds"] = round(max(0.0, estimated_total - elapsed), 1)
+        if task.get("status") == "complete":
+            task["estimated_total_seconds"] = round(elapsed, 1)
+            task["estimated_remaining_seconds"] = 0.0
         task["updated_at"] = _now()
 
 def optimization_status(task_id):
     with _lock:
         task = _optimization_tasks.get(str(task_id))
-        return dict(task) if task else None
+        return {key: value for key, value in task.items() if not key.startswith("_")} if task else None
 
 def cancel_optimization(task_id):
     task_id = str(task_id)
@@ -375,6 +397,8 @@ def optimize_candidate(body):
                     seed=seed_index + 1,
                     iteration=iteration,
                     iterations_per_seed=iterations,
+                    completed_iterations=seed_index * iterations + iteration,
+                    total_iterations=32 * iterations,
                     evaluated=evaluated,
                 )
             progress = iteration / max(1, iterations - 1)
@@ -493,7 +517,7 @@ def optimize_candidate(body):
     # Not marked status="complete" here on purpose: the caller (see
     # _optimize_worker below) attaches `result` in the SAME update that flips
     # status to "complete", so a poller can never observe complete-without-result.
-    _optimization_update(task_id, stage="결과 정리 중", progress=99, current=32, total=32, seed=32, iteration=240, iterations_per_seed=240, evaluated=evaluated)
+    _optimization_update(task_id, stage="결과 정리 중", progress=99, current=32, total=32, seed=32, iteration=240, iterations_per_seed=240, completed_iterations=32 * 240, total_iterations=32 * 240, evaluated=evaluated)
     return result
 
 def _optimize_worker(task_id, body):
@@ -523,7 +547,7 @@ def start_optimization(body):
     if mode not in {"constrained", "sa", "hybrid"}:
         raise ValueError("mode must be constrained, sa, or hybrid.")
     task_id = _new_id()
-    _optimization_update(task_id, status="queued", mode=mode, stage="대기 중", progress=0, current=0, total=32, seed=0, iteration=0)
+    _optimization_update(task_id, status="queued", mode=mode, stage="대기 중", progress=0, current=0, total=32, seed=0, iteration=0, completed_iterations=0, total_iterations=32 * 240)
     thread = threading.Thread(target=_optimize_worker, args=(task_id, body), daemon=True, name=f"layout-optimize-{task_id}")
     with _lock:
         _threads[task_id] = thread

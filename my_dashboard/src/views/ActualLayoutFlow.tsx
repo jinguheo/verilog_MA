@@ -45,6 +45,11 @@ interface OptimizationTask {
   seed: number
   iteration: number
   iterations_per_seed?: number
+  completed_iterations?: number
+  total_iterations?: number
+  elapsed_seconds?: number
+  estimated_total_seconds?: number
+  estimated_remaining_seconds?: number
   evaluated?: number
   mode?: string
   error?: string
@@ -273,6 +278,25 @@ export default function ActualLayoutFlow() {
     return saved ? { ...macro, ...saved } : macro
   })
   const optimizing = optimizationTask ? ['queued', 'running'].includes(optimizationTask.status) : false
+  const formatDuration = (seconds?: number) => {
+    if (seconds === undefined || !Number.isFinite(seconds)) return '계산 중'
+    const rounded = Math.max(0, Math.round(seconds))
+    if (rounded < 60) return `${rounded}초`
+    const minutes = Math.floor(rounded / 60)
+    const remainder = rounded % 60
+    return `${minutes}분 ${remainder}초`
+  }
+  const optimizationDescription = optimizationTask?.status === 'cancelled'
+    ? '사용자 요청으로 계산을 중지했습니다.'
+    : optimizationTask?.status === 'complete'
+      ? '후보 생성과 결과 정리가 완료되었습니다.'
+      : optimizationTask?.stage.includes('격자')
+        ? '1/3 · 경계·겹침·keep-out을 통과하는 legal 배치를 선별하고 있습니다.'
+        : optimizationTask?.stage.includes('SA')
+          ? `2/3 · Re-place 후 seed ${optimizationTask.seed}/32를 annealing 중입니다.`
+          : optimizationTask?.stage.includes('결과')
+            ? '3/3 · 상위 후보를 정렬하고 개선 히스토리를 저장하고 있습니다.'
+            : '입력 좌표와 기준 배치를 확인하고 있습니다.'
   const visibleHistory = verificationOnly ? history.filter(item => item.verification?.status === 'passed') : history
   const passedHistory = history.filter(item => item.verification?.status === 'passed')
   const candidateState = (item: OptimizationHistoryEntry) => item.verification?.status === 'passed' ? 'DRC/LVS PASS' : item.verification?.status === 'failed' ? 'DRC/LVS FAIL' : item.screening?.status === 'shortlisted' ? `SCREEN TOP ${item.screening.rank ?? ''}` : item.screening?.status === 'screened-out' ? `SCREEN OUT · #${item.screening.rank ?? '-'}` : '검증 대기'
@@ -353,12 +377,16 @@ export default function ActualLayoutFlow() {
         {optimizationTask && <div className={`actual-job ${optimizationTask.status}`}>
           <div><b>{optimizationTask.status.toUpperCase()}</b><span>{optimizationTask.stage}</span></div>
           <progress max="100" value={optimizationTask.progress}/>
-          <small>
-            {optimizationTask.mode === 'sa' || optimizationTask.mode === 'hybrid'
-              ? `seed ${optimizationTask.seed}/32 · iteration ${optimizationTask.iteration}/${optimizationTask.iterations_per_seed ?? 240}`
-              : `격자 후보 ${optimizationTask.current}/${optimizationTask.total}`}
-            {optimizationTask.evaluated !== undefined && ` · ${optimizationTask.evaluated.toLocaleString()} legal 평가`}
-          </small>
+          <strong>{optimizationTask.progress}%</strong>
+          <p className="actual-job-description">{optimizationDescription}</p>
+          <div className="actual-job-details">
+            <span><b>전체 반복</b>{(optimizationTask.completed_iterations ?? 0).toLocaleString()} / {(optimizationTask.total_iterations ?? 7680).toLocaleString()}</span>
+            <span><b>현재 위치</b>seed {optimizationTask.seed}/32 · iteration {optimizationTask.iteration}/{optimizationTask.iterations_per_seed ?? 240}</span>
+            <span><b>경과 시간</b>{formatDuration(optimizationTask.elapsed_seconds)}</span>
+            <span><b>예상 총시간</b>{formatDuration(optimizationTask.estimated_total_seconds)}</span>
+            <span><b>예상 남은 시간</b>{formatDuration(optimizationTask.estimated_remaining_seconds)}</span>
+            <span><b>Legal 평가</b>{(optimizationTask.evaluated ?? 0).toLocaleString()}회</span>
+          </div>
           {optimizationTask.error && <p>{optimizationTask.error}</p>}
         </div>}
         {optimization && <div className="optimization-result"><b>{optimization.generation_mode === 'sa' ? 'MACRO RE-PLACE + SA' : 'CONSTRAINT-BASED GRID SEARCH'}</b><span>pool {String(optimization.candidate_pool_size)}</span><span>grid {String(optimization.grid_candidates)}</span><span>SA {String(optimization.replace_sa_candidates)}</span><span>{Number(optimization.candidates_evaluated).toLocaleString()} legal evaluations</span><span>wire {String(optimization.estimated_manhattan_um)} µm</span><span>alignment {String(optimization.centerline_misalignment_um)} µm</span><span>halo {String(optimization.halo_um)} µm</span></div>}
