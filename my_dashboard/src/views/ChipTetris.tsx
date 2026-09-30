@@ -130,6 +130,22 @@ const architecture = [
   ['digital', 'Read DMA', 'read_req → stream'],
 ] as const
 
+const realityGapRows = [
+  ['좌표·형상', '50µm macro grid와 10µm sub-grid의 추상 블록', 'LEF 실제 크기·핀·OBS를 DBU 좌표로 배치', '격자 양자화와 실제 핀 접근 차이'],
+  ['DRC', '경계·겹침·구역·간격·pin escape proxy', 'sky130 PDK deck으로 metal/via/enclosure/spacing/density 검사', '게임 CLEAN은 PDK DRC PASS가 아님'],
+  ['LVS', 'instance 셀 수·ID·종류 무결성 검사', 'GDS 추출 netlist와 RTL/SPICE의 net·pin 연결 비교', '현재 structural proxy는 연결 등가성을 증명하지 못함'],
+  ['배선·혼잡', 'hole·열 높이·Manhattan wirelength 비용', 'global/detailed route, RC extraction, antenna·disconnected pin', '실제 track·via·macro pin 병목은 routing 뒤 확인'],
+  ['전원·타이밍', 'power stripe 접근성과 이웃 거리 추정', 'PDN 연결, IR/EM, SPEF 기반 MCMM setup/hold STA', '전압강하와 corner timing은 게임 점수에 미포함'],
+] as const
+
+const realityGapSteps = [
+  ['완료', '공통 형상 기준', '실제 ADC/SRAM LEF 크기, DIE/CORE 경계, overlap 검사를 후보 생성에 사용'],
+  ['연결 필요', '이웃 region 내보내기', 'SAR Near·CDC Edge·Capture Near를 DEF region/blockage로 변환해 게임과 OpenROAD 좌표를 일치'],
+  ['강화 필요', 'PDK-aware 사전 필터', 'LEF pin/OBS, routing track, PDN stripe, macro halo, density·antenna 위험을 후보 비용에 반영'],
+  ['강화 필요', '결과 기반 PASS gate', 'checker 폴더가 아니라 metrics 오류 수와 Netgen mismatch 0을 읽고 DRC/LVS/antenna/PDN/STA를 함께 판정'],
+  ['다음 evolution', '실측 피드백 학습', '실제 PASS 후보는 elite seed로, 반복 DRC/LVS 실패 패턴은 다음 세대 penalty로 자동 환류'],
+] as const
+
 export default function ChipTetris() {
   const [game, dispatch] = useReducer(reducer, undefined, createPpa3SeedGame)
   const [running, setRunning] = useState(false)
@@ -150,6 +166,7 @@ export default function ChipTetris() {
   const [generation, setGeneration] = useState(1)
   const [champion, setChampion] = useState<CandidateResult | null>(null)
   const [stagnantGenerations, setStagnantGenerations] = useState(0)
+  const [diversityRestarts, setDiversityRestarts] = useState(0)
   const [failedAttempts, setFailedAttempts] = useState(0)
   const [savedCandidates, setSavedCandidates] = useState<CandidateResult[]>(loadSavedCandidates)
   const [saRunning, setSaRunning] = useState(false)
@@ -290,16 +307,14 @@ export default function ChipTetris() {
 
     const pool = champion ? [champion, ...completedResults] : completedResults
     const winner = [...pool].sort((a, b) => b.score - a.score || a.violations - b.violations)[0]
+    let diversityRestart = false
     if (winner) {
       const improved = !champion || winner.score > champion.score
       const nextStagnant = improved ? 0 : stagnantGenerations + 1
+      diversityRestart = nextStagnant >= 3
       setChampion(winner)
-      setStagnantGenerations(nextStagnant)
-      if (nextStagnant >= 3) {
-        dispatch({ type: 'load', state: winner.state })
-        setRunning(false)
-        return
-      }
+      setStagnantGenerations(diversityRestart ? 0 : nextStagnant)
+      if (diversityRestart) setDiversityRestarts(value => value + 1)
     }
 
     const nextGeneration = generation + 1
@@ -311,7 +326,7 @@ export default function ChipTetris() {
     setGeneration(nextGeneration)
     setCandidateIndex(1)
     setCandidateResults([])
-    if (nextParent && stagnantGenerations < 3) dispatch({ type: 'mutate', state: nextParent.state, seed: nextSeed })
+    if (nextParent && !diversityRestart) dispatch({ type: 'mutate', state: nextParent.state, seed: nextSeed })
     else dispatch({ type: 'candidate', seed: nextSeed })
     setRunning(true)
   }, [candidateIndex, champion, generation, savedCandidates, stagnantGenerations])
@@ -445,7 +460,7 @@ export default function ChipTetris() {
     if (!standardCellsDone) { setStdFillCount(stdFillTarget); return }
     if (!finalCandidate && searchPasses === 0) startHybrid()
   }
-  const reset = () => { saJobIdRef.current += 1; lastReplaceAt.current = 0; setStdFillCount(0); setSearchPasses(0); setFinalCandidate(false); setSaRunning(false); setSaProgress({ stage: 'idle', iteration: 0, total: SA_ITERATIONS, elapsedMs: 0, estimatedMs: SA_INITIAL_ESTIMATE_MS, accepted: 0, attempted: 0 }); setCandidateIndex(1); setCandidateResults([]); setCandidateRecorded(false); setGeneration(1); setChampion(null); setStagnantGenerations(0); setFailedAttempts(0); setSelectedInstances(new Set()); dispatch({ type: 'reset' }); setAiEnabled(false); setRunning(false) }
+  const reset = () => { saJobIdRef.current += 1; lastReplaceAt.current = 0; setStdFillCount(0); setSearchPasses(0); setFinalCandidate(false); setSaRunning(false); setSaProgress({ stage: 'idle', iteration: 0, total: SA_ITERATIONS, elapsedMs: 0, estimatedMs: SA_INITIAL_ESTIMATE_MS, accepted: 0, attempted: 0 }); setCandidateIndex(1); setCandidateResults([]); setCandidateRecorded(false); setGeneration(1); setChampion(null); setStagnantGenerations(0); setDiversityRestarts(0); setFailedAttempts(0); setSelectedInstances(new Set()); dispatch({ type: 'reset' }); setAiEnabled(false); setRunning(false) }
   const startAi = () => {
     setAiEnabled(true)
     setRunning(true)
@@ -508,7 +523,7 @@ export default function ChipTetris() {
 
   return <div className="chip-tetris-page">
     <section className="chip-game-hero">
-      <div><small>FAST SEEDS · BEAM SEARCH · EARLY STOP · REPLACE → SA</small><h2>AI Chip Tetris</h2><p>세대마다 {GENERATION_POOL_SIZE}개의 seed 후보를 단계별로 탐색합니다. 이미 계산한 최적 위치를 실제 배치에 재사용하고 위치별 Beam은 2개로 제한하며, 동일 배치를 제거하고 3세대 동안 개선이 없으면 자동 정지합니다.</p></div>
+      <div><small>FAST SEEDS · BEAM SEARCH · DIVERSITY RESTART · REPLACE → SA</small><h2>AI Chip Tetris</h2><p>세대마다 {GENERATION_POOL_SIZE}개의 seed 후보를 단계별로 탐색합니다. 3세대 동안 개선이 없으면 종료하지 않고 랜덤 시작으로 탐색 영역을 넓히며, 사용자가 Pause 또는 STOP을 누를 때까지 계속 evolution합니다.</p></div>
       <div className={`ai-status ${running && aiEnabled ? 'live' : ''}`}><i/><span>{game.gameOver && running ? `RETRYING · FAILED ${failedAttempts + 1}` : !running ? 'PRESS AI START' : !game.floorplanReady ? game.placements < 2 ? `G${generation} · ${candidateIndex}/8 · MACROS` : `G${generation} · ${candidateIndex}/8 · STD REGIONS` : !standardCellsDone ? `G${generation} · ${candidateIndex}/8 · STD CELLS` : `G${generation} · ${candidateIndex}/8 · FINAL SEARCH`}</span></div>
     </section>
 
@@ -612,7 +627,7 @@ export default function ChipTetris() {
 
       <aside className="chip-control-panel">
         <section className="placed-group-editor"><div className="placed-group-head"><div><span className="panel-label">MANUAL GROUP MOVE</span><b>{selectedInstances.size}개 블록 선택</b></div><div><button onClick={() => setSelectedInstances(new Set(placedInstances.map(([instance]) => instance)))} disabled={!placedInstances.length}>전체</button><button onClick={() => setSelectedInstances(new Set())} disabled={!selectedInstances.size}>해제</button></div></div><div className="placed-instance-list">{placedInstances.map(([instance, cell]) => <button key={instance} className={selectedInstances.has(instance) ? 'selected' : ''} onClick={() => togglePlacedInstance(instance)}><BlockShape id={cell.id} compact physicalSize={BLOCKS[cell.id].physicalKind === 'neighbor-region' ? appliedRegionSizes[cell.id as InitBlockId] : undefined}/><span>#{instance} {BLOCKS[cell.id].label}</span></button>)}</div><div className="group-move-pad"><span/><button onClick={() => moveGroup(0, -1)} disabled={!selectedInstances.size}>↑</button><span/><button onClick={() => moveGroup(-1, 0)} disabled={!selectedInstances.size}>←</button><button className="center" disabled>{GRID_UM}µm</button><button onClick={() => moveGroup(1, 0)} disabled={!selectedInstances.size}>→</button><span/><button onClick={() => moveGroup(0, 1)} disabled={!selectedInstances.size}>↓</button><span/></div><small>보드에서 여러 블록을 클릭한 뒤 함께 이동합니다. 상대 배치는 유지되며 경계·충돌 시 이동하지 않습니다.</small></section>
-        <div className="next-grid"><div><span>{!game.floorplanReady ? game.placements < 2 ? 'MACRO' : 'STD REGION' : !standardCellsDone ? 'STD CELLS' : 'SEARCH PASS'}</span>{game.floorplanReady ? <div className="chip-mini"><b>{!standardCellsDone ? `${stdFillCount}/${stdFillTarget}` : searchPasses}</b><small>{!standardCellsDone ? 'PLACING' : finalCandidate ? 'CONVERGED' : 'SEARCHING'}</small></div> : <MiniBlock id={game.active.id} physicalSize={BLOCKS[game.active.id].physicalKind === 'neighbor-region' ? appliedRegionSizes[game.active.id as InitBlockId] : undefined}/>}</div><div><span>CANDIDATE PROFILE</span><div className="chip-mini"><b>G{generation} #{candidateIndex} · {candidateProfiles[game.candidateSeed % candidateProfiles.length]}</b><small>ELITE {champion ? champion.score.toLocaleString() : 'NONE'} · SAVED {savedCandidates.length} · FAILED {failedAttempts}</small></div></div></div>
+        <div className="next-grid"><div><span>{!game.floorplanReady ? game.placements < 2 ? 'MACRO' : 'STD REGION' : !standardCellsDone ? 'STD CELLS' : 'SEARCH PASS'}</span>{game.floorplanReady ? <div className="chip-mini"><b>{!standardCellsDone ? `${stdFillCount}/${stdFillTarget}` : searchPasses}</b><small>{!standardCellsDone ? 'PLACING' : finalCandidate ? 'CONVERGED' : 'SEARCHING'}</small></div> : <MiniBlock id={game.active.id} physicalSize={BLOCKS[game.active.id].physicalKind === 'neighbor-region' ? appliedRegionSizes[game.active.id as InitBlockId] : undefined}/>}</div><div><span>CANDIDATE PROFILE</span><div className="chip-mini"><b>G{generation} #{candidateIndex} · {candidateProfiles[game.candidateSeed % candidateProfiles.length]}</b><small>ELITE {champion ? champion.score.toLocaleString() : 'NONE'} · SAVED {savedCandidates.length} · RESTART {diversityRestarts}</small></div></div></div>
         <div className="full-next-queue"><span className="panel-label">ALL REMAINING PLACEMENT</span><div className="next-row all-items">{remainingRequired.map((id, index) => <div className={`queued-block ${index === 0 ? 'current' : ''}`} key={`${id}-${index}`}><em>{index === 0 ? 'NOW' : `NEXT ${index}`}</em><MiniBlock id={id} physicalSize={BLOCKS[id].physicalKind === 'neighbor-region' ? appliedRegionSizes[id as InitBlockId] : undefined}/></div>)}{futurePlacementStages.map((stage, index) => <div className={`queued-stage ${stage.done ? 'done' : !game.floorplanReady && index === 0 ? 'waiting' : ''}`} key={stage.id}><em>{stage.done ? 'DONE' : `STEP ${remainingRequired.length + index + 1}`}</em><b>{stage.label}</b><small>{stage.detail}</small></div>)}</div><small className="queue-note">현재 블록부터 필수 영역, 표준셀 채우기, Re-place, SA, 후보 평가까지 모두 표시합니다.</small></div>
         <div className="placement-progress">{PLACEMENT_SEQUENCE.map((id, index) => <div key={id} className={index < game.placements ? 'done' : index === game.placements && !game.floorplanReady ? 'current' : ''}><i>{index < game.placements ? '✓' : index + 1}</i><span>{BLOCKS[id].label}</span><small>{index < 2 ? 'MACRO' : 'STD REGION'}</small></div>)}</div>
         <div className={`sa-progress-panel ${saRunning ? 'running' : saProgress.stage === 'complete' ? 'complete' : ''}`}><div className="sa-progress-head"><div><span className="panel-label">SA PROGRESS</span><b>{saStageLabel}</b></div><strong>{Math.round(saPercent)}%</strong></div><div className="sa-progress-track"><i style={{ width: `${saPercent}%` }}/></div><div className="sa-progress-metrics"><span><small>ITERATION</small><b>{saProgress.stage === 'replace' ? `R ${saProgress.iteration}/2` : `${saProgress.iteration}/${saProgress.total}`}</b></span><span><small>경과</small><b>{(saProgress.elapsedMs / 1000).toFixed(1)}s</b></span><span><small>예상 총시간</small><b>~{(saProgress.estimatedMs / 1000).toFixed(1)}s</b></span><span><small>예상 잔여</small><b>~{(saRemainingMs / 1000).toFixed(1)}s</b></span></div><small className="sa-progress-note">{saRunning ? `accepted ${saProgress.accepted}/${saProgress.attempted} · Worker에서 계산 중이라 화면 조작은 유지됩니다.` : saProgress.stage === 'complete' ? `SA 완료 · 실제 ${(saProgress.elapsedMs / 1000).toFixed(1)}초` : `후보당 ${SA_ITERATIONS} iteration · 최근 실측 기준 약 ${(SA_INITIAL_ESTIMATE_MS / 1000).toFixed(1)}초 예상`}</small></div>
@@ -620,8 +635,20 @@ export default function ChipTetris() {
         <div className="ai-decision"><span className="panel-label">NOW / NEXT</span>{game.gameOver && running ? <><b>illegal 후보 자동 폐기</b><p>저장된 legal 후보는 유지한 채 다음 seed로 즉시 넘어갑니다.</p></> : game.floorplanReady ? !standardCellsDone ? <><b>후보 #{candidateIndex} · 표준셀 자동 배치</b><p>{stdFillCount}/{stdFillTarget} · 목표 이용률 실측 7.8%</p></> : <><b>후보 #{candidateIndex} · 최종 탐색 pass {searchPasses + 1}</b><p>Replace→SA로 탐색하고, legal 후보를 저장한 뒤 다음 후보를 계속 만듭니다.</p></> : plan ? <><b>{running ? '배치 중' : '대기 중'} · {BLOCKS[plan.id].label} → ({plan.x + 1}, {plan.y + 1})</b><p>{game.placements < 2 ? '매크로를 하나씩 완료합니다.' : '매크로 완료 후 표준셀 이웃 영역을 직접 배치합니다.'}</p></> : <b>legal move 없음</b>}<small>{running ? game.lastEvent : 'AI START를 누르면 저장된 후보를 유지하며 탐색을 계속합니다.'}</small></div>
         <div className="chip-switches"><button className={running && aiEnabled ? 'active' : ''} onClick={startAi}>{running && aiEnabled ? 'FAST EVOLUTION' : 'START EVOLUTION'}</button><button className="active replace" disabled>REPLACE → SA</button><button onClick={() => setRunning(false)} disabled={!running}>Pause</button><button className="stop" onClick={stopEvolution} disabled={!running && !saRunning}>STOP</button><button onClick={stepAi} disabled={game.gameOver || saRunning}>AI step</button><button onClick={() => dispatch({ type: 'replace' })} disabled={game.gameOver || game.placements < 2 || saRunning}>Re-place now</button><button onClick={reset}>Reset</button></div>
         <label className="speed-control">빠른 자동 간격 <input type="range" min="10" max="200" step="10" value={speed} onChange={event => setSpeed(Number(event.target.value))}/><b>{speed} ms</b></label>
-        <p className="key-help"><b>Continuous evolution:</b> 저장된 상위 후보를 번갈아 변형하고 정체되면 랜덤 시작으로 탐색 영역을 넓힙니다. legal 후보는 상위 {MAX_SAVED_CANDIDATES}개까지 브라우저에 저장되며, 실패해도 Restart 없이 다음 seed를 계속 탐색합니다.</p>
+        <p className="key-help"><b>Continuous evolution:</b> 저장된 상위 후보를 번갈아 변형하고 3세대 정체 시 다양성 재시작으로 탐색 영역을 넓힙니다. 자동 종료하지 않으며 Pause 또는 STOP 전까지 계속됩니다. legal 후보는 상위 {MAX_SAVED_CANDIDATES}개까지 브라우저에 저장됩니다.</p>
       </aside>
+    </section>
+
+    <section className="reality-gap-panel">
+      <div className="reality-gap-head"><div><small>GAME PROXY ↔ PHYSICAL SIGNOFF</small><h3>실제 구현과의 차이와 줄이는 방법</h3><p>게임은 빠른 후보 생성기이고 최종 판정기는 아닙니다. 게임 규칙을 통과한 후보 중 일부만 실제 OpenLane signoff로 보내 비용과 정확도를 함께 맞춥니다.</p></div><div><span>게임</span><b>빠른 반복</b><i>→</i><span>실제 툴</span><b>PDK 판정</b></div></div>
+      <div className="reality-gap-table">
+        <div className="reality-gap-row head"><b>항목</b><b>AI Chip Tetris</b><b>실제 P&amp;R/Signoff</b><b>남는 차이</b></div>
+        {realityGapRows.map(([subject, gameSide, actualSide, gap]) => <div className="reality-gap-row" key={subject}><b>{subject}</b><span>{gameSide}</span><span>{actualSide}</span><span className="gap-risk">{gap}</span></div>)}
+      </div>
+      <div className="gap-reduction-grid">
+        {realityGapSteps.map(([status, title, detail]) => <article className={status === '완료' ? 'done' : ''} key={title}><header><b>{title}</b><em>{status}</em></header><p>{detail}</p></article>)}
+      </div>
+      <p className="reality-gap-note"><b>운영 원칙:</b> 게임 evolution은 Pause/STOP 전까지 계속하지만 실제 P&amp;R은 모든 후보에 실행하지 않습니다. 중복 제거된 후보를 빠르게 선별한 뒤 Top 3에만 TritonRoute·Magic/KLayout DRC·Netgen LVS를 실행하고, 실제 PASS 결과를 다음 evolution의 seed와 penalty로 되돌리는 것이 목표입니다.</p>
     </section>
 
     <section className="chip-analysis-grid">
