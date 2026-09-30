@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react'
 import {
   applyAiPlan, applyBestReplacement, BLOCKS, BOARD_COLS, BOARD_ROWS, cellsFor, chooseAiPlan, configureBlockSizes, createEliteMutation, createGame, createPpa3SeedGame, DIE_HEIGHT_UM, DIE_WIDTH_UM, evaluatePlacement, getBlockSizes, GRID_UM, movePlacedInstances, placementSignature, placeActive, runReplaceThenAnnealing, TOTAL_REQUIRED_BLOCKS,
-  holdActive, measureBoard, moveActive, PLACEMENT_SEQUENCE, preSignoffReport, rotateActive, type ActiveBlock, type AiPlan, type BlockCell, type BlockId, type GameState,
+  holdActive, isLegalPlacement, measureBoard, moveActive, PLACEMENT_SEQUENCE, preSignoffReport, rotateActive, type ActiveBlock, type AiPlan, type BlockCell, type BlockId, type GameState,
 } from '../game/chipTetrisEngine'
 import ActualLayoutFlow from './ActualLayoutFlow'
 import type { ChipTetrisWorkerResponse } from '../game/chipTetrisWorker'
@@ -186,6 +186,22 @@ export default function ChipTetris() {
   const standardCellsDone = game.floorplanReady && stdFillCount >= stdFillTarget
   const stdFillDone = standardCellsDone && finalCandidate
   const filledStdCells = useMemo(() => new Set(stdCellCandidates.slice(0, stdFillCount).map(({ x, y, subX, subY }) => `${x}:${y}:${subX}:${subY}`)), [stdCellCandidates, stdFillCount])
+  const legalSpace = useMemo(() => {
+    const cells = new Set<string>()
+    const anchors = new Set<string>()
+    if (game.floorplanReady || game.gameOver) return { cells, anchors, count: 0 }
+    for (let y = 0; y < BOARD_ROWS; y += 1) {
+      for (let x = 0; x < BOARD_COLS; x += 1) {
+        const candidate: ActiveBlock = { ...game.active, x, y }
+        if (!isLegalPlacement(game.board, candidate)) continue
+        anchors.add(`${x}:${y}`)
+        cellsFor(candidate).forEach(([cellX, cellY]) => cells.add(`${cellX}:${cellY}`))
+      }
+    }
+    return { cells, anchors, count: anchors.size }
+  }, [game.active, game.board, game.floorplanReady, game.gameOver])
+  const emptyMacroCells = useMemo(() => game.board.reduce((sum, row) => sum + row.filter(cell => !cell).length, 0), [game.board])
+  const constrainedEmptyCells = Math.max(0, emptyMacroCells - legalSpace.cells.size)
   const placedInstances = useMemo(() => {
     const values = new Map<number, BlockCell>()
     game.board.forEach(row => row.forEach(cell => { if (cell && cell.instance > 0) values.set(cell.instance, cell) }))
@@ -529,6 +545,16 @@ export default function ChipTetris() {
     <section className="chip-game-layout">
       <div className="chip-board-wrap">
         <div className="zone-headings"><span>ANALOG<br/>ISLAND</span><span>DIGITAL<br/>FABRIC</span><span>MEMORY<br/>BANKS</span></div>
+        <div className="space-legend" aria-label="여유 공간 분류">
+          {!game.floorplanReady ? <>
+            <span className="legal"><i/>실제 배치 가능 <b>{legalSpace.cells.size}</b></span>
+            <span className="anchor"><i/>가능 좌표 <b>{legalSpace.count}</b></span>
+            <span className="blocked"><i/>형상·구역·인접 제약 <b>{constrainedEmptyCells}</b></span>
+          </> : <>
+            <span className="std"><i/>STD CELL 실측 목표 <b>{stdFillTarget} sub-cell</b></span>
+            <span className="reserve"><i/>PDN·route·decap·tap 예약 <b>{otherPurposeLiveSubCells.toLocaleString()} sub-cell</b></span>
+          </>}
+        </div>
         <div className="chip-board" style={{ '--cols': BOARD_COLS, '--rows': BOARD_ROWS } as CSSProperties} role="grid" aria-label="AI chip tetris board">
           {Array.from({ length: BOARD_ROWS * BOARD_COLS }, (_, index) => {
             const x = index % BOARD_COLS, y = Math.floor(index / BOARD_COLS), cell = cellAt(x, y)
@@ -562,11 +588,26 @@ export default function ChipTetris() {
               const subY = Math.floor(subIndex / STD_SUBDIVISIONS)
               return localTileX * STD_SUBDIVISIONS + subX < regionCols && localTileY * STD_SUBDIVISIONS + subY < regionRows
             }) : []
-            return <div key={index} role="gridcell" onClick={() => cell && togglePlacedInstance(cell.instance)} className={`chip-cell ${zone} ${cell ? `filled ${cell.category} ${BLOCKS[cell.id].physicalKind}` : ''} ${selected ? 'group-selected' : ''} ${active ? game.placements < 2 ? 'macro-preview' : 'gap-fill' : ''} ${standardCell ? 'std-cell-fill' : ''} ${standardCellOpen ? 'std-cell-open' : ''}`} style={cellStyle} title={cell ? `${BLOCKS[cell.id].label} · #${cell.instance} · ${regionSize ? `${regionSize.widthUm}×${regionSize.heightUm} µm` : 'macro'} · 클릭하여 그룹 선택` : standardCell ? `Placed ${STD_GRID_UM}µm standard-cell clusters` : standardCellOpen ? `다른 용도로 쓰일 것으로 추정 (${STD_GRID_UM}µm sub-cell) — filler·decap·tap·라우팅 채널, 빈 공간 아님` : `${zone.replace('-', ' ')} empty`}>{regionSize ? <><span className="neighbor-subcell-grid" aria-hidden="true">{regionSlots.map((occupied, subIndex) => <i key={subIndex} className={occupied ? 'occupied' : ''}/>)}</span>{localTileX === 0 && localTileY === 0 && <b className="neighbor-region-label">{BLOCKS[cell!.id].label}</b>}</> : cell ? <span>{BLOCKS[cell.id].label}</span> : standardCellOpen ? <span className="std-subcell-grid" aria-hidden="true">{standardCellSlots.map((filled, subIndex) => <i key={subIndex} className={filled ? 'placed' : ''}/>)}</span> : null}</div>
+            const legalPlacementCell = !cell && !game.floorplanReady && legalSpace.cells.has(`${x}:${y}`)
+            const legalAnchor = !cell && !game.floorplanReady && legalSpace.anchors.has(`${x}:${y}`)
+            const constraintBlocked = !cell && !game.floorplanReady && !legalPlacementCell
+            const cellClasses = [
+              'chip-cell', zone, cell ? `filled ${cell.category} ${BLOCKS[cell.id].physicalKind}` : '',
+              selected ? 'group-selected' : '', active ? game.placements < 2 ? 'macro-preview' : 'gap-fill' : '',
+              standardCell ? 'std-cell-fill' : '', standardCellOpen ? 'std-cell-open' : '',
+              legalPlacementCell ? 'legal-placement-space' : '', legalAnchor ? 'legal-placement-anchor' : '',
+              constraintBlocked ? 'constraint-blocked' : '',
+            ].filter(Boolean).join(' ')
+            const emptyTitle = legalPlacementCell
+              ? `${BLOCKS[game.active.id].label} 전체 형상이 들어갈 수 있는 실제 배치 가능 영역${legalAnchor ? ' · 이 칸이 배치 기준 좌표' : ''}`
+              : constraintBlocked
+                ? '빈 칸처럼 보이지만 현재 블록의 형상·구역·필수 인접 규칙을 모두 만족하지 않아 배치 불가'
+                : `${zone.replace('-', ' ')} empty`
+            return <div key={index} role="gridcell" onClick={() => cell && togglePlacedInstance(cell.instance)} className={cellClasses} style={cellStyle} title={cell ? `${BLOCKS[cell.id].label} · #${cell.instance} · ${regionSize ? `${regionSize.widthUm}×${regionSize.heightUm} µm` : 'macro'} · 클릭하여 그룹 선택` : standardCell ? `Placed ${STD_GRID_UM}µm standard-cell clusters` : standardCellOpen ? `다른 용도로 쓰일 것으로 추정 (${STD_GRID_UM}µm sub-cell) — filler·decap·tap·라우팅 채널, 빈 공간 아님` : emptyTitle}>{regionSize ? <><span className="neighbor-subcell-grid" aria-hidden="true">{regionSlots.map((occupied, subIndex) => <i key={subIndex} className={occupied ? 'occupied' : ''}/>)}</span>{localTileX === 0 && localTileY === 0 && <b className="neighbor-region-label">{BLOCKS[cell!.id].label}</b>}</> : cell ? <span>{BLOCKS[cell.id].label}</span> : standardCellOpen ? <span className="std-subcell-grid" aria-hidden="true">{standardCellSlots.map((filled, subIndex) => <i key={subIndex} className={filled ? 'placed' : ''}/>)}</span> : legalAnchor ? <i className="legal-anchor-mark" aria-label="배치 기준 좌표"/> : null}</div>
           })}
           {game.gameOver && running && <div className="game-over"><b>AUTO RETRY</b><span>이 seed는 legal 배치를 만들지 못했습니다. 저장된 후보는 유지하고 다음 후보를 자동 탐색합니다.</span></div>}
         </div>
-        <p className="chip-note" style={{ marginTop: 8 }}>보라색 점이 안 켜진 sub-cell도 <b>빈 공간이 아닙니다</b> — STD CELL 로직은 이 자리의 7.8%만 차지하고(<code>STD_CELL_LEFTOVER_FILL_RATIO</code>), 나머지 {game.floorplanReady ? otherPurposeLivePct.toFixed(1) : otherPurposePct.toFixed(1)}%(다이 전체 기준)는 filler·decap·tap 셀과 라우팅 채널이 실제로 차지합니다. 이 자리는 항상 채워지는 자리라 게임이 목표로 삼을 필요가 없습니다.</p>
+        <p className="chip-note" style={{ marginTop: 8 }}>{game.floorplanReady ? <>보라색 점이 안 켜진 sub-cell도 <b>빈 공간이 아닙니다</b> — STD CELL 로직은 이 자리의 7.8%만 차지하고(<code>STD_CELL_LEFTOVER_FILL_RATIO</code>), 나머지 {otherPurposeLivePct.toFixed(1)}%(다이 전체 기준)는 PDN·라우팅·filler·decap·tap 예약입니다.</> : <>초록색만 현재 <b>{BLOCKS[game.active.id].label}</b>의 전체 형상과 구역·필수 인접 규칙을 모두 통과한 실제 배치 가능 영역입니다. 점이 있는 초록 칸은 배치 기준 좌표이며, 회색 칸은 비어 보여도 현재 블록을 놓을 수 없습니다.</>}</p>
       </div>
 
       <aside className="chip-control-panel">

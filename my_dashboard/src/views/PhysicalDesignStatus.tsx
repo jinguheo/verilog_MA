@@ -2,8 +2,8 @@
 // "Physical Design" (manufacturing) tab. TaskWorkspace's generic tasks{}
 // entry describes the workflow in the abstract; this component reports what
 // has actually run, with real numbers, so the tab is not just a checklist.
-// Snapshot as of 2026-09-23 13:10 KST — refresh the numbers by hand after the
-// next run finishes (see the "how to refresh" note at the bottom).
+// Snapshot audited against local run artifacts on 2026-09-29. This is a
+// persisted evidence summary, not a claim that an OpenLane job is currently live.
 import PhysicalDesignLive from './PhysicalDesignLive'
 import ParsacFloorplan from './ParsacFloorplan'
 
@@ -20,7 +20,7 @@ const blocks = [
   ['cnt_sat', '완료 · signoff clean', 'DRC 0 · LVS 0 · XOR 0 · antenna 0 · AREA 1 전환 후 전체 P&R 재검증'],
   ['chan_ctrl', '완료 · signoff clean (실제 SDC 적용)', '단일 클럭. AREA 2 전환 후 전체 P&R 재검증. 폴백 SDC 대비 setup 여유 4.25→1.98ns로 낮아짐 — IO 제약이 없어서 좋아 보였던 것'],
   ['chan_top', '완료 · 5개 게이트 전부 signoff clean', 'DRC Passed · LVS Passed · Antenna Passed · Setup WNS/TNS 0.0/0.0 (worst corner) · Hold WNS 0 — RUN_2026-09-23_12-48-47 (src=14ns/axi=52ns, DIODE_INSERTION_STRATEGY=6), 46,009 cells. ch_cause_o 레지스터화(9/20, b02cb4e)로 axi 도메인 CRC 병목 해결 → src_period 14ns(9/21, 32a7395)로 src_ready_o 마저 해결 → 안테나 신규 1건을 strategy 6으로 해결(9/23, 3d73bbd). 주기 스윕만으로는 안 닫혔고 RTL 파이프라이닝 + 정밀한 주기 조정의 조합으로 완전 클로징'],
-  ['daq_subsystem (8채널 top)', '진행 중 · worst-corner 부분 검증 (RUN_2026-09-23_12-48-48, 라이브)', '12/48ns 목표로 재실행 중 — chan_top의 14/52ns 갱신은 아직 미반영. `--to OpenROAD.STAMidPNR-3` + DEFAULT_CORNER=nom_ss_100C_1v60로 전체 signoff 대신 worst corner 배치 후 타이밍부터 우선 확보하는 범위. 오늘 12:48 시작, 확인 시점 기준 yosys 합성 단계. ~107k 셀(chan_top의 3.6배)'],
+  ['daq_subsystem (8채널 top)', '부분 검증 · 현재 실행 없음', 'Flat 최신 run은 CTS 이후 STA에서 종료. Hierarchical 기준 run(hierarchical_auto_20260924_142552)은 detailed routing·post-PNR STA·XOR clean까지 도달했지만 setup WNS −6.44ns, hold WNS −0.15ns, antenna 121 nets가 남았고 Magic DRC/LVS 완료 전 중단. 100µm-channel 후보는 DPL-0036, scattered 후보는 GRT-0118 실패'],
 ] as const
 
 // 진단(두 병목)은 그대로 유효 — 실패 경로의 시작/끝 신호명이 모든 재실행에서
@@ -28,7 +28,7 @@ const blocks = [
 // 아래 timingHistory 표와 constraints/chan_top.sdc의 CORRECTION 블록 3개에 있음.
 const rootCauses = [
   ['axi_clk 도메인', 'pkt_check.sv의 CRC-32가 8단 crc32_byte_step을 조합 로직으로 직렬 연결 (각 단이 내부적으로 8비트 시프트-XOR 재귀) — 사실상 64단 조합 체인, 종점은 ch_cause_o[0]/[2]. 12/48ns 재합성 후에도 남은 5개 위반이 전부 이 경로 (SDC 3차 정정 기준).'],
-  ['src_clk 도메인 (별개 원인)', 'skid_buffer.sv의 출력 mux가 pkt_align.sv의 가변 인덱스 바이트 누산기(nxt_data[byte_cnt_q*8+:8])에 물려 있음 — axi_clk와 무관한 src_clk 내부 문제. src_period=12ns에서 모든 코너·모든 실행 0 위반으로 확정.'],
+  ['src_clk 도메인 (별개 원인)', 'skid_buffer.sv의 출력 mux가 pkt_align.sv의 가변 인덱스 바이트 누산기(nxt_data[byte_cnt_q*8+:8])에 물려 있음 — axi_clk와 무관한 src_clk 내부 문제. src_period=12ns에서 마지막 WNS −0.496ns 경로가 남았고, 14ns로 조정해 최종 run에서 모든 코너 0 위반으로 닫힘.'],
 ] as const
 
 // 세 번 정정된 chan_top 타이밍 결론 — 매번 "실측"이었지만 무엇을 재는지가 달랐음.
@@ -94,7 +94,7 @@ export default function PhysicalDesignStatus() {
   return <>
     <PhysicalDesignLive/>
     <ParsacFloorplan/>
-    <section className="card"><div className="card-title"><div><small className="kicker">STATUS SNAPSHOT · 2026-09-18 23:20</small><h2>Sample Test 4 — ASIC 물리 설계 진행 상황</h2></div><span className="warning-badge">chan_top · daq_subsystem 동시 실행 중</span></div>
+    <section className="card"><div className="card-title"><div><small className="kicker">STATUS SNAPSHOT · AUDITED 2026-09-29</small><h2>Sample Test 4 — ASIC 물리 설계 확인 상태</h2></div><span className="warning-badge">실행 중 작업 없음 · 저장된 결과 기준</span></div>
       <div className="data-table"><table><thead><tr><th>블록</th><th>상태</th><th>근거</th></tr></thead><tbody>{blocks.map(([name, status, note]) => <tr key={name}><td><code>{name}</code></td><td>{status.includes('완료') ? <span className="ok-badge">{status}</span> : <span className="warning-badge">{status}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
       <p className="rtl-guide-note">산출물 위치: <code>samples/sample_test_4/asic/&lt;block&gt;/runs/RUN_*/final/</code> (GDS·LEF·netlist·SPEF·5-corner .lib). RTL은 이 작업 중 어느 것도 수정되지 않았습니다.</p>
     </section>
@@ -103,24 +103,24 @@ export default function PhysicalDesignStatus() {
     </section>
     <section className="card"><div className="card-title"><div><small className="kicker">chan_top — 타이밍 실패 원인 규명</small><h2>두 개의 독립된 조합 로직 병목</h2></div></div>
       <div className="check-list">{rootCauses.map(([title, detail]) => <p key={title}><b>{title}</b><span>{detail}</span></p>)}</div>
-      <p className="rtl-guide-note">둘 다 실측 기반 진단이고 지금도 유효합니다 — 넷리스트에서 실제 시작점 신호명을 확인하고(<code>fifo_rptr_q[2]</code>, <code>u_pkt_align.u_skid.skid_valid_q</code>), 배치·배선 완료된 설계 + 추출된 SPEF로 주기를 스윕했습니다. <b>하지만 "어느 주기에서 닫히는가"는 두 번 틀렸습니다</b> — 아래 표. <b>최종 결론(9/21 확정)</b>: 주기 스윕만으로는 axi 도메인의 CRC 병목이 안 닫혔고, 실제로 닫은 것은 <code>ch_cause_o</code> 레지스터화(RTL 파이프라이닝) + src_period 14ns 소폭 조정의 조합 — RUN_2026-09-21_21-20-41에서 전 코너 셋업 타이밍 완전 클로징. 남은 유일한 이슈는 안테나 위반 1건(strategy 6으로 재검증 중, 아래 상태 표 참고).</p>
+      <p className="rtl-guide-note">둘 다 실측 기반 진단이고 지금도 유효합니다 — 넷리스트에서 실제 시작점 신호명을 확인하고(<code>fifo_rptr_q[2]</code>, <code>u_pkt_align.u_skid.skid_valid_q</code>), 배치·배선 완료된 설계 + 추출된 SPEF로 주기를 스윕했습니다. <b>하지만 "어느 주기에서 닫히는가"는 두 번 틀렸습니다</b> — 아래 표. <b>최종 결론(9/23 확정)</b>: <code>ch_cause_o</code> 레지스터화 + src_period 14ns로 타이밍을 닫고, strategy 6으로 마지막 antenna 1건까지 제거했습니다. RUN_2026-09-23_12-48-47에서 5개 signoff gate가 모두 clean입니다.</p>
     </section>
     <section className="card"><div className="card-title"><div><small className="kicker">chan_top — 타이밍 결론이 세 번 바뀐 기록</small><h2>같은 "실측"이라도 무엇을 재는지가 달랐다</h2></div></div>
       <div className="data-table"><table><thead><tr><th>주장 / 시도</th><th>근거 실행</th><th>결과</th><th>왜 그렇게 나왔나</th></tr></thead><tbody>{timingHistory.map(([claim, run, result, why]) => <tr key={claim}><td><b>{claim}</b></td><td><code>{run}</code></td><td>{result.startsWith('❌') ? <span className="warning-badge">{result}</span> : result}</td><td>{why}</td></tr>)}</tbody></table></div>
       <p className="rtl-guide-note"><b>교훈 두 가지.</b> (1) 이미 배치·배선된 레이아웃을 다른 SDC로 "다시 채점"한 값은 그 레이아웃이 원래 어떤 목표로 최적화됐는지에 종속됩니다 — 툴은 주어진 주기에 맞춰 최적화 노력을 조절하므로, 빡빡한 목표로 만든 레이아웃은 느슨한 요구에 여유가 남아 보이는 게 당연합니다. 처음부터 그 주기로 돌린 실행만이 근거입니다. (2) 주기 스윕 시 수기 Tcl 대신 <b>signoff SDC 원본을 그대로 source</b>해야 합니다 — IO delay 예산, CDC max_delay, driving_cell 같은 예외 하나만 빠져도 결론이 뒤집힙니다. 두 오판 모두 <code>constraints/chan_top.sdc</code>의 CORRECTION 블록 3개와 RESULTS.md에 사후 기록돼 있습니다.</p>
       <p className="rtl-guide-note"><b>비교 기준 실행이 사라진 문제 (원인 미확인)</b>: 12/48 결과의 근거인 <code>RUN_2026-09-18_21-19-11</code> 디렉터리가 디스크에 없습니다. 실행 자체는 실재했고 완주했음이 로그로 확인되지만(<code>tools/wsl/logs/111_chan_top_1248.log</code>에 해당 run 태그와 <code>Flow complete</code>), 8/29 것까지 포함해 다른 run 디렉터리는 모두 남아있는 와중에 이것만 없어졌습니다. <b>러너 스크립트가 지운 것은 아닙니다</b> — <code>111</code>/<code>102</code>의 <code>rm -rf</code>는 shim 경로(<code>~/.cache/openlane-tools-*</code>)에만 적용되고 run 디렉터리는 건드리지 않음을 확인했습니다. 누가/무엇이 지웠는지는 확인되지 않았습니다. 결과적으로 수치는 로그와 RESULTS.md에 남아 신뢰 가능하나 GDS/metrics.json 재검증은 불가 — 기준이 될 실행은 별도 보존(복사 또는 태그)하는 정책이 필요합니다.</p>
     </section>
-    <section className="card"><div className="card-title"><div><small className="kicker">daq_subsystem — 8채널 전체 top</small><h2>주기가 chan_top보다 한 단계 뒤처진 채 재검증 중</h2></div></div>
+    <section className="card"><div className="card-title"><div><small className="kicker">daq_subsystem — 8채널 전체 top</small><h2>실행 기록은 보존됐지만 현재 작업은 중단 상태</h2></div></div>
       <div className="check-list">
-        <p><b>왜 계속 재시도하나</b><span>OpenLane 버그가 아니라 실행 환경 문제 — WSL 백그라운드 프로세스는 Claude 세션과 무관하게 살아있지만, PC/전체 Code 세션이 닫히거나 WSL VM이 재시작되면 함께 죽습니다. 매 시도가 처음부터 다시 시작(합성부터). 오늘(9/23 12:48) 새 실행이 라이브 진행 중(<code>RUN_2026-09-23_12-48-48</code>).</span></p>
-        <p><b>이번 시도의 범위</b><span><code>--to OpenROAD.STAMidPNR-3</code> + <code>DEFAULT_CORNER=nom_ss_100C_1v60</code> — 전체 signoff가 아니라 worst corner(ss) 기준 배치 후 타이밍 감부터 확보. aca2efd에서 chan_top의 12/48ns로 리타겟됐지만, chan_top 자체는 이후 14/52ns로 한 단계 더 갔음(위 표) — daq_subsystem의 SDC는 아직 그 갱신을 반영하지 않음. chan_ctrl.sv의 ch_cause_o 레지스터화는 공유 RTL이라 이미 반영돼 있음.</span></p>
+        <p><b>Flat 실행 기록</b><span>여러 시도가 PC/WSL 종료로 중단됐고 최신 run도 CTS 이후 STA에서 멈췄습니다. 현재 OpenLane/OpenROAD 프로세스는 없으며 “라이브 진행 중” 상태가 아닙니다.</span></p>
+        <p><b>Hierarchical 기준 배치</b><span><code>hierarchical_auto_20260924_142552</code>는 top-only flow로 detailed routing·RCX·post-PNR STA·XOR까지 도달했습니다. 다만 setup/hold/antenna 위반이 남고 Magic DRC/LVS 완료 전 중단됐으므로 routed evidence이지 signoff 결과는 아닙니다.</span></p>
         <p><b>이미 잡은 RTL 버그 1건</b><span><code>perf_cnt.sv</code>의 <code>$countones()</code>가 OpenLane 합성 프론트엔드를 크래시 — Verilator/sby에선 멀쩡한 합법 SV. <code>daq_pkg::popcount</code> 패키지 함수로 옮겨 해결, TB/mutation 비회귀 확인 (<code>a4dbd21</code>).</span></p>
-        <p><b>검증 안 된 첫 추정치</b><span><code>DIE_AREA</code> 3200×3200µm — 실측 전 감. ~107k 셀(chan_top 29.5k의 3.6배)에 P&R 시간은 비선형으로 늘어나므로 전체 signoff는 시간 단위 이상 예산 필요.</span></p>
+        <p><b>현재 기준 floorplan</b><span>8개 800×800µm chan_top과 300µm 행간 채널을 둔 3700×2100µm 격자가 가장 멀리 진행된 기준입니다. 100µm 채널과 scattered 후보는 각각 DPL/GRT에서 실패했습니다.</span></p>
       </div>
     </section>
     <section className="card"><div className="card-title"><div><small className="kicker">상용 EDA vs 오픈소스 — 무엇이 다른가</small><h2>왜 실제 반도체 회사는 이 도구들을 안 쓰는가</h2></div></div>
       <div className="data-table"><table><thead><tr><th>항목</th><th>상용 EDA</th><th>이 프로젝트(오픈소스)</th></tr></thead><tbody>{eda.map(([item, commercial, oss]) => <tr key={item}><td><b>{item}</b></td><td>{commercial}</td><td>{oss}</td></tr>)}</tbody></table></div>
-      <p className="rtl-guide-note">오픈소스가 "가짜"라는 뜻이 아닙니다 — 이번에 chan_ctrl과 chan_top(진행 중)에서 나온 DRC/LVS/타이밍 수치는 실제 sky130 공정 규칙 기준으로 계산된 진짜 결과입니다. 다만 상용 도구가 표준으로 갖춘 정확도·자동화·공정 접근 범위가 없어서, 실제 양산칩 signoff에는 아직 못 미칩니다.</p>
+      <p className="rtl-guide-note">오픈소스가 "가짜"라는 뜻이 아닙니다 — chan_ctrl과 signoff-clean chan_top에서 나온 DRC/LVS/타이밍 수치는 실제 sky130 공정 규칙 기준으로 계산된 결과입니다. 다만 상용 도구가 표준으로 갖춘 정확도·자동화·공정 접근 범위가 없어서 최신 상용 공정의 양산 signoff와 동일하다고 볼 수는 없습니다.</p>
     </section>
     <section className="card"><div className="card-title"><div><small className="kicker">파운드리 PDK 접근 — NDA가 갈라놓는 것</small><h2>왜 sky130으로만 "진짜 제조"를 해볼 수 있는가</h2></div></div>
       <div className="check-list">{pdkAccess.map(([name, detail]) => <p key={name}><b>{name}</b><span>{detail}</span></p>)}</div>

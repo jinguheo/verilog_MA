@@ -51,12 +51,27 @@
 //   460,614µm²를 40% 밀도 300µm 타일 13개로), 빈 다이에서 하나씩 쌓는 자동
 //   플레이 모드를 추가.
 //
+// - 2026-09-26: macroTetrisModel.ts의 mergedIntervals/internalProjectionGaps 기반
+//   매크로 그룹 채널(≥300µm) 하드 게이트 추가 — 실제 hierarchical 실행에서 채널을
+//   300µm→100µm로 좁힌 후보가 hold 리페어 버퍼 300개를 legal하게 못 앉혀 Detailed
+//   Placement 자체가 실패한 것(DPL-0034/0036)을 그대로 반영. 이전까지 쓰던 "표준셀
+//   여유 공간"(usableLeftoverPct)은 이 실패를 못 잡았다(둘 다 42%로 동일).
+// - 2026-09-30: "배치 후 진짜 여유 공간" 카드 추가 — 전체 leftover 중 채널(300µm)·
+//   열/행 간격(100µm) 법적 최소를 채우고도 남는 만큼만 계산(spaceBreakdown). 구현
+//   중 실제 버그를 하나 잡았다: 패킹(열/행) 간격을 채널과 같은 축 투영 방식으로
+//   재면, SA/병렬 탐색이 찾은 대각선으로 어긋난 legal 후보를 스스로 위반처럼
+//   잘못 보여줬다(예: 실제 최소 pairwise 간격 101.65µm인데 투영으론 72.9µm로
+//   표시) — 패킹 간격은 같은 채널 밴드 안에서 실제 gapBetween(대각선 오프셋
+//   반영) 쌍별 비교로 고쳤다. 400개 SA 후보로 회귀 확인(수정 전 3건 오탐 →
+//   수정 후 0건). PRE-SIGNOFF PROXY 8개 항목이 전부 CLEAN인 후보에서만 표시된다
+//   — legal이 아닌 배치는 채널/간격 실측값 자체가 위반 상태라 "여유"가 의미 없다.
+//
 // 정직하게 선을 긋는 부분: 실제 TritonRoute 라우팅도, Magic/KLayout DRC도
 // 아니다. 허브 위치는 실제 배선 경로가 아니라 신호 그룹의 전기적 중심
-// 근사치다. 여기서 찾은 후보는 daq_subsystem/config_hierarchical_parsac.json
-// 으로 만들어 실제 OpenLane 실행을 돌려야 최종 확정된다.
+// 근사치다. 여기서 찾은 후보는 config_hierarchical.json의
+// MACROS.chan_top.instances에 반영해 실제 OpenLane 실행을 돌려야 최종 확정된다.
 import { useEffect, useRef, useState } from 'react'
-import { DIE_W, DIE_H, N, MIN_SPACING, MACRO_MIN_SIDE, MACRO_MAX_SIDE, REAL_CHAN_TOP, CORE_RATIO, UTIL_WARN, impliedUtil, hubDefs, N_HUBS, type Pos, type Macro, REAL_RUN_MACROS, MIXED_MACROS, REAL_RUN_HUBS, type Cost, type State, type Candidate, isLegal, compareCandidates, LO_CELL, LO_COLS, LO_ROWS, analyzeLeftover, cost, LEFTOVER_CLEAN_PCT, CHANNEL_SAFE_MARGIN, preSignoffProxy, mulberry32, cloneState, clampMacro, stepSA, type RipUpResult, ripUpReplace, remainingStillFit, referenceCandidate, toMacroPlacementCfg, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, GLUE_TILE, GLUE_TILE_CAP, GLUE_TILES_NEEDED, GLUE_TILE_HUBS, GLUE_TILE_MAX_WIDTH_UM, type GlueTile, placeGlueTile, fillGlue, glueWirelength, bestMacroSpot, macrosSignature } from '../game/macroTetrisModel'
+import { DIE_W, DIE_H, N, MIN_SPACING, MACRO_MIN_SIDE, MACRO_MAX_SIDE, REAL_CHAN_TOP, CORE_RATIO, UTIL_WARN, impliedUtil, hubDefs, N_HUBS, type Pos, type Macro, REAL_RUN_MACROS, MIXED_MACROS, REAL_RUN_HUBS, type Cost, type State, type Candidate, isLegal, compareCandidates, LO_CELL, LO_COLS, LO_ROWS, analyzeLeftover, cost, LEFTOVER_CLEAN_PCT, CHANNEL_SAFE_MARGIN, spaceBreakdown, preSignoffProxy, mulberry32, cloneState, clampMacro, stepSA, type RipUpResult, ripUpReplace, remainingStillFit, referenceCandidate, toMacroPlacementCfg, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, GLUE_TILE, GLUE_TILE_CAP, GLUE_TILES_NEEDED, GLUE_TILE_HUBS, GLUE_TILE_MAX_WIDTH_UM, type GlueTile, placeGlueTile, fillGlue, glueWirelength, bestMacroSpot, macrosSignature } from '../game/macroTetrisModel'
 import type { ReplaceSAResult, SolverJob, SolverProgress, SolverRequest } from '../game/macroTetrisWorker'
 
 type Glue = { tiles: GlueTile[]; sig: string }
@@ -977,8 +992,36 @@ export default function MacroTetris() {
           <div><dt>spacing 위반</dt><dd>{liveCost.spacingViolations}</dd></div>
           <div><dt>조각난 여유 칸</dt><dd>{liveCost.fragmentedCells} cells</dd></div>
         </dl>
-        <p className="rule-disclaimer">이 모델은 매크로를 속이 빈 사각형으로만 다룹니다 — 실제 핀 위치·PDN 스트랩 배치를 시뮬레이션한 것이 아니라 근사치입니다. 최종 확정은 <code>config_hierarchical_parsac.json</code>으로 만든 실제 OpenLane 실행만 할 수 있습니다. <b>매크로 그룹 채널</b> 항목은 예외적으로 실제 실패 사례에 기반한 하드 legal 게이트입니다 — 2026-09-26에 채널을 300µm→100µm로 좁힌 후보를 실제 OpenLane으로 돌렸더니 hold 버퍼 300개가 legal한 자리를 못 찾아 Detailed Placement가 실패했습니다(DPL-0034/0036). 그 전까지 쓰던 "표준셀 여유 공간" 지표는 이 실패를 못 잡았습니다(둘 다 42%로 동일하게 나옴) — 다이 어디든 빈 공간만 있으면 되는 게 아니라, 매크로 그룹을 가르는 채널 자체가 넓어야 한다는 걸 실제로 확인한 뒤 추가한 항목입니다.</p>
+        <p className="rule-disclaimer">이 모델은 매크로를 속이 빈 사각형으로만 다룹니다 — 실제 핀 위치·PDN 스트랩 배치를 시뮬레이션한 것이 아니라 근사치입니다. 최종 확정은 <code>config_hierarchical.json</code>에 반영해 만든 실제 OpenLane 실행만 할 수 있습니다. <b>매크로 그룹 채널</b> 항목은 예외적으로 실제 실패 사례에 기반한 하드 legal 게이트입니다 — 2026-09-26에 채널을 300µm→100µm로 좁힌 후보를 실제 OpenLane으로 돌렸더니 hold 버퍼 300개가 legal한 자리를 못 찾아 Detailed Placement가 실패했습니다(DPL-0034/0036). 그 전까지 쓰던 "표준셀 여유 공간" 지표는 이 실패를 못 잡았습니다(둘 다 42%로 동일하게 나옴) — 다이 어디든 빈 공간만 있으면 되는 게 아니라, 매크로 그룹을 가르는 채널 자체가 넓어야 한다는 걸 실제로 확인한 뒤 추가한 항목입니다.</p>
       </article>
+
+      {(() => {
+        const allClean = proxy.overlapClean && proxy.spacingClean && proxy.boundsClean && proxy.pinAccessClean && proxy.powerAccessClean && proxy.leftoverClean && proxy.utilClean && proxy.channelClean
+        if (!allClean) return <article className="chip-card">
+          <div className="chip-card-title"><div><small>배치 후 진짜 여유 공간</small><h3>모든 검사를 통과한 후보만 표시</h3></div></div>
+          <p className="chip-note">위 PRE-SIGNOFF PROXY 8개 항목이 전부 CLEAN이어야 계산합니다 — 겹침·간격·채널 위반이 있는 배치는 채널/패킹 간격 실측값 자체가 위반 상태라 "여유"를 따지는 게 의미 없습니다. 지금은 {[!proxy.overlapClean && '겹침', !proxy.spacingClean && '간격', !proxy.channelClean && '채널', !proxy.boundsClean && '경계', !proxy.pinAccessClean && '핀 escape', !proxy.powerAccessClean && '전원 접근', !proxy.leftoverClean && '표준셀 여유', !proxy.utilClean && 'util'].filter(Boolean).join(', ')}이 RISK라 표시하지 않습니다.</p>
+        </article>
+        const sb = spaceBreakdown(liveStateRef.current.macros)
+        return <article className="chip-card" style={{ gridColumn: 'span 2' }}>
+          <div className="chip-card-title"><div><small>배치 후 진짜 여유 공간</small><h3>필수 간격을 다 채우고도 남는 공간 — 이 후보 기준 실측</h3></div><span>{sb.bindingConstraint === 'channel-geometry' ? '채널 기하 구조가 병목' : 'glue 밀도가 병목'}</span></div>
+          <dl className="metric-list">
+            <div><dt>전체 빈 공간(leftover)</dt><dd>{sb.totalLeftoverArea.toLocaleString()} µm² ({(sb.totalLeftoverArea / (DIE_W * DIE_H) * 100).toFixed(1)}%)</dd></div>
+            <div><dt>필수 — 채널({CHANNEL_SAFE_MARGIN}µm) × {sb.channel.length}곳</dt><dd>{sb.channel.length ? sb.channel.map(g => `${Math.round(g.actual)}µm`).join(', ') : '없음(이 후보는 채널 구조가 아님)'} · 초과분 {Math.round(sb.channelSlackTotal)}µm</dd></div>
+            <div><dt>필수 — 열/행 간격({MIN_SPACING}µm) × {sb.packing.length}곳</dt><dd>{sb.packing.map(g => `${Math.round(g.actual)}µm`).join(', ')} · 초과분 {Math.round(sb.packingSlackTotal)}µm</dd></div>
+            <div><dt>가장자리(다이 경계, 이 모델은 강제 안 함)</dt><dd>{Math.round(sb.edgeLow.actual)}µm / {Math.round(sb.edgeHigh.actual)}µm · 실제 성공 배치 관례값 {sb.edgeConvention}µm</dd></div>
+            <div><dt>glue 필요 면적(밀도 {Math.round(REAL_GLUE.targetDensity * 100)}% 기준)</dt><dd>{Math.round(sb.glueRequiredArea).toLocaleString()} µm²</dd></div>
+            <div><dt>채널·간격 legal 최소 면적(근사)</dt><dd>{Math.round(sb.geometryRequiredArea).toLocaleString()} µm²</dd></div>
+            <div><dt><b>진짜 여유 (leftover − 둘 중 더 큰 값)</b></dt><dd><b>{Math.round(sb.genuineSpareArea).toLocaleString()} µm² ({(sb.genuineSpareArea / (DIE_W * DIE_H) * 100).toFixed(1)}%)</b></dd></div>
+          </dl>
+          <p className="chip-note">채널·열간격 초과분이 0이면 그 항목은 법적 최소에 정확히 붙어 있는 것 — 더 줄이면 바로 위반입니다. {sb.bindingConstraint === 'glue-density'
+            ? <>지금은 <b>glue 밀도가 병목</b>이라 "진짜 여유"는 채널·간격 초과분이 아니라 leftover에서 glue 필요 면적({Math.round(sb.glueRequiredArea).toLocaleString()}µm²)을 뺀 값입니다 — 채널·간격 최소({Math.round(sb.geometryRequiredArea).toLocaleString()}µm²)는 이미 그보다 작아서 병목이 아닙니다.</>
+            : <>"진짜 여유"의 실제 출처: {[
+                sb.channelSlackTotal > 0.5 && `채널 초과분 ${Math.round(sb.channelSlackTotal).toLocaleString()}µm`,
+                sb.packingSlackTotal > 0.5 && `열/행 간격 초과분 합 ${Math.round(sb.packingSlackTotal).toLocaleString()}µm`,
+                (sb.edgeLow.actual + sb.edgeHigh.actual) > 0.5 && `가장자리 여백 ${Math.round(sb.edgeLow.actual)}+${Math.round(sb.edgeHigh.actual)}µm(관례 ${sb.edgeConvention}×2µm 대비)`,
+              ].filter(Boolean).join(' · ') || '없음(이미 법적 최소에 정확히 붙어 있음)'}</>} — 이 모델은 가장자리를 강제하지 않아서(<code>isLegal</code>이 0µm도 허용) 매크로를 다이 끝까지 밀어붙일 여지가 이론적으로 있지만, 그러면 실제 성공한 baseline의 관례(100µm 여백)에서 벗어나 검증되지 않은 영역입니다.</p>
+        </article>
+      })()}
     </section>
 
     {candidates.length > 0 && <section className="chip-card">

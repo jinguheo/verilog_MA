@@ -385,8 +385,8 @@ function PpaExperimentTwo() {
     </section>
 
     <section className="ppa-result-card">
-      <div className="card-title"><div><small className="kicker">LAYOUT EVIDENCE & FLOORPLAN INTENT</small><h3>실제 레이아웃 결과와 캡처 macro 배치 계획</h3></div><span className="analog-badge blocked">macro wrapper pending</span></div>
-      <p>왼쪽은 현재 공개 ADC와 SRAM macro에서 확보한 실제 배치 이미지입니다. 오른쪽은 실험 2에서 해당 macro를 분리 배치할 계획을 표현한 floorplan으로, 물리 구현 결과가 아니므로 추정 이미지와 혼동하지 않게 표시합니다.</p>
+      <div className="card-title"><div><small className="kicker">LAYOUT EVIDENCE & FLOORPLAN INTENT</small><h3>실제 macro와 PPA3 배치 기준</h3></div><span className="analog-badge blocked">offline route 있음 · mixed-signal signoff 대기</span></div>
+      <p>왼쪽 두 이미지는 공개 ADC와 SRAM macro의 실제 물리 view입니다. 오른쪽 그림은 초기 계획 스케치이며, 이후 PPA3 wrapper가 이 원칙으로 OpenLane 배치·라우팅까지 실행됐습니다. 최종 mixed-signal signoff는 CDAC 잔여 DRC/LVS 때문에 아직 완료가 아닙니다.</p>
       <div className="layout-evidence-grid">
         <figure><img src="/analog/adc_mid.png" alt="현재 사용 중인 SKY130 ADC 레이아웃 결과"/><figcaption><b>실제 ADC layout</b><br/>SAR ADC는 아날로그 섬으로 유지하고, 데이터 경계에서만 CDC를 둡니다.</figcaption></figure>
         <figure><img src="/analog/sram_mid.png" alt="현재 선택한 SRAM22 1024 by 32 macro 레이아웃 결과"/><figcaption><b>실제 SRAM22 layout</b><br/>1,024 × 32 macro의 물리 view를 재사용합니다. 캡처 buffer에는 별도 인스턴스가 필요합니다.</figcaption></figure>
@@ -399,8 +399,8 @@ function PpaExperimentTwo() {
       <p>혼합신호 경로는 ADC 매칭·SRAM macro 배치·전원망·CDC·타이밍·라우팅이 서로 영향을 줍니다. 전부를 동시에 바꾸면 어느 변경이 PPA 또는 기능 악화의 원인인지 분리할 수 없고, 재현 가능한 기준점도 사라집니다. 그래서 불변 조건을 먼저 잠그고, 한 단계에서 하나의 위험만 줄입니다.</p>
       <div className="strategy-grid">
         <article><i>1</i><b>기능 기준점 고정</b><span>byte 조립, FIFO CDC, circular capture, backpressure를 RTL test/lint로 먼저 고정합니다.</span><small>현재: 완료</small></article>
-        <article><i>2</i><b>macro/전원 영역 예약</b><span>ADC와 4 KB SRAM의 위치, 전압 domain, keep-out 및 배선 입출구를 먼저 정합니다.</span><small>다음: floorplan</small></article>
-        <article><i>3</i><b>물리 경로 단위 검증</b><span>PDN → placement → CTS → detailed routing → DRC/LVS를 block별로 닫습니다.</span><small>그 다음: physical closure</small></article>
+        <article><i>2</i><b>macro/전원 영역 예약</b><span>ADC와 4 KB SRAM의 위치, 전압 domain, keep-out 및 배선 입출구를 먼저 정합니다.</span><small>완료: PPA3 기준 floorplan</small></article>
+        <article><i>3</i><b>물리 경로 단위 검증</b><span>PDN → placement → CTS → detailed routing → DRC/LVS를 block별로 닫습니다.</span><small>부분 완료: offline route · signoff 대기</small></article>
         <article><i>4</i><b>추출 후 PPA 비교</b><span>PEX/STA/전력에서 실제 RC와 switching activity를 반영해 trade-off를 수치화합니다.</span><small>마지막: Pareto</small></article>
       </div>
       <div className="data-table"><table><thead><tr><th>미리 결정할 것</th><th>지금 확정하면 피하는 재작업</th><th>결정 기준</th></tr></thead><tbody>
@@ -424,15 +424,15 @@ function PpaExperimentTwo() {
         <tr><td>기생 추출 / PPA</td><td>OpenRCX / SPEF · OpenSTA · OpenROAD reports</td><td>배선 RC를 포함한 timing, area, power proxy와 routing quality</td><td>PEX/STA 이후 PPA 수치 기록 · Pareto 비교</td></tr>
         <tr><td>아날로그 signoff</td><td>Xschem · ngspice / Xyce</td><td>ADC noise·settling·INL/DNL 및 전원/온도 corner</td><td>12-bit·1 MS/s 목표를 corner별로 측정</td></tr>
       </tbody></table></div>
-      <p><b>현재 물리 PPA는 아직 not measured입니다.</b> 실험 1이 사용 중인 OpenLane/OpenROAD 자원을 건드리지 않고, 위 RTL 기준점과 macro wrapper를 먼저 완성한 뒤 별도 run으로 측정합니다.</p>
+      <p><b>Offline PPA3 배치·라우팅 근거는 존재하지만 최종 mixed-signal PPA는 아직 not measured입니다.</b> 현재 실행 중인 OpenLane 작업 때문이 아니라, ADC/CDAC의 잔여 DRC와 새 GDS 기준 LVS/PEX가 닫히지 않아 해당 route를 signoff 결과로 승격할 수 없기 때문입니다.</p>
     </section>
   </section>
 }
 
 function PpaExperimentThree({ onApply }: { onApply: () => void }) {
   return <section className="card ppa-experiment">
-    <div className="card-title"><div><small className="kicker">PPA EXPERIMENT 3 · IMPLEMENTED</small><h2>ADC·CDAC·SRAM 재사용 배치 기준</h2></div><span className="analog-badge ok">RTL + config ready</span></div>
-    <p>PPA1의 실제 ADC 크기와 PPA2의 macro 분리 원칙을 재사용한 초기 placement 설정입니다. CDAC GDS 정합이 끝나기 전에는 자동 배치·라우팅을 실행하지 않고, 영역·여유부·핀 접근성만 고정합니다.</p>
+    <div className="card-title"><div><small className="kicker">PPA EXPERIMENT 3 · IMPLEMENTED</small><h2>ADC·CDAC·SRAM 재사용 배치 기준</h2></div><span className="analog-badge ok">RTL + offline routed baseline</span></div>
+    <p>PPA1의 실제 ADC 크기와 PPA2의 macro 분리 원칙을 재사용한 placement 설정입니다. PPA3 wrapper는 offline OpenLane 배치·라우팅까지 실행됐지만, CDAC GDS 정합 전 결과이므로 최종 signoff/Pareto가 아니라 후보 기준선으로만 사용합니다.</p>
     <div className="stats ppa-experiment-stats">
       <div className="stat-card"><small>ADC island</small><strong>0.0656 mm²</strong><span>PPA1 실측 · 223.71 × 293.37 µm</span></div>
       <div className="stat-card"><small>CDAC 수리 여유</small><strong>0.0344 mm²</strong><span>총 아날로그 영역 ≤ 0.10 mm²</span></div>
@@ -449,14 +449,14 @@ function PpaExperimentThree({ onApply }: { onApply: () => void }) {
       </div>
     </section>
     <section className="ppa-result-card">
-      <div className="card-title"><div><small className="kicker">PPA3 CHECKPOINT · 2026-09-24</small><h3>현재 작업과 다음 재개 지점</h3></div><span className="analog-badge blocked">paused · gate 1 / 5</span></div>
-      <p>PPA3의 floorplan 기준은 준비됐지만 자동 placement·routing은 아직 시작하지 않습니다. CDAC Magic DRC 잔여 6건과 새 GDS의 DRC/LVS가 닫혀야 배치 결과와 PPA 측정이 의미를 갖습니다.</p>
+      <div className="card-title"><div><small className="kicker">PPA3 CHECKPOINT · AUDITED 2026-09-29</small><h3>Offline route 확보 · 최종 signoff 재개 지점</h3></div><span className="analog-badge blocked">routed candidate · signoff blocked</span></div>
+      <p>1250×600µm PPA3 wrapper의 ADC/SRAM 고정 배치와 detailed-routing 이미지는 확보했습니다. 다만 CDAC Magic DRC 잔여 6건과 새 GDS의 DRC/LVS가 닫히지 않아 이 결과를 최종 물리 PPA로 부르지는 않습니다.</p>
       <div className="ppa-result-grid">
-        <article><small>구현 완료</small><b>RTL + OpenLane config</b><span className="ok-text">통합 top lint pass · 1250 × 600 µm · ADC/SRAM 고정 배치</span></article>
+        <article><small>구현 완료</small><b>RTL + OpenLane routed baseline</b><span className="ok-text">통합 top lint pass · 1250 × 600 µm · ADC/SRAM 고정 배치 · routing 이미지</span></article>
                 <article><small>정합 결과</small><b>CDAC DRC 84 → 6</b><span className="warn-text">Magic 원본에서 job별 GDS 재생성</span></article>
         <article><small>원본 보호</small><b>vendor GDS unchanged</b><span className="ok-text">SHA-256 전후 동일 · 검증 복사본만 변경</span></article>
         <article><small>다음 재개 지점</small><b>잔여 6건 physical closure</b><span><code>diff/tap.18,20</code> · 우측 MV nwell/P-tap 영역</span></article>
-        <article><small>배치 실행 조건</small><b>CDAC DRC/LVS 통과</b><span>대칭축·dummy·guard ring·핀 접근성 보존</span></article>
+        <article><small>최종 승격 조건</small><b>CDAC DRC/LVS 통과</b><span>대칭축·dummy·guard ring·핀 접근성 보존 후 재실행</span></article>
         <article><small>최종 산출물</small><b>PEX 기반 PPA3</b><span>기생 RC 포함 성능·전력·면적과 Pareto 비교</span></article>
       </div>
     </section>

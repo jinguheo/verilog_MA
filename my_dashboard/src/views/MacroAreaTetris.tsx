@@ -687,7 +687,7 @@ export default function MacroAreaTetris() {
     </section>
 
     <section className="future-optimization-roadmap macro-area-improvements">
-      <div className="roadmap-head"><div><small>MACRO AREA TETRIS STATUS</small><h4>현재 구현 사항과 추후 개선 사항</h4></div><span>현재 모델 6.3/10 · 실제 signoff 연결 전</span></div>
+      <div className="roadmap-head"><div><small>MACRO AREA TETRIS STATUS</small><h4>현재 구현 사항과 추후 개선 사항</h4></div><span>현재 모델 6.3/10 · 배치 후보 전반은 실제 signoff 연결 전, chan_top 재성형만 실제 배치로 확인(위 AREA FINDING)</span></div>
       <div className="roadmap-section-title"><div><small>CURRENT IMPLEMENTATION</small><h5>현재 구현 사항 요약</h5></div><span>현재 실제 동작</span></div>
       <div className="improvement-score-strip">
         <div><span>면적 탐색</span><b>8/10</b><small>5→1% 사다리 · 2D 형상 3행 legal, 4행은 아직</small></div><div><span>제약·진단</span><b>8/10</b><small>실패 부위 기록</small></div><div><span>후보 다양성</span><b>7/10</b><small>random seed 12개 연결 · SA(온도) 미적용</small></div><div><span>배선 예측</span><b>4/10</b><small>근사 hub 비용</small></div><div><span>DRC/LVS</span><b>2/10</b><small>목록 출력 단계</small></div><div><span>시각화</span><b>8/10</b><small>단계별 layout</small></div>
@@ -700,8 +700,10 @@ export default function MacroAreaTetris() {
         <article><b>후보·히스토리 관리</b><span>좌표 signature 중복 제거, 재발견 누적, 처리 단계별 layout 보존</span></article>
         <article><b>Worker·수동 편집·출력</b><span>백그라운드 계산, macro drag, 후보 저장과 OpenLane config JSON 출력</span></article>
       </div>
-      <div className="roadmap-section-title future"><div><small>ROADMAP STATUS</small><h5>완료·부분 구현·미연결 항목</h5></div><span>2026-09-29 코드 기준</span></div>
+      <div className="roadmap-section-title future"><div><small>ROADMAP STATUS</small><h5>완료·부분 구현·미연결 항목</h5></div><span>2026-09-30 코드 기준</span></div>
       <div className="roadmap-grid">
+        <article className="game-done"><header><b>chan_top 재성형 실제 배치 검증</b><em>DONE(배치만) · 2026-09-30</em></header><p>위 AREA FINDING 표의 PASS 4개(650×985 · 590×1085 · 500×1280 · 450×1422)는 원래 다이 레벨 패킹 계산일 뿐이었는데, 각각 <code>DIE_AREA</code>만 바꾼 chan_top을 실제 OpenLane으로 synthesis부터 <code>--to OpenROAD.DetailedPlacement</code>까지 다시 돌려 4개 전부 legalize 확인(최종 displacement 0.0µm, DPL 에러 없음) — 실제 배치 스크린샷도 있습니다. <b>CTS·라우팅·DRC/LVS·타이밍은 여전히 미확인</b>이라 "배치 가능"이지 "signoff 가능"은 아직 아닙니다.</p><small>재현: config_reshape_*.json + tools/wsl/114_render_chan_top_reshapes.sh</small></article>
+        <article className="game-done"><header><b>진짜 남은 여유 공간 표시</b><em>DONE · 2026-09-30</em></header><p>leftover 초록/주황 오버레이가 매크로만 빼고 계산돼서, 표준셀 타일을 이미 채운 뒤에도 그 자리가 계속 "여유"로 보였습니다 — <code>analyzeLeftoverD</code>에 배치된 타일도 빼는 옵션을 추가해, 타일 표시를 켜면 <b>진짜 아직 안 쓰인 칸</b>만 남깁니다(수치도 표시: "매크로+타일 배치 후 진짜 남은 여유 N%"). 같이 고침: 표준셀 타일 버튼이 예전엔 항상 작업 중인 배치(cur) 기준이라 후보를 보고 있어도 조용히 현재 배치로 튕겨나갔는데, 이제 지금 화면에 보이는 것(후보든 처리 단계든) 기준으로 채웁니다.</p><small>확인: 후보 C0001(3700×2100) 선택 → 타일 13/13 채움 → 진짜 남은 여유 27.3% 라이브 확인</small></article>
         <article className="game-done"><header><b>random legal start 연결</b><em>DONE · 2026-09-29</em></header><p>후보 생성이 <code>seeds: 0</code>으로 호출돼 무작위 시작점이 전혀 없었습니다 — 이제 12개(로드맵 권장 8~16개 범위)를 실제로 흩뿌려 deterministic 여유 분할 후보에 더합니다. 다만 지금 붙은 건 Macro Tetris의 <b>Rip-up(greedy 다듬기)</b>까지고, 온도 기반으로 일부 나쁜 이동도 받아들이는 <b>SA 자체는 아직</b>입니다 — local minimum 탈출력은 SA를 실제로 붙여야 더 좋아집니다.</p><small>남은 일: repairFrom의 polish를 SA로 교체</small></article>
         <article className="game-done" style={{ gridColumn: 'span 3' }}>
           <header><b>표준셀 타일 — 가변 폭 row-run</b><em>DONE · 2026-09-29</em></header>
@@ -721,7 +723,7 @@ export default function MacroAreaTetris() {
         <article><header><b>실제 표준셀 수용성</b><em>P1 · FEEDBACK</em></header><p>단순 남는 면적 density 외에 usable row 단절, halo, PDN obstruction과 pin-access 밀도를 빠른 placement 결과로 평가합니다.</p><small>도구: RePlAce · DPL · FastRoute</small></article>
         <article><header><b>후보 저장 강화</b><em>P2 · QUALITY</em></header><p>작업 중 Reset 시 Worker를 terminate/restart하는 실제 취소는 완료됐습니다. 남은 일은 최대 800개 후보와 단계 기록을 localStorage 대신 IndexedDB 또는 파일 registry로 옮기는 것입니다.</p><small>완료: Worker 취소·기본 회귀 테스트 · 남음: 영속 저장소</small></article>
       </div>
-      <div className="flow-implementation-status"><span className="done"><b>현재 구현</b> 면적 축소 사다리 · 형상/행 수 후보 · random seed 12개 · 물리 gate · Worker 취소 · 회귀 테스트</span><span className="next"><b>추후 우선순위</b> 실제 net 비용 → 온도 기반 SA → 3·4행 legalize → 10개 GRT/STA → Top 3 signoff → PASS-only best</span></div>
+      <div className="flow-implementation-status"><span className="done"><b>현재 구현</b> 면적 축소 사다리 · 형상/행 수 후보(3행 legal) · random seed 12개 · 물리 gate · 진짜 여유 공간 표시 · chan_top 재성형 4개 실제 배치 검증 · Worker 취소 · 회귀 테스트</span><span className="next"><b>추후 우선순위</b> 실제 net 비용 → 온도 기반 SA → 4행 legalize → 재성형 CTS/라우팅/DRC/LVS → 10개 GRT/STA → Top 3 signoff → PASS-only best</span></div>
     </section>
 
     <section className="chip-analysis-grid">

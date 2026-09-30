@@ -194,6 +194,93 @@ export function internalProjectionGaps(macros: Macro[]): number[] {
   return gaps
 }
 
+// "배치 후 진짜 여유 공간" — 전체 빈 공간(leftover) 중 얼마가 법적 최소(간격·채널)를
+// 만족하는 데 반드시 필요하고, 그걸 다 채우고도 남는 게 있는지를 축(axis)별로 정확히
+// 계산한다. 두 축 각각의 내부 간격(같은 축의 밴드 사이)과 다이 경계까지의 가장자리
+// 여백을 실측값·법적 최소값과 함께 보여주고, 그 차이(초과분)만 "진짜 여유"로 친다.
+// 채널 축(그룹 수가 적은 쪽)은 CHANNEL_SAFE_MARGIN(300)이 최소, 반대 축(패킹 축, 같은
+// 밴드 안에서 옆으로 늘어선 매크로 사이)은 MIN_SPACING(100)이 최소 — internalProjectionGaps와
+// 같은 축 판정 규칙을 쓴다. 가장자리(다이 경계)는 이 모델의 isLegal이 실제로 강제하는
+// 값이 0이라 "필수"는 아니고, 실제 성공한 baseline이 쓰는 관례값(100)과 비교만 한다.
+export type AxisGapReport = { actual: number; min: number; slack: number }
+export type SpaceBreakdown = {
+  channelAxis: 'x' | 'y'
+  channel: AxisGapReport[]
+  packing: AxisGapReport[]
+  edgeLow: { axis: 'x' | 'y'; actual: number }
+  edgeHigh: { axis: 'x' | 'y'; actual: number }
+  edgeConvention: number
+  totalLeftoverArea: number
+  channelSlackTotal: number
+  packingSlackTotal: number
+  glueRequiredArea: number
+  geometryRequiredArea: number
+  genuineSpareArea: number
+  bindingConstraint: 'channel-geometry' | 'glue-density'
+}
+function gapReports(merged: [number, number][], min: number): AxisGapReport[] {
+  const out: AxisGapReport[] = []
+  for (let i = 1; i < merged.length; i++) {
+    const actual = merged[i][0] - merged[i - 1][1]
+    out.push({ actual, min, slack: Math.max(0, actual - min) })
+  }
+  return out
+}
+// 패킹(같은 채널 밴드 안에서 옆으로 늘어선 매크로) 간격은 채널 간격과 달리 "축 투영
+// 병합 구간 사이"로 재면 틀릴 수 있다 - 매크로가 대각선으로 살짝 어긋나 있으면(예:
+// SA/병렬 탐색이 찾은 후보) 투영 간격이 실제 최소 간격(gapBetween, 대각선 오프셋을
+// 반영하는 Chebyshev 거리)보다 작게 나와 legal한 배치를 위반처럼 잘못 보여준다 - 실제로
+// spacingViolations는 축 투영이 아니라 gapBetween 쌍별 비교로 판정하기 때문이다. 그래서
+// 패킹 간격은 같은 채널 밴드에 속한 매크로들을 뽑아 패킹 축 위치로 정렬한 뒤, 이웃한
+// 쌍의 실제 gapBetween을 쓴다 - 채널 자체는 "다이 폭 전체가 완전히 비었는가"라는 축
+// 투영 질문이 맞는 것과 대조적이다(그래서 channel은 그대로 mergedIntervals를 쓴다).
+function packingGapReports(macros: Macro[], chMerged: [number, number][], channelAxis: 'x' | 'y'): { gap: AxisGapReport; bandExtent: number }[] {
+  const packAxis = channelAxis === 'x' ? 'y' : 'x'
+  const chLo = (m: Macro) => (channelAxis === 'y' ? m.y : m.x)
+  const packLo = (m: Macro) => (packAxis === 'y' ? m.y : m.x)
+  const out: { gap: AxisGapReport; bandExtent: number }[] = []
+  for (const [bandStart, bandEnd] of chMerged) {
+    const inBand = macros.filter(m => chLo(m) > bandStart - 1e-6 && chLo(m) < bandEnd - 1e-6)
+    const sorted = [...inBand].sort((a, b) => packLo(a) - packLo(b))
+    for (let i = 1; i < sorted.length; i++) {
+      const actual = gapBetween(sorted[i - 1], sorted[i])
+      out.push({ gap: { actual, min: MIN_SPACING, slack: Math.max(0, actual - MIN_SPACING) }, bandExtent: bandEnd - bandStart })
+    }
+  }
+  return out
+}
+export function spaceBreakdown(macros: Macro[]): SpaceBreakdown {
+  const mx = mergedIntervals(macros, 'x'), my = mergedIntervals(macros, 'y')
+  const channelAxis: 'x' | 'y' = mx.length <= my.length ? 'x' : 'y'
+  const [chMerged, , chDie] = channelAxis === 'x' ? [mx, my, DIE_W] : [my, mx, DIE_H]
+  const pkDie = channelAxis === 'x' ? DIE_H : DIE_W
+  const channel = gapReports(chMerged, CHANNEL_SAFE_MARGIN)
+  const packingRaw = packingGapReports(macros, chMerged, channelAxis)
+  const packing = packingRaw.map(p => p.gap)
+  const channelSlackTotal = channel.reduce((s, g) => s + g.slack, 0)
+  const packingSlackTotal = packing.reduce((s, g) => s + g.slack, 0)
+  const edgeLowActual = chMerged[0]?.[0] ?? chDie
+  const edgeHighActual = chDie - (chMerged[chMerged.length - 1]?.[1] ?? 0)
+  const macroArea = macros.reduce((s, m) => s + m.w * m.h, 0)
+  const totalLeftoverArea = DIE_W * DIE_H - macroArea
+  const glueRequiredArea = REAL_GLUE.cellArea / REAL_GLUE.targetDensity
+  // "법적 최소를 만족하려면 leftover가 최소 얼마나 있어야 하는가" — 채널 간격은 다이를
+  // 가로지르는 폭 전체(pkDie)에 걸쳐 있고, 각 패킹 간격은 자기가 속한 밴드의 실제
+  // 폭(bandExtent, baseline이면 행 높이 800)에만 반복된다. 격자형 배치에서는 정확한
+  // 값과 일치한다(3700×2100 baseline에서 검증: 채널 1,110,000 + 패킹 480,000 =
+  // 1,590,000, 빈 100µm 셀 전수 분류와 일치) — 밴드 폭 합계로 한 번에 곱하면 같은
+  // 축에 밴드가 여러 개일 때 과대평가한다.
+  const geometryRequiredArea = channel.reduce((s, g) => s + g.min * pkDie, 0) + packingRaw.reduce((s, p) => s + p.gap.min * p.bandExtent, 0)
+  const requiredArea = Math.max(glueRequiredArea, geometryRequiredArea)
+  const genuineSpareArea = Math.max(0, totalLeftoverArea - requiredArea)
+  return {
+    channelAxis, channel, packing,
+    edgeLow: { axis: channelAxis, actual: edgeLowActual }, edgeHigh: { axis: channelAxis, actual: edgeHighActual }, edgeConvention: MIN_SPACING,
+    totalLeftoverArea, channelSlackTotal, packingSlackTotal, glueRequiredArea, geometryRequiredArea, genuineSpareArea,
+    bindingConstraint: geometryRequiredArea >= glueRequiredArea ? 'channel-geometry' : 'glue-density',
+  }
+}
+
 export function sideClearances(idx: number, macros: Macro[]): { left: number; right: number; top: number; bottom: number } {
   const m = macros[idx]
   let left = m.x, right = DIE_W - (m.x + m.w), top = m.y, bottom = DIE_H - (m.y + m.h)

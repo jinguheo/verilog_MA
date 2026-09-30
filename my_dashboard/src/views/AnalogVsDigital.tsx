@@ -263,7 +263,7 @@ export default function AnalogVsDigital({tools,catalog}:{tools:LiveTool[];catalo
         <tr><td>전원 도메인</td><td>단일 (vdd/vss 격자 하나)</td><td>vdda/vssa(아날로그)와 vccd/vssd(디지털) <b>물리적으로 분리</b></td></tr>
         <tr><td>정확도의 기준</td><td>타이밍(setup/hold), 논리적 참/거짓</td><td>소자 간 상대 매칭 — 절대값이 아니라 비율 오차(%)</td></tr>
         <tr><td>신호 표현</td><td>0/1 두 준위 + 노이즈 마진</td><td>연속 전압, 잡음이 곧 오차로 직결</td></tr>
-        <tr><td>이 세션에서 실제로 돌린 도구</td><td>Yosys → OpenROAD (synthesis→P&amp;R)</td><td>CACE(ngspice 기반 특성평가) → Magic DRC → Netgen LVS, 지금 LVS에서 <code>netgen</code> 오류로 blocked</td></tr>
+        <tr><td>이 세션에서 실제로 돌린 도구</td><td>Yosys → OpenROAD (synthesis→P&amp;R)</td><td>CACE(ngspice 기반 특성평가) → Magic DRC → Netgen LVS. 과거 <code>netgen</code> 실행 오류는 수정됐고 device/connectivity equivalence까지 확인했으며, 현재 gate는 CDAC Magic DRC 잔여 6건과 새 GDS 기준 pin-order/LVS 재검증</td></tr>
       </tbody></table></div>
     </section>
   </>

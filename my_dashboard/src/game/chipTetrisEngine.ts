@@ -298,11 +298,18 @@ const nextFromQueue = (state: GameState, board: Board, completed: number, queue 
 }
 
 export const lockActive = (state: GameState, active = state.active, queue = state.queue, hold = state.hold): GameState => {
-  if (!isValid(state.board, active) || !respectsHardPlacementRules(state.board, active)) return { ...state, lastEvent: 'Illegal placement: zone or required-neighbor rule failed' }
+  if (!isLegalPlacement(state.board, active)) return { ...state, lastEvent: 'Illegal placement: zone or required-neighbor rule failed' }
   const board = writeBlock(state.board, active, state.placements + 1)
   const completed = Math.max(0, countFullRows(board) - countFullRows(state.board))
   return nextFromQueue({ ...state, active }, board, completed, queue, hold)
 }
+
+// The game board uses this exact predicate both for an AI placement and for the
+// "real free space" overlay in ChipTetris. A visually empty tile is not free
+// unless the whole active shape fits, stays in its allowed zone, and satisfies
+// its required-neighbour relation.
+export const isLegalPlacement = (board: Board, active: ActiveBlock): boolean =>
+  isValid(board, active) && respectsHardPlacementRules(board, active)
 
 export const moveActive = (state: GameState, dx: number, dy: number): GameState => {
   if (state.gameOver || state.floorplanReady) return state
