@@ -28,6 +28,21 @@ export const DIE_SNAP = 10
 export const MAX_ASPECT = 3
 export const RIPUP_STEP = MIN_SPACING
 
+// ---- 룰 참조표 ----
+// 지금 적용 중인 물리 제약이 gateReason/diagnoseD/repairFrom/generateForDie에
+// 흩어져 있어서 "지금 규칙이 뭐지?"를 빠르게 확인할 데가 없었다. 값을 여기서
+// 새로 정의하지 않고 원래 상수를 그대로 참조만 한다 — 상수 하나 바뀌면 이 표도
+// 같이 바뀌니, 이 객체 하나가 "지금 켜져 있는 규칙 전체"에 대한 단일 진실 공급원.
+export const RULES = {
+  spacing: { value: MIN_SPACING, unit: 'µm', gate: '항상', desc: '매크로 간 최소 간격 · 다이 가장자리 여유' },
+  channel: { value: CHANNEL_SAFE_MARGIN, unit: 'µm', gate: '항상 (하드 게이트)', desc: '매크로 그룹 채널 — 2026-09-26 실측: 300=PASS, 100=FAIL(DPL-0034/0036)' },
+  pinEscape: { value: PIN_ESCAPE_MARGIN, unit: 'µm', gate: '엄격 모드만', desc: '핀 escape — 최소 간격×2, 라우팅 채널 하나 지나갈 여유' },
+  powerAccess: { value: POWER_RING_MARGIN, unit: 'µm', gate: '엄격 모드만', desc: '전원 접근 — 최소 간격×3, 실제 hierarchical config 행간 채널 폭과 동일' },
+  density: { value: REAL_GLUE.targetDensity, unit: '', gate: '항상 (UI에서 40/50/60% 선택)', desc: '필요 밀도(glue 460,614µm² ÷ 남는 공간) ≤ 목표 — 기본값은 config의 PL_TARGET_DENSITY_PCT' },
+  maxAspect: { value: MAX_ASPECT, unit: ':1', gate: '다이 형상 탐색', desc: '다이 종횡비 상한 — 한쪽만 계속 줄어드는 가늘고 긴 다이 방지' },
+  dieSnap: { value: DIE_SNAP, unit: 'µm', gate: '항상', desc: '다이 크기 반올림 단위' },
+} as const
+
 export function dieArea(d: Die): number { return d.w * d.h }
 export function macroArea(macros: Macro[]): number { return macros.reduce((s, m) => s + m.w * m.h, 0) }
 // 다이 utilization = (매크로 면적 + 표준셀 실제 셀 면적) / 다이 면적.
