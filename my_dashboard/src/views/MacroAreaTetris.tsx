@@ -669,7 +669,20 @@ export default function MacroAreaTetris() {
           <tr><td>700×914</td><td>3300×2330</td><td>7.689mm²</td><td>-1.04%</td><td><span className="warning-badge">FAIL — 채널 부족</span></td></tr>
         </tbody></table></div>
         <p className="chip-note">방법: <code>costD</code>/<code>gateReason</code>을 그대로 써서 4×2 격자를 여러 W×H(면적 고정, {MIN_SPACING}µm 최소 간격·{CHANNEL_SAFE_MARGIN}µm 채널·100µm 가장자리 여유 그대로)로 직접 만들어 실측 게이트를 통과하는지 하나씩 계산 — 근사치가 아니라 이 탭이 쓰는 legality 함수로 직접 확인한 결과입니다. <b>590×1085 부근이 이론적 최적점</b>(가로 압박=세로 압박이 같아지는 지점)과 거의 일치합니다.</p>
-        <p className="rule-disclaimer"><b>확정은 아직 안 됨</b> — 이 표는 "이 비율이면 게이트를 통과할 다이가 나온다"는 배치 문제의 계산 결과일 뿐, chan_top 내부(46,009셀)가 실제로 590×1085 비율에서 라우팅·타이밍이 되는지는 전혀 보지 않습니다. 확정하려면 chan_top을 이 비율로 <b>다시 synthesis+P&R</b>해야 합니다(몇 시간짜리 새 실행, 위치 재배치와는 급이 다른 작업). 아래 로드맵의 "2차원 다이 형상 탐색" 항목이 이 결과를 근거로 합니다.</p>
+        <p className="rule-disclaimer"><b>2026-09-30: PASS 4개 전부 배치 가능함을 실측으로 확인</b> — 각 W×H로 <code>DIE_AREA</code>만 바꾼 chan_top을 실제 OpenLane으로 synthesis부터 다시 돌려 <code>--to OpenROAD.DetailedPlacement</code>까지(floorplan→합성→global placement→detailed placement, CTS·라우팅·DRC·LVS는 생략 — 각 6~7분) 실행했습니다. 4개 전부 legalize 완료(최종 displacement 0.0µm, DPL 에러 없음) — 아래는 그 결과의 실제 배치 스크린샷(OpenROAD GUI <code>save_image</code>, 라우팅 없이 셀 배치만)입니다. <b>DRC/LVS·타이밍·라우팅은 아직 확인 안 됨</b> — 이건 배치까지만 본 결과이고, 확정하려면 CTS+라우팅+signoff까지 마저 돌려야 합니다(여기서부터가 몇 시간짜리 작업).</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginTop: 10 }}>
+          {[
+            { w: 800, h: 800, file: '800x800', label: '800×800 (현재, 실제 signoff)', note: '실제 완주 run — DRC 0 · LVS 0' },
+            { w: 650, h: 985, file: '650x985', label: '650×985', note: '배치 legal · displacement 0.0µm' },
+            { w: 590, h: 1085, file: '590x1085', label: '590×1085 (탐색 최적점)', note: '배치 legal · displacement 0.0µm' },
+            { w: 500, h: 1280, file: '500x1280', label: '500×1280', note: '배치 legal · displacement 0.0µm' },
+            { w: 450, h: 1422, file: '450x1422', label: '450×1422', note: '배치 legal · displacement 0.0µm' },
+          ].map(s => <figure key={s.file} style={{ margin: 0 }}>
+            <img src={`/macro-area/chan-top-reshape/${s.file}.png`} alt={`chan_top ${s.label} 실제 배치`} style={{ width: '100%', borderRadius: 6, border: '1px solid var(--border)', aspectRatio: `${s.w} / ${s.h}`, objectFit: 'cover' }}/>
+            <figcaption style={{ marginTop: 4, color: 'var(--text-muted)', fontSize: 8 }}><b>{s.label}</b><br/>{s.note}</figcaption>
+          </figure>)}
+        </div>
+        <p className="chip-note" style={{ marginTop: 8 }}>파란 가로줄은 전원망(PDN) 스트랩, 진한 세로 줄무늬는 tap/endcap 셀 열 — 라우팅 전이라 배선은 안 보입니다. 스크린샷은 <code>samples/sample_test_4/asic/chan_top/config_reshape_*.json</code>(각 W×H, 나머지는 config.json과 동일) + <code>tools/wsl/114_render_chan_top_reshapes.sh</code>로 재현 가능합니다.</p>
       </article>
     </section>
 
