@@ -65,9 +65,12 @@ function squareFilled(pre: Int32Array, cols: number, r: number, c: number, K: nu
 
 export type LeftoverD = { cellClass: Uint8Array; cols: number; rows: number; usableCells: number; fragmentedCells: number; totalEmptyCells: number }
 
-export function analyzeLeftoverD(d: Die, macros: Macro[]): LeftoverD {
+// tiles: 이미 배치된 표준셀 타일(있으면) — 넘기면 그 자리도 occupied로 쳐서 "진짜
+// 아직 안 쓰인" 칸만 usable/fragmented로 분류한다. 기본값 없음(=매크로만 볼 때와
+// 동일)이라 costD 등 기존 호출부는 그대로 매크로만 본다.
+export function analyzeLeftoverD(d: Die, macros: Macro[], tiles: { x: number; y: number; w: number; h: number }[] = []): LeftoverD {
   const { cols, rows } = loDims(d)
-  const occ = occupancy(d, macros)
+  const occ = occupancy(d, tiles.length ? [...macros, ...tiles] : macros)
   const pre = prefixSum(occ, cols, rows)
   const K = USABLE_SQUARE
   const usable = new Uint8Array(cols * rows)

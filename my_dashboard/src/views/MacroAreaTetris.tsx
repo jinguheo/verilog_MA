@@ -78,7 +78,10 @@ function drawArea(ctx: CanvasRenderingContext2D, v: BoardView, glue: GlueTile[],
   ctx.fillStyle = '#16213a'
   ctx.fillRect(0, 0, die.w * s, die.h * s)
 
-  const lo = analyzeLeftoverD(die, macros)
+  // glue.length>0(표준셀 타일 표시 켜짐)이면 타일이 이미 차지한 칸은 빼고, 그
+  // 자리에 정말 아직 아무것도 없는 칸만 초록/주황으로 표시한다 — 타일 뒤에 가려진
+  // 칸까지 "여유"로 보이는 걸 막는다.
+  const lo = analyzeLeftoverD(die, macros, glue.map(t => ({ x: t.x, y: t.y, w: t.w, h: LO_CELL })))
   for (let r = 0; r < lo.rows; r++) for (let c = 0; c < lo.cols; c++) {
     const cls = lo.cellClass[r * lo.cols + c]
     if (cls === 0) continue
@@ -223,11 +226,16 @@ export default function MacroAreaTetris() {
   const vsBase = dieArea(cur.die) / dieArea(BASE_DIE) - 1
   const vsStart = dieArea(cur.die) / dieArea(start.cur.die) - 1
   const locked = busy !== null || searching
+  // 후보를 보고 있으면(board) 그 후보 기준, 아니면 지금 작업 중인 배치(cur) 기준 —
+  // 표준셀 타일 버튼·"진짜 남은 여유" 계산이 화면에 실제로 보이는 다이를 따라간다.
   const view: BoardView = board ?? { die: cur.die, macros: cur.state.macros, hubs: cur.state.hubs, issues: diagnoseD(cur.die, cur.state, opts), title: '현재 배치' }
+  // 매크로 + "이미 배치된" 표준셀 타일까지 뺀, 진짜 아직 안 쓰인 칸 — 표준셀 타일
+  // 표시를 켰을 때만 의미 있음(꺼져있으면 glue=[]라 매크로만 뺀 값과 같아짐).
+  const afterGlue = glue.length > 0 ? analyzeLeftoverD(view.die, view.macros, glue.map(t => ({ x: t.x, y: t.y, w: t.w, h: LO_CELL }))) : null
 
   useEffect(() => {
     const ctx = canvasRef.current?.getContext('2d')
-    if (ctx) drawArea(ctx, view, board ? [] : glue, board ? null : sel)
+    if (ctx) drawArea(ctx, view, glue, board ? null : sel)
   })
 
   useEffect(() => { writeJson(candKey(opts), cands) }, [cands, opts])
@@ -492,7 +500,7 @@ export default function MacroAreaTetris() {
           style={{ width: '100%', height: 'auto', background: '#101726', border: '2px solid var(--border-strong)', borderRadius: 8, display: 'block', cursor: locked || board ? 'default' : 'grab' }}
           onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
         />
-        {board && <div style={{ marginTop: 6 }}><button className="chip-link-button" onClick={() => setBoard(null)} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '0.5px solid var(--border-strong)', background: 'var(--surface-1)', color: 'var(--text-primary)', cursor: 'pointer' }}>← 현재 배치로 돌아가기</button></div>}
+        {board && <div style={{ marginTop: 6 }}><button className="chip-link-button" onClick={() => { setBoard(null); setGlue([]) }} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '0.5px solid var(--border-strong)', background: 'var(--surface-1)', color: 'var(--text-primary)', cursor: 'pointer' }}>← 현재 배치로 돌아가기</button></div>}
         {view.issues.length > 0 && <div className="data-table" style={{ marginTop: 6 }}><table><thead><tr><th>실패 부위</th><th>내용</th></tr></thead><tbody>
           {view.issues.slice(0, 10).map((is, k) => <tr key={k}><td><b>{ISSUE_LABEL[is.kind]}</b></td><td>{is.detail}</td></tr>)}
           {view.issues.length > 10 && <tr><td colSpan={2}>… 외 {view.issues.length - 10}건</td></tr>}
@@ -543,8 +551,9 @@ export default function MacroAreaTetris() {
           </div>
           {genProgress && <p className="key-help" style={{ marginTop: 4 }}>후보 생성 다이 {genProgress.done}/{genProgress.total} · 통과 배치 {genProgress.found}개</p>}
           <div className="chip-switches" style={{ marginTop: 5, gridTemplateColumns: '1fr' }}>
-            <button onClick={() => { const r = fillGlueD(cur.die, cur.state.macros, cur.state.hubs, glueTilesNeeded(opts.density), opts.density); setGlue(r.tiles); setBoard(null) }} disabled={locked}>표준셀 타일 표시 (표시용){glue.length > 0 && ` — ${glue.length}/${glueTilesNeeded(opts.density)}개 배치됨`}</button>
+            <button onClick={() => { const r = fillGlueD(view.die, view.macros, view.hubs, glueTilesNeeded(opts.density), opts.density); setGlue(r.tiles) }} disabled={locked}>표준셀 타일 표시 (표시용, {view.title} 기준){glue.length > 0 && ` — ${glue.length}/${glueTilesNeeded(opts.density)}개 배치됨`}</button>
           </div>
+          {afterGlue && <p className="key-help" style={{ marginTop: 4 }}>{view.title}({view.die.w}×{view.die.h}) 매크로+타일 배치 후 <b>진짜 남은 여유</b>: {(afterGlue.totalEmptyCells * LO_CELL * LO_CELL / dieArea(view.die) * 100).toFixed(1)}% ({afterGlue.totalEmptyCells}칸, {(afterGlue.totalEmptyCells * LO_CELL * LO_CELL).toLocaleString()}µm² — 그중 정사각형 규칙으로 바로 쓸 수 있는 칸 {afterGlue.usableCells}개, 조각난 칸 {afterGlue.fragmentedCells}개). 위 캔버스의 초록/주황 칸이 이 자리입니다 — 타일이 이미 덮은 칸은 빠졌습니다.</p>}
           <p className="key-help" style={{ marginTop: 4 }}>후보 만들기 = ① 지금 다이부터 3700×2100 높이까지 10µm마다(같은 폭) ② 행 수(1~4)별로 필요한 최소 다이를 closed form으로 계산한 형상(2차원 형상 sweep, MAX_ASPECT 안에서 최대 3개 — 3·4행은 아직 legal 후보 미생성) — 각 다이마다 세로 여유 분할(채널 폭 {CHANNEL_SAMPLES + 1}단계 × 위/아래 배분 3) × 가로 분배 4가지를 진단→처리 알고리즘에 통과시킵니다. 폭이 좁아 4개씩 2행으로 못 들어가는 형상은 처리 알고리즘이 3·4행으로 재구성하거나 실패로 걸러집니다. 탐색이 수렴하면 자동으로 실행됩니다.</p>
         </div>
 
@@ -579,7 +588,7 @@ export default function MacroAreaTetris() {
             <p className="chip-note"><b>#{t.n} 상세</b> — 후보 다이별 진단·처리 단계. 단계를 누르면 그 시점 배치가 위 보드에 실패 부위와 함께 그려집니다.</p>
             {t.attempts.map((a, ai) => <div key={ai} className="data-table" style={{ marginTop: 6 }}><table>
               <thead><tr><th colSpan={4}>{SHAPE_LABEL[a.shape]} · {a.die.w}×{a.die.h}µm ({mm2(dieArea(a.die))}mm²) — {a.ok ? '통과' : `실패: ${a.reason}`}</th></tr><tr><th>단계</th><th>무엇을 했나</th><th>결과 진단</th><th>적용</th></tr></thead>
-              <tbody>{a.steps.map((s, si) => <tr key={si} onClick={() => setBoard({ die: a.die, macros: s.macros, hubs: scaleHubs(start.cur.state.hubs, start.cur.die, a.die), issues: s.issues, title: `#${t.n} ${SHAPE_LABEL[a.shape]} ${a.die.w}×${a.die.h} · ${s.action}` })} style={{ cursor: 'pointer' }}>
+              <tbody>{a.steps.map((s, si) => <tr key={si} onClick={() => { setBoard({ die: a.die, macros: s.macros, hubs: scaleHubs(start.cur.state.hubs, start.cur.die, a.die), issues: s.issues, title: `#${t.n} ${SHAPE_LABEL[a.shape]} ${a.die.w}×${a.die.h} · ${s.action}` }); setGlue([]) }} style={{ cursor: 'pointer' }}>
                 <td><b>{s.action}</b></td><td style={{ fontSize: 11 }}>{s.why}</td>
                 <td style={{ fontSize: 11 }}>{s.ok ? <span className="ok-badge">통과</span> : summarizeIssues(s.issues)}</td>
                 <td>{s.applied ? '적용' : '불가·건너뜀'}</td>
@@ -601,7 +610,7 @@ export default function MacroAreaTetris() {
           <button onClick={() => { if (window.confirm('이 조건의 후보 풀과 히스토리를 모두 지울까요?')) { setCands([]); setChecked(new Set()); setSelCand(null) } }} disabled={cands.length === 0} style={{ fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '0.5px solid var(--border-strong)', background: 'var(--surface-1)', color: 'var(--text-secondary)', cursor: 'pointer' }}>후보 풀 비우기</button>
         </div>
         <div className="data-table" style={{ marginTop: 8, maxHeight: 420, overflow: 'auto' }}><table><thead><tr><th/><th>순위</th><th>ID</th><th>다이</th><th>util</th><th>배선 비용</th><th>필요 밀도</th><th>핀/전원 막힘</th><th>만든 방법</th><th>발견</th><th>검증</th></tr></thead><tbody>
-          {ranked.slice(0, 200).map((k, i) => <tr key={k.id} onClick={() => { setSelCand(k.id); setBoard({ die: k.die, macros: k.macros, hubs: k.hubs, issues: [], title: `후보 ${k.id}` }) }} style={{ cursor: 'pointer', background: k.id === selCand ? 'var(--accent-soft)' : undefined }}>
+          {ranked.slice(0, 200).map((k, i) => <tr key={k.id} onClick={() => { setSelCand(k.id); setBoard({ die: k.die, macros: k.macros, hubs: k.hubs, issues: [], title: `후보 ${k.id}` }); setGlue([]) }} style={{ cursor: 'pointer', background: k.id === selCand ? 'var(--accent-soft)' : undefined }}>
             <td onClick={e => e.stopPropagation()}><input type="checkbox" checked={checked.has(k.id)} onChange={() => setChecked(prev => { const n = new Set(prev); if (n.has(k.id)) n.delete(k.id); else n.add(k.id); return n })}/></td>
             <td>{i + 1}</td><td><code>{k.id}</code></td><td>{k.die.w}×{k.die.h}</td><td><b>{pct(k.metrics.util, 2)}</b></td>
             <td>{Math.round(k.metrics.wl).toLocaleString()}</td><td>{pct(k.metrics.reqDensity)}</td><td>{k.metrics.pin}/{k.metrics.power}</td>
@@ -628,7 +637,7 @@ export default function MacroAreaTetris() {
           </ol>
           {selected.steps.length > 0 && <>
             <span className="panel-label">처리 단계 (누르면 보드에 표시)</span>
-            <div className="data-table"><table><tbody>{selected.steps.map((s, si) => <tr key={si} onClick={() => setBoard({ die: selected.die, macros: s.macros, hubs: selected.hubs, issues: s.issues, title: `후보 ${selected.id} · ${s.action}` })} style={{ cursor: 'pointer' }}>
+            <div className="data-table"><table><tbody>{selected.steps.map((s, si) => <tr key={si} onClick={() => { setBoard({ die: selected.die, macros: s.macros, hubs: selected.hubs, issues: s.issues, title: `후보 ${selected.id} · ${s.action}` }); setGlue([]) }} style={{ cursor: 'pointer' }}>
               <td><b>{s.action}</b></td><td style={{ fontSize: 11 }}>{s.ok ? '통과' : summarizeIssues(s.issues)}</td>
             </tr>)}</tbody></table></div>
           </>}
