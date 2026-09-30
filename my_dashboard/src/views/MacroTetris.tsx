@@ -1051,23 +1051,32 @@ export default function MacroTetris() {
           <li><b>형상 비교</b><span>비율 유지·가로 축소·세로 축소 세 가지를 모두 비교합니다. (macroAreaModel.ts:637)</span></li>
           <li><b>항목별 진단 분리</b><span>overlap·spacing·boundary·channel·pin escape·power access·표준셀 용량을 따로 분리해서 진단합니다.</span></li>
           <li><b>원인별 순차 복구</b><span>실패 원인에 따라 legalize → shelf repack → 여유 재분배 → target rip-up을 순차 적용하며 중간 layout까지 저장합니다.</span></li>
-          <li><b>300µm 채널 게이트</b><span>실제 OpenLane DPL-0034/0036 실패 경험을 반영한 hard gate — 이 Macro Tetris 탭의 <code>CHANNEL_SAFE_MARGIN</code>과 같은 계열의 실증 기반 안전장치입니다.</span></li>
+          <li><b>300µm 채널 게이트</b><span>실제 OpenLane DPL-0034/0036 실패 경험을 반영한 hard gate — 이 Macro Tetris 탭의 <code>CHANNEL_SAFE_MARGIN</code>과 같은 계열의 실증 기반 안전장치입니다. 모든 후보에 동일하게 적용 중이라 한 번의 실제 실패에 근거한 기준치고는 다소 보수적일 수 있습니다 — 재보정 시점은 아래 "모델 정확도" 참고.</span></li>
           <li><b>Web Worker 분리</b><span>무거운 계산을 Web Worker로 분리해 UI 정지를 줄였습니다.</span></li>
           <li><b>후보 관리</b><span>signature 중복 제거, 재발견 횟수, 후보 생성 히스토리를 관리하는 구조가 좋습니다.</span></li>
         </ul>
 
-        <h4 style={{ marginTop: 16, marginBottom: 6 }}>가장 먼저 개선할 부분</h4>
+        <h4 style={{ marginTop: 16, marginBottom: 6 }}>완료됨</h4>
+        <ul className="strategy-list">
+          <li><b>Worker 취소</b><span>Reset 중 작업이 있으면 기존 Worker를 <code>terminate()</code>하고 새 Worker로 교체합니다. 결과만 무시하면서 CPU 계산이 남던 문제는 2026-09-29 수정됐습니다.</span></li>
+        </ul>
+
+        <h4 style={{ marginTop: 16, marginBottom: 6 }}>진행 중</h4>
+        <ul className="strategy-list">
+          <li><b>후보 다양성</b><span>random legal seed 12개가 실제 연결됐고 deterministic 여유 분할 후보와 함께 탐색합니다. 다만 다듬기는 아직 greedy Rip-up뿐이고, 온도 기반으로 나쁜 이동도 확률적으로 수용하는 실제 SA는 없습니다 — 다음은 random seed 수 추가가 아니라 <code>repairFrom</code> polish를 SA로 교체하고 signoff best 주변 mutation을 연결하는 것입니다.</span></li>
+          <li><b>다이 형상 후보</b><span><code>shapeVariantDies</code>가 1~4행별 최소 W×H를 closed form으로 계산해 후보 생성에 포함합니다(2행 3700×2100, 3행 2800×3200, 4행 1900×4300; 1행은 종횡비 초과로 제외). <code>distributeAxis</code>를 채널 목표로 고쳐 <b>3행은 legal 후보가 나옵니다</b>. <b>4행은 아직 안 됩니다</b> — <code>legalizeD</code>가 overlap만 보고 채널 여유가 거의 없는 배치를 legal로 통과시켜, 뒤이은 여유 재분배가 늘릴 여유 자체가 안 남습니다.</span></li>
+          <li><b>회귀 테스트</b><span><code>macroAreaModel.regression.ts</code>가 기준 배치 legality, 300µm channel gate, 축소 사다리 수렴, signature, config export, 2·3·4행 크기 계산을 검사합니다. 아직 Worker 취소 UI와 3·4행 legalization 성공은 테스트 대상이 아닙니다.</span></li>
+        </ul>
+
+        <h4 style={{ marginTop: 16, marginBottom: 6 }}>아직 시작 안 함 · 우선순위 높음</h4>
         <ol className="strategy-list">
           <li><b>DRC/LVS 대기열을 실제 실행과 연결</b><span>현재 "DRC/LVS 검증 목록"은 JSON을 만들고 상태를 <code>queued</code>로 바꾸는 데서 끝납니다 — 실제 OpenLane은 실행되지 않습니다. (MacroAreaTetris.tsx:392) 권장 구조: 후보 최대 10개 → 공통 합성 checkpoint 재사용 → OpenROAD placement + global route → wirelength·overflow·WNS로 Top 3 → detailed route + DRC/LVS → PASS 후보 registry. PPA3에 추가한 절약형 검증 퍼널을 이 화면에도 재사용하는 것이 가장 효과적입니다.</span></li>
           <li><b>배선 비용을 실제 netlist 기반으로 변경</b><span>현재 비용은 모든 macro를 모든 hub에 연결해 Manhattan 거리를 더합니다. (macroAreaModel.ts:149) 실제로 연결되지 않은 net도 계산되어 순위가 왜곡될 수 있습니다. macro별 실제 연결 hub, 연결 폭/net criticality, timing-critical path 가중치, macro pin 위치, high-fanout net 분리가 필요합니다 — 최소한 <code>macro × hub connectivity matrix</code>를 두고 존재하는 연결만 비용에 포함해야 합니다.</span></li>
-          <li><b>후보 다양성 — 부분 개선</b><span>Macro Area 후보 생성에 random legal seed 12개가 실제 연결됐고 deterministic 여유 분할 후보와 함께 탐색합니다. 다만 이 경로의 다듬기는 greedy Rip-up이며, 온도 기반으로 나쁜 이동도 확률적으로 수용하는 실제 SA는 아직 없습니다. 다음 단계는 random seed 수 추가가 아니라 repairFrom polish를 SA로 교체하고 signoff best 주변 mutation을 연결하는 것입니다.</span></li>
-          <li><b>다이 형상 후보 — 부분 구현</b><span><code>shapeVariantDies</code>가 1~4행별 최소 W×H를 계산하고 후보 생성에 포함합니다. 2행 3700×2100은 legal하지만 3행·4행은 repairFrom의 행 재구성이 300µm 채널을 만들지 못해 아직 후보를 내지 못합니다. 크기 계산은 회귀 테스트로 고정됐고, 남은 일은 3·4행 legalize입니다.</span></li>
           <li><b>"best" 기준을 utilization 단독에서 변경</b><span>현재 최고 결과는 legal 후보 중 utilization이 가장 높으면 승격됩니다. (MacroAreaTetris.tsx:224) 하지만 utilization 최대 후보가 congestion 증가·WNS 악화·routing detour 증가·buffer 삽입 공간 부족·PDN/pin access 악화를 동반할 수 있습니다. <code>minimum-area best</code> · <code>minimum-wire best</code> · <code>best-routability</code> · <code>signoff-pass PPA best</code>로 나누고, 최종 best는 반드시 DRC/LVS PASS 후보에서만 승격해야 합니다.</span></li>
         </ol>
 
         <h4 style={{ marginTop: 16, marginBottom: 6 }}>모델 정확도 개선</h4>
         <ul className="strategy-list">
-          <li><b>300µm 채널 hard gate</b><span>모든 후보에 동일하게 적용 중입니다. 한 번의 실제 실패에 근거한 안전한 기준이지만 다소 보수적일 수 있습니다.</span></li>
           <li><b>표준셀 수용 가능성</b><span>주로 "남는 면적 대비 필요 density"로 판정 — 실제 usable row 단절, macro halo, PDN obstruction, pin density는 반영하지 못합니다.</span></li>
           <li><b>혼잡도(congestion)</b><span>20×12 격자와 고정 L자 경로를 사용하므로 FastRoute 결과와 차이가 날 수 있습니다.</span></li>
           <li><b>매크로 orientation</b><span>항상 <code>N</code>으로 내보냅니다. (macroAreaModel.ts:780)</span></li>
@@ -1078,9 +1087,7 @@ export default function MacroTetris() {
         <ul className="strategy-list">
           <li><b>그룹 이동</b><span>현재 macro 하나만 drag할 수 있습니다. AI Chip Tetris처럼 복수 선택·그룹 이동을 추가할 수 있습니다.</span></li>
           <li><b>Undo/redo</b><span>Undo/redo와 manual edit snapshot이 필요합니다.</span></li>
-          <li><b>Worker 취소 — 해결됨</b><span>Reset 중 작업이 있으면 기존 Worker를 <code>terminate()</code>하고 새 Worker로 교체합니다. 결과만 무시하면서 CPU 계산이 남던 문제는 2026-09-29 수정됐습니다.</span></li>
           <li><b>저장소</b><span>후보 800개와 단계별 macro 좌표를 <code>localStorage</code>에 저장하므로 용량 초과 시 저장이 조용히 실패할 수 있습니다. IndexedDB나 백엔드 파일 registry가 더 안전합니다.</span></li>
-          <li><b>회귀 테스트 — 기본 세트 추가됨</b><span><code>macroAreaModel.regression.ts</code>가 실제 기준 배치 legality, 300µm channel gate, 축소 사다리 수렴, signature, config export, 2·3·4행 크기 계산을 검사합니다. 아직 Worker 취소 UI와 3·4행 legalization 성공은 테스트 대상이 아닙니다.</span></li>
         </ul>
         <p className="rule-disclaimer">가장 가치가 큰 다음 작업 순서: <b>실제 net 연결 기반 비용함수 → SA 후보 확장 → PPA3와 같은 10→Top 3 검증 퍼널 연결</b>.</p>
       </article>
