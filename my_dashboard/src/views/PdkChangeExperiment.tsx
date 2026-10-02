@@ -191,7 +191,8 @@ export default function PdkChangeExperiment({ libId, libraryRowHeight, cellName,
     <div className="card" style={{ padding: 12, marginBottom: 14 }}>
       <b>기존 배치를 활용한 셀 내부 P&R</b>
       <p className="chip-note" style={{ margin: '8px 0' }}>기존 셀의 소자 배치와 내부 배선을 새 공정 설계의 시작점으로 재사용할 수 있습니다. 복잡한 셀은 새 간격·핀 접근성·배선 충돌에 맞춰 재배치와 재배선이 필요할 수 있습니다.</p>
-      <p className="chip-note" style={{ margin: 0 }}><b>현재 기능은 변경 초안만 생성하며 셀 내부 P&R은 실행하지 않습니다.</b> 실제 90 nm 셀의 P&R 결과로 인정하려면 변경된 내부 형상을 GDS로 만들고, 목표 90 nm PDK의 설계 규칙으로 DRC를 통과해야 합니다. 연결 일치 여부는 LVS로 별도 검증해야 합니다. 목표 PDK가 없는 상태에서는 통과 여부를 판정할 수 없습니다.</p>
+      <p className="chip-note" style={{ margin: '0 0 8px' }}><b>P&R의 목적:</b> 목표 공정의 배치·배선 규칙을 제약으로 지키면서 연결 길이와 기생 저항·용량, 혼잡을 줄이고 핀 접근성·면적·타이밍을 함께 고려하는 것입니다. 가장 짧은 배선이 언제나 최적은 아닙니다.</p>
+      <p className="chip-note" style={{ margin: 0 }}><b>현재 기능은 변경 초안만 생성하며 셀 내부 P&R은 실행하지 않습니다.</b> 실제 설계에서는 목표 90 nm PDK 규칙을 반영해 배치·배선을 반복하고 GDS를 만든 다음 DRC로 최종 형상을 검사합니다. 위반이 있으면 P&R을 수정하며, LVS로 연결 일치도 별도 검증합니다. 목표 PDK가 없는 상태에서는 규칙 준수나 기생값을 실제 공정 기준으로 판정할 수 없습니다.</p>
     </div>
     <div className="data-table" style={{ marginBottom: 14 }}><table><thead><tr><th>여기서 직접 변경 가능한 조건</th><th>화면에 반영되는 내용</th></tr></thead><tbody>
       <tr><td>적용 대상 셀</td><td>현재 라이브러리의 전체 셀 또는 직접 체크한 일부 셀</td></tr>
@@ -268,6 +269,6 @@ export default function PdkChangeExperiment({ libId, libraryRowHeight, cellName,
           <td>{r.status}{r.outsidePins.length ? ` (${r.outsidePins.join(', ')})` : ''}</td></tr>)}
       </tbody></table></div>
     </div>}
-    <p className="chip-note" style={{ marginTop: 12 }}><b>현재 판정: 가상·미검증, 셀 내부 P&R 미실행.</b> 초안 생성은 셀 크기와 핀 외곽만 계산되었다는 뜻입니다. 실제 이식은 변경 GDS와 목표 90 nm PDK 기준 DRC 통과가 필요하며, LVS·PVT도 별도 검증해야 합니다.</p>
+    <p className="chip-note" style={{ marginTop: 12 }}><b>현재 판정: 가상·미검증, 셀 내부 P&R 미실행.</b> 초안 생성은 셀 크기와 핀 외곽만 계산되었다는 뜻입니다. 실제 이식은 목표 PDK 규칙을 반영한 셀 내부 P&R, 변경 GDS의 DRC 통과, LVS·PVT 검증이 필요합니다.</p>
   </section>
 }
