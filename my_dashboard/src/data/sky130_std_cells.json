@@ -1,0 +1,4767 @@
+{
+ "generatedFrom": "~/eda/pdk/sky130A/libs.ref (LEF size + tt_025C_1v80 liberty)",
+ "libs": [
+  {
+   "id": "sky130_fd_sc_hd",
+   "label": "High Density · 1.8V",
+   "lefCells": 437,
+   "libertyCells": 428,
+   "functions": 163,
+   "rowHeight": 2.72,
+   "noTiming": [
+    "fill_1",
+    "fill_2",
+    "fill_4",
+    "fill_8",
+    "tap_1",
+    "tap_2",
+    "tapvgnd2_1",
+    "tapvgnd_1",
+    "tapvpwrvgnd_1"
+   ],
+   "groups": [
+    {
+     "base": "a2111o",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a2111oi",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 0,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 10.12,
+       "area": 27.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a211o",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 6.44,
+       "area": 17.52,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a211oi",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a21bo",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a21boi",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 0,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 6.9,
+       "area": 18.77,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a21o",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a21oi",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a221o",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a221oi",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a222oi",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a22o",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 6.44,
+       "area": 17.52,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a22oi",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a2bb2o",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a2bb2oi",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a311o",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a311oi",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a31o",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 6.44,
+       "area": 17.52,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a31oi",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a32o",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a32oi",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 10.12,
+       "area": 27.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a41o",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "a41oi",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 10.12,
+       "area": 27.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "and2",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 0,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "and2b",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "and3",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "and3b",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "and4",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "and4b",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.06,
+       "area": 13.76,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "and4bb",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "buf",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 1.38,
+       "area": 3.75,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 6,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      },
+      {
+       "drive": 12,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      },
+      {
+       "drive": 16,
+       "w": 10.12,
+       "area": 27.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "bufbuf",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 8,
+       "w": 6.9,
+       "area": 18.77,
+       "timing": true
+      },
+      {
+       "drive": 16,
+       "w": 11.96,
+       "area": 32.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "bufinv",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 8,
+       "w": 6.44,
+       "area": 17.52,
+       "timing": true
+      },
+      {
+       "drive": 16,
+       "w": 11.04,
+       "area": 30.03,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "clkbuf",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 1.38,
+       "area": 3.75,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 5.06,
+       "area": 13.76,
+       "timing": true
+      },
+      {
+       "drive": 16,
+       "w": 9.2,
+       "area": 25.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "clkdlybuf4s15",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "clkdlybuf4s18",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "clkdlybuf4s25",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "clkdlybuf4s50",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "clkinv",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 1.38,
+       "area": 3.75,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 16,
+       "w": 11.04,
+       "area": 30.03,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "clkinvlp",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 2,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "conb",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 1.38,
+       "area": 3.75,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "decap",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 3,
+       "w": 1.38,
+       "area": 3.75,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": true
+      },
+      {
+       "drive": 6,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 12,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dfbbn",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 11.96,
+       "area": 32.53,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 12.88,
+       "area": 35.03,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dfbbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 11.96,
+       "area": 32.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dfrbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 10.58,
+       "area": 28.78,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 11.04,
+       "area": 30.03,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dfrtn",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 9.2,
+       "area": 25.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dfrtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 9.2,
+       "area": 25.02,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 10.58,
+       "area": 28.78,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dfsbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 10.58,
+       "area": 28.78,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 11.04,
+       "area": 30.03,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dfstp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 11.04,
+       "area": 30.03,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dfxbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 8.74,
+       "area": 23.77,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dfxtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 8.74,
+       "area": 23.77,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "diode",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 2,
+       "w": 0.92,
+       "area": 2.5,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlclkp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 6.44,
+       "area": 17.52,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 6.9,
+       "area": 18.77,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlrbn",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 8.28,
+       "area": 22.52,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlrbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 8.28,
+       "area": 22.52,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlrtn",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 6.44,
+       "area": 17.52,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 6.44,
+       "area": 17.52,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlrtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 6.44,
+       "area": 17.52,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlxbn",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 6.9,
+       "area": 18.77,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlxbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 6.9,
+       "area": 18.77,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlxtn",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 6.9,
+       "area": 18.77,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlxtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlygate4sd1",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlygate4sd2",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlygate4sd3",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlymetal6s2s",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlymetal6s4s",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "dlymetal6s6s",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "ebufn",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "edfxbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 11.96,
+       "area": 32.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "edfxtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 11.04,
+       "area": 30.03,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "einvn",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 0,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": true
+      },
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.06,
+       "area": 13.76,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 8.28,
+       "area": 22.52,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "einvp",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.06,
+       "area": 13.76,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 8.28,
+       "area": 22.52,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "fa",
+     "category": "mux-adder",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 8.28,
+       "area": 22.52,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 10.12,
+       "area": 27.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "fah",
+     "category": "mux-adder",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 12.42,
+       "area": 33.78,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "fahcin",
+     "category": "mux-adder",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 12.42,
+       "area": 33.78,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "fahcon",
+     "category": "mux-adder",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 12.42,
+       "area": 33.78,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "fill",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 0.46,
+       "area": 1.25,
+       "timing": false
+      },
+      {
+       "drive": 2,
+       "w": 0.92,
+       "area": 2.5,
+       "timing": false
+      },
+      {
+       "drive": 4,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": false
+      },
+      {
+       "drive": 8,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": false
+      }
+     ]
+    },
+    {
+     "base": "ha",
+     "category": "mux-adder",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 9.2,
+       "area": 25.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "inv",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 1.38,
+       "area": 3.75,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 1.38,
+       "area": 3.75,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 6,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 12,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 16,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "lpflow_bleeder",
+     "category": "low-power",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "lpflow_clkbufkapwr",
+     "category": "low-power",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 1.38,
+       "area": 3.75,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 5.06,
+       "area": 13.76,
+       "timing": true
+      },
+      {
+       "drive": 16,
+       "w": 9.2,
+       "area": 25.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "lpflow_clkinvkapwr",
+     "category": "low-power",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 1.38,
+       "area": 3.75,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 16,
+       "w": 11.04,
+       "area": 30.03,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "lpflow_decapkapwr",
+     "category": "low-power",
+     "variants": [
+      {
+       "drive": 3,
+       "w": 1.38,
+       "area": 3.75,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": true
+      },
+      {
+       "drive": 6,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 12,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "lpflow_inputiso0n",
+     "category": "low-power",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "lpflow_inputiso0p",
+     "category": "low-power",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "lpflow_inputiso1n",
+     "category": "low-power",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "lpflow_inputiso1p",
+     "category": "low-power",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "lpflow_inputisolatch",
+     "category": "low-power",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 5.06,
+       "area": 13.76,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "lpflow_isobufsrc",
+     "category": "low-power",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.06,
+       "area": 13.76,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 8.74,
+       "area": 23.77,
+       "timing": true
+      },
+      {
+       "drive": 16,
+       "w": 16.56,
+       "area": 45.04,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "lpflow_isobufsrckapwr",
+     "category": "low-power",
+     "variants": [
+      {
+       "drive": 16,
+       "w": 14.26,
+       "area": 38.79,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "lpflow_lsbuf_lh_hl_isowell_tap",
+     "category": "low-power",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 6.44,
+       "area": 35.03,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 6.44,
+       "area": 35.03,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.36,
+       "area": 40.04,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "lpflow_lsbuf_lh_isowell",
+     "category": "low-power",
+     "variants": [
+      {
+       "drive": 4,
+       "w": 7.36,
+       "area": 40.04,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "lpflow_lsbuf_lh_isowell_tap",
+     "category": "low-power",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 6.44,
+       "area": 35.03,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 6.44,
+       "area": 35.03,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.36,
+       "area": 40.04,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "macro_sparecell",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 0,
+       "w": 13.34,
+       "area": 36.28,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "maj3",
+     "category": "mux-adder",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.06,
+       "area": 13.76,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "mux2",
+     "category": "mux-adder",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "mux2i",
+     "category": "mux-adder",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.06,
+       "area": 13.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 8.28,
+       "area": 22.52,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "mux4",
+     "category": "mux-adder",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 8.28,
+       "area": 22.52,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 9.2,
+       "area": 25.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "nand2",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 1.38,
+       "area": 3.75,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "nand2b",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.06,
+       "area": 13.76,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "nand3",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 6.44,
+       "area": 17.52,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "nand3b",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "nand4",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "nand4b",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 8.74,
+       "area": 23.77,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "nand4bb",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 10.12,
+       "area": 27.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "nor2",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 1.38,
+       "area": 3.75,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 8,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "nor2b",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.06,
+       "area": 13.76,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "nor3",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "nor3b",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 6.9,
+       "area": 18.77,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "nor4",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "nor4b",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 8.74,
+       "area": 23.77,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "nor4bb",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 9.2,
+       "area": 25.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o2111a",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o2111ai",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o211a",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 6.44,
+       "area": 17.52,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o211ai",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o21a",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o21ai",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 0,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": true
+      },
+      {
+       "drive": 1,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o21ba",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o21bai",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 6.9,
+       "area": 18.77,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o221a",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o221ai",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o22a",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 6.44,
+       "area": 17.52,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o22ai",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o2bb2a",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o2bb2ai",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 10.12,
+       "area": 27.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o311a",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o311ai",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 0,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o31a",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 6.44,
+       "area": 17.52,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o31ai",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o32a",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 8.28,
+       "area": 22.52,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o32ai",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 10.12,
+       "area": 27.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o41a",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 7.82,
+       "area": 21.27,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "o41ai",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 10.12,
+       "area": 27.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "or2",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 0,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "or2b",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "or3",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.3,
+       "area": 6.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "or3b",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "or4",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.76,
+       "area": 7.51,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "or4b",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.06,
+       "area": 13.76,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "or4bb",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 4.14,
+       "area": 11.26,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 4.6,
+       "area": 12.51,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "probe_p",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 8,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "probec_p",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 8,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "sdfbbn",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 14.26,
+       "area": 38.79,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 15.18,
+       "area": 41.29,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "sdfbbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 14.26,
+       "area": 38.79,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "sdfrbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 12.88,
+       "area": 35.03,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 13.34,
+       "area": 36.28,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "sdfrtn",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 11.5,
+       "area": 31.28,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "sdfrtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 11.5,
+       "area": 31.28,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 11.96,
+       "area": 32.53,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 12.88,
+       "area": 35.03,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "sdfsbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 13.34,
+       "area": 36.28,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 14.26,
+       "area": 38.79,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "sdfstp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 12.42,
+       "area": 33.78,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 12.88,
+       "area": 35.03,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 13.8,
+       "area": 37.54,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "sdfxbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 11.04,
+       "area": 30.03,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 11.96,
+       "area": 32.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "sdfxtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 10.12,
+       "area": 27.53,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 11.04,
+       "area": 30.03,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "sdlclkp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 6.9,
+       "area": 18.77,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 7.36,
+       "area": 20.02,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 8.28,
+       "area": 22.52,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "sedfxbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 14.26,
+       "area": 38.79,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 15.18,
+       "area": 41.29,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "sedfxtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 13.34,
+       "area": 36.28,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 13.8,
+       "area": 37.54,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 14.72,
+       "area": 40.04,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "tap",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 0.46,
+       "area": 1.25,
+       "timing": false
+      },
+      {
+       "drive": 2,
+       "w": 0.92,
+       "area": 2.5,
+       "timing": false
+      }
+     ]
+    },
+    {
+     "base": "tapvgnd",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 0.46,
+       "area": 1.25,
+       "timing": false
+      }
+     ]
+    },
+    {
+     "base": "tapvgnd2",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 0.46,
+       "area": 1.25,
+       "timing": false
+      }
+     ]
+    },
+    {
+     "base": "tapvpwrvgnd",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 0.46,
+       "area": 1.25,
+       "timing": false
+      }
+     ]
+    },
+    {
+     "base": "xnor2",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 10.12,
+       "area": 27.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "xnor3",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 8.28,
+       "area": 22.52,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 8.74,
+       "area": 23.77,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 9.66,
+       "area": 26.28,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "xor2",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.22,
+       "area": 8.76,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 5.98,
+       "area": 16.27,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 10.12,
+       "area": 27.53,
+       "timing": true
+      }
+     ]
+    },
+    {
+     "base": "xor3",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 8.74,
+       "area": 23.77,
+       "timing": true
+      },
+      {
+       "drive": 2,
+       "w": 9.2,
+       "area": 25.02,
+       "timing": true
+      },
+      {
+       "drive": 4,
+       "w": 10.12,
+       "area": 27.53,
+       "timing": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sky130_fd_sc_hvl",
+   "label": "High Voltage · 5V I/O",
+   "lefCells": 69,
+   "libertyCells": null,
+   "functions": 56,
+   "rowHeight": 4.07,
+   "noTiming": [],
+   "groups": [
+    {
+     "base": "a21o",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 4.32,
+       "area": 17.58,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "a21oi",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.36,
+       "area": 13.68,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "a22o",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 5.28,
+       "area": 21.49,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "a22oi",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.84,
+       "area": 15.63,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "and2",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.36,
+       "area": 13.68,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "and3",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.84,
+       "area": 15.63,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "buf",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.4,
+       "area": 9.77,
+       "timing": null
+      },
+      {
+       "drive": 2,
+       "w": 3.36,
+       "area": 13.68,
+       "timing": null
+      },
+      {
+       "drive": 4,
+       "w": 4.8,
+       "area": 19.54,
+       "timing": null
+      },
+      {
+       "drive": 8,
+       "w": 9.6,
+       "area": 39.07,
+       "timing": null
+      },
+      {
+       "drive": 16,
+       "w": 17.76,
+       "area": 72.28,
+       "timing": null
+      },
+      {
+       "drive": 32,
+       "w": 33.6,
+       "area": 136.75,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "conb",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.4,
+       "area": 9.77,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "decap",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 4,
+       "w": 1.92,
+       "area": 7.81,
+       "timing": null
+      },
+      {
+       "drive": 8,
+       "w": 3.84,
+       "area": 15.63,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "dfrbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 16.8,
+       "area": 68.38,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "dfrtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 15.36,
+       "area": 62.52,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "dfsbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 17.76,
+       "area": 72.28,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "dfstp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 14.88,
+       "area": 60.56,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "dfxbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 13.92,
+       "area": 56.65,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "dfxtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 12.0,
+       "area": 48.84,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "diode",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 2,
+       "w": 0.96,
+       "area": 3.91,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "dlclkp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 10.08,
+       "area": 41.03,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "dlrtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 9.6,
+       "area": 39.07,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "dlxtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 8.16,
+       "area": 33.21,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "einvn",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.36,
+       "area": 13.68,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "einvp",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.36,
+       "area": 13.68,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "fill",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 0.48,
+       "area": 1.95,
+       "timing": null
+      },
+      {
+       "drive": 2,
+       "w": 0.96,
+       "area": 3.91,
+       "timing": null
+      },
+      {
+       "drive": 4,
+       "w": 1.92,
+       "area": 7.81,
+       "timing": null
+      },
+      {
+       "drive": 8,
+       "w": 3.84,
+       "area": 15.63,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "inv",
+     "category": "buffer",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 1.44,
+       "area": 5.86,
+       "timing": null
+      },
+      {
+       "drive": 2,
+       "w": 2.4,
+       "area": 9.77,
+       "timing": null
+      },
+      {
+       "drive": 4,
+       "w": 3.84,
+       "area": 15.63,
+       "timing": null
+      },
+      {
+       "drive": 8,
+       "w": 7.2,
+       "area": 29.3,
+       "timing": null
+      },
+      {
+       "drive": 16,
+       "w": 13.44,
+       "area": 54.7,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "lsbufhv2hv_hl",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 8.64,
+       "area": 70.33,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "lsbufhv2hv_lh",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 10.56,
+       "area": 85.96,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "lsbufhv2lv",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 8.16,
+       "area": 66.42,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "lsbufhv2lv_simple",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 8.64,
+       "area": 70.33,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "lsbuflv2hv",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 10.56,
+       "area": 85.96,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "lsbuflv2hv_clkiso_hlkg",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 3,
+       "w": 24.96,
+       "area": 203.17,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "lsbuflv2hv_isosrchvaon",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 13.92,
+       "area": 113.31,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "lsbuflv2hv_symmetric",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 11.04,
+       "area": 89.87,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "mux2",
+     "category": "mux-adder",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 5.28,
+       "area": 21.49,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "mux4",
+     "category": "mux-adder",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 12.48,
+       "area": 50.79,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "nand2",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.4,
+       "area": 9.77,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "nand3",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.36,
+       "area": 13.68,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "nor2",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 2.4,
+       "area": 9.77,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "nor3",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.36,
+       "area": 13.68,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "o21a",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 4.32,
+       "area": 17.58,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "o21ai",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.36,
+       "area": 13.68,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "o22a",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 5.28,
+       "area": 21.49,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "o22ai",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.84,
+       "area": 15.63,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "or2",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.36,
+       "area": 13.68,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "or3",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 3.84,
+       "area": 15.63,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "probe_p",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 8,
+       "w": 9.6,
+       "area": 39.07,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "probec_p",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 8,
+       "w": 9.6,
+       "area": 39.07,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "schmittbuf",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 5.28,
+       "area": 21.49,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "sdfrbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 20.16,
+       "area": 82.05,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "sdfrtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 19.2,
+       "area": 78.14,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "sdfsbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 20.16,
+       "area": 82.05,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "sdfstp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 18.72,
+       "area": 76.19,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "sdfxbp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 19.68,
+       "area": 80.1,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "sdfxtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 14.88,
+       "area": 60.56,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "sdlclkp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 11.04,
+       "area": 44.93,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "sdlxtp",
+     "category": "sequential",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 11.52,
+       "area": 46.89,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "xnor2",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 5.28,
+       "area": 21.49,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "xor2",
+     "category": "logic",
+     "variants": [
+      {
+       "drive": 1,
+       "w": 5.28,
+       "area": 21.49,
+       "timing": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sky130_ef_sc_hd",
+   "label": "Efabless extra (hd 호환)",
+   "lefCells": 8,
+   "libertyCells": null,
+   "functions": 6,
+   "rowHeight": 2.72,
+   "noTiming": [],
+   "groups": [
+    {
+     "base": "decap",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 12,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "decap_20",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 12,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "decap_40",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 12,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "decap_60",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 12,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "decap_80",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 12,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": null
+      }
+     ]
+    },
+    {
+     "base": "fill",
+     "category": "physical",
+     "variants": [
+      {
+       "drive": 4,
+       "w": 1.84,
+       "area": 5.0,
+       "timing": null
+      },
+      {
+       "drive": 8,
+       "w": 3.68,
+       "area": 10.01,
+       "timing": null
+      },
+      {
+       "drive": 12,
+       "w": 5.52,
+       "area": 15.01,
+       "timing": null
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "usage": {
+  "design": "chan_top",
+  "source": "RUN_2026-09-23_12-48-47/06-yosys-synthesis/reports/stat.json (합성 직후, P&R 전)",
+  "totalCells": 12177,
+  "area": 172052.512,
+  "distinctTypes": 69,
+  "rows": [
+   {
+    "cell": "mux2_1",
+    "count": 3831
+   },
+   {
+    "cell": "dfxtp_2",
+    "count": 3392
+   },
+   {
+    "cell": "o221a_2",
+    "count": 656
+   },
+   {
+    "cell": "dfrtp_2",
+    "count": 385
+   },
+   {
+    "cell": "or2_2",
+    "count": 367
+   },
+   {
+    "cell": "xnor2_2",
+    "count": 356
+   },
+   {
+    "cell": "o22a_2",
+    "count": 352
+   },
+   {
+    "cell": "a221o_2",
+    "count": 309
+   },
+   {
+    "cell": "a22o_2",
+    "count": 289
+   },
+   {
+    "cell": "o211a_2",
+    "count": 288
+   },
+   {
+    "cell": "a21o_2",
+    "count": 255
+   },
+   {
+    "cell": "a211o_2",
+    "count": 178
+   },
+   {
+    "cell": "nor2_2",
+    "count": 159
+   },
+   {
+    "cell": "nand2_2",
+    "count": 138
+   },
+   {
+    "cell": "a21oi_2",
+    "count": 127
+   },
+   {
+    "cell": "and3_2",
+    "count": 111
+   },
+   {
+    "cell": "xor2_2",
+    "count": 101
+   },
+   {
+    "cell": "and2_2",
+    "count": 90
+   },
+   {
+    "cell": "o21ai_2",
+    "count": 83
+   },
+   {
+    "cell": "inv_2",
+    "count": 80
+   },
+   {
+    "cell": "a31o_2",
+    "count": 77
+   },
+   {
+    "cell": "or3_2",
+    "count": 69
+   },
+   {
+    "cell": "o21a_2",
+    "count": 54
+   },
+   {
+    "cell": "nand3_2",
+    "count": 53
+   },
+   {
+    "cell": "mux4_2",
+    "count": 35
+   },
+   {
+    "cell": "dfstp_2",
+    "count": 32
+   },
+   {
+    "cell": "or3b_2",
+    "count": 31
+   },
+   {
+    "cell": "o211ai_2",
+    "count": 23
+   },
+   {
+    "cell": "o31a_2",
+    "count": 21
+   },
+   {
+    "cell": "a211oi_2",
+    "count": 20
+   },
+   {
+    "cell": "a311o_2",
+    "count": 16
+   },
+   {
+    "cell": "a32o_2",
+    "count": 16
+   },
+   {
+    "cell": "o311a_2",
+    "count": 16
+   },
+   {
+    "cell": "a2bb2o_2",
+    "count": 15
+   },
+   {
+    "cell": "or4_2",
+    "count": 15
+   },
+   {
+    "cell": "and4_2",
+    "count": 12
+   },
+   {
+    "cell": "o2bb2a_2",
+    "count": 12
+   },
+   {
+    "cell": "o32a_2",
+    "count": 11
+   },
+   {
+    "cell": "o22ai_2",
+    "count": 10
+   },
+   {
+    "cell": "and3b_2",
+    "count": 9
+   },
+   {
+    "cell": "o21ba_2",
+    "count": 9
+   },
+   {
+    "cell": "nand2b_2",
+    "count": 7
+   },
+   {
+    "cell": "nand3b_2",
+    "count": 7
+   },
+   {
+    "cell": "a221oi_2",
+    "count": 6
+   },
+   {
+    "cell": "nand4_2",
+    "count": 5
+   },
+   {
+    "cell": "o21bai_2",
+    "count": 5
+   },
+   {
+    "cell": "nor3_2",
+    "count": 4
+   },
+   {
+    "cell": "o31ai_2",
+    "count": 4
+   },
+   {
+    "cell": "a21bo_2",
+    "count": 3
+   },
+   {
+    "cell": "a22oi_2",
+    "count": 3
+   },
+   {
+    "cell": "a31oi_2",
+    "count": 3
+   },
+   {
+    "cell": "a41o_2",
+    "count": 3
+   },
+   {
+    "cell": "and2b_2",
+    "count": 3
+   },
+   {
+    "cell": "conb_1",
+    "count": 3
+   },
+   {
+    "cell": "a2111oi_2",
+    "count": 2
+   },
+   {
+    "cell": "a21boi_2",
+    "count": 2
+   },
+   {
+    "cell": "o221ai_2",
+    "count": 2
+   },
+   {
+    "cell": "a2111o_2",
+    "count": 1
+   },
+   {
+    "cell": "a311oi_2",
+    "count": 1
+   },
+   {
+    "cell": "a32oi_2",
+    "count": 1
+   },
+   {
+    "cell": "and4b_2",
+    "count": 1
+   },
+   {
+    "cell": "and4bb_2",
+    "count": 1
+   },
+   {
+    "cell": "nor4_2",
+    "count": 1
+   },
+   {
+    "cell": "o2111a_2",
+    "count": 1
+   },
+   {
+    "cell": "o2bb2ai_2",
+    "count": 1
+   },
+   {
+    "cell": "o311ai_2",
+    "count": 1
+   },
+   {
+    "cell": "o32ai_2",
+    "count": 1
+   },
+   {
+    "cell": "or4b_2",
+    "count": 1
+   },
+   {
+    "cell": "or4bb_2",
+    "count": 1
+   }
+  ]
+ }
+}

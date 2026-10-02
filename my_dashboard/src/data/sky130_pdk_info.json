@@ -1,0 +1,72 @@
+{
+ "name": "sky130A",
+ "install": "~/eda/pdk/sky130A (WSL)",
+ "openPdks": "c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+ "libsRef": [
+  "sky130_fd_io",
+  "sky130_fd_pr",
+  "sky130_fd_sc_hd",
+  "sky130_fd_sc_hvl",
+  "sky130_ml_xx_hd",
+  "sky130_sram_macros"
+ ],
+ "libsTech": [
+  "combined",
+  "irsim",
+  "klayout",
+  "magic",
+  "netgen",
+  "ngspice",
+  "openlane",
+  "qflow",
+  "xcircuit",
+  "xschem"
+ ],
+ "stdcellLibs": [
+  {
+   "id": "sky130_fd_sc_hd",
+   "role": "High Density · 1.8V 디지털 표준셀 — 이 프로젝트의 모든 P&R이 사용"
+  },
+  {
+   "id": "sky130_fd_sc_hvl",
+   "role": "High Voltage · 5V 표준셀 (레벨 시프터 등 I/O 쪽)"
+  },
+  {
+   "id": "sky130_ef_sc_hd",
+   "role": "Efabless 추가 셀(decap_12 등 큰 decap) — hd와 호환"
+  }
+ ],
+ "techlef": {
+  "site": {
+   "name": "unithd",
+   "w": 0.46,
+   "h": 2.72
+  },
+  "layers": {
+   "li1": {
+    "pitch": 0.46,
+    "width": 0.17
+   },
+   "met1": {
+    "pitch": 0.34,
+    "width": 0.14
+   },
+   "met2": {
+    "pitch": 0.46,
+    "width": 0.14
+   },
+   "met3": {
+    "pitch": 0.68,
+    "width": 0.3
+   },
+   "met4": {
+    "pitch": 0.92,
+    "width": 0.3
+   },
+   "met5": {
+    "pitch": 3.4,
+    "width": 1.6
+   }
+  }
+ }
+}
