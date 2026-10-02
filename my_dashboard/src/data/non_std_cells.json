@@ -1,0 +1,122 @@
+{
+ "pdk": [
+  {
+   "lib": "sky130_fd_io",
+   "kind": "I/O 패드",
+   "count": 70,
+   "breakdown": {
+    "전원 패드(vccd/vdda/vddio/vss…)": 26,
+    "아날로그 패드": 5,
+    "GPIO 패드": 6,
+    "코너/버스 슬라이스/기타": 33
+   },
+   "why": "칩 외부 핀과 연결, 정전기(ESD) 보호·높은 전압(3.3V/5V) 구동 때문에 표준셀과 전혀 다른 전용 셀",
+   "examples": [
+    "sky130_fd_io__corner_bus_overlay",
+    "sky130_ef_io__corner_pad",
+    "sky130_ef_io__gpiov2_pad",
+    "sky130_ef_io__gpiov2_pad_wrapped"
+   ]
+  },
+  {
+   "lib": "sky130_sram_macros",
+   "kind": "SRAM 매크로",
+   "count": 4,
+   "why": "비트셀 배열이라 표준셀(플립플롭)로 만들면 면적이 수십 배 — 전용 레이아웃으로 만든 별도 매크로",
+   "macros": [
+    {
+     "name": "sky130_sram_2kbyte_1rw1r_32x512_8",
+     "w": 683.1,
+     "h": 416.54
+    },
+    {
+     "name": "sky130_sram_1kbyte_1rw1r_8x1024_8",
+     "w": 455.3,
+     "h": 446.46
+    },
+    {
+     "name": "sram_1rw1r_32_256_8_sky130",
+     "w": 376.48,
+     "h": 446.235
+    },
+    {
+     "name": "sky130_sram_1kbyte_1rw1r_32x256_8",
+     "w": 479.78,
+     "h": 397.5
+    }
+   ]
+  },
+  {
+   "lib": "sky130_fd_pr",
+   "kind": "개별 소자 PCell",
+   "count": 288,
+   "why": "트랜지스터·저항·커패시터·다이오드 하나하나의 파라메트릭 셀 — 표준셀 내부와 아날로그 직접 설계의 재료"
+  }
+ ],
+ "project": [
+  {
+   "block": "chan_ctrl",
+   "run": "RUN_2026-09-14_22-03-02",
+   "totalCells": 116,
+   "stdCells": 116,
+   "nonStd": []
+  },
+  {
+   "block": "chan_top",
+   "run": "RUN_2026-09-30_20-54-47",
+   "totalCells": 12177,
+   "stdCells": 12177,
+   "nonStd": []
+  },
+  {
+   "block": "cnt_sat",
+   "run": "RUN_2026-09-14_22-03-02",
+   "totalCells": 154,
+   "stdCells": 154,
+   "nonStd": []
+  },
+  {
+   "block": "daq_subsystem",
+   "run": "RUN_2026-09-24_13-44-52",
+   "totalCells": 110257,
+   "stdCells": 110257,
+   "nonStd": []
+  },
+  {
+   "block": "ppa3_adc_capture",
+   "run": "RUN_2026-09-24_14-07-59",
+   "totalCells": 1105,
+   "stdCells": 1103,
+   "nonStd": [
+    {
+     "cell": "sky130_ef_ip__adc3v_12bit",
+     "count": 1,
+     "w": 223.71,
+     "h": 293.365,
+     "lef": "analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.lef"
+    },
+    {
+     "cell": "sram22_1024x32m8w8",
+     "count": 1,
+     "w": 764.24,
+     "h": 460.28,
+     "lef": "analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8.lef"
+    }
+   ]
+  },
+  {
+   "block": "skid_buffer",
+   "run": "RUN_2026-08-26_12-40-27",
+   "totalCells": 168,
+   "stdCells": 168,
+   "nonStd": []
+  }
+ ],
+ "hierarchical": {
+  "macro": "chan_top",
+  "instances": 8,
+  "w": 800.0,
+  "h": 800.0,
+  "lef": "samples/sample_test_4/asic/chan_top/runs/RUN_2026-09-23_12-48-47/final/lef/chan_top.lef"
+ }
+}
