@@ -12,7 +12,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { hubDefs, N_HUBS, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, LO_CELL, MIN_SPACING, CHANNEL_SAFE_MARGIN, PIN_ESCAPE_MARGIN, POWER_RING_MARGIN, REAL_CHAN_TOP, cloneState, type State, type GlueTile, type Macro, type Pos } from '../game/macroTetrisModel'
 import {
   BASE_DIE, EDGE_MARGIN, SHRINK_LADDER, SHAPE_LABEL, ISSUE_LABEL, CHANNEL_SAMPLES, analyzeLeftoverD, costD, gateReason, diagnoseD,
-  summarizeIssues, requiredDensity, dieArea, dieUtil, glueTilesNeeded, fillGlueD, realStart, toAreaCfg, candidateDies, shapeVariantDies, baseFor, metricsOf, layoutSig, scaleHubs, RULES,
+  summarizeIssues, requiredDensity, rowCapacityD, MACRO_HALO_UM, dieArea, dieUtil, glueTilesNeeded, fillGlueD, realStart, toAreaCfg, candidateDies, shapeVariantDies, baseFor, metricsOf, layoutSig, scaleHubs, RULES,
   type Die, type AreaOpts, type Issue, type RepairStep, type ShapeAttempt, type TrialPlan, type CandMetrics,
 } from '../game/macroAreaModel'
 import type { AreaRequest, AreaResponse } from '../game/macroAreaWorker'
@@ -222,6 +222,7 @@ export default function MacroAreaTetris() {
   const c = costD(cur.state, cur.die)
   const gate = gateReason(cur.die, cur.state, c, opts)
   const util = dieUtil(cur.die, cur.state.macros)
+  const rowCap = rowCapacityD(cur.die, cur.state.macros)
   const reqDen = requiredDensity(cur.die, cur.state.macros)
   const vsBase = dieArea(cur.die) / dieArea(BASE_DIE) - 1
   const vsStart = dieArea(cur.die) / dieArea(start.cur.die) - 1
@@ -487,7 +488,7 @@ export default function MacroAreaTetris() {
       <div><span>원래(3700×2100) 대비</span><b className="pass">{signedPct(vsBase)}</b></div>
       <div><span>시작점 대비</span><b className="pass">{signedPct(vsStart)}</b></div>
       <div><span>UTILIZATION</span><b className="pass">{pct(util, 2)}</b></div>
-      <div><span>필요 밀도</span><b className={reqDen <= opts.density ? 'pass' : 'warn'}>{pct(reqDen)} / {Math.round(opts.density * 100)}%</b></div>
+      <div><span>필요 밀도</span><b className={reqDen <= opts.density ? 'pass' : 'warn'}>{pct(reqDen)} / {Math.round(opts.density * 100)}%</b><small>row 용량 {Math.round(rowCap.capacityUm2).toLocaleString()}µm² · 조각 {rowCap.segments.toLocaleString()}개 (다이−매크로의 {pct(rowCap.capacityUm2 / rowCap.naiveFreeUm2, 0)})</small></div>
       <div><span>후보 (util≥{Math.round(utilMin * 100)}%)</span><b className="pass">{ranked.length} / {cands.length}</b></div>
       <div><span>다른 용도(glue 중 탭·버퍼)</span><b>{(REAL_GLUE_OTHER_PURPOSE_AREA / dieArea(cur.die) * 100).toFixed(1)}%</b><small>다이 대비 · glue 자체론 {(REAL_GLUE_OTHER_PURPOSE_RATIO * 100).toFixed(1)}%</small></div>
     </section>
@@ -540,7 +541,7 @@ export default function MacroAreaTetris() {
           <div className="chip-switches" style={{ marginTop: 5, gridTemplateColumns: '1fr' }}>
             <button className={opts.strict ? 'active replace' : ''} onClick={() => changeOpts({ ...opts, strict: !opts.strict })} disabled={busy !== null}>{opts.strict ? '엄격: 핀 escape·전원 접근 CLEAN 필수' : '완화: 겹침·간격·경계·용량만'}</button>
           </div>
-          <p className="key-help" style={{ marginTop: 4 }}>항상: 겹침 0 · 간격 ≥{MIN_SPACING}µm · 가장자리 ≥{EDGE_MARGIN}µm · 필요 밀도(glue {REAL_GLUE.cellArea.toLocaleString()}µm² ÷ (다이 − 매크로)) ≤ 목표. 엄격은 + 매크로마다 한 면 {PIN_ESCAPE_MARGIN}µm 이상(핀 escape), 전원 링 또는 {POWER_RING_MARGIN}µm 채널 접근. 조건마다 최고 결과·후보 풀이 따로 저장됩니다. 이 glue {REAL_GLUE.cellArea.toLocaleString()}µm² 중 {(REAL_GLUE_OTHER_PURPOSE_RATIO * 100).toFixed(1)}%({REAL_GLUE_OTHER_PURPOSE_CELLS.toLocaleString()}셀, 탭 {REAL_GLUE_OTHER_PURPOSE.tapCells.toLocaleString()}+타이밍 리페어 {REAL_GLUE_OTHER_PURPOSE.timingRepairBuffers.toLocaleString()}+hold 버퍼 {REAL_GLUE_OTHER_PURPOSE.holdBuffers.toLocaleString()})는 RTL 로직이 아니라 P&R이 끼워 넣은 <b>다른 용도</b> — 빈 공간처럼 보여도 실제로는 대부분 이미 목적이 정해져 있습니다.</p>
+          <p className="key-help" style={{ marginTop: 4 }}>항상: 겹침 0 · 간격 ≥{MIN_SPACING}µm · 가장자리 ≥{EDGE_MARGIN}µm · 필요 밀도(glue {REAL_GLUE.cellArea.toLocaleString()}µm² ÷ <b>실제 row 용량</b> — 코어 inset·매크로 halo {MACRO_HALO_UM}µm를 뺀 OpenROAD cutrows 모델, 실측 DEF와 일치) ≤ 목표. 엄격은 + 매크로마다 한 면 {PIN_ESCAPE_MARGIN}µm 이상(핀 escape), 전원 링 또는 {POWER_RING_MARGIN}µm 채널 접근. 조건마다 최고 결과·후보 풀이 따로 저장됩니다. 이 glue {REAL_GLUE.cellArea.toLocaleString()}µm² 중 {(REAL_GLUE_OTHER_PURPOSE_RATIO * 100).toFixed(1)}%({REAL_GLUE_OTHER_PURPOSE_CELLS.toLocaleString()}셀, 탭 {REAL_GLUE_OTHER_PURPOSE.tapCells.toLocaleString()}+타이밍 리페어 {REAL_GLUE_OTHER_PURPOSE.timingRepairBuffers.toLocaleString()}+hold 버퍼 {REAL_GLUE_OTHER_PURPOSE.holdBuffers.toLocaleString()})는 RTL 로직이 아니라 P&R이 끼워 넣은 <b>다른 용도</b> — 빈 공간처럼 보여도 실제로는 대부분 이미 목적이 정해져 있습니다.</p>
           <div className="data-table" style={{ marginTop: 6 }}><table><thead><tr><th>룰</th><th>값</th><th>적용</th><th>근거</th></tr></thead><tbody>
             {Object.entries(RULES).map(([k, r]) => <tr key={k}><td><code>{k}</code></td><td><b>{r.value}{r.unit}</b></td><td>{r.gate}</td><td style={{ fontSize: 11 }}>{r.desc}</td></tr>)}
           </tbody></table></div>

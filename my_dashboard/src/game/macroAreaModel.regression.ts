@@ -7,7 +7,7 @@
 // Run with: npx tsx src/game/macroAreaModel.regression.ts
 import {
   realStart, searchTrial, isLegalD, costD, gateReason, diagnoseD, layoutSig, toAreaCfg,
-  shapeVariantDies, SHRINK_LADDER, dieArea, type AreaOpts, type Die,
+  shapeVariantDies, SHRINK_LADDER, dieArea, rowCapacityD, requiredDensity, type AreaOpts, type Die,
 } from './macroAreaModel'
 import type { Macro, State } from './macroTetrisModel'
 
@@ -101,6 +101,24 @@ check('dieArea(realStart) matches w*h', dieArea(start.die) === start.die.w * sta
   check('shapeVariantDies includes the 4-row size (1900x4300, 8.17mm2)', shapes.some(d => d.w === 1900 && d.h === 4300), '')
   check('shapeVariantDies excludes 1-row (aspect 7.3 > MAX_ASPECT)', !shapes.some(d => d.w === 7300 && d.h === 1000), '')
   check('2-row is the smallest-area shape (this topology has no smaller legal row count)', byArea[0].w === 3700 && byArea[0].h === 2100, byArea.map(d => `${d.w}x${d.h}=${(dieArea(d) / 1e6).toFixed(2)}mm2`).join(', '))
+}
+
+// 8) rowCapacityD vs the REAL OpenROAD cutrows output. Numbers read from the DEF ROW
+// statements of the signed-off run daq_subsystem/runs/hierarchical_auto_20260924_142552
+// (17-openroad-cutrows/daq_subsystem.def): 764 rows, 3,180 row segments, 2,274,156 um^2
+// of site capacity, shortest segment 79.58 um (the 100 um inter-macro channel minus halo).
+// The 800x800 / 590x1085 row counts come from chan_top's own real cutrows DEFs.
+{
+  const cap = rowCapacityD(start.die, start.state.macros)
+  check('rowCapacityD reproduces the real daq_subsystem row count (764)', cap.rows === 764, String(cap.rows))
+  check('rowCapacityD reproduces the real row-segment count (3180)', cap.segments === 3180, String(cap.segments))
+  check('rowCapacityD reproduces the real site capacity (2,274,156 um^2) within 0.01%', Math.abs(cap.capacityUm2 - 2274156) / 2274156 < 1e-4, String(Math.round(cap.capacityUm2)))
+  check('rowCapacityD reproduces the real shortest segment (79.58 um = 100 um channel - 2x halo, site-snapped)', Math.abs(cap.shortestSegUm - 79.58) < 0.01, cap.shortestSegUm.toFixed(2))
+  check('real row capacity is below the naive die-minus-macros area', cap.capacityUm2 < cap.naiveFreeUm2, `${Math.round(cap.capacityUm2)} < ${Math.round(cap.naiveFreeUm2)}`)
+  check('chan_top 800x800 core has the real 286 rows', rowCapacityD({ w: 800, h: 800 }, []).rows === 286, '')
+  check('chan_top 590x1085 core has the real 390 rows', rowCapacityD({ w: 590, h: 1085 }, []).rows === 390, '')
+  const req = requiredDensity(start.die, start.state.macros)
+  check('requiredDensity on the real grid is the real-capacity ratio (~20.3%)', Math.abs(req - 460614 / 2274156) < 1e-3, `${(req * 100).toFixed(2)}%`)
 }
 
 if (failures > 0) {

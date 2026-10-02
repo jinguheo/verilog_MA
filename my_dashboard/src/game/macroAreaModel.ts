@@ -14,6 +14,7 @@ import {
   GRID_COLS, GRID_ROWS, HOTSPOT_RATIO, PIN_ESCAPE_MARGIN, POWER_RING_MARGIN,
   LO_CELL, USABLE_SQUARE, GLUE_TILE, GLUE_TILE_CAP, REAL_GLUE, REAL_RUN_MACROS, REAL_RUN_HUBS,
   gapBetween, overlapAmount, rasterizeSegment, mulberry32, internalProjectionGaps, CHANNEL_SAFE_MARGIN,
+  STD_CELL_ROW_HEIGHT_UM, STD_CELL_SITE_WIDTH_UM,
   type Macro, type Pos, type State, type Cost, type GlueTile,
 } from './macroTetrisModel'
 
@@ -28,6 +29,11 @@ export const DIE_SNAP = 10
 export const MAX_ASPECT = 3
 export const RIPUP_STEP = MIN_SPACING
 
+// 표준셀 row 용량 모델 상수 — 근거는 아래 rowCapacityD 주석(실측 cutrows DEF).
+export const CORE_INSET_X_UM = 5.52
+export const CORE_INSET_Y_UM = 10.88
+export const MACRO_HALO_UM = 10
+
 // ---- 룰 참조표 ----
 // 지금 적용 중인 물리 제약이 gateReason/diagnoseD/repairFrom/generateForDie에
 // 흩어져 있어서 "지금 규칙이 뭐지?"를 빠르게 확인할 데가 없었다. 값을 여기서
@@ -38,7 +44,9 @@ export const RULES = {
   channel: { value: CHANNEL_SAFE_MARGIN, unit: 'µm', gate: '항상 (하드 게이트)', desc: '매크로 그룹 채널 — 2026-09-26 실측: 300=PASS, 100=FAIL(DPL-0034/0036)' },
   pinEscape: { value: PIN_ESCAPE_MARGIN, unit: 'µm', gate: '엄격 모드만', desc: '핀 escape — 최소 간격×2, 라우팅 채널 하나 지나갈 여유' },
   powerAccess: { value: POWER_RING_MARGIN, unit: 'µm', gate: '엄격 모드만', desc: '전원 접근 — 최소 간격×3, 실제 hierarchical config 행간 채널 폭과 동일' },
-  density: { value: REAL_GLUE.targetDensity, unit: '', gate: '항상 (UI에서 40/50/60% 선택)', desc: '필요 밀도(glue 460,614µm² ÷ 남는 공간) ≤ 목표 — 기본값은 config의 PL_TARGET_DENSITY_PCT' },
+  density: { value: REAL_GLUE.targetDensity, unit: '', gate: '항상 (UI에서 40/50/60% 선택)', desc: '필요 밀도(glue 460,614µm² ÷ 실제 row 용량) ≤ 목표 — 기본값은 config의 PL_TARGET_DENSITY_PCT' },
+  macroHalo: { value: MACRO_HALO_UM, unit: 'µm', gate: '표준셀 row 용량', desc: '매크로 둘레 row 절단 폭 — 실측 cutrows DEF: 100µm 틈 → row 조각 79.58µm' },
+  coreInset: { value: CORE_INSET_Y_UM, unit: 'µm (세로, 가로 5.52)', gate: '표준셀 row 용량', desc: '다이 가장자리에서 코어까지 — 3개 다이 크기의 실측 row 수와 일치' },
   maxAspect: { value: MAX_ASPECT, unit: ':1', gate: '다이 형상 탐색', desc: '다이 종횡비 상한 — 한쪽만 계속 줄어드는 가늘고 긴 다이 방지' },
   dieSnap: { value: DIE_SNAP, unit: 'µm', gate: '항상', desc: '다이 크기 반올림 단위' },
 } as const
@@ -406,13 +414,55 @@ export const SHAPE_LABEL: Record<ShapeKind, string> = { ratio: '비율 유지', 
 // 접근까지 CLEAN이어야 통과(끄면 겹침·간격·경계·용량만 본다).
 export type AreaOpts = { density: number; strict: boolean }
 
-// 표준셀이 들어갈 수 있는 자리 = 다이 − 매크로. 거기에 실제 glue 셀 면적을 넣었을 때의
+// ---- 표준셀 row 용량 (실측 cutrows 모델) ----
+// 예전엔 "다이 − 매크로 면적"을 표준셀 자리로 쳤는데, 실제 OpenROAD는 (1) 코어를 다이
+// 가장자리에서 안쪽으로 들이고 (2) 매크로 둘레 halo까지 row를 잘라내고 (3) 남은 조각을
+// site(0.46µm) 단위로 맞춘다. 실제 signoff run(daq_subsystem hierarchical_auto_
+// 20260924_142552)의 17-openroad-cutrows DEF ROW 3,180개를 읽어 확인한 값:
+//   · 코어 inset: x 5.52µm(12 site), y 10.88µm(4 row) — 다이 800×800·590×1085·3700×2100
+//     3개 크기에서 row 수 floor((H−2·10.88)/2.72), site 수 floor((W−2·5.52)/0.46)가 전부 일치
+//   · 매크로 halo: 100µm 틈(매크로 x 900→1000)이 row 조각 910.34→989.92(79.58µm)로 줄어듦
+//     → 한 변 약 10µm. 세로도 같음(매크로 y 100~900 → row 89.76~908.48이 잘림)
+//   · 그 결과 실제 row 용량 2,274,156µm² — 다이−매크로(2,650,000)의 85.8%.
+// (CORE_INSET_X_UM · CORE_INSET_Y_UM · MACRO_HALO_UM 정의는 RULES 위쪽 — RULES가 참조해서 먼저 선언)
+
+export type RowCapacity = { capacityUm2: number; rows: number; segments: number; longestSegUm: number; shortestSegUm: number; naiveFreeUm2: number }
+
+export function rowCapacityD(d: Die, macros: Macro[]): RowCapacity {
+  const rh = STD_CELL_ROW_HEIGHT_UM, sw = STD_CELL_SITE_WIDTH_UM
+  const nRows = Math.max(0, Math.floor((d.h - 2 * CORE_INSET_Y_UM) / rh))
+  const nSites = Math.max(0, Math.floor((d.w - 2 * CORE_INSET_X_UM) / sw))
+  const x0 = CORE_INSET_X_UM
+  let sitesTotal = 0, segments = 0, longest = 0, shortest = Infinity
+  for (let r = 0; r < nRows; r++) {
+    const y0 = CORE_INSET_Y_UM + r * rh, y1 = y0 + rh
+    const cuts: [number, number][] = []
+    for (const m of macros) {
+      if (y1 <= m.y - MACRO_HALO_UM || y0 >= m.y + m.h + MACRO_HALO_UM) continue
+      cuts.push([m.x - MACRO_HALO_UM, m.x + m.w + MACRO_HALO_UM])
+    }
+    cuts.sort((a, b) => a[0] - b[0])
+    let cursor = 0
+    const take = (endSite: number) => {
+      const n = endSite - cursor
+      if (n > 0) { sitesTotal += n; segments++; longest = Math.max(longest, n * sw); shortest = Math.min(shortest, n * sw) }
+    }
+    for (const [cx0, cx1] of cuts) {
+      take(Math.min(nSites, Math.floor((cx0 - x0) / sw)))
+      cursor = Math.max(cursor, Math.ceil((cx1 - x0) / sw))
+    }
+    take(nSites)
+  }
+  return { capacityUm2: sitesTotal * sw * rh, rows: nRows, segments, longestSegUm: longest, shortestSegUm: shortest === Infinity ? 0 : shortest, naiveFreeUm2: dieArea(d) - macroArea(macros) }
+}
+
+// 표준셀이 들어갈 수 있는 자리 = 실제 row 용량(위). 거기에 실제 glue 셀 면적을 넣었을 때의
 // 필요 밀도. 이게 목표 밀도 이하여야 한다. (300µm 타일 판정은 좁은 채널을 전부 버려
 // 실제로 signoff까지 간 3700×2100 격자조차 12/13으로 실패시키므로 통과 조건에서 뺐고,
 // 화면 표시에만 쓴다 — 실제 표준셀은 100µm 틈에도 row 단위로 들어간다.)
 export function requiredDensity(d: Die, macros: Macro[]): number {
-  const free = dieArea(d) - macroArea(macros)
-  return free > 0 ? REAL_GLUE.cellArea / free : Infinity
+  const cap = rowCapacityD(d, macros).capacityUm2
+  return cap > 0 ? REAL_GLUE.cellArea / cap : Infinity
 }
 
 // 이 옵션 기준으로 배치가 통과인지, 아니면 왜 아닌지(한 줄 요약).
