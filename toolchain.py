@@ -75,11 +75,13 @@ def _wsl_check_paths(paths: Dict[str, str], timeout: float = 3.0) -> Dict[str, O
     try:
         completed = subprocess.run(
             [wsl_exe, "-d", WSL_DISTRO, "--", "bash", "-lc", script],
-            capture_output=True, text=True, timeout=timeout,
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout,
         )
     except (subprocess.TimeoutExpired, OSError):
         return result
-    for line in completed.stdout.splitlines():
+    # wsl.exe can print localized (cp949) status text before bash starts; with the
+    # default locale codec that raised in the reader thread and left stdout None.
+    for line in (completed.stdout or "").splitlines():
         if line.startswith("FOUND:"):
             _, key, resolved = line.split(":", 2)
             if key in result:

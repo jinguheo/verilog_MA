@@ -11,6 +11,7 @@ import pdk from '../data/sky130_pdk_info.json'
 import nonStd from '../data/non_std_cells.json'
 import { REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_CHAN_TOP } from '../game/macroTetrisModel'
 import PdkChangeExperiment from './PdkChangeExperiment'
+import ComplexStandardCellExperiment from './ComplexStandardCellExperiment'
 
 type Variant = { drive: number; w: number; area: number; timing: boolean | null }
 type Group = { base: string; category: string; variants: Variant[] }
@@ -138,8 +139,7 @@ export default function StandardCells() {
   const [sel, setSel] = useState('nand2_1')
   const [data, setData] = useState<Record<string, Record<string, CellData>>>({})
   const [loadErr, setLoadErr] = useState('')
-  const [showBackground, setShowBackground] = useState(false)
-  const [subTab, setSubTab] = useState<'library' | 'experiment'>('library')
+  const [subTab, setSubTab] = useState<'library' | 'background' | 'experiment' | 'complex'>('library')
   const [imageFailed, setImageFailed] = useState(false)
   const lib = libs.find(l => l.id === libId) ?? libs[0]
   const libData = data[libId] ?? null
@@ -180,57 +180,31 @@ export default function StandardCells() {
   return <div style={{ display: 'grid', gap: 16 }}>
     <div className="layout-pills" role="tablist" aria-label="Standard Cells 수평 탭">
       <button type="button" role="tab" aria-selected={subTab === 'library'} className={subTab === 'library' ? 'active' : ''} onClick={() => setSubTab('library')}>셀 라이브러리</button>
+      <button type="button" role="tab" aria-selected={subTab === 'background'} className={subTab === 'background' ? 'active' : ''} onClick={() => setSubTab('background')}>배경 지식</button>
       <button type="button" role="tab" aria-selected={subTab === 'experiment'} className={subTab === 'experiment' ? 'active' : ''} onClick={() => setSubTab('experiment')}>PDK 변경 실험</button>
+      <button type="button" role="tab" aria-selected={subTab === 'complex'} className={subTab === 'complex' ? 'active' : ''} onClick={() => setSubTab('complex')}>복잡한 Standard Cell 실험</button>
     </div>
     {subTab === 'experiment' ? <PdkChangeExperiment libId={libId} libraryRowHeight={lib.rowHeight} cellName={sel} cell={cell}
-      cells={libData} availableCells={Object.keys(libData ?? {})} onSelectCell={setSel} onOpenLibrary={() => setSubTab('library')}/> : <>
+      cells={libData} availableCells={Object.keys(libData ?? {})} onSelectCell={setSel} onOpenLibrary={() => setSubTab('library')}/> : subTab === 'complex' ? <ComplexStandardCellExperiment/> : subTab === 'background' ? <>
     <section className="card">
-      <div className="card-title"><div><small className="kicker">PDK · 지금 표시 중: {pdk.name} / {lib.id}</small><h2>표준셀 라이브러리 — PDK가 제공하는 셀 전체</h2></div><div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}><span className="connection">{catalog.generatedFrom}</span><button type="button" className={showBackground ? 'active' : ''} aria-expanded={showBackground} aria-controls="standard-cell-background" onClick={() => setShowBackground(v => !v)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-strong)', background: showBackground ? 'var(--accent-soft)' : 'var(--surface-1)', color: 'var(--text-primary)', cursor: 'pointer' }}>배경 지식 {showBackground ? '접기' : '보기'}</button></div></div>
-      {showBackground && <div id="standard-cell-background" className="card" style={{ padding: 14, marginBottom: 12, background: 'var(--surface-muted)' }}>
-        <h3 style={{ margin: '0 0 8px' }}>표준 셀과 PDK 파일을 읽는 법</h3>
-        <p className="chip-note" style={{ margin: '0 0 10px' }}>이 탭은 설치된 {pdk.name} PDK의 기존 셀을 보여줍니다. 셀을 새로 설계하거나 DRC·LVS 통과를 판정하는 도구는 아닙니다. 현재 프로젝트의 디지털 P&amp;R은 주로 <code>sky130_fd_sc_hd</code>를 사용합니다.</p>
+      <div className="card-title"><div><small className="kicker">PDK FILES</small><h3>표준 셀과 PDK 파일을 읽는 법</h3></div></div>
+        <p className="chip-note" style={{ margin: '0 0 10px' }}>Standard Cells 탭은 설치된 {pdk.name} PDK의 기존 셀을 보여줍니다. 셀을 새로 설계하거나 DRC·LVS 통과를 판정하는 도구는 아닙니다. 현재 프로젝트의 디지털 P&amp;R은 주로 <code>sky130_fd_sc_hd</code>를 사용합니다.</p>
         <div className="data-table"><table><thead><tr><th>파일</th><th>여기서 볼 수 있는 것</th><th>이 파일만으로 알 수 없는 것</th></tr></thead><tbody>
           <tr><td><b>LEF</b></td><td>셀 외곽 크기, 배치 site, 핀의 위치·도형, 배선 금지 영역(OBS)</td><td>내부 트랜지스터와 제조용 전체 도형</td></tr>
           <tr><td><b>GDS</b></td><td>웰·확산·게이트·콘택트·비아·금속 등 층별 상세 도형과 셀 계층</td><td>논리 기능, PVT별 지연·전력, DRC 통과 여부 자체</td></tr>
           <tr><td><b>Liberty</b></td><td>셀 기능과 공정·전압·온도(PVT) 조건별 타이밍·전력 모델</td><td>제조용 레이아웃 도형</td></tr>
           <tr><td><b>SPICE/CDL</b></td><td>소자와 연결 관계. LVS에서 레이아웃 추출 회로와 비교할 기준</td><td>배치용 셀 외곽과 배선 핀 도형</td></tr>
         </tbody></table></div>
-        <p className="chip-note" style={{ margin: '10px 0 0' }}><b>LEF와 GDS:</b> LEF만으로도 아래의 셀 윤곽과 핀 그림을 그릴 수 있습니다. 실제 칩의 최종 레이아웃에는 상세 도형이 필요하며, GDS 파일이나 GDS로 내보낼 수 있는 원본 레이아웃에서 가져옵니다. DRC는 도형을 해당 PDK 규칙으로 검사하고, LVS는 추출된 연결을 회로와 비교합니다.</p>
+        <p className="chip-note" style={{ margin: '10px 0 0' }}><b>LEF와 GDS:</b> 셀 라이브러리 탭의 LEF 뷰(셀 윤곽과 핀)는 LEF만으로 그린 것입니다. 실제 칩의 최종 레이아웃에는 상세 도형이 필요하며, GDS 파일이나 GDS로 내보낼 수 있는 원본 레이아웃에서 가져옵니다. DRC는 도형을 해당 PDK 규칙으로 검사하고, LVS는 추출된 연결을 회로와 비교합니다.</p>
         <p className="chip-note" style={{ margin: '6px 0 0' }}><b>공정 변경:</b> 예를 들어 130 nm 설계를 90 nm로 옮길 때 셀 그림을 일정 비율로 줄여 쓰지 않습니다. 90 nm PDK와 검증된 셀 라이브러리로 다시 합성·배치하고, 타이밍·전력·DRC·LVS를 확인해야 합니다. 필요한 셀이나 목표 성능이 없으면 이식이 불가능할 수도 있습니다.</p>
-      </div>}
-      <div className="data-table"><table><tbody>
-        <tr><td><b>PDK</b></td><td>{pdk.name} (SkyWater 130nm CMOS, open_pdks <code>{String(pdk.openPdks).slice(0, 8)}</code>) — 설치 위치 <code>{pdk.install}</code></td></tr>
-        <tr><td><b>제공 라이브러리</b></td><td>{pdk.libsRef.map(l => <code key={l} style={{ marginRight: 8, fontWeight: l === lib.id ? 800 : 400 }}>{l}</code>)}</td></tr>
-        <tr><td><b>표준셀 라이브러리 3종</b></td><td>{pdk.stdcellLibs.map(l => <div key={l.id}><code style={{ fontWeight: l.id === lib.id ? 800 : 400 }}>{l.id}</code> — {l.role}</div>)}</td></tr>
-        <tr><td><b>공정 기술 파일</b></td><td>{pdk.libsTech.map(t => <code key={t} style={{ marginRight: 8 }}>{t}</code>)} · 기준 site <code>{site?.name}</code> = {site?.w}×{site?.h} µm</td></tr>
-      </tbody></table></div>
-      <div className="layout-pills" style={{ marginTop: 10 }}>{libs.map(l => <button key={l.id} className={l.id === libId ? 'active' : ''} onClick={() => { setLibId(l.id); setCat('all'); setQuery(''); setSel(l.groups[0] ? `${l.groups[0].base}_${l.groups[0].variants[0].drive}` : '') }}>{l.id.replace('sky130_', '')} · {l.lefCells}셀</button>)}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10, marginTop: 12 }}>
-        <div className="card" style={{ padding: 12 }}><small>총 가용 셀 수 (LEF)</small><h3 style={{ margin: '4px 0' }}>{fmt(lib.lefCells)}</h3><small>{lib.label}</small></div>
-        <div className="card" style={{ padding: 12 }}><small>기능 종류 (drive 제외)</small><h3 style={{ margin: '4px 0' }}>{fmt(lib.functions)}</h3><small>같은 기능의 크기 변형을 하나로 묶음</small></div>
-        <div className="card" style={{ padding: 12 }}><small>행 높이</small><h3 style={{ margin: '4px 0' }}>{lib.rowHeight} µm</h3><small>높이 고정, 폭만 가변</small></div>
-        <div className="card" style={{ padding: 12 }}><small>셀 폭 범위</small><h3 style={{ margin: '4px 0' }}>{Math.min(...widths)}–{Math.max(...widths)} µm</h3><small>가장 작은 셀 ~ 가장 큰 셀</small></div>
-      </div>
-      {lib.libertyCells !== null && <p className="chip-note" style={{ marginTop: 10 }}>liberty(타이밍) 정의 <b>{lib.libertyCells}개</b> / LEF <b>{lib.lefCells}개</b> — 차이 {lib.lefCells - lib.libertyCells}개는 타이밍이 없는 물리 전용 셀: <code>{lib.noTiming.join(' · ')}</code>.</p>}
     </section>
 
     <section className="card">
-      <div className="card-title"><div><small className="kicker">PDK FILES → 설계 흐름</small><h3>PDK 파일들은 어떻게 서로 연결되나</h3></div><span className="connection">선택한 셀: {sel}</span></div>
-      <div className="data-table"><table><thead><tr><th>단계</th><th>쓰는 PDK 파일</th><th>거기서 읽는 정보 (선택한 셀 기준)</th></tr></thead><tbody>
-        <tr><td><b>1. 합성</b> (RTL→게이트)</td><td><code>{libertyFile}</code></td><td>{libId === 'sky130_ef_sc_hd' ? '이 라이브러리의 셀은 물리 보조용으로 표시되며, 이 탭에 타이밍 Liberty가 없습니다.' : <>셀 이름·<b>기능</b>({outFns.map(p => `${p.n}=${p.fn}`).join(', ') || '—'})·<b>면적</b> {info?.area ?? '—'} µm²·핀 입력 용량·지연 표. 합성기가 RTL 로직을 라이브러리 셀로 매핑할 때 사용</>}</td></tr>
-        <tr><td><b>2. 플로어플랜/배치</b></td><td><code>lef/…lef</code> + <code>techlef/…tlef</code></td><td>셀 <b>크기</b> {info?.size ? `${info.size[0]}×${info.size[1]} µm` : '—'} = site <code>{info?.site ?? '—'}</code>({site?.w}×{site?.h}µm) {info?.size && site ? `${Math.round(info.size[0] / site.w)}칸 × ${Math.round(info.size[1] / site.h)}행` : ''}. 배치기는 이 격자 위에 셀을 놓고 <b>위치</b>(x,y)와 방향을 정함</td></tr>
-        <tr><td><b>3. 라우팅</b></td><td><code>lef</code> (PIN/RECT) + <code>techlef</code> 배선층</td><td>셀 안 <b>핀 위치</b>: {info?.pins.filter(p => p.use === 'signal').map(p => `${p.n}@${p.rects[0]?.[0]}(${((p.rects[0]?.[1] + p.rects[0]?.[3]) / 2).toFixed(2)}, ${((p.rects[0]?.[2] + p.rects[0]?.[4]) / 2).toFixed(2)})`).join(' · ') || '—'}. 라우터가 핀 사각형(li1)에서 met1~ 로 올려 연결. 배선 pitch: {Object.entries(pdk.techlef?.layers ?? {}).map(([k, v]) => `${k} ${(v as { pitch: number }).pitch}`).join(' · ')} µm</td></tr>
-        <tr><td><b>4. 물리 검증</b></td><td><code>gds/…gds</code> + <code>spice/…spice</code> (<code>cdl/</code>)</td><td>GDS는 마스크가 될 <b>실제 도형</b>(DRC가 검사), SPICE/CDL은 <b>트랜지스터 회로</b> — LVS가 GDS에서 추출한 회로와 이 SPICE를 비교해 같은지 확인. 아래 회로도와 레이아웃이 바로 이 쌍</td></tr>
-      </tbody></table></div>
-      <p className="chip-note">즉 <b>liberty = 이 셀이 무슨 기능이고 얼마나 빠른가</b>, <b>LEF = 얼마나 크고 핀이 어디인가</b>(P&amp;R이 보는 추상 뷰), <b>SPICE = 안에 트랜지스터가 어떻게 연결돼 있나</b>(회로도), <b>GDS = 그게 실제로 어떤 도형인가</b>(레이아웃)입니다. 같은 셀 하나를 네 가지 시점으로 적은 파일이고, 이름(<code>sky130_fd_sc_hd__nand2_1</code>)으로 서로 연결됩니다.</p>
-    </section>
-
-    <section className="card">
-      <div className="card-title"><div><small className="kicker">BACKGROUND</small><h3>배경 지식 — 표준셀은 P&amp;R에서 어떻게 다뤄지고, 언제 직접 바꾸나</h3></div></div>
+      <div className="card-title"><div><small className="kicker">BACKGROUND</small><h3>표준셀은 P&amp;R에서 어떻게 다뤄지고, 언제 직접 바꾸나</h3></div></div>
       <div className="data-table"><table><thead><tr><th>구분</th><th>내용</th></tr></thead><tbody>
         <tr><td><b>기본: 블랙박스로 배치·배선</b></td><td>디지털 로직은 표준셀 단위로 P&amp;R합니다. 셀 내부(트랜지스터·poly·diffusion·내부 li1)는 PDK가 이미 완성·검증해 둔 GDS이고, P&amp;R은 LEF 추상 뷰(크기·핀 사각형·전원 레일·배선 금지 영역)만 봅니다. P&amp;R이 정하는 것은 셀의 <b>위치(x,y)·방향(N/FS)</b>과 셀 사이 met1 이상 배선뿐이며, 최종 GDS는 셀 GDS 인스턴스 + 배선 도형으로 조립됩니다.</td></tr>
         <tr><td><b>셀 자체를 직접 바꾸는 경우</b></td><td>① <b>커스텀 셀 추가</b> — PDK에 없는 특수 래치/고속 FF/큰 구동 버퍼/저누설 변형 (PPA가 라이브러리 셀로 안 나올 때)<br/>② <b>기존 셀 변형</b> — 트랜지스터 W/L, Vt(hvt/lvt/svt), 핀 위치, 폭 변경 (타이밍·누설·핀 접근성/혼잡 개선)<br/>③ <b>PDK 셀 결함 우회</b> — 특정 공정/툴 조합의 DRC·LVS·핀 접근 문제 수정<br/>④ <b>전용 라이브러리 구축</b> — 파운드리/IP 회사가 새 셀 세트를 통째로 설계</td></tr>
-        <tr><td><b>같이 맞춰야 하는 4개 파일</b></td><td>셀 하나는 이름으로 묶인 4개 뷰이므로 함께 갱신해야 합니다.<br/><b>GDS</b>(원본 도형 수정) → <b>SPICE</b>(W/L·연결을 GDS와 일치 → LVS 통과) → <b>LEF</b>(크기·핀 사각형을 GDS에서 다시 추출) → <b>liberty</b>(바뀐 트랜지스터로 SPICE 재특성화 — 건너뛰면 합성/STA가 옛 셀 기준으로 계산). 이후 DRC·LVS를 통과시키고 상위 P&amp;R이 새 LEF/liberty를 읽게 합니다.</td></tr>
+        <tr><td><b>셀을 바꾸면 갱신 순서</b></td><td>위 표의 4개 파일은 이름으로 묶인 같은 셀의 다른 뷰라서 함께 갱신해야 합니다.<br/><b>GDS</b>(원본 도형 수정) → <b>SPICE</b>(W/L·연결을 GDS와 일치 → LVS 통과) → <b>LEF</b>(크기·핀 사각형을 GDS에서 다시 추출) → <b>liberty</b>(바뀐 트랜지스터로 SPICE 재특성화 — 건너뛰면 합성/STA가 옛 셀 기준으로 계산). 이후 DRC·LVS를 통과시키고 상위 P&amp;R이 새 LEF/liberty를 읽게 합니다.</td></tr>
         <tr><td><b>이 프로젝트에서</b></td><td>현재 흐름(OpenLane + sky130A)은 PDK 셀을 그대로 사용합니다. 커스텀 셀은 PDK 원본을 덮어쓰지 말고 별도 라이브러리(예: <code>sky130_custom</code>)로 만들어 OpenLane 설정이 가리키게 하는 것이 안전합니다 — 덮어쓰면 같은 PDK를 쓰는 다른 설계까지 바뀝니다.</td></tr>
         <tr><td><b>표준셀이 아닌 대상</b> <small>(아래 카드에 실측)</small></td><td>SRAM·아날로그·I/O 패드는 별도 GDS+LEF 매크로로 두고 P&amp;R은 배치만 하며, 하위 블록(chan_top 등)은 먼저 P&amp;R해 하나의 매크로로 만든 뒤 상위(daq_subsystem)에서 glue 표준셀과 함께 배치합니다.</td></tr>
       </tbody></table></div>
@@ -251,6 +225,25 @@ export default function StandardCells() {
         {nonStd.hierarchical && <tr><td><code>daq_subsystem</code><br/><small>hierarchical</small></td><td colSpan={2}>chan_top ×{nonStd.hierarchical.instances}</td><td style={{ fontSize: 12 }}><b style={{ color: '#7F77DD' }}>{nonStd.hierarchical.macro}</b> — 표준셀로 만든 블록을 먼저 P&amp;R로 굳힌 뒤 매크로로 배치 ({nonStd.hierarchical.w}×{nonStd.hierarchical.h} µm). 내부는 전부 표준셀이지만 상위에서는 SRAM처럼 블랙박스입니다.</td></tr>}
       </tbody></table></div>
       <p className="chip-note">정리: <b>chan_top·chan_ctrl·cnt_sat·skid_buffer·daq_subsystem(채널 포함 통합 합성)은 100% 표준셀</b>이고, <b>ppa3_adc_capture만 ADC·SRAM 매크로가 섞여 있습니다</b>. hierarchical 구성의 chan_top은 표준셀 집합이 매크로로 승격된 경우입니다. 표준셀이 아닌 쪽은 P&amp;R에서 먼저 큰 블록으로 배치하고, 그 사이 여유 공간에 표준셀이 채워집니다(Macro Tetris가 다루는 부분).</p>
+    </section>
+
+    </> : <>
+    <section className="card">
+      <div className="card-title"><div><small className="kicker">PDK · 지금 표시 중: {pdk.name} / {lib.id}</small><h2>표준셀 라이브러리 — PDK가 제공하는 셀 전체</h2></div><div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}><span className="connection">{catalog.generatedFrom}</span><button type="button" onClick={() => setSubTab('background')} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-strong)', background: 'var(--surface-1)', color: 'var(--text-primary)', cursor: 'pointer' }}>배경 지식 보기 →</button></div></div>
+      <div className="data-table"><table><tbody>
+        <tr><td><b>PDK</b></td><td>{pdk.name} (SkyWater 130nm CMOS, open_pdks <code>{String(pdk.openPdks).slice(0, 8)}</code>) — 설치 위치 <code>{pdk.install}</code></td></tr>
+        <tr><td><b>제공 라이브러리</b></td><td>{pdk.libsRef.map(l => <code key={l} style={{ marginRight: 8, fontWeight: l === lib.id ? 800 : 400 }}>{l}</code>)}</td></tr>
+        <tr><td><b>표준셀 라이브러리 3종</b></td><td>{pdk.stdcellLibs.map(l => <div key={l.id}><code style={{ fontWeight: l.id === lib.id ? 800 : 400 }}>{l.id}</code> — {l.role}</div>)}</td></tr>
+        <tr><td><b>공정 기술 파일</b></td><td>{pdk.libsTech.map(t => <code key={t} style={{ marginRight: 8 }}>{t}</code>)} · 기준 site <code>{site?.name}</code> = {site?.w}×{site?.h} µm</td></tr>
+      </tbody></table></div>
+      <div className="layout-pills" style={{ marginTop: 10 }}>{libs.map(l => <button key={l.id} className={l.id === libId ? 'active' : ''} onClick={() => { setLibId(l.id); setCat('all'); setQuery(''); setSel(l.groups[0] ? `${l.groups[0].base}_${l.groups[0].variants[0].drive}` : '') }}>{l.id.replace('sky130_', '')} · {l.lefCells}셀</button>)}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10, marginTop: 12 }}>
+        <div className="card" style={{ padding: 12 }}><small>총 가용 셀 수 (LEF)</small><h3 style={{ margin: '4px 0' }}>{fmt(lib.lefCells)}</h3><small>{lib.label}</small></div>
+        <div className="card" style={{ padding: 12 }}><small>기능 종류 (drive 제외)</small><h3 style={{ margin: '4px 0' }}>{fmt(lib.functions)}</h3><small>같은 기능의 크기 변형을 하나로 묶음</small></div>
+        <div className="card" style={{ padding: 12 }}><small>행 높이</small><h3 style={{ margin: '4px 0' }}>{lib.rowHeight} µm</h3><small>높이 고정, 폭만 가변</small></div>
+        <div className="card" style={{ padding: 12 }}><small>셀 폭 범위</small><h3 style={{ margin: '4px 0' }}>{Math.min(...widths)}–{Math.max(...widths)} µm</h3><small>가장 작은 셀 ~ 가장 큰 셀</small></div>
+      </div>
+      {lib.libertyCells !== null && <p className="chip-note" style={{ marginTop: 10 }}>liberty(타이밍) 정의 <b>{lib.libertyCells}개</b> / LEF <b>{lib.lefCells}개</b> — 차이 {lib.lefCells - lib.libertyCells}개는 타이밍이 없는 물리 전용 셀: <code>{lib.noTiming.join(' · ')}</code>.</p>}
     </section>
 
     <section className="card">
@@ -320,6 +313,17 @@ export default function StandardCells() {
         </div>
         <p className="chip-note" style={{ marginTop: 8 }}><b>회로도 ↔ 레이아웃 대응</b>: 회로도의 소자 {cell.devices.length}개(W/L 표)가 레이아웃에서는 diffusion 폭 = W, poly 길이 = L인 트랜지스터로 구현됩니다 (이 셀은 PMOS {nP}, NMOS {nN}). 회로도의 입력 신호는 레이아웃/LEF의 li1 핀 사각형으로, VPWR/VGND는 위·아래 met1 레일로 나옵니다.</p>
       </>}
+    </section>
+
+    <section className="card">
+      <div className="card-title"><div><small className="kicker">PDK FILES → 설계 흐름</small><h3>이 셀이 설계 흐름의 각 단계에서 쓰이는 방식</h3></div><span className="connection">선택한 셀: {sel}</span></div>
+      <div className="data-table"><table><thead><tr><th>단계</th><th>쓰는 PDK 파일</th><th>거기서 읽는 정보 (선택한 셀 기준)</th></tr></thead><tbody>
+        <tr><td><b>1. 합성</b> (RTL→게이트)</td><td><code>{libertyFile}</code></td><td>{libId === 'sky130_ef_sc_hd' ? '이 라이브러리의 셀은 물리 보조용으로 표시되며, 이 탭에 타이밍 Liberty가 없습니다.' : <>셀 이름·<b>기능</b>({outFns.map(p => `${p.n}=${p.fn}`).join(', ') || '—'})·<b>면적</b> {info?.area ?? '—'} µm²·핀 입력 용량·지연 표. 합성기가 RTL 로직을 라이브러리 셀로 매핑할 때 사용</>}</td></tr>
+        <tr><td><b>2. 플로어플랜/배치</b></td><td><code>lef/…lef</code> + <code>techlef/…tlef</code></td><td>셀 <b>크기</b> {info?.size ? `${info.size[0]}×${info.size[1]} µm` : '—'} = site <code>{info?.site ?? '—'}</code>({site?.w}×{site?.h}µm) {info?.size && site ? `${Math.round(info.size[0] / site.w)}칸 × ${Math.round(info.size[1] / site.h)}행` : ''}. 배치기는 이 격자 위에 셀을 놓고 <b>위치</b>(x,y)와 방향을 정함</td></tr>
+        <tr><td><b>3. 라우팅</b></td><td><code>lef</code> (PIN/RECT) + <code>techlef</code> 배선층</td><td>셀 안 <b>핀 위치</b>: {info?.pins.filter(p => p.use === 'signal').map(p => `${p.n}@${p.rects[0]?.[0]}(${((p.rects[0]?.[1] + p.rects[0]?.[3]) / 2).toFixed(2)}, ${((p.rects[0]?.[2] + p.rects[0]?.[4]) / 2).toFixed(2)})`).join(' · ') || '—'}. 라우터가 핀 사각형(li1)에서 met1~ 로 올려 연결. 배선 pitch: {Object.entries(pdk.techlef?.layers ?? {}).map(([k, v]) => `${k} ${(v as { pitch: number }).pitch}`).join(' · ')} µm</td></tr>
+        <tr><td><b>4. 물리 검증</b></td><td><code>gds/…gds</code> + <code>spice/…spice</code> (<code>cdl/</code>)</td><td>GDS는 마스크가 될 <b>실제 도형</b>(DRC가 검사), SPICE/CDL은 <b>트랜지스터 회로</b> — LVS가 GDS에서 추출한 회로와 이 SPICE를 비교해 같은지 확인. 아래 회로도와 레이아웃이 바로 이 쌍</td></tr>
+      </tbody></table></div>
+      <p className="chip-note">파일별로 무엇을 알 수 있고 무엇은 알 수 없는지는 <b>배경 지식</b> 탭에 정리되어 있습니다.</p>
     </section>
 
     {usage && <section className="card">

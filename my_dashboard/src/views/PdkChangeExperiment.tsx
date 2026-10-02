@@ -19,8 +19,13 @@ type Props = {
 const round = (value: number, digits = 3) => Number(value.toFixed(digits))
 const sourceSiteWidth = (libId: string) => libId === 'sky130_fd_sc_hvl' ? 0.48 : 0.46
 const EMPTY_CELLS: Record<string, Cell> = {}
+const DEFAULT_TARGET_NM = 90
+const outsideOf = (pins: { name: string; use: string; rects: Rect[] }[], size: [number, number]) => pins.filter(pin => pin.use === 'signal' && pin.rects.some(r =>
+  r[1] < -1e-9 || r[2] < -1e-9 || r[3] > size[0] + 1e-9 || r[4] > size[1] + 1e-9)).map(pin => pin.name)
 type TargetPin = { name: string; use: string; rects: Rect[] }
-type BatchResult = { name: string; source: [number, number] | null; target: [number, number] | null; sites: number; rows: number; pins: TargetPin[]; outsidePins: string[]; status: '초안 생성' | '핀 이탈' | '크기 없음' | '치수 오류' }
+// '원본 핀 외곽 초과': the installed LEF itself already has a signal pin rectangle outside the cell
+// outline (e.g. probec_p_8's met5 pin), so the virtual change did not cause it.
+type BatchResult = { name: string; source: [number, number] | null; target: [number, number] | null; sites: number; rows: number; pins: TargetPin[]; outsidePins: string[]; sourceOutsidePins: string[]; status: '초안 생성' | '핀 이탈' | '원본 핀 외곽 초과' | '크기 없음' | '치수 오류' }
 
 function pinCenter(pin: Pin, size: [number, number]): Position | null {
   const r = pin.rects[0]
@@ -30,12 +35,13 @@ function pinCenter(pin: Pin, size: [number, number]): Position | null {
 
 function transformCell(name: string, cell: Cell, sourceSite: number, sourceRow: number, targetSite: number, targetRow: number, siteDelta: number, pinDx: number, pinDy: number): BatchResult {
   const source = cell.info.size
-  if (!source) return { name, source: null, target: null, sites: 0, rows: 0, pins: [], outsidePins: [], status: '크기 없음' }
+  if (!source) return { name, source: null, target: null, sites: 0, rows: 0, pins: [], outsidePins: [], sourceOutsidePins: [], status: '크기 없음' }
+  const sourceOutsidePins = outsideOf(cell.info.pins.map(pin => ({ name: pin.n, use: pin.use, rects: pin.rects })), source)
   const sites = Math.round(source[0] / sourceSite) + siteDelta
   const rows = Math.max(1, Math.round(source[1] / sourceRow))
   const target: [number, number] = [round(targetSite * sites), round(targetRow * rows)]
   if (!Number.isFinite(target[0]) || !Number.isFinite(target[1]) || sites < 1 || !Number.isInteger(sites) || target[0] <= 0 || target[1] <= 0) {
-    return { name, source, target: null, sites, rows, pins: [], outsidePins: [], status: '치수 오류' }
+    return { name, source, target: null, sites, rows, pins: [], outsidePins: [], sourceOutsidePins, status: '치수 오류' }
   }
   const pins: TargetPin[] = cell.info.pins.map(pin => {
     const dx = pin.use === 'signal' ? pinDx / 100 * target[0] : 0
@@ -44,9 +50,9 @@ function transformCell(name: string, cell: Cell, sourceSite: number, sourceRow: 
       [r[0], round(r[1] / source[0] * target[0] + dx), round(r[2] / source[1] * target[1] + dy),
         round(r[3] / source[0] * target[0] + dx), round(r[4] / source[1] * target[1] + dy)] as Rect) }
   })
-  const outsidePins = pins.filter(pin => pin.use === 'signal' && pin.rects.some(r =>
-    r[1] < 0 || r[2] < 0 || r[3] > target[0] || r[4] > target[1])).map(pin => pin.name)
-  return { name, source, target, sites, rows, pins, outsidePins, status: outsidePins.length ? '핀 이탈' : '초안 생성' }
+  const outsidePins = outsideOf(pins, target).filter(pin => !sourceOutsidePins.includes(pin))
+  return { name, source, target, sites, rows, pins, outsidePins, sourceOutsidePins,
+    status: outsidePins.length ? '핀 이탈' : sourceOutsidePins.length ? '원본 핀 외곽 초과' : '초안 생성' }
 }
 
 function GeometryPreview({ title, size, pins, sourceSize, positions }: {
@@ -98,9 +104,9 @@ function GeometryPreview({ title, size, pins, sourceSize, positions }: {
 
 export default function PdkChangeExperiment({ libId, libraryRowHeight, cellName, cell, cells, availableCells, onSelectCell, onOpenLibrary }: Props) {
   const cellsByName = cells ?? EMPTY_CELLS
-  const [targetNm, setTargetNm] = useState(90)
-  const [siteWidth, setSiteWidth] = useState(0.32)
-  const [rowHeight, setRowHeight] = useState(1.88)
+  const [targetNm, setTargetNm] = useState(DEFAULT_TARGET_NM)
+  const [siteWidth, setSiteWidth] = useState(() => round(sourceSiteWidth(libId) * DEFAULT_TARGET_NM / 130))
+  const [rowHeight, setRowHeight] = useState(() => round(libraryRowHeight * DEFAULT_TARGET_NM / 130))
   const [siteDelta, setSiteDelta] = useState(0)
   const [pinDx, setPinDx] = useState(0)
   const [pinDy, setPinDy] = useState(0)
@@ -239,7 +245,8 @@ export default function PdkChangeExperiment({ libId, libraryRowHeight, cellName,
           })}
         </tbody></table>
       </div>
-      {!!focused?.outsidePins.length && <p className="init-error" style={{ marginTop: 10 }}>선택 셀에서 외곽을 벗어난 핀: {focused.outsidePins.join(', ')}.</p>}
+      {!!focused?.outsidePins.length && <p className="init-error" style={{ marginTop: 10 }}>선택 셀에서 변경 후 외곽을 벗어난 핀: {focused.outsidePins.join(', ')}.</p>}
+      {!!focused?.sourceOutsidePins.length && <p className="chip-note" style={{ marginTop: 10 }}>이 셀은 설치된 PDK LEF 원본부터 핀 도형이 셀 외곽 밖까지 걸쳐 있습니다: {focused.sourceOutsidePins.join(', ')}. 가상 변경으로 생긴 이탈이 아닙니다.</p>}
     </>}
     <div className="card" style={{ padding: 12, marginTop: 14 }}>
       <b style={{ fontSize: 12 }}>일괄 변경 대상 · {selectedNames.length}/{availableCells.length}셀</b>
@@ -261,12 +268,12 @@ export default function PdkChangeExperiment({ libId, libraryRowHeight, cellName,
       </div>
     </div>
     {batchResults && <div className="card" style={{ padding: 12, marginTop: 14 }}>
-      <div className="card-title"><div><small className="kicker">가상 변경 결과</small><h3>{batchResults.length}셀 처리 · 초안 {batchResults.filter(r => r.status === '초안 생성').length} · 핀 이탈 {batchResults.filter(r => r.status === '핀 이탈').length} · 치수 문제 {batchResults.filter(r => r.status === '치수 오류' || r.status === '크기 없음').length}</h3></div>
+      <div className="card-title"><div><small className="kicker">가상 변경 결과</small><h3>{batchResults.length}셀 처리 · 초안 {batchResults.filter(r => r.status === '초안 생성').length} · 핀 이탈 {batchResults.filter(r => r.status === '핀 이탈').length} · 원본부터 핀 외곽 초과 {batchResults.filter(r => r.status === '원본 핀 외곽 초과').length} · 치수 문제 {batchResults.filter(r => r.status === '치수 오류' || r.status === '크기 없음').length}</h3></div>
         <button type="button" onClick={downloadResults}>결과 JSON 저장</button></div>
       <div className="data-table" style={{ maxHeight: 360 }}><table><thead><tr><th>셀</th><th>원본 (µm)</th><th>가상 (µm)</th><th>site×행</th><th>형상 검사</th></tr></thead><tbody>
         {[...batchResults].sort((a, b) => a.status.localeCompare(b.status)).map(r => <tr key={r.name} onClick={() => onSelectCell(r.name)} style={{ cursor: 'pointer' }}>
           <td><code>{r.name}</code></td><td>{r.source?.join(' × ') ?? '—'}</td><td>{r.target?.join(' × ') ?? '—'}</td><td>{r.target ? `${r.sites} × ${r.rows}` : '—'}</td>
-          <td>{r.status}{r.outsidePins.length ? ` (${r.outsidePins.join(', ')})` : ''}</td></tr>)}
+          <td>{r.status}{r.outsidePins.length ? ` (${r.outsidePins.join(', ')})` : r.sourceOutsidePins.length ? ` (${r.sourceOutsidePins.join(', ')} · PDK LEF 원본 그대로)` : ''}</td></tr>)}
       </tbody></table></div>
     </div>}
     <p className="chip-note" style={{ marginTop: 12 }}><b>현재 판정: 가상·미검증, 셀 내부 P&R 미실행.</b> 초안 생성은 셀 크기와 핀 외곽만 계산되었다는 뜻입니다. 실제 이식은 목표 PDK 규칙을 반영한 셀 내부 P&R, 변경 GDS의 DRC 통과, LVS·PVT 검증이 필요합니다.</p>
