@@ -15,6 +15,7 @@ import {
   summarizeIssues, requiredDensity, rowCapacityD, MACRO_HALO_UM, dieArea, dieUtil, glueTilesNeeded, fillGlueD, realStart, toAreaCfg, candidateDies, shapeVariantDies, baseFor, metricsOf, layoutSig, scaleHubs, RULES,
   type Die, type AreaOpts, type Issue, type RepairStep, type ShapeAttempt, type TrialPlan, type CandMetrics,
 } from '../game/macroAreaModel'
+import { drawFreeCell, drawTileBox, LEGEND_SWATCH, TETRIS_COLORS } from '../game/tetrisPalette'
 import type { AreaRequest, AreaResponse } from '../game/macroAreaWorker'
 
 type Cur = { die: Die; state: State }
@@ -85,8 +86,7 @@ function drawArea(ctx: CanvasRenderingContext2D, v: BoardView, glue: GlueTile[],
   for (let r = 0; r < lo.rows; r++) for (let c = 0; c < lo.cols; c++) {
     const cls = lo.cellClass[r * lo.cols + c]
     if (cls === 0) continue
-    ctx.fillStyle = cls === 1 ? 'rgba(29,158,117,0.22)' : 'rgba(230,120,78,0.40)'
-    ctx.fillRect(c * LO_CELL * s, r * LO_CELL * s, LO_CELL * s, LO_CELL * s)
+    drawFreeCell(ctx, cls === 1 ? 'usable' : 'fragmented', c * LO_CELL * s, r * LO_CELL * s, LO_CELL * s, LO_CELL * s)
   }
   ctx.setLineDash([6, 4]); ctx.strokeStyle = '#6b7280'; ctx.lineWidth = 1
   ctx.strokeRect(0.5, 0.5, BASE_DIE.w * s - 1, BASE_DIE.h * s - 1)
@@ -134,11 +134,8 @@ function drawArea(ctx: CanvasRenderingContext2D, v: BoardView, glue: GlueTile[],
 
   // 이제 정사각형이 아니라 가변 폭(row 조각)이라 t.w를 그대로, 높이는 LO_CELL.
   glue.forEach((t, i) => {
-    ctx.fillStyle = 'rgba(126,104,215,0.55)'
-    ctx.fillRect(t.x * s + 1, t.y * s + 1, t.w * s - 2, LO_CELL * s - 2)
-    ctx.strokeStyle = hubDefs[t.hub].color; ctx.lineWidth = 1.5
-    ctx.strokeRect(t.x * s + 1, t.y * s + 1, t.w * s - 2, LO_CELL * s - 2)
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 8px sans-serif'
+    drawTileBox(ctx, t.x * s, t.y * s, t.w * s, LO_CELL * s)
+    ctx.fillStyle = TETRIS_COLORS.tile.text; ctx.font = 'bold 8px sans-serif'
     ctx.fillText(`S${i + 1}`, t.x * s + 3, t.y * s + 10)
   })
 
@@ -510,7 +507,9 @@ export default function MacroAreaTetris() {
           {hubDefs.map(hd => <span key={hd.name}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 4, background: hd.color, marginRight: 4 }}/>{hd.name} (×{hd.weight})</span>)}
           <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: '#F4B6A6', border: '2px solid #C0392B', marginRight: 4 }}/>실패 부위 매크로</span>
           <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: 'rgba(192,57,43,0.6)', marginRight: 4 }}/>줄여서 없어진 면적</span>
-          <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: 'rgba(230,120,78,0.6)', marginRight: 4 }}/>좁은 여유(채널·가장자리)</span>
+          <span><span style={LEGEND_SWATCH.usable}/>빈 공간 · 표준셀 넣기 좋음 (빗금)</span>
+          <span><span style={LEGEND_SWATCH.fragmented}/>빈 공간 · 조각나서 쓰기 어려움 — 좁은 채널·가장자리 (격자 빗금)</span>
+          <span><span style={LEGEND_SWATCH.tile}/>실제 배치된 표준셀 타일 (단색 · S번호)</span>
         </div>
       </div>
 

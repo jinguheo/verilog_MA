@@ -72,6 +72,7 @@
 // MACROS.chan_top.instances에 반영해 실제 OpenLane 실행을 돌려야 최종 확정된다.
 import { useEffect, useRef, useState } from 'react'
 import { DIE_W, DIE_H, N, MIN_SPACING, MACRO_MIN_SIDE, MACRO_MAX_SIDE, REAL_CHAN_TOP, CORE_RATIO, UTIL_WARN, impliedUtil, hubDefs, N_HUBS, type Pos, type Macro, REAL_RUN_MACROS, MIXED_MACROS, REAL_RUN_HUBS, type Cost, type State, type Candidate, isLegal, compareCandidates, LO_CELL, LO_COLS, LO_ROWS, analyzeLeftover, cost, LEFTOVER_CLEAN_PCT, CHANNEL_SAFE_MARGIN, spaceBreakdown, preSignoffProxy, mulberry32, cloneState, clampMacro, stepSA, type RipUpResult, ripUpReplace, remainingStillFit, referenceCandidate, toMacroPlacementCfg, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, GLUE_TILE, GLUE_TILE_CAP, GLUE_TILES_NEEDED, GLUE_TILE_HUBS, GLUE_TILE_MAX_WIDTH_UM, type GlueTile, placeGlueTile, fillGlue, glueWirelength, bestMacroSpot, macrosSignature } from '../game/macroTetrisModel'
+import { drawFreeCell, drawTileBox, LEGEND_SWATCH, TETRIS_COLORS } from '../game/tetrisPalette'
 import type { ReplaceSAResult, SolverJob, SolverProgress, SolverRequest } from '../game/macroTetrisWorker'
 
 type Glue = { tiles: GlueTile[]; sig: string }
@@ -131,8 +132,7 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, state: State,
   for (let r = 0; r < LO_ROWS; r++) for (let col = 0; col < LO_COLS; col++) {
     const cls = leftover.cellClass[r * LO_COLS + col]
     if (cls === 0) continue
-    ctx.fillStyle = cls === 1 ? 'rgba(29,158,117,0.22)' : 'rgba(230,120,78,0.55)'
-    ctx.fillRect(col * LO_CELL * sx, r * LO_CELL * sy, LO_CELL * sx, LO_CELL * sy)
+    drawFreeCell(ctx, cls === 1 ? 'usable' : 'fragmented', col * LO_CELL * sx, r * LO_CELL * sy, LO_CELL * sx, LO_CELL * sy)
   }
 
   ctx.strokeStyle = '#B4B2A9'
@@ -193,12 +193,8 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, state: State,
     ctx.strokeStyle = def.color + '88'
     ctx.lineWidth = 1
     ctx.beginPath(); ctx.moveTo(cx * sx, cy * sy); ctx.lineTo(hub.x * sx, hub.y * sy); ctx.stroke()
-    ctx.fillStyle = 'rgba(126,104,215,0.55)'
-    ctx.fillRect(t.x * sx + 1, t.y * sy + 1, t.w * sx - 2, LO_CELL * sy - 2)
-    ctx.strokeStyle = def.color
-    ctx.lineWidth = 1.5
-    ctx.strokeRect(t.x * sx + 1, t.y * sy + 1, t.w * sx - 2, LO_CELL * sy - 2)
-    ctx.fillStyle = '#fff'
+    drawTileBox(ctx, t.x * sx, t.y * sy, t.w * sx, LO_CELL * sy)
+    ctx.fillStyle = TETRIS_COLORS.tile.text
     ctx.font = 'bold 8px sans-serif'
     ctx.fillText(`S${i + 1}`, t.x * sx + 3, t.y * sy + 10)
   })
@@ -797,9 +793,9 @@ export default function MacroTetris() {
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
           {hubDefs.map(hd => <span key={hd.name}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 4, background: hd.color, marginRight: 4 }}/>{hd.name} (×{hd.weight})</span>)}
-          <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: 'rgba(29,158,117,0.45)', marginRight: 4 }}/>표준셀 넣기 좋은 여유</span>
-          <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: 'rgba(230,120,78,0.7)', marginRight: 4 }}/>조각난 여유(쓰기 어려움)</span>
-          <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: 'rgba(126,104,215,0.8)', marginRight: 4 }}/>표준셀 타일(최대 {GLUE_TILE_MAX_WIDTH_UM}×{LO_CELL}µm 가변 폭, 턴당 {GLUE_TILE_CAP.toLocaleString()}µm²)</span>
+          <span><span style={LEGEND_SWATCH.usable}/>빈 공간 · 표준셀 넣기 좋음 (빗금)</span>
+          <span><span style={LEGEND_SWATCH.fragmented}/>빈 공간 · 조각나서 쓰기 어려움 (격자 빗금)</span>
+          <span><span style={LEGEND_SWATCH.tile}/>실제 배치된 표준셀 타일 (단색 · S번호, 최대 {GLUE_TILE_MAX_WIDTH_UM}×{LO_CELL}µm 가변 폭, 턴당 {GLUE_TILE_CAP.toLocaleString()}µm²)</span>
         </div>
       </div>
 
