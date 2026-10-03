@@ -247,13 +247,13 @@ const GALLERY_STATUS = ['전체', '규칙 위반 있음', '규칙 적합', '핀 
 const GALLERY_SORT = [['change', '많이 변한 순 (면적 변화 큼)'], ['outlier', '다른 셀보다 유독 변한 순'], ['violation', '규칙 위반 많은 순'], ['name', '이름순']] as const
 type GallerySort = (typeof GALLERY_SORT)[number][0]
 
-// 일괄 적용 결과를 셀마다 전·후 그림으로 보여준다(많으면 페이지로 나눔). 같은 배율로 그려 크기 변화가 보이고,
+// 일괄 적용 결과를 셀마다 전·후 그림으로 보여준다(기본값은 전체, 필요하면 페이지로 나눔). 같은 배율로 그려 크기 변화가 보이고,
 // 기본 정렬은 가장 많이 변한 셀이 맨 앞이다. 각 카드에는 가상 규칙 검사 결과가 같이 붙는다.
 function BatchGallery({ results, cellsByName, onSelectCell }: { results: BatchResult[]; cellsByName: Record<string, Cell>; onSelectCell: (name: string) => void }) {
   const [status, setStatus] = useState<(typeof GALLERY_STATUS)[number]>('전체')
   const [sort, setSort] = useState<GallerySort>('change')
   const [query, setQuery] = useState('')
-  const [pageSize, setPageSize] = useState(12)
+  const [pageSize, setPageSize] = useState(0)
   const [page, setPage] = useState(0)
   const q = query.trim().toLowerCase()
   const sized = results.filter(r => r.source && r.target)
@@ -274,7 +274,7 @@ function BatchGallery({ results, cellsByName, onSelectCell }: { results: BatchRe
   const ctl = { padding: '5px 8px', border: '1px solid var(--border-strong)', borderRadius: 5, background: 'var(--surface-1)', color: 'var(--text-primary)', fontSize: 12 }
   const goto = (n: number) => setPage(Math.max(0, Math.min(pageCount - 1, n)))
   return <div style={{ marginBottom: 14 }}>
-    <p className="chip-note" style={{ margin: '0 0 8px', padding: 10, borderLeft: '4px solid #378ADD', background: 'var(--surface-muted)' }}><b>전체 {results.length}셀의 가상 변경 결과가 계산되었습니다.</b> 아래 그림은 기본적으로 {pageSize === 0 ? '검색·필터 결과 전체를 한 번에' : `페이지당 ${pageSize}개씩`} 표시합니다. 다른 셀은 페이지 버튼으로 보거나 <b>전체 그림 펼치기</b>를 누르세요. 이 그림은 LEF 외곽·핀을 변환한 미리보기이며 실제 90 nm GDS 이미지가 아닙니다.</p>
+    <p className="chip-note" style={{ margin: '0 0 8px', padding: 10, borderLeft: '4px solid #378ADD', background: 'var(--surface-muted)' }}><b>전체 {results.length}셀의 가상 변경 결과가 계산되었습니다. 현재 비교 그림 {shown.length}개 표시 중입니다.</b> {pageSize === 0 ? '전체 결과를 아래에서 스크롤하여 볼 수 있습니다.' : `페이지당 ${pageSize}개씩 표시합니다. 전체 그림 펼치기를 누르면 모두 볼 수 있습니다.`} 이 그림은 LEF 외곽·핀을 변환한 미리보기이며 실제 90 nm GDS 이미지가 아닙니다.</p>
     <p className="chip-note" style={{ margin: '0 0 6px' }}>변경 전·후 비교 — 셀 {sized.length}개의 LEF 면적 합 <b>{Math.round(before).toLocaleString()} → {Math.round(after).toLocaleString()} µm² ({before > 0 ? signed(after / before - 1) : '—'})</b>, 셀별 면적 변화 중앙값 {signed(medianArea)}. 한 셀 안에서는 전·후를 같은 배율로 그려 크기 변화가 그대로 보입니다(셀끼리는 배율이 다릅니다). 점선 = 셀 외곽, 색 사각형 = 핀(초록 li1·파랑 met1), 빨간 테두리 = 위반 핀.</p>
     <p className="chip-note" style={{ margin: '0 0 8px' }}><b>가상 규칙 검사</b> — 위 &lsquo;가상 설계 규칙&rsquo; 기준: <b style={{ color: violating ? '#C0392B' : '#16805F' }}>위반 셀 {violating} / {sized.length}</b> · {perRule.map(p => `${RULE_LABEL[p.id]} ${p.cells}셀`).join(' · ')}. 칩의 ✓ 적합 · <span style={{ color: '#C0392B' }}>✕N 변경으로 새로 생긴 위반</span> · <span style={{ color: '#B07A10' }}>△N 설치된 PDK 원본부터 있던 것(변경 탓 아님)</span>. 가상 규칙은 실제 목표 공정의 규칙이 아니므로 DRC 통과 판정이 아닙니다.</p>
     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -296,7 +296,7 @@ function BatchGallery({ results, cellsByName, onSelectCell }: { results: BatchRe
     </div>
     {shown.length === 0 ? <p className="chip-note">조건에 맞는 셀이 없습니다.</p>
       : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 10 }}>
-        {shown.map(r => <BeforeAfterPair key={r.name} r={r} source={cellsByName[r.name]} onPick={() => onSelectCell(r.name)}/>)}
+        {shown.map(r => <div key={r.name} style={{ contentVisibility: 'auto', containIntrinsicSize: '320px 180px' }}><BeforeAfterPair r={r} source={cellsByName[r.name]} onPick={() => onSelectCell(r.name)}/></div>)}
       </div>}
   </div>
 }
@@ -384,6 +384,10 @@ export default function PdkChangeExperiment({ libId, libraryRowHeight, cellName,
     setRunId(n => n + 1)
     setBatchResults(selectedNames.map(name => transformCell(name, cellsByName[name], sourceSiteWidth(libId), libraryRowHeight, siteWidth, rowHeight, siteDelta, pinDx, pinDy, rules)))
   }
+  const showAllResults = () => {
+    if (!batchResults) runBatch()
+    window.setTimeout(() => document.getElementById('pdk-batch-gallery')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+  }
   const toggleCell = (name: string) => {
     setSelectedNames(current => current.includes(name) ? current.filter(item => item !== name) : [...current, name])
     setBatchResults(null)
@@ -408,6 +412,10 @@ export default function PdkChangeExperiment({ libId, libraryRowHeight, cellName,
   return <section className="card">
     <div className="card-title"><div><small className="kicker">가상 LEF 실험 · 제조 검증 아님</small><h2>PDK 변경 실험</h2></div><button type="button" onClick={onOpenLibrary}>원본 라이브러리 보기</button></div>
     <p className="chip-note" style={{ marginBottom: 12 }}>설치된 {libId} 셀의 LEF 외곽과 핀을 출발점으로 새 공정의 배치 형상을 가정합니다. 목표 공정의 실제 PDK·Liberty·GDS는 연결하지 않으므로 타이밍, 전력, DRC, LVS 결과를 예측하거나 통과로 판정하지 않습니다.</p>
+    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+      <button type="button" onClick={showAllResults} disabled={!validInput || selectedNames.length === 0}>{batchResults ? `${batchResults.length}개 전체 비교 그림으로 이동` : `${selectedNames.length}개 비교 그림 생성·보기`}</button>
+      <span className="chip-note">비교 갤러리는 기본적으로 선택한 셀의 그림을 전부 표시합니다. 필요하면 갤러리에서 페이지 보기로 전환하세요.</span>
+    </div>
     <div className="card" style={{ padding: 12, marginBottom: 14 }}>
       <b>기존 배치를 활용한 셀 내부 P&R</b>
       <p className="chip-note" style={{ margin: '8px 0' }}>기존 셀의 소자 배치와 내부 배선을 새 공정 설계의 시작점으로 재사용할 수 있습니다. 복잡한 셀은 새 간격·핀 접근성·배선 충돌에 맞춰 재배치와 재배선이 필요할 수 있습니다.</p>
@@ -506,7 +514,7 @@ export default function PdkChangeExperiment({ libId, libraryRowHeight, cellName,
         <span className="chip-note">PDK 원본 파일은 수정하지 않고, 가상 LEF 치수·핀 위치를 메모리에서 계산합니다.</span>
       </div>
     </div>
-    {batchResults && <div className="card" style={{ padding: 12, marginTop: 14 }}>
+    {batchResults && <div id="pdk-batch-gallery" className="card" style={{ padding: 12, marginTop: 14 }}>
       <div className="card-title"><div><small className="kicker">가상 변경 결과</small><h3>{batchResults.length}셀 처리 · 초안 {batchResults.filter(r => r.status === '초안 생성').length} · 핀 이탈 {batchResults.filter(r => r.status === '핀 이탈').length} · 원본부터 핀 외곽 초과 {batchResults.filter(r => r.status === '원본 핀 외곽 초과').length} · 치수 문제 {batchResults.filter(r => r.status === '치수 오류' || r.status === '크기 없음').length} · <span style={{ color: batchResults.some(r => failOf(r) > 0) ? '#C0392B' : '#16805F' }}>가상 규칙 위반 셀 {batchResults.filter(r => failOf(r) > 0).length}</span></h3></div>
         <button type="button" onClick={downloadResults}>결과 JSON 저장</button></div>
       <BatchGallery key={runId} results={batchResults} cellsByName={cellsByName} onSelectCell={onSelectCell}/>
