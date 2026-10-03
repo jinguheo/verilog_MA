@@ -45,27 +45,51 @@
   "layers": {
    "li1": {
     "pitch": 0.46,
-    "width": 0.17
+    "width": 0.17,
+    "dir": "vertical",
+    "offset": 0.23,
+    "spacing": 0.17,
+    "area": 0.0561
    },
    "met1": {
     "pitch": 0.34,
-    "width": 0.14
+    "width": 0.14,
+    "dir": "horizontal",
+    "offset": 0.17,
+    "spacing": 0.14,
+    "area": 0.083
    },
    "met2": {
     "pitch": 0.46,
-    "width": 0.14
+    "width": 0.14,
+    "dir": "vertical",
+    "offset": 0.23,
+    "spacing": 0.14,
+    "area": 0.0676
    },
    "met3": {
     "pitch": 0.68,
-    "width": 0.3
+    "width": 0.3,
+    "dir": "horizontal",
+    "offset": 0.34,
+    "spacing": 0.3,
+    "area": 0.24
    },
    "met4": {
     "pitch": 0.92,
-    "width": 0.3
+    "width": 0.3,
+    "dir": "vertical",
+    "offset": 0.46,
+    "spacing": 0.3,
+    "area": 0.24
    },
    "met5": {
     "pitch": 3.4,
-    "width": 1.6
+    "width": 1.6,
+    "dir": "horizontal",
+    "offset": 1.7,
+    "spacing": 1.6,
+    "area": 4.0
    }
   }
  }

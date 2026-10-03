@@ -216,9 +216,29 @@ if tech:
     if m:
         facts["site"] = {"name": m.group(1), "w": float(m.group(2)), "h": float(m.group(3))}
     for lay in ("li1", "met1", "met2", "met3", "met4", "met5"):
-        mm = re.search(r"LAYER %s\s.*?PITCH ([\d.]+).*?WIDTH ([\d.]+)" % lay, txt, re.S)
-        if mm:
-            facts.setdefault("layers", {})[lay] = {"pitch": float(mm.group(1)), "width": float(mm.group(2))}
+        # one LAYER ... END <lay> block; dashboard's virtual-rule check needs direction, track
+        # pitch/offset, min width, base min spacing (first SPACINGTABLE entry) and min area.
+        blk = re.search(r"LAYER %s\s(.*?)END %s" % (lay, lay), txt, re.S)
+        if not blk:
+            continue
+        b = blk.group(1)
+        mm = re.search(r"PITCH ([\d.]+).*?WIDTH ([\d.]+)", b, re.S)
+        if not mm:
+            continue
+        rec = {"pitch": float(mm.group(1)), "width": float(mm.group(2))}
+        d = re.search(r"DIRECTION (\w+)", b)
+        if d:
+            rec["dir"] = d.group(1).lower()
+        o = re.search(r"OFFSET ([\d.]+)", b)
+        if o:
+            rec["offset"] = float(o.group(1))
+        sp = re.search(r"SPACINGTABLE\s+(?:PARALLELRUNLENGTH [\d. ]+\s+)?WIDTH\s+0\s+([\d.]+)", b)
+        if sp:
+            rec["spacing"] = float(sp.group(1))
+        a = re.search(r"\n\s*AREA ([\d.]+)", b)
+        if a:
+            rec["area"] = float(a.group(1))
+        facts.setdefault("layers", {})[lay] = rec
 info_path = f"{ROOT}/src/data/sky130_pdk_info.json"
 info = json.load(open(info_path, encoding="utf-8"))
 info["techlef"] = facts
