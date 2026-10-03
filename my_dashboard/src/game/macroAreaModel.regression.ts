@@ -7,7 +7,7 @@
 // Run with: npx tsx src/game/macroAreaModel.regression.ts
 import {
   realStart, searchTrial, isLegalD, costD, gateReason, diagnoseD, layoutSig, toAreaCfg,
-  shapeVariantDies, SHRINK_LADDER, dieArea, rowCapacityD, requiredDensity, type AreaOpts, type Die,
+  shapeVariantDies, SHRINK_LADDER, dieArea, rowCapacityD, requiredDensity, shapeStart, RESHAPE_PRESETS, type AreaOpts, type Die,
 } from './macroAreaModel'
 import type { Macro, State } from './macroTetrisModel'
 
@@ -119,6 +119,19 @@ check('dieArea(realStart) matches w*h', dieArea(start.die) === start.die.w * sta
   check('chan_top 590x1085 core has the real 390 rows', rowCapacityD({ w: 590, h: 1085 }, []).rows === 390, '')
   const req = requiredDensity(start.die, start.state.macros)
   check('requiredDensity on the real grid is the real-capacity ratio (~20.3%)', Math.abs(req - 460614 / 2274156) < 1e-3, `${(req * 100).toFixed(2)}%`)
+}
+
+// 9) Macro-shape presets (the ones actually run through OpenLane): the start layout of each must
+// be legal under the current gates and have exactly the die the dashboard's AREA FINDING table
+// lists - otherwise picking a shape in the UI would silently start from a broken layout.
+{
+  const expected: Record<string, string> = { '800x800': '3700x2100', '650x985': '3100x2470', '590x1085': '2860x2670', '500x1280': '2500x3060', '450x1422': '2300x3350' }
+  for (const p of RESHAPE_PRESETS) {
+    const st = shapeStart(p.key)
+    const why = gateReason(st.die, st.state, costD(st.state, st.die), opts)
+    check(`shapeStart(${p.key}) die matches the table`, `${st.die.w}x${st.die.h}` === expected[p.key], `${st.die.w}x${st.die.h}`)
+    check(`shapeStart(${p.key}) start layout passes every gate`, why === null, String(why))
+  }
 }
 
 if (failures > 0) {

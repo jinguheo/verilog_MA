@@ -412,7 +412,8 @@ export type ShapeKind = 'ratio' | 'width' | 'height'
 export const SHAPE_LABEL: Record<ShapeKind, string> = { ratio: '비율 유지', width: '가로만', height: '세로만' }
 // density: 표준셀 목표 밀도(실제 config의 PL_TARGET_DENSITY_PCT). strict: 핀 escape·전원
 // 접근까지 CLEAN이어야 통과(끄면 겹침·간격·경계·용량만 본다).
-export type AreaOpts = { density: number; strict: boolean }
+// shape: 매크로 모양 프리셋 키(RESHAPE_PRESETS). 모델 함수는 쓰지 않고 화면이 시작 배치·저장 키를 고르는 데만 쓴다.
+export type AreaOpts = { density: number; strict: boolean; shape?: string }
 
 // ---- 표준셀 row 용량 (실측 cutrows 모델) ----
 // 예전엔 "다이 − 매크로 면적"을 표준셀 자리로 쳤는데, 실제 OpenROAD는 (1) 코어를 다이
@@ -887,6 +888,38 @@ export function baseFor(d: Die, from: { die: Die; state: State }): { die: Die; s
 
 export function realStart(): { die: Die; state: State } {
   return { die: { ...BASE_DIE }, state: { macros: REAL_RUN_MACROS.map(m => ({ ...m })), hubs: REAL_RUN_HUBS.map(h => ({ ...h })) } }
+}
+
+// 매크로 모양(재성형) 프리셋. 실제 격자(800×800)에서는 가로 3700·세로 2100이 이미 최소라
+// 위치만 바꾸는 면적 탐색이 항상 "변화 없음"으로 끝난다. 같은 면적에서 매크로 모양을
+// 바꾸면 다이가 달라지는데, 아래 4개는 2026-09-30~10-03에 chan_top을 그 모양으로 실제
+// OpenLane(합성부터 DRC/LVS까지)에 돌려 본 모양이다. evidence의 숫자는 그 run의 실측값
+// (config의 axi_clk 52ns 기준 setup WNS, tools/wsl/115_run_chan_top_reshape_full.sh).
+export type ReshapePreset = { key: string; w: number; h: number; evidence: string }
+export const RESHAPE_PRESETS: ReshapePreset[] = [
+  { key: '800x800', w: 800, h: 800, evidence: '현재 · 실제 signoff 통과 (DRC 0 · LVS 0 · setup +0.994ns)' },
+  { key: '650x985', w: 650, h: 985, evidence: '실제 P&R: DRC 0 · LVS 0 · setup −0.139ns (axi 54ns로 완화하면 +0.436ns)' },
+  { key: '590x1085', w: 590, h: 1085, evidence: '실제 P&R: DRC 0 · LVS 0 · setup −0.179ns · 배선 +4.1%' },
+  { key: '500x1280', w: 500, h: 1280, evidence: '실제 P&R: DRC 0 · LVS 0 · setup −2.690ns (타이밍 가장 나쁨)' },
+  { key: '450x1422', w: 450, h: 1422, evidence: '실제 P&R: DRC 0 · LVS 0 · setup −0.460ns · 안테나 위반 0' },
+]
+
+// 한 모양의 최소 다이: 4×2 격자, 가로 간격 MIN_SPACING, 행 사이 채널 CHANNEL_SAFE_MARGIN,
+// 가장자리 EDGE_MARGIN. 800×800이면 정확히 실제 3700×2100(= realStart)이 된다.
+export function shapeStart(key: string | undefined): { die: Die; state: State } {
+  const p = RESHAPE_PRESETS.find(x => x.key === key)
+  if (!p || (p.w === REAL_RUN_MACROS[0].w && p.h === REAL_RUN_MACROS[0].h)) return realStart()
+  const perRow = Math.ceil(REAL_RUN_MACROS.length / 2)
+  const die: Die = {
+    w: Math.ceil((2 * EDGE_MARGIN + perRow * p.w + (perRow - 1) * MIN_SPACING) / DIE_SNAP) * DIE_SNAP,
+    h: Math.ceil((2 * EDGE_MARGIN + 2 * p.h + CHANNEL_SAFE_MARGIN) / DIE_SNAP) * DIE_SNAP,
+  }
+  const macros = REAL_RUN_MACROS.map((m, i) => ({
+    ...m, w: p.w, h: p.h,
+    x: EDGE_MARGIN + (i % perRow) * (p.w + MIN_SPACING),
+    y: i < perRow ? EDGE_MARGIN : EDGE_MARGIN + p.h + CHANNEL_SAFE_MARGIN,
+  }))
+  return { die, state: { macros, hubs: scaleHubs(REAL_RUN_HUBS.map(h => ({ ...h })), BASE_DIE, die) } }
 }
 
 // OpenLane config에 붙일 DIE_AREA + MACROS.chan_top.instances.

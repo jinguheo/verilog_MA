@@ -12,7 +12,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { hubDefs, N_HUBS, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, LO_CELL, MIN_SPACING, CHANNEL_SAFE_MARGIN, PIN_ESCAPE_MARGIN, POWER_RING_MARGIN, REAL_CHAN_TOP, cloneState, type State, type GlueTile, type Macro, type Pos } from '../game/macroTetrisModel'
 import {
   BASE_DIE, EDGE_MARGIN, SHRINK_LADDER, SHAPE_LABEL, ISSUE_LABEL, CHANNEL_SAMPLES, analyzeLeftoverD, costD, gateReason, diagnoseD,
-  summarizeIssues, requiredDensity, rowCapacityD, MACRO_HALO_UM, dieArea, dieUtil, glueTilesNeeded, fillGlueD, realStart, toAreaCfg, candidateDies, shapeVariantDies, baseFor, metricsOf, layoutSig, scaleHubs, RULES,
+  summarizeIssues, requiredDensity, rowCapacityD, MACRO_HALO_UM, dieArea, dieUtil, glueTilesNeeded, fillGlueD, shapeStart, RESHAPE_PRESETS, toAreaCfg, candidateDies, shapeVariantDies, baseFor, metricsOf, layoutSig, scaleHubs, RULES,
   type Die, type AreaOpts, type Issue, type RepairStep, type ShapeAttempt, type TrialPlan, type CandMetrics,
 } from '../game/macroAreaModel'
 import { drawFreeCell, drawTileBox, LEGEND_SWATCH, TETRIS_COLORS } from '../game/tetrisPalette'
@@ -40,7 +40,9 @@ const CAND_CAP = 800
 // local minimum을 벗어날 무작위 시작점을 추가한다. 로드맵 카드의 "8~16개" 권장 범위.
 const GENERATE_RANDOM_SEEDS = 12
 
-function optsKey(o: AreaOpts) { return `${Math.round(o.density * 100)}-${o.strict ? 'strict' : 'relaxed'}` }
+// 800×800(기본)은 예전 키 그대로라 이미 저장된 후보·최고 결과가 유지된다. 다른 매크로
+// 모양은 모양 키를 붙여 따로 저장 — 다이 크기가 다른 후보가 한 풀에 섞이지 않게.
+function optsKey(o: AreaOpts) { return `${Math.round(o.density * 100)}-${o.strict ? 'strict' : 'relaxed'}${o.shape && o.shape !== '800x800' ? `-${o.shape}` : ''}` }
 function readJson<T>(key: string): T | null { try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T : null } catch { return null } }
 function writeJson(key: string, v: unknown) { try { localStorage.setItem(key, JSON.stringify(v)) } catch { /* 저장 불가 환경이면 화면에만 유지 */ } }
 const bestKey = (o: AreaOpts) => `macro-area-tetris-best-${optsKey(o)}`
@@ -65,14 +67,29 @@ function startFrom(o: AreaOpts): { cur: Cur; label: string } {
     // 결과가 지금 기준으로 illegal(예: 채널 부족)할 수 있으니 불러오기 전에 다시 검사한다.
     const why = gateReason(bc.die, bc.state, costD(bc.state, bc.die), o)
     if (!why) return { cur: bc, label: `기존 최고 결과 (${b.die.w}×${b.die.h}, util ${pct(b.util)}, ${b.foundAt})` }
-    return { cur: realStart(), label: `실제 signoff 격자 3700×2100 (저장된 최고 결과가 지금 기준으로 무효 — ${why})` }
+    return { cur: shapeStart(o.shape), label: `${baseLabel(o)} (저장된 최고 결과가 지금 기준으로 무효 — ${why})` }
   }
-  return { cur: realStart(), label: '실제 signoff 격자 3700×2100 (저장된 성공 결과 없음)' }
+  return { cur: shapeStart(o.shape), label: `${baseLabel(o)} (저장된 성공 결과 없음)` }
+}
+
+// 시작 배치 이름 — 800×800은 실제 signoff 격자, 나머지는 재성형 모양의 최소 다이.
+function baseLabel(o: AreaOpts): string {
+  const st = shapeStart(o.shape)
+  return !o.shape || o.shape === '800x800'
+    ? '실제 signoff 격자 3700×2100'
+    : `재성형 ${o.shape} 최소 다이 ${st.die.w}×${st.die.h}`
+}
+
+// 캔버스 배율. 원래 다이(3700×2100)에 맞춰 두면 재성형 다이처럼 세로가 더 긴(예:
+// 2300×3350) 것은 잘려 보이므로, 원래 다이와 지금 다이가 둘 다 들어가는 배율로 고른다.
+// 그리기와 마우스 좌표 변환이 같은 값을 써야 해서 함수 하나로 둔다.
+function scaleFor(die: Die): number {
+  return Math.min(CANVAS_W / Math.max(BASE_DIE.w, die.w), CANVAS_H / Math.max(BASE_DIE.h, die.h))
 }
 
 function drawArea(ctx: CanvasRenderingContext2D, v: BoardView, glue: GlueTile[], sel: number | null) {
   const { die, macros, hubs, issues } = v
-  const s = CANVAS_W / BASE_DIE.w
+  const s = scaleFor(die)
   ctx.clearRect(0, 0, CANVAS_W, CANVAS_H)
   ctx.fillStyle = 'rgba(192,57,43,0.5)'
   if (die.w < BASE_DIE.w) ctx.fillRect(die.w * s, 0, (BASE_DIE.w - die.w) * s, Math.min(die.h, BASE_DIE.h) * s)
@@ -412,7 +429,7 @@ export default function MacroAreaTetris() {
     // busy(=아직 응답 안 온 job이 있음)일 때만 재시작 — 그렇지 않으면 매번 정상적인
     // Worker까지 불필요하게 버리고 새로 만들게 된다.
     if (busy !== null) restartWorker()
-    const s = which === 'best' ? startFrom(o) : { cur: realStart(), label: '실제 signoff 격자 3700×2100' }
+    const s = which === 'best' ? startFrom(o) : { cur: shapeStart(o.shape), label: baseLabel(o) }
     setStart(s); setCur(s.cur); setShrinkPct(SHRINK_LADDER[0]); setTrials([]); setLiveAttempts([])
     setSearching(false); setBusy(null); setConverged(null); setGlue([]); setBoard(null); setSel(null); setExportText(null); setGenProgress(null)
     setNarration(`${s.label}에서 다시 시작`)
@@ -458,7 +475,7 @@ export default function MacroAreaTetris() {
 
   function toCanvas(e: React.MouseEvent<HTMLCanvasElement>) {
     const rect = e.currentTarget.getBoundingClientRect()
-    const s = CANVAS_W / BASE_DIE.w
+    const s = scaleFor(curRef.current.die)
     return { x: (e.clientX - rect.left) * (CANVAS_W / rect.width) / s, y: (e.clientY - rect.top) * (CANVAS_H / rect.height) / s }
   }
   function onMouseDown(e: React.MouseEvent<HTMLCanvasElement>) {
@@ -557,9 +574,16 @@ export default function MacroAreaTetris() {
         <div><span className="panel-label">시작점</span>
           <div className="chip-switches" style={{ gridTemplateColumns: '1fr 1fr' }}>
             <button className="active" onClick={() => reset('best')} disabled={busy !== null}>기존 성공 결과로 초기화</button>
-            <button onClick={() => reset('real')} disabled={busy !== null}>실제 격자로 초기화</button>
+            <button onClick={() => reset('real')} disabled={busy !== null}>{!opts.shape || opts.shape === '800x800' ? '실제 격자로 초기화' : '이 모양의 최소 다이로 초기화'}</button>
           </div>
           <p className="key-help" style={{ marginTop: 4 }}>지금 시작점: {start.label}</p>
+        </div>
+
+        <div><span className="panel-label">매크로 모양 · 면적이 바뀌는 유일한 방법</span>
+          <div className="chip-switches" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            {RESHAPE_PRESETS.map(p => <button key={p.key} className={(opts.shape ?? '800x800') === p.key ? 'active' : ''} onClick={() => changeOpts({ ...opts, shape: p.key })} disabled={busy !== null}>{p.w}×{p.h}{p.key === '800x800' ? ' (실제)' : ''}</button>)}
+          </div>
+          <p className="key-help" style={{ marginTop: 4 }}>{RESHAPE_PRESETS.find(p => p.key === (opts.shape ?? '800x800'))?.evidence}. 실제 격자(800×800)는 위치만 바꿔서는 면적을 줄일 수 없어서(가로·세로가 이미 최소) 면적 탐색이 항상 "변화 없음"으로 끝납니다. 같은 실리콘 면적에서 모양을 바꾼 모양들은 이 탭의 다이가 달라지고, 위 숫자는 chan_top을 그 모양으로 실제 OpenLane에 돌린 결과입니다. 모양마다 후보 풀·최고 결과가 따로 저장됩니다.</p>
         </div>
 
         <div><span className="panel-label">면적 탐색 · 성공→축소 / 실패→증가</span>
