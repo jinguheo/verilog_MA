@@ -880,6 +880,48 @@ export function bestMacroSpot(placed: Macro[], next: Macro, hubs: Pos[], remaini
   return best
 }
 
+// ---- 자동 쌓기: 막히면 무작위로 다시 ----
+// bestMacroSpot은 항상 비용이 가장 낮은 자리만 골라서, 같은 입력이면 매번 같은 곳
+// (보통 마지막 매크로)에서 막힌다. 여기선 비용이 낮은 순으로 정렬한 legal 자리 중
+// "남은 매크로가 들어가는" 상위 topK개에서 무작위로 골라 시도마다 다른 배치를 만든다.
+// 한 번 시도가 약 0.1초라 legal한 결과가 나올 때까지 수백 번 돌려도 된다.
+export function randomMacroSpot(placed: Macro[], next: Macro, hubs: Pos[], remaining: Macro[], rng: () => number, topK: number): Macro | null {
+  const legal: { cand: Macro; total: number }[] = []
+  for (let x = 0; x <= DIE_W - next.w; x += RIPUP_GRID_STEP) for (let y = 0; y <= DIE_H - next.h; y += RIPUP_GRID_STEP) {
+    const cand = { ...next, x, y }
+    if (!fitsAmong(cand, placed)) continue
+    const c = cost({ macros: [...placed, cand], hubs })
+    if (isLegal(c)) legal.push({ cand, total: c.total })
+  }
+  legal.sort((a, b) => a.total - b.total)
+  const pool: Macro[] = []
+  for (const { cand } of legal) {
+    if (!remainingStillFit([...placed, cand], remaining)) continue
+    pool.push(cand)
+    if (pool.length >= topK) break
+  }
+  return pool.length ? pool[Math.floor(rng() * pool.length)] : null
+}
+
+export type StackAttempt = { ok: boolean; macros: Macro[]; tiles: GlueTile[]; failAt: number | null; reason: string }
+
+// 빈 다이에서 매크로 전부 → 표준셀 타일 전부를 한 번에 쌓아 본다. ok는 매크로가 다
+// 놓이고(부분 배치마다 legal 검사를 통과) 마지막 배치도 legal이며 타일이 필요한
+// 개수만큼 전부 들어간 경우만 true.
+export function stackAttempt(shapes: Macro[], hubs: Pos[], rng: () => number, topK: number): StackAttempt {
+  let placed: Macro[] = []
+  for (let i = 0; i < shapes.length; i++) {
+    const spot = randomMacroSpot(placed, shapes[i], hubs, shapes.slice(i + 1), rng, topK)
+    if (!spot) return { ok: false, macros: placed, tiles: [], failAt: i, reason: `매크로 ${i}를 놓을 legal한 자리가 없음` }
+    placed = [...placed, spot]
+  }
+  const c = cost({ macros: placed, hubs })
+  if (!isLegal(c)) return { ok: false, macros: placed, tiles: [], failAt: null, reason: '매크로는 다 놓였지만 최종 배치가 legal하지 않음' }
+  const g = fillGlue(placed, hubs)
+  if (!g.complete) return { ok: false, macros: placed, tiles: g.tiles, failAt: null, reason: `표준셀 ${g.tiles.length}/${g.needed}개만 들어감` }
+  return { ok: true, macros: placed, tiles: g.tiles, failAt: null, reason: '완료' }
+}
+
 export function macrosSignature(macros: Macro[]): string {
   return macros.map(m => `${Math.round(m.x)},${Math.round(m.y)},${Math.round(m.w)},${Math.round(m.h)}`).join('|')
 }

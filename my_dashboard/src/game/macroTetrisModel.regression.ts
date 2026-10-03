@@ -10,7 +10,7 @@
 // scattered (actually-failed) layout BETTER than the real passing grid layout
 // on every metric except channel width - this script exists so that kind of
 // mis-ranking can never silently come back after a future cost-function edit.
-import { cost, isLegal, preSignoffProxy, REAL_RUN_HUBS, REAL_RUN_MACROS, fillGlue, REAL_GLUE, type Macro } from './macroTetrisModel'
+import { cost, isLegal, preSignoffProxy, REAL_RUN_HUBS, REAL_RUN_MACROS, fillGlue, REAL_GLUE, stackAttempt, mulberry32, GLUE_TILES_NEEDED, type Macro } from './macroTetrisModel'
 
 type RealRun = { name: string; expectLegal: boolean; why: string; locations: [number, number][] }
 
@@ -79,6 +79,25 @@ if (gridEntry?.legal) {
   const glue = fillGlue(macros, REAL_RUN_HUBS.map(h => ({ ...h })))
   const ok = glue.complete && glue.tiles.length === glue.needed
   console.log(`${ok ? 'PASS' : 'FAIL'}  glue-tile row-run fit at real grid: ${glue.tiles.length}/${glue.needed} tiles placed (needed area ${REAL_GLUE.cellArea}um^2)`)
+  if (!ok) failures++
+}
+
+// Auto-stack ("자동 쌓기"): the deterministic greedy stacker dead-ends at the same macro every
+// time (GAME OVER at macro 7 on the real 8-macro problem), so the UI retries with seeded
+// randomness until a legal, fully-tiled floorplan comes out. Pin that it actually finds one,
+// quickly, with the same topK schedule the UI uses.
+{
+  let found = -1
+  for (let a = 0; a < 150 && found < 0; a++) {
+    const topK = Math.min(16, 3 + Math.floor(a / 2))
+    const r = stackAttempt(REAL_RUN_MACROS.map(m => ({ ...m })), REAL_RUN_HUBS.map(h => ({ ...h })), mulberry32(4242 + a * 7919), topK)
+    if (r.ok) {
+      const c = cost({ macros: r.macros, hubs: REAL_RUN_HUBS.map(h => ({ ...h })) })
+      if (isLegal(c) && r.tiles.length === GLUE_TILES_NEEDED && r.macros.length === REAL_RUN_MACROS.length) found = a + 1
+    }
+  }
+  const ok = found > 0
+  console.log(`${ok ? 'PASS' : 'FAIL'}  auto-stack finds a legal fully-tiled floorplan: attempt #${found}`)
   if (!ok) failures++
 }
 

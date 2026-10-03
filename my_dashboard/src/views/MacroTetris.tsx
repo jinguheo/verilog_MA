@@ -71,7 +71,7 @@
 // 근사치다. 여기서 찾은 후보는 config_hierarchical.json의
 // MACROS.chan_top.instances에 반영해 실제 OpenLane 실행을 돌려야 최종 확정된다.
 import { useEffect, useRef, useState } from 'react'
-import { DIE_W, DIE_H, N, MIN_SPACING, MACRO_MIN_SIDE, MACRO_MAX_SIDE, REAL_CHAN_TOP, CORE_RATIO, UTIL_WARN, impliedUtil, hubDefs, N_HUBS, type Pos, type Macro, REAL_RUN_MACROS, MIXED_MACROS, REAL_RUN_HUBS, type Cost, type State, type Candidate, isLegal, compareCandidates, LO_CELL, LO_COLS, LO_ROWS, analyzeLeftover, cost, LEFTOVER_CLEAN_PCT, CHANNEL_SAFE_MARGIN, spaceBreakdown, preSignoffProxy, mulberry32, cloneState, clampMacro, stepSA, type RipUpResult, ripUpReplace, remainingStillFit, referenceCandidate, toMacroPlacementCfg, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, GLUE_TILE, GLUE_TILE_CAP, GLUE_TILES_NEEDED, GLUE_TILE_HUBS, GLUE_TILE_MAX_WIDTH_UM, type GlueTile, placeGlueTile, fillGlue, glueWirelength, bestMacroSpot, macrosSignature } from '../game/macroTetrisModel'
+import { DIE_W, DIE_H, N, MIN_SPACING, MACRO_MIN_SIDE, MACRO_MAX_SIDE, REAL_CHAN_TOP, CORE_RATIO, UTIL_WARN, impliedUtil, hubDefs, N_HUBS, type Pos, type Macro, REAL_RUN_MACROS, MIXED_MACROS, REAL_RUN_HUBS, type Cost, type State, type Candidate, isLegal, compareCandidates, LO_CELL, LO_COLS, LO_ROWS, analyzeLeftover, cost, LEFTOVER_CLEAN_PCT, CHANNEL_SAFE_MARGIN, spaceBreakdown, preSignoffProxy, mulberry32, cloneState, clampMacro, stepSA, type RipUpResult, ripUpReplace, remainingStillFit, referenceCandidate, toMacroPlacementCfg, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, GLUE_TILE, GLUE_TILE_CAP, GLUE_TILES_NEEDED, GLUE_TILE_HUBS, GLUE_TILE_MAX_WIDTH_UM, type GlueTile, placeGlueTile, fillGlue, glueWirelength, bestMacroSpot, macrosSignature, stackAttempt } from '../game/macroTetrisModel'
 import { drawFreeCell, drawTileBox, LEGEND_SWATCH, TETRIS_COLORS } from '../game/tetrisPalette'
 import type { ReplaceSAResult, SolverJob, SolverProgress, SolverRequest } from '../game/macroTetrisWorker'
 
@@ -547,6 +547,68 @@ export default function MacroTetris() {
     setPlaying(false)
   }
 
+  // ---- 자동 쌓기: legal하고 표준셀까지 전부 들어가는 결과를 찾을 때까지 계속 시도 ----
+  // 일반 쌓기는 항상 비용이 가장 낮은 자리만 골라 같은 곳에서 매번 GAME OVER가 난다.
+  // 여기서는 시도마다 상위 후보 중 무작위로 골라 다르게 쌓고(stackAttempt), 실패하면
+  // 후보 폭(topK)을 조금씩 넓혀 가며 바로 다시 시도한다. 한 번에 약 0.1초.
+  const AUTO_STACK_MAX_ATTEMPTS = 1500
+  const autoRef = useRef(false)
+  const [autoStack, setAutoStack] = useState<{ attempt: number; topK: number; reason: string; best: number } | null>(null)
+
+  function stopAutoStack(message?: string) {
+    autoRef.current = false
+    setAutoStack(null)
+    if (message) setNarration(message)
+  }
+
+  function startAutoStack() {
+    sourceRef.current = '자동 쌓기'
+    const shapes = liveStateRef.current.macros.length === N ? liveStateRef.current.macros.map(m => ({ ...m })) : REAL_RUN_MACROS.map(m => ({ ...m }))
+    playRef.current = null
+    setPlayView(null)
+    setPlaying(false)
+    setAiOn(false)
+    setSelected(null)
+    autoRef.current = true
+    setAutoStack({ attempt: 0, topK: 3, reason: '시작', best: 0 })
+    setNarration('자동 쌓기 시작 — legal하고 표준셀이 전부 들어가는 배치를 찾을 때까지 계속 시도합니다')
+    setTimeout(() => autoStep(shapes, 0, 0), 20)
+  }
+
+  function autoStep(shapes: Macro[], attempt: number, best: number) {
+    if (!autoRef.current) return
+    const topK = Math.min(16, 3 + Math.floor(attempt / 2))
+    const hubs = REAL_RUN_HUBS.map(p => ({ ...p }))
+    const r = stackAttempt(shapes.map(m => ({ ...m })), hubs, mulberry32((Date.now() + attempt * 7919) >>> 0), topK)
+    liveStateRef.current = { macros: r.macros, hubs }
+    setGlue(r.tiles.length ? { tiles: r.tiles, sig: macrosSignature(r.macros) } : null)
+    if (r.ok) {
+      redraw()
+      const fin = liveStateRef.current, c = cost(fin)
+      autoRef.current = false
+      setAutoStack(null)
+      const message = `완료 — 자동 쌓기 ${attempt + 1}번째 시도에서 legal 배치 발견 · 매크로 ${fin.macros.length}개 · 표준셀 ${r.tiles.length}/${GLUE_TILES_NEEDED} · 매크로 WL ${Math.round(c.wl).toLocaleString()} · 표준셀 WL ${Math.round(glueWirelength(r.tiles, fin.hubs)).toLocaleString()} · 여유 공간 ${c.usableLeftoverPct}%`
+      playRef.current = { queue: [], pos: 0, result: { ok: true, message } }
+      setPlayView({ ...playRef.current })
+      setNarration(message)
+      return
+    }
+    redraw()
+    const nBest = Math.max(best, r.macros.length)
+    const reason = `${r.reason} (매크로 ${r.macros.length}/${shapes.length}개까지)`
+    setAutoStack({ attempt: attempt + 1, topK, reason, best: nBest })
+    setNarration(`자동 쌓기 시도 #${attempt + 1} (후보 폭 ${topK}) — 실패: ${reason} · 최고 ${nBest}/${shapes.length}개 · 계속 찾는 중…`)
+    if (attempt + 1 >= AUTO_STACK_MAX_ATTEMPTS) {
+      autoRef.current = false
+      setAutoStack(null)
+      setNarration(`자동 쌓기 ${AUTO_STACK_MAX_ATTEMPTS}번 시도에도 legal한 배치를 못 찾음 — 마지막 실패: ${reason}`)
+      return
+    }
+    setTimeout(() => autoStep(shapes, attempt + 1, nBest), 25)
+  }
+
+  useEffect(() => () => { autoRef.current = false }, [])
+
   function endPlay(ok: boolean, message: string) {
     const p = playRef.current
     if (!p) return
@@ -751,11 +813,11 @@ export default function MacroTetris() {
   const riskCount = liveCost.pinAccessViolations + liveCost.powerAccessViolations
   const partial = liveStateRef.current.macros.length !== N
   // 매크로 8개가 다 놓이지 않았거나 AI/쌓기/워커 계산이 도는 동안에는 편집 버튼을 막는다.
-  const locked = aiOn || playing || busy !== null || partial || searching
+  const locked = aiOn || playing || busy !== null || partial || searching || !!autoStack
   const glueTiles = currentGlue()
   const glueStale = glueView !== null && glueTiles.length === 0 && glueView.tiles.length > 0
   const nextItems = playView ? playView.queue.slice(playView.pos, playView.pos + 3) : []
-  const status = searching ? `PARALLEL SEARCH ${searchView?.attempts ?? 0}/${searchView?.budget ?? 0}` : busy ? 'AI COMPUTING' : playing ? `STACKING ${playView?.pos ?? 0}/${playView?.queue.length ?? 0}` : playView?.result ? (playView.result.ok ? 'FLOORPLAN COMPLETE' : 'GAME OVER') : !isLegal(liveCost) ? 'ILLEGAL LAYOUT' : aiOn ? 'AI AUTOPILOT (SA)' : 'MANUAL MODE'
+  const status = searching ? `PARALLEL SEARCH ${searchView?.attempts ?? 0}/${searchView?.budget ?? 0}` : autoStack ? `AUTO STACKING #${autoStack.attempt}` : busy ? 'AI COMPUTING' : playing ? `STACKING ${playView?.pos ?? 0}/${playView?.queue.length ?? 0}` : playView?.result ? (playView.result.ok ? 'FLOORPLAN COMPLETE' : 'GAME OVER') : !isLegal(liveCost) ? 'ILLEGAL LAYOUT' : aiOn ? 'AI AUTOPILOT (SA)' : 'MANUAL MODE'
 
   return <div className="chip-tetris-page">
     <section className="chip-game-hero">
@@ -789,6 +851,7 @@ export default function MacroTetris() {
             <b>{playView.result.ok ? 'FLOORPLAN COMPLETE' : 'GAME OVER'}</b>
             <span>{playView.result.message}</span>
             <button onClick={startPlay}>다시 쌓기</button>
+            <button className="active" onClick={startAutoStack}>자동 쌓기 (legal 찾을 때까지)</button>
           </div>}
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
@@ -804,7 +867,10 @@ export default function MacroTetris() {
 
         <div><span className="panel-label">게임 · 하나씩 쌓기</span>
           <div className="chip-switches">
-            <button className="active" onClick={startPlay} disabled={aiOn || busy !== null}>▶ 쌓기 플레이</button>
+            <button className="active" onClick={startPlay} disabled={aiOn || busy !== null || !!autoStack}>▶ 쌓기 플레이</button>
+            {autoStack
+              ? <button className="stop" onClick={() => stopAutoStack(`자동 쌓기 중지 — ${autoStack.attempt}번 시도, 최고 ${autoStack.best}/${N}개까지 놓음`)}>■ 자동 쌓기 중지 (#{autoStack.attempt})</button>
+              : <button onClick={startAutoStack} disabled={aiOn || busy !== null}>⟳ 자동 쌓기 (legal 찾을 때까지)</button>}
             <button onClick={() => setPlaying(v => !v)} disabled={!playView || !!playView.result}>{playing ? '일시정지' : '계속'}</button>
             <button onClick={stepPlay} disabled={!playView || !!playView.result || playing}>한 칸씩</button>
           </div>
@@ -963,6 +1029,7 @@ export default function MacroTetris() {
         <div className="chip-card-title"><div><small>HEURISTIC SEARCH</small><h3>AI가 하는 일</h3></div><span>쌓기 · SA · RePlAce · Rip-up</span></div>
         <ol className="strategy-list">
           <li><b>▶ 쌓기 플레이 (탐욕 + 선검사)</b><span>빈 다이에 매크로를 하나씩, 부분 배치 비용이 가장 낮은 legal 자리에 놓습니다. 남은 매크로가 더 들어갈 수 없게 막는 자리는 빠른 패킹 검사로 미리 뺍니다(이게 없으면 매크로 3에서 GAME OVER). 매크로가 다 놓이면 표준셀 타일 최대 {GLUE_TILES_NEEDED}개를 각자 허브에 가장 가까운 빈 자리에, 한 줄 안에서 이어진 폭만큼(정사각형이 아니라 가변 폭) 채웁니다.</span></li>
+          <li><b>⟳ 자동 쌓기 (legal 찾을 때까지)</b><span>쌓기 플레이는 항상 비용이 가장 낮은 자리만 골라서 같은 입력이면 매번 같은 곳에서 GAME OVER가 납니다(실측: 매크로 7). 자동 쌓기는 시도마다 비용이 낮은 legal 자리 상위 K개 중에서 무작위로 골라 다르게 쌓고, 실패하면 K를 3→16까지 넓혀 가며 legal하고 표준셀 {GLUE_TILES_NEEDED}개가 전부 들어간 배치가 나올 때까지 계속 시도합니다(최대 1,500번, 한 번에 약 0.1초, 중지 버튼 있음). 실측 14회 반복에서 전부 1~15번째 시도에서 찾았습니다.</span></li>
           <li><b>SA 자동 진행 (확률적)</b><span>매 스텝 무작위로 하나를 옮겨보고 비용이 낮아지면 수락, 높아져도 온도에 비례한 확률로 수락 — 식으면 다시 데워서 끝나지 않고 계속 돕니다.</span></li>
           <li><b>RePlAce 스타일 (결정론적, 즉시)</b><span>전역 배치(허브로 당기기+서로 반발) → 합법화(밀어내기) 2단계로 한 번에 수렴 — 실제 RePlAce의 정전기 밀도 모델+Nesterov 경사하강 성격을 흉내.</span></li>
           <li><b>Rip-up &amp; Re-place (전수 탐색)</b><span>AI Chip Tetris와 동일한 원리 — 매크로를 하나씩 뽑아 100µm 격자의 모든 legal 위치를 평가하고, 실제로 비용이 낮아질 때만 옮깁니다. 개선되는 이동이 없으면 스스로 멈추는 결정론적 종료.</span></li>
