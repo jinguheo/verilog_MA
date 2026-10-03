@@ -838,7 +838,7 @@ export default function MacroTetris() {
         { title: '2. 쌓다가 GAME OVER가 나면', body: <>쌓기 플레이는 항상 가장 낮은 비용 자리만 고르기 때문에 같은 곳에서 매번 막힙니다. <b>⟳ 자동 쌓기</b>를 누르면 무작위로 다르게 쌓으며 legal하고 표준셀 {GLUE_TILES_NEEDED}개가 다 들어가는 배치를 찾을 때까지 계속 돕니다(중지 가능).</> },
         { title: '3. 개선하기 (가벼운 것 → 무거운 것)', body: <><b>Rip-up</b>(몇 초, 개선이 없으면 스스로 멈춤) → <b>AI ON</b>(SA가 계속 흔들어 봄, MANUAL로 바꾸면 중단) → <b>병렬 탐색</b>(레인 여러 개로 오래 돌려 최고 후보를 갱신, 개선을 못 찾는 동안은 안 멈춤).</> },
         { title: '4. 직접 만져 보기', body: <>캔버스에서 매크로를 드래그하거나 화살표 키(20µm, Shift는 100µm)로 이동, Tab으로 다음 매크로 선택. 빨간 상태가 되면 legal이 깨진 것입니다.</> },
-        { title: '5. 표준셀이 들어가는지 보기', body: <><b>표준셀 채우기</b>를 누르면 타일 {GLUE_TILES_NEEDED}개를 놓아 봅니다. 13/13이면 들어간 것이고, 모자라면 표준셀 공간 부족입니다. 캔버스는 <b>빗금 = 빈 공간</b>(청록: 넣기 좋음, 호박색: 조각나서 어려움), <b>자홍 단색 = 실제 배치된 표준셀</b>입니다.</> },
+        { title: '5. 표준셀이 들어가는지 보기', body: <><b>표준셀 채우기</b>를 누르면 타일 {GLUE_TILES_NEEDED}개를 놓아 봅니다. 13/13이면 들어간 것이고, 모자라면 표준셀 공간 부족입니다. 캔버스는 <b>빗금 = 빈 공간</b>(초록: 넣기 좋음, 호박색: 조각나서 어려움), <b>자홍 단색 = 실제 배치된 표준셀</b>입니다.</> },
         { title: '6. 저장하고 비교하기', body: <>마음에 들면 <b>후보 저장</b>. 아래 후보 목록과 "지금까지 찾은 최고 후보"(자동 저장)에서 비용·배선·표준셀 여유를 비교하고, 클릭하면 캔버스로 불러옵니다.</> },
         { title: '7. 실제로 쓰기', body: <><b>실제 config로 내보내기</b> → <code>MACROS.chan_top.instances</code> 좌표 JSON이 나옵니다. 이것을 daq_subsystem의 <code>config_hierarchical.json</code>에 붙여 OpenLane을 돌려야 signoff가 확정됩니다. 8개 모두 HARD일 때만 그대로 쓸 수 있습니다.</> },
       ]}
@@ -883,7 +883,7 @@ export default function MacroTetris() {
         <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
           {hubDefs.map(hd => <span key={hd.name}><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 4, background: hd.color, marginRight: 4 }}/>{hd.name} (×{hd.weight})</span>)}
           <span><span style={LEGEND_SWATCH.usable}/>빈 공간 · 표준셀 넣기 좋음 (빗금)</span>
-          <span><span style={LEGEND_SWATCH.fragmented}/>빈 공간 · 조각나서 쓰기 어려움 (격자 빗금)</span>
+          <span><span style={LEGEND_SWATCH.fragmented}/>빈 공간 · 조각나서 쓰기 어려움 (반대 방향 빗금)</span>
           <span><span style={LEGEND_SWATCH.tile}/>실제 배치된 표준셀 타일 (단색 · S번호, 최대 {GLUE_TILE_MAX_WIDTH_UM}×{LO_CELL}µm 가변 폭, 턴당 {GLUE_TILE_CAP.toLocaleString()}µm²)</span>
         </div>
       </div>

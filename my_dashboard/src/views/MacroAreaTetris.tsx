@@ -176,6 +176,20 @@ function AreaChart({ start, trials }: { start: Die; trials: TrialRec[] }) {
   </svg>
 }
 
+const RESHAPE_PX_PER_UM = 0.2 // screenshot scale: 800µm → 160px (five pictures fit in one row)
+const RESHAPE_BASE = { w: 800, h: 800 }
+// setup/hold WNS (ns) from the full OpenLane flow of each shape (2026-10-03, worst corner ss_100C_1v60) - same numbers as the signoff table below
+const dieMm2 = (d: [number, number]) => d[0] * d[1] / 1e6
+const setupBadge = (wns: number) => wns < 0 ? <span className="warning-badge">setup 위반</span> : <span className="ok-badge">setup 통과</span>
+const signedNs = (v: number, d = 3) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(d)}`
+const RESHAPE_SHAPES = [
+  { w: 800, h: 800, file: '800x800', die: [3700, 2100] as [number, number], wns: 0.994, hold: 0.125, label: '800×800 (현재, 실제 signoff)', note: '실제 완주 run — DRC 0 · LVS 0' },
+  { w: 650, h: 985, file: '650x985', die: [3100, 2470] as [number, number], wns: -0.139, hold: 0.125, label: '650×985', note: '배치 legal · displacement 0.0µm' },
+  { w: 590, h: 1085, file: '590x1085', die: [2860, 2670] as [number, number], wns: -0.179, hold: 0.143, label: '590×1085 (탐색 최적점)', note: '배치 legal · displacement 0.0µm' },
+  { w: 500, h: 1280, file: '500x1280', die: [2500, 3060] as [number, number], wns: -2.69, hold: 0.138, label: '500×1280', note: '배치 legal · displacement 0.0µm' },
+  { w: 450, h: 1422, file: '450x1422', die: [2300, 3350] as [number, number], wns: -0.46, hold: 0.138, label: '450×1422', note: '배치 legal · displacement 0.0µm' },
+]
+
 export default function MacroAreaTetris() {
   const initialOpts: AreaOpts = { density: REAL_GLUE.targetDensity, strict: true }
   const [opts, setOpts] = useState<AreaOpts>(initialOpts)
@@ -496,7 +510,7 @@ export default function MacroAreaTetris() {
         { when: '후보 풀이 비어 있다', what: <>위의 <b>utilization ≥</b> 값이 너무 높거나, 조건(밀도·엄격/완화)을 바꿔서 그 풀이 아직 비어 있는 경우입니다. 필터를 60% 이하로 낮추거나 후보 만들기를 다시 누르세요.</> },
         { when: '면적을 더 줄이고 싶다', what: <>위치만 바꿔서는 한계입니다. 아래 <b>AREA FINDING</b> 카드의 <b>매크로 모양(종횡비) 재성형</b> 결과표와 실제 배치·타이밍 결과를 보세요.</> },
         { when: '직접 고쳐 보고 싶다', what: <>보드에서 매크로를 드래그한 뒤 <b>Rip-up</b>으로 다듬고 <b>후보로 저장</b>.</> },
-        { when: '색이 헷갈린다', what: <><b>빗금 = 빈 공간</b>(청록: 표준셀 넣기 좋음, 호박색: 조각나서 어려움), <b>자홍 단색 = 실제 배치된 표준셀 타일</b>. 빨간 테두리는 실패 부위 매크로.</> },
+        { when: '색이 헷갈린다', what: <><b>빗금 = 빈 공간</b>(초록: 표준셀 넣기 좋음, 호박색: 조각나서 어려움), <b>자홍 단색 = 실제 배치된 표준셀 타일</b>. 빨간 테두리는 실패 부위 매크로.</> },
       ]}
       caveats={[
         'utilization·배선 비용·필요 밀도는 근사 모델 값이고, 필요 밀도는 실제 OpenROAD row 용량(코어 inset·매크로 halo 반영) 기준입니다. 실제 통과 여부는 OpenLane DRC/LVS로만 확정됩니다.',
@@ -532,7 +546,7 @@ export default function MacroAreaTetris() {
           <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: '#F4B6A6', border: '2px solid #C0392B', marginRight: 4 }}/>실패 부위 매크로</span>
           <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: 'rgba(192,57,43,0.6)', marginRight: 4 }}/>줄여서 없어진 면적</span>
           <span><span style={LEGEND_SWATCH.usable}/>빈 공간 · 표준셀 넣기 좋음 (빗금)</span>
-          <span><span style={LEGEND_SWATCH.fragmented}/>빈 공간 · 조각나서 쓰기 어려움 — 좁은 채널·가장자리 (격자 빗금)</span>
+          <span><span style={LEGEND_SWATCH.fragmented}/>빈 공간 · 조각나서 쓰기 어려움 — 좁은 채널·가장자리 (반대 방향 빗금)</span>
           <span><span style={LEGEND_SWATCH.tile}/>실제 배치된 표준셀 타일 (단색 · S번호)</span>
         </div>
       </div>
@@ -708,18 +722,43 @@ export default function MacroAreaTetris() {
         </tbody></table></div>
         <p className="chip-note">방법: <code>costD</code>/<code>gateReason</code>을 그대로 써서 4×2 격자를 여러 W×H(면적 고정, {MIN_SPACING}µm 최소 간격·{CHANNEL_SAFE_MARGIN}µm 채널·100µm 가장자리 여유 그대로)로 직접 만들어 실측 게이트를 통과하는지 하나씩 계산 — 근사치가 아니라 이 탭이 쓰는 legality 함수로 직접 확인한 결과입니다. <b>590×1085 부근이 이론적 최적점</b>(가로 압박=세로 압박이 같아지는 지점)과 거의 일치합니다.</p>
         <p className="rule-disclaimer"><b>2026-09-30: PASS 4개 전부 배치 가능함을 실측으로 확인</b> — 각 W×H로 <code>DIE_AREA</code>만 바꾼 chan_top을 실제 OpenLane으로 synthesis부터 다시 돌려 <code>--to OpenROAD.DetailedPlacement</code>까지(floorplan→합성→global placement→detailed placement, CTS·라우팅·DRC·LVS는 생략 — 각 6~7분) 실행했습니다. 4개 전부 legalize 완료(최종 displacement 0.0µm, DPL 에러 없음) — 아래는 그 결과의 실제 배치 스크린샷(OpenROAD GUI <code>save_image</code>, 라우팅 없이 셀 배치만)입니다. <b>2026-10-03: 같은 4개를 CTS·라우팅·fill·STA·DRC·LVS까지 전체 flow로 돌린 결과가 아래 표입니다</b>(각 66~68분).</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginTop: 10 }}>
-          {[
-            { w: 800, h: 800, file: '800x800', label: '800×800 (현재, 실제 signoff)', note: '실제 완주 run — DRC 0 · LVS 0' },
-            { w: 650, h: 985, file: '650x985', label: '650×985', note: '배치 legal · displacement 0.0µm' },
-            { w: 590, h: 1085, file: '590x1085', label: '590×1085 (탐색 최적점)', note: '배치 legal · displacement 0.0µm' },
-            { w: 500, h: 1280, file: '500x1280', label: '500×1280', note: '배치 legal · displacement 0.0µm' },
-            { w: 450, h: 1422, file: '450x1422', label: '450×1422', note: '배치 legal · displacement 0.0µm' },
-          ].map(s => <figure key={s.file} style={{ margin: 0 }}>
-            <img src={`/macro-area/chan-top-reshape/${s.file}.png`} alt={`chan_top ${s.label} 실제 배치`} style={{ width: '100%', borderRadius: 6, border: '1px solid var(--border)', aspectRatio: `${s.w} / ${s.h}`, objectFit: 'cover' }}/>
-            <figcaption style={{ marginTop: 4, color: 'var(--text-muted)', fontSize: 8 }}><b>{s.label}</b><br/>{s.note}</figcaption>
-          </figure>)}
+        {/* every picture is drawn at the same px-per-µm scale; the dashed box is the current 800×800 macro so the width change (and height growth) can be read directly */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 14, marginTop: 10 }}>
+          {RESHAPE_SHAPES.map(s => {
+            const dw = (s.w / RESHAPE_BASE.w - 1) * 100, dh = (s.h / RESHAPE_BASE.h - 1) * 100, k = RESHAPE_PX_PER_UM
+            return <figure key={s.file} style={{ margin: 0, width: RESHAPE_BASE.w * k }}>
+              <div style={{ position: 'relative', width: RESHAPE_BASE.w * k, height: Math.max(RESHAPE_BASE.h, s.h) * k }}>
+                <div style={{ position: 'absolute', left: 0, top: 0, width: RESHAPE_BASE.w * k, height: RESHAPE_BASE.h * k, border: '1px dashed #E6784E', boxSizing: 'border-box' }} title="현재 800×800 매크로 크기"/>
+                <img src={`/macro-area/chan-top-reshape/${s.file}.png`} alt={`chan_top ${s.label} 실제 배치`} width={s.w * k} height={s.h * k} style={{ position: 'absolute', left: 0, top: 0, borderRadius: 2, outline: '1px solid var(--border-strong)' }}/>
+              </div>
+              <figcaption style={{ marginTop: 4, color: 'var(--text-muted)', fontSize: 10, lineHeight: 1.45 }}><b>{s.label}</b><br/>
+                폭 {s.w}µm <b style={{ color: dw < 0 ? '#1D9E75' : undefined }}>{dw === 0 ? '기준' : `${dw > 0 ? '+' : ''}${dw.toFixed(1)}%`}</b> · 높이 {s.h}µm <b style={{ color: dh > 0 ? '#c0392b' : undefined }}>{dh === 0 ? '기준' : `+${dh.toFixed(1)}%`}</b><br/>다이 {s.die[0]}×{s.die[1]} · {dieMm2(s.die).toFixed(3)}mm²{s.file === '800x800' ? ' (기준)' : <> <b style={{ color: '#1D9E75' }}>{((dieMm2(s.die) / dieMm2(RESHAPE_SHAPES[0].die) - 1) * 100).toFixed(2)}%</b></>}<br/>setup WNS <b style={{ color: s.wns < 0 ? '#c0392b' : '#1D9E75' }}>{signedNs(s.wns)}ns</b>{s.file === '800x800' ? ' (기준)' : <> · 변화 <b>{signedNs(s.wns - RESHAPE_SHAPES[0].wns)}ns</b></>} {setupBadge(s.wns)}<br/>{s.note}</figcaption>
+            </figure> })}
         </div>
+        <p className="chip-note" style={{ marginTop: 6 }}>모든 그림은 <b>같은 축척</b>(1µm = {RESHAPE_PX_PER_UM}px)이고, <span style={{ color: '#E6784E' }}>주황 점선</span>이 현재 800×800 매크로의 크기입니다 — 점선 안쪽 오른쪽이 비어 보이는 만큼이 폭이 줄어든 양, 점선 아래로 나온 만큼이 높이가 늘어난 양입니다(매크로 면적은 모두 약 640,000µm²). WNS는 각 모양을 전체 flow(CTS·라우팅·STA)로 돌린 실제 값이고, 변화는 800×800 대비입니다 — 음수 WNS = setup 위반(클럭 주기 안에 신호가 도착하지 못함)입니다.</p>
+        <div className="card" style={{ padding: 10, marginTop: 6, borderLeft: '4px solid #c0392b' }}><b style={{ fontSize: 13 }}>면적은 줄어드는데 타이밍은 위반 — 얻은 것과 잃은 것</b>
+          <p style={{ margin: '4px 0 0', fontSize: 12, lineHeight: 1.7 }}>다이 면적은 최대 <b style={{ color: '#1D9E75' }}>{Math.abs(Math.min(...RESHAPE_SHAPES.map(s => (dieMm2(s.die) / dieMm2(RESHAPE_SHAPES[0].die) - 1) * 100))).toFixed(2)}% 줄고</b>(590×1085), 그 대가로 4개 모양 모두 <b style={{ color: '#c0392b' }}>setup WNS가 음수(위반)</b>입니다 — 기준 800×800은 +0.994ns로 통과. 즉 면적 이득은 최대 약 1.7%로 작은데 타이밍은 0.14~2.69ns 모자라서, <b>지금 설정 그대로는 채택할 수 없고</b> hold 수정 설정을 조정해 타이밍을 다시 닫은 뒤에야 비교할 가치가 있습니다. 맨 위 표의 &quot;채널·핀·전원 게이트 PASS&quot;는 <b>매크로를 배치할 수 있는지</b>(겹침·간격·채널)만 본 것이라 타이밍 통과를 뜻하지 않습니다.</p></div>
+        <div className="card" style={{ padding: 10, marginTop: 8 }}>
+          <b style={{ fontSize: 13 }}>setup 위반 조치 사항 — 무엇을 바꿔 다시 돌리나</b>
+          <p className="chip-note" style={{ margin: '4px 0 6px' }}>원인: 비동기 FIFO 읽기 포인터 경로(<code>u_cdc_fifo.fifo_rptr_q</code>)에 hold 수정용 delay 셀(dlygate4sd3)이 11~18개 끼어 setup이 모자랍니다. 합성·배치는 다시 하지 않고 <b>배치 결과를 재사용해 CTS → 라우팅 → STA만 다시 돌려</b>(약 25분, <code>tools/wsl/118_run_reshape_variant.sh</code>) 설정별 효과를 확인합니다.</p>
+          <div className="data-table"><table><thead><tr><th>조치</th><th>바꾸는 것</th><th>650×985 결과 (기준 setup −0.139 / hold +0.125)</th><th>판정</th><th>비용·리스크</th></tr></thead><tbody>
+            <tr><td><b>1. hold 여유 0</b></td><td><code>*_RESIZER_HOLD_SLACK_MARGIN</code> 0.1 → 0</td><td>setup <b>−0.096</b> (위반 1개, 개선) · hold <b style={{ color: '#c0392b' }}>−0.003</b> (새로 위반)</td><td><span className="warning-badge">단독으론 부족</span></td><td>setup은 줄지만 hold가 깨짐 — 서로 맞바뀜</td></tr>
+            <tr><td><b>2. 1 + setup 여유 0.3</b></td><td><code>*_RESIZER_SETUP_SLACK_MARGIN</code> 0.05 → 0.3</td><td>1번과 같은 값(setup −0.096, hold −0.003)</td><td><span className="warning-badge">효과 없음</span></td><td>리사이저가 더 애써도 이 경로는 개선되지 않음</td></tr>
+            <tr><td><b>3. axi 주기 완화</b></td><td><code>axi_clk</code> 52 → 54 ns (SDC 사본)</td><td>setup <b>+0.436</b> 로 닫힘 (config 주석 기록) — 590×1085, 450×1422은 실행 중</td><td><span className="ok-badge">닫힘</span></td><td>클럭 사양을 약 3.7% 낮추는 것이라 <b>상위 요구사항 확인 필요</b>. 해결이라기보다 &quot;이 모양에 필요한 주기&quot;를 안 것</td></tr>
+            <tr><td><b>4. CDC 경로 원인 제거</b></td><td>SDC의 비동기 FIFO 포인터 제약, 또는 FIFO 포인터 구조 검토</td><td>미착수</td><td><span className="chip-note">미실행</span></td><td>근본 해결 가능성이 가장 크지만 제약을 잘못 쓰면 실제 위반을 숨김 — 리뷰 필요</td></tr>
+            <tr><td><b>5. 채택 포기</b></td><td>800×800 유지</td><td>setup +0.994 · DRC 0 · LVS 0 (이미 signoff)</td><td><span className="ok-badge">통과</span></td><td>면적 이득 최대 1.72%를 포기</td></tr>
+          </tbody></table></div>
+          <p className="chip-note" style={{ margin: '6px 0 0' }}><b>판단 순서:</b> ① 3번(주기 완화)로 나머지 모양도 닫히는지 확인 → ② 주기를 그대로 유지해야 하면 4번을 시도 → ③ 어느 쪽도 안 되면 5번(800×800 유지). 조치를 해도 <b>다시 DRC·LVS·STA 전체 signoff</b>를 통과해야 후보로 인정됩니다. 위 값은 <code>tools/wsl/logs/reshape_try_*.summary</code>와 config 주석에서 옮긴 것이며 단일 seed 1회 결과입니다.</p>
+        </div>
+        <div className="data-table" style={{ marginTop: 6 }}><table><thead><tr><th>매크로 W×H</th><th>폭 (800 대비)</th><th style={{ width: '28%' }}/><th>높이 (800 대비)</th><th>종횡비 H/W</th><th>매크로 면적</th><th>다이 면적</th><th>다이 면적 변화</th><th>setup WNS (ns)</th><th>WNS 변화</th><th>setup 판정</th><th>hold WNS (ns)</th><th>hold 변화</th></tr></thead><tbody>
+          {RESHAPE_SHAPES.map(s => { const dw = (s.w / RESHAPE_BASE.w - 1) * 100, dh = (s.h / RESHAPE_BASE.h - 1) * 100
+            return <tr key={s.file}><td><b>{s.w}×{s.h}</b></td><td>{s.w}µm ({dw === 0 ? '기준' : `${dw.toFixed(1)}%`}, −{RESHAPE_BASE.w - s.w}µm)</td>
+              <td><div style={{ height: 10, background: 'var(--surface-muted)', borderRadius: 3 }}><div style={{ height: '100%', width: `${s.w / RESHAPE_BASE.w * 100}%`, background: '#378ADD', borderRadius: 3 }}/></div></td>
+              <td>{s.h}µm ({dh === 0 ? '기준' : `+${dh.toFixed(1)}%`})</td><td>{(s.h / s.w).toFixed(2)}</td><td>{(s.w * s.h).toLocaleString()}µm²</td>
+              <td>{s.die[0]}×{s.die[1]}<br/><b>{dieMm2(s.die).toFixed(3)}mm²</b></td><td>{s.file === '800x800' ? '기준' : <b style={{ color: '#1D9E75' }}>{((dieMm2(s.die) / dieMm2(RESHAPE_SHAPES[0].die) - 1) * 100).toFixed(2)}%</b>}</td>
+              <td><b style={{ color: s.wns < 0 ? '#c0392b' : '#1D9E75' }}>{signedNs(s.wns)}</b></td><td>{s.file === '800x800' ? '기준' : <b>{signedNs(s.wns - RESHAPE_SHAPES[0].wns)}</b>}</td><td>{setupBadge(s.wns)}</td>
+              <td>{signedNs(s.hold)}</td><td>{s.file === '800x800' ? '기준' : signedNs(s.hold - RESHAPE_SHAPES[0].hold)}</td></tr> })}
+        </tbody></table></div>
         <div className="data-table" style={{ marginTop: 10 }}><table><thead><tr><th>chan_top 다이</th><th>DRC (route/Magic/KLayout)</th><th>LVS</th><th>setup WNS (ns)</th><th>hold WNS</th><th>안테나 net</th><th>worst 경로의 hold 버퍼</th><th>배선 길이</th><th>전력</th></tr></thead><tbody>
           <tr><td>800×800 (현재 signoff)</td><td><span className="ok-badge">0 / 0 / 0</span></td><td><span className="ok-badge">0</span></td><td><b>+0.994</b></td><td>+0.125</td><td>0</td><td>1단</td><td>824,218µm</td><td>6.148</td></tr>
           <tr><td>650×985</td><td><span className="ok-badge">0 / 0 / 0</span></td><td><span className="ok-badge">0</span></td><td><span className="warning-badge">−0.139</span></td><td>+0.125</td><td>5</td><td>11단</td><td>830,680µm (+0.8%)</td><td>6.402 (+4.1%)</td></tr>
@@ -728,7 +767,7 @@ export default function MacroAreaTetris() {
           <tr><td>450×1422</td><td><span className="ok-badge">0 / 0 / 0</span></td><td><span className="ok-badge">0</span></td><td><span className="warning-badge">−0.460</span></td><td>+0.138</td><td><b>0</b></td><td>12단</td><td>849,663µm (+3.1%)</td><td>6.559 (+6.7%)</td></tr>
         </tbody></table></div>
         <p className="rule-disclaimer"><b>읽는 법:</b> 4개 모두 <b>배치·라우팅·DRC·LVS는 깨끗</b>합니다 — 모양을 바꿔도 물리적으로는 문제없이 만들어집니다. 다만 같은 SDC·같은 설정으로는 <b>setup 타이밍이 닫히지 않습니다</b>(기존 800×800은 +0.99ns). 위반은 전부 최악 코너(ss_100C_1v60)의 <code>axi_clk</code> 레지스터↔레지스터 경로 1~4개이고, 원인은 배치 불가가 아니라 async FIFO read pointer(<code>u_cdc_fifo.fifo_rptr_q</code>) 경로에 <b>hold 수정용 delay 셀(dlygate4sd3, 각 1.1~1.9ns)이 11~18개 직렬로 끼어든 것</b>입니다(기존은 1개). 모양별 특징: <b>650×985</b> 위반이 가장 작고(−0.14, 경로 2개) 배선·전력 증가도 가장 작음 · <b>590×1085</b> 다이 면적은 가장 작지만 배선 +4.1%·전력 +10.6%로 가장 비쌈 · <b>500×1280</b> 배선·인스턴스는 기존과 같은데 타이밍이 가장 나쁨(−2.69, 경로 4개, hold 18단) · <b>450×1422</b> 안테나 위반 0으로 유일하게 깨끗하지만 타이밍 −0.46. 따라서 이 4개는 &quot;signoff 통과 후보&quot;가 아니라 <b>hold repair 설정을 조정해 타이밍을 다시 닫아야 하는 후보</b>입니다 — 단일 seed 1회 결과라 이 순위가 필연적이라고 단정할 수는 없습니다.</p>
-        <p className="chip-note" style={{ marginTop: 8 }}>파란 가로줄은 전원망(PDN) 스트랩, 진한 세로 줄무늬는 tap/endcap 셀 열 — 라우팅 전이라 배선은 안 보입니다. 스크린샷은 <code>samples/sample_test_4/asic/chan_top/config_reshape_*.json</code>(각 W×H, 나머지는 config.json과 동일) + <code>tools/wsl/114_render_chan_top_reshapes.sh</code>로 재현 가능합니다.</p>
+        <p className="chip-note" style={{ marginTop: 8 }}>초록 가로줄은 전원망(PDN) 스트랩, 보라색 칸은 표준셀(밝을수록 촘촘), 진한 세로 줄무늬는 tap/endcap 셀 열 — 라우팅 전이라 배선은 안 보입니다. 스크린샷은 <code>samples/sample_test_4/asic/chan_top/config_reshape_*.json</code>(각 W×H, 나머지는 config.json과 동일) + <code>tools/wsl/114_render_chan_top_reshapes.sh</code>로 재현 가능합니다.</p>
       </article>
     </section>
 
