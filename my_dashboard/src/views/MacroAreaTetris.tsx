@@ -662,7 +662,7 @@ export default function MacroAreaTetris() {
 
     <section className="chip-analysis-grid">
       <article className="chip-card" style={{ gridColumn: '1 / -1' }}>
-        <div className="chip-card-title"><div><small>AREA FINDING · 2026-09-27</small><h3>순수 재배치 이후의 다음 레버 — 매크로 종횡비 재성형</h3></div><span>계산 확인 완료 · chan_top 재하드닝 전</span></div>
+        <div className="chip-card-title"><div><small>AREA FINDING · 2026-09-27</small><h3>순수 재배치 이후의 다음 레버 — 매크로 종횡비 재성형</h3></div><span>계산 + 전체 flow 확인 · DRC/LVS 통과, 타이밍 미달</span></div>
         <p className="chip-note">위 면적 탐색(사다리 5→1%)은 매크로를 800×800 정사각형으로 고정한 채 <b>위치만</b> 바꾸는데, 채널 게이트(≥{CHANNEL_SAFE_MARGIN}µm)가 가로·세로 두 축 모두에서 정확히 딱 맞아(4×800+3×100+2×100=3700, 2×800+300+2×100=2100) <b>이미 바닥</b>입니다 — 재배치만으로는 더 줄일 수 없습니다. 남은 레버는 매크로 자체를 <b>같은 실리콘 면적(640,000µm², 실측 셀 면적 그대로)에서 다른 비율로 재성형</b>하는 것입니다: 정사각형 2행 배치는 다이를 가로로 길게 늘어뜨리는데(3700×2100, 종횡비 1.76:1), 매크로를 세로로 더 길게 만들면 가로 압박이 줄고 세로 압박이 늘어 — 두 압박을 맞바꿔 전체 다이를 정사각형에 더 가깝게 만들 수 있습니다.</p>
         <div className="data-table"><table><thead><tr><th>매크로 W×H (면적 640,000µm² 동일)</th><th>결과 다이</th><th>면적</th><th>기준 대비</th><th>채널·핀·전원 게이트</th></tr></thead><tbody>
           <tr><td>800×800 (현재, 실제 하드닝됨)</td><td>3700×2100</td><td>7.770mm²</td><td>-</td><td><span className="ok-badge">PASS</span></td></tr>
@@ -673,7 +673,7 @@ export default function MacroAreaTetris() {
           <tr><td>700×914</td><td>3300×2330</td><td>7.689mm²</td><td>-1.04%</td><td><span className="warning-badge">FAIL — 채널 부족</span></td></tr>
         </tbody></table></div>
         <p className="chip-note">방법: <code>costD</code>/<code>gateReason</code>을 그대로 써서 4×2 격자를 여러 W×H(면적 고정, {MIN_SPACING}µm 최소 간격·{CHANNEL_SAFE_MARGIN}µm 채널·100µm 가장자리 여유 그대로)로 직접 만들어 실측 게이트를 통과하는지 하나씩 계산 — 근사치가 아니라 이 탭이 쓰는 legality 함수로 직접 확인한 결과입니다. <b>590×1085 부근이 이론적 최적점</b>(가로 압박=세로 압박이 같아지는 지점)과 거의 일치합니다.</p>
-        <p className="rule-disclaimer"><b>2026-09-30: PASS 4개 전부 배치 가능함을 실측으로 확인</b> — 각 W×H로 <code>DIE_AREA</code>만 바꾼 chan_top을 실제 OpenLane으로 synthesis부터 다시 돌려 <code>--to OpenROAD.DetailedPlacement</code>까지(floorplan→합성→global placement→detailed placement, CTS·라우팅·DRC·LVS는 생략 — 각 6~7분) 실행했습니다. 4개 전부 legalize 완료(최종 displacement 0.0µm, DPL 에러 없음) — 아래는 그 결과의 실제 배치 스크린샷(OpenROAD GUI <code>save_image</code>, 라우팅 없이 셀 배치만)입니다. <b>DRC/LVS·타이밍·라우팅은 아직 확인 안 됨</b> — 이건 배치까지만 본 결과이고, 확정하려면 CTS+라우팅+signoff까지 마저 돌려야 합니다(여기서부터가 몇 시간짜리 작업).</p>
+        <p className="rule-disclaimer"><b>2026-09-30: PASS 4개 전부 배치 가능함을 실측으로 확인</b> — 각 W×H로 <code>DIE_AREA</code>만 바꾼 chan_top을 실제 OpenLane으로 synthesis부터 다시 돌려 <code>--to OpenROAD.DetailedPlacement</code>까지(floorplan→합성→global placement→detailed placement, CTS·라우팅·DRC·LVS는 생략 — 각 6~7분) 실행했습니다. 4개 전부 legalize 완료(최종 displacement 0.0µm, DPL 에러 없음) — 아래는 그 결과의 실제 배치 스크린샷(OpenROAD GUI <code>save_image</code>, 라우팅 없이 셀 배치만)입니다. <b>2026-10-03: 같은 4개를 CTS·라우팅·fill·STA·DRC·LVS까지 전체 flow로 돌린 결과가 아래 표입니다</b>(각 66~68분).</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginTop: 10 }}>
           {[
             { w: 800, h: 800, file: '800x800', label: '800×800 (현재, 실제 signoff)', note: '실제 완주 run — DRC 0 · LVS 0' },
@@ -686,6 +686,14 @@ export default function MacroAreaTetris() {
             <figcaption style={{ marginTop: 4, color: 'var(--text-muted)', fontSize: 8 }}><b>{s.label}</b><br/>{s.note}</figcaption>
           </figure>)}
         </div>
+        <div className="data-table" style={{ marginTop: 10 }}><table><thead><tr><th>chan_top 다이</th><th>DRC (route/Magic/KLayout)</th><th>LVS</th><th>setup WNS (ns)</th><th>hold WNS</th><th>안테나 net</th><th>worst 경로의 hold 버퍼</th><th>배선 길이</th><th>전력</th></tr></thead><tbody>
+          <tr><td>800×800 (현재 signoff)</td><td><span className="ok-badge">0 / 0 / 0</span></td><td><span className="ok-badge">0</span></td><td><b>+0.994</b></td><td>+0.125</td><td>0</td><td>1단</td><td>824,218µm</td><td>6.148</td></tr>
+          <tr><td>650×985</td><td><span className="ok-badge">0 / 0 / 0</span></td><td><span className="ok-badge">0</span></td><td><span className="warning-badge">−0.139</span></td><td>+0.125</td><td>5</td><td>11단</td><td>830,680µm (+0.8%)</td><td>6.402 (+4.1%)</td></tr>
+          <tr><td>590×1085</td><td><span className="ok-badge">0 / 0 / 0</span></td><td><span className="ok-badge">0</span></td><td><span className="warning-badge">−0.179</span></td><td>+0.143</td><td>3</td><td>11단</td><td>857,715µm (+4.1%)</td><td>6.800 (+10.6%)</td></tr>
+          <tr><td>500×1280</td><td><span className="ok-badge">0 / 0 / 0</span></td><td><span className="ok-badge">0</span></td><td><span className="warning-badge">−2.690</span></td><td>+0.138</td><td>2</td><td>18단</td><td>824,297µm (0.0%)</td><td>6.224 (+1.2%)</td></tr>
+          <tr><td>450×1422</td><td><span className="ok-badge">0 / 0 / 0</span></td><td><span className="ok-badge">0</span></td><td><span className="warning-badge">−0.460</span></td><td>+0.138</td><td><b>0</b></td><td>12단</td><td>849,663µm (+3.1%)</td><td>6.559 (+6.7%)</td></tr>
+        </tbody></table></div>
+        <p className="rule-disclaimer"><b>읽는 법:</b> 4개 모두 <b>배치·라우팅·DRC·LVS는 깨끗</b>합니다 — 모양을 바꿔도 물리적으로는 문제없이 만들어집니다. 다만 같은 SDC·같은 설정으로는 <b>setup 타이밍이 닫히지 않습니다</b>(기존 800×800은 +0.99ns). 위반은 전부 최악 코너(ss_100C_1v60)의 <code>axi_clk</code> 레지스터↔레지스터 경로 1~4개이고, 원인은 배치 불가가 아니라 async FIFO read pointer(<code>u_cdc_fifo.fifo_rptr_q</code>) 경로에 <b>hold 수정용 delay 셀(dlygate4sd3, 각 1.1~1.9ns)이 11~18개 직렬로 끼어든 것</b>입니다(기존은 1개). 모양별 특징: <b>650×985</b> 위반이 가장 작고(−0.14, 경로 2개) 배선·전력 증가도 가장 작음 · <b>590×1085</b> 다이 면적은 가장 작지만 배선 +4.1%·전력 +10.6%로 가장 비쌈 · <b>500×1280</b> 배선·인스턴스는 기존과 같은데 타이밍이 가장 나쁨(−2.69, 경로 4개, hold 18단) · <b>450×1422</b> 안테나 위반 0으로 유일하게 깨끗하지만 타이밍 −0.46. 따라서 이 4개는 &quot;signoff 통과 후보&quot;가 아니라 <b>hold repair 설정을 조정해 타이밍을 다시 닫아야 하는 후보</b>입니다 — 단일 seed 1회 결과라 이 순위가 필연적이라고 단정할 수는 없습니다.</p>
         <p className="chip-note" style={{ marginTop: 8 }}>파란 가로줄은 전원망(PDN) 스트랩, 진한 세로 줄무늬는 tap/endcap 셀 열 — 라우팅 전이라 배선은 안 보입니다. 스크린샷은 <code>samples/sample_test_4/asic/chan_top/config_reshape_*.json</code>(각 W×H, 나머지는 config.json과 동일) + <code>tools/wsl/114_render_chan_top_reshapes.sh</code>로 재현 가능합니다.</p>
       </article>
     </section>
@@ -706,7 +714,7 @@ export default function MacroAreaTetris() {
       </div>
       <div className="roadmap-section-title future"><div><small>ROADMAP STATUS</small><h5>완료·부분 구현·미연결 항목</h5></div><span>2026-09-30 코드 기준</span></div>
       <div className="roadmap-grid">
-        <article className="game-done"><header><b>chan_top 재성형 실제 배치 검증</b><em>DONE(배치만) · 2026-09-30</em></header><p>위 AREA FINDING 표의 PASS 4개(650×985 · 590×1085 · 500×1280 · 450×1422)는 원래 다이 레벨 패킹 계산일 뿐이었는데, 각각 <code>DIE_AREA</code>만 바꾼 chan_top을 실제 OpenLane으로 synthesis부터 <code>--to OpenROAD.DetailedPlacement</code>까지 다시 돌려 4개 전부 legalize 확인(최종 displacement 0.0µm, DPL 에러 없음) — 실제 배치 스크린샷도 있습니다. <b>CTS·라우팅·DRC/LVS·타이밍은 여전히 미확인</b>이라 "배치 가능"이지 "signoff 가능"은 아직 아닙니다.</p><small>재현: config_reshape_*.json + tools/wsl/114_render_chan_top_reshapes.sh</small></article>
+        <article className="game-done"><header><b>chan_top 재성형 실제 배치 검증</b><em>DONE · 2026-10-03 · 타이밍 미달</em></header><p>위 AREA FINDING 표의 PASS 4개(650×985 · 590×1085 · 500×1280 · 450×1422)는 원래 다이 레벨 패킹 계산일 뿐이었는데, 각각 <code>DIE_AREA</code>만 바꾼 chan_top을 실제 OpenLane으로 synthesis부터 <code>--to OpenROAD.DetailedPlacement</code>까지 다시 돌려 4개 전부 legalize 확인(최종 displacement 0.0µm, DPL 에러 없음) — 실제 배치 스크린샷도 있습니다. <b>2026-10-03 전체 flow 결과: 4개 모두 라우팅·DRC·LVS 0건, setup 타이밍은 −0.14~−2.69ns로 미달</b>(기존 +0.99ns) — 원인은 CDC FIFO 경로의 hold delay 셀 11~18단. 즉 "물리적으로 만들어진다"는 확인됐고 "타이밍 closure"가 다음 과제입니다.</p><small>재현: config_reshape_*.json + tools/wsl/114_render_chan_top_reshapes.sh</small></article>
         <article className="game-done"><header><b>진짜 남은 여유 공간 표시</b><em>DONE · 2026-09-30</em></header><p>leftover 초록/주황 오버레이가 매크로만 빼고 계산돼서, 표준셀 타일을 이미 채운 뒤에도 그 자리가 계속 "여유"로 보였습니다 — <code>analyzeLeftoverD</code>에 배치된 타일도 빼는 옵션을 추가해, 타일 표시를 켜면 <b>진짜 아직 안 쓰인 칸</b>만 남깁니다(수치도 표시: "매크로+타일 배치 후 진짜 남은 여유 N%"). 같이 고침: 표준셀 타일 버튼이 예전엔 항상 작업 중인 배치(cur) 기준이라 후보를 보고 있어도 조용히 현재 배치로 튕겨나갔는데, 이제 지금 화면에 보이는 것(후보든 처리 단계든) 기준으로 채웁니다.</p><small>확인: 후보 C0001(3700×2100) 선택 → 타일 13/13 채움 → 진짜 남은 여유 27.3% 라이브 확인</small></article>
         <article className="game-done"><header><b>random legal start 연결</b><em>DONE · 2026-09-29</em></header><p>후보 생성이 <code>seeds: 0</code>으로 호출돼 무작위 시작점이 전혀 없었습니다 — 이제 12개(로드맵 권장 8~16개 범위)를 실제로 흩뿌려 deterministic 여유 분할 후보에 더합니다. 다만 지금 붙은 건 Macro Tetris의 <b>Rip-up(greedy 다듬기)</b>까지고, 온도 기반으로 일부 나쁜 이동도 받아들이는 <b>SA 자체는 아직</b>입니다 — local minimum 탈출력은 SA를 실제로 붙여야 더 좋아집니다.</p><small>남은 일: repairFrom의 polish를 SA로 교체</small></article>
         <article className="game-done" style={{ gridColumn: 'span 3' }}>
@@ -727,7 +735,7 @@ export default function MacroAreaTetris() {
         <article><header><b>실제 표준셀 수용성</b><em>P1 · FEEDBACK</em></header><p>단순 남는 면적 density 외에 usable row 단절, halo, PDN obstruction과 pin-access 밀도를 빠른 placement 결과로 평가합니다.</p><small>도구: RePlAce · DPL · FastRoute</small></article>
         <article><header><b>후보 저장 강화</b><em>P2 · QUALITY</em></header><p>작업 중 Reset 시 Worker를 terminate/restart하는 실제 취소는 완료됐습니다. 남은 일은 최대 800개 후보와 단계 기록을 localStorage 대신 IndexedDB 또는 파일 registry로 옮기는 것입니다.</p><small>완료: Worker 취소·기본 회귀 테스트 · 남음: 영속 저장소</small></article>
       </div>
-      <div className="flow-implementation-status"><span className="done"><b>현재 구현</b> 면적 축소 사다리 · 형상/행 수 후보(3행 legal) · random seed 12개 · 물리 gate · 진짜 여유 공간 표시 · chan_top 재성형 4개 실제 배치 검증 · Worker 취소 · 회귀 테스트</span><span className="next"><b>추후 우선순위</b> 실제 net 비용 → 온도 기반 SA → 4행 legalize → 재성형 CTS/라우팅/DRC/LVS → 10개 GRT/STA → Top 3 signoff → PASS-only best</span></div>
+      <div className="flow-implementation-status"><span className="done"><b>현재 구현</b> 면적 축소 사다리 · 형상/행 수 후보(3행 legal) · random seed 12개 · 물리 gate · 진짜 여유 공간 표시 · chan_top 재성형 4개 전체 flow(DRC/LVS 0 · 타이밍 미달) · Worker 취소 · 회귀 테스트</span><span className="next"><b>추후 우선순위</b> 실제 net 비용 → 온도 기반 SA → 4행 legalize → 재성형 hold repair 튜닝(타이밍 closure) → 10개 GRT/STA → Top 3 signoff → PASS-only best</span></div>
     </section>
 
     <section className="chip-analysis-grid">
