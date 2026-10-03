@@ -61,6 +61,26 @@ function met1Tracks(height: number, pitch: number, width: number, rail: number):
   return tracks
 }
 
+// Suggest the smallest simple parameter repair for the reported proxy failure. A subsequent search
+// may expose another failure; this is not a foundry DRC repair or proof of a legal routed cell.
+function repairFor(reason: string | null, rules: Rules): { guidance: string; corrected: Rules | null } {
+  if (reason === 'met1 pitch ≤ 폭 (간격 없음)') {
+    const pitch = round(Math.max(rules.m1Width + 0.01, rules.m1Width * 1.2))
+    return { guidance: `met1 pitch를 ${round(rules.m1Pitch)} → ${pitch} µm로 늘려 폭 ${round(rules.m1Width)} µm보다 크게 설정`,
+      corrected: { ...rules, m1Pitch: pitch } }
+  }
+  if (reason === '레일 사이에 met1 트랙 없음') {
+    const clear = rules.railHalf + (rules.m1Pitch - rules.m1Width)
+    const firstIndex = Math.max(0, Math.ceil((clear + rules.m1Width / 2 - rules.m1Pitch / 2) / rules.m1Pitch))
+    const trackY = rules.m1Pitch / 2 + firstIndex * rules.m1Pitch
+    const row = round(trackY + rules.m1Width / 2 + clear + 0.01)
+    return { guidance: `행 높이를 ${round(rules.row)} → ${row} µm 이상으로 늘려 레일 사이 트랙을 확보`,
+      corrected: { ...rules, row } }
+  }
+  if (reason === '핀 도형 없음') return { guidance: '원본 LEF의 MUX X·AND B 핀 도형을 확인하고, 없으면 유효한 핀 자료를 제공', corrected: null }
+  return { guidance: '탈락 원인을 확인한 뒤 가상 PDK 값을 조정하고 재탐색', corrected: null }
+}
+
 // A pin rectangle placed in the row: scaled from the sky130 LEF to the target cell size, mirrored for FN.
 function placedRects(cell: SourceCell, pin: string, cellX: number, cellW: number, rowH: number, flip: boolean): Box[] {
   const src = cell.info.size
@@ -244,6 +264,8 @@ export default function ComplexStandardCellExperiment() {
     ]
     return examples.map(example => ({ ...example, result: searchAll(mux!, and!, example.rules, [BASELINE_PLACEMENT], weights) }))
   }, [ready, mux, and, rules, weights])
+  const currentRepair = repairFor(failedPlacements[0]?.reject ?? null, rules)
+  const applyRepair = (corrected: Rules) => { setRules(corrected); setPreset('custom'); setProgress(100) }
 
   // ---- timing analysis: measure the real search, then extrapolate the candidate count to larger composites ----
   const bench = useMemo(() => {
@@ -473,7 +495,7 @@ export default function ComplexStandardCellExperiment() {
           <button type="button" onClick={() => setWeights(DEFAULT_WEIGHTS)}>기본 가중치</button>
         </div>
         <p className="chip-note" style={{ margin: '6px 0 8px' }}>세로 구간과 꺾임에는 <b>가상의 벌점</b>을 줍니다. 실제 다른 층 사용이나 비아 개수, RC 비용을 계산한 값은 아닙니다. 가중치를 바꾸면 이 비용 모델로 즉시 다시 전부 탐색합니다.</p>
-        {full.valid.length === 0 ? <p className="init-error">규칙을 통과한 후보가 없습니다. 목표 규칙(트랙 수, pitch)을 확인하세요.</p> :
+        {full.valid.length === 0 ? <p className="init-error">가상 모델에서 경로를 찾은 후보가 없습니다. 아래 탈락 이유와 권장 수정값을 확인하세요.</p> :
           <div className="data-table" style={{ maxHeight: 320, overflow: 'auto' }}><table><thead><tr><th>순위</th><th>배치</th><th>X 핀</th><th>트랙 y</th><th>길이</th><th>가로 / 세로</th><th>꺾임</th><th>면적</th><th>비용</th></tr></thead><tbody>
             {full.valid.slice(0, 15).map((c, i) => <tr key={c.id} onClick={() => { setPickedId(c.id); setProgress(100) }} style={{ cursor: 'pointer', background: cur?.id === c.id ? 'var(--accent-soft)' : undefined }}>
               <td><b>{i + 1}</b></td><td style={{ fontSize: 11 }}>{placementLabel(c)}</td><td>#{c.xRect + 1}</td><td>{c.trackY}</td><td>{round(c.length)}</td><td>{round(c.hLen)} / {round(c.vLen)}</td><td>{c.bends}</td><td>{round(c.area)}</td><td><b>{round(c.cost)}</b></td></tr>)}
@@ -485,21 +507,23 @@ export default function ComplexStandardCellExperiment() {
         <div className="card-title" style={{ marginBottom: 6 }}><div><small className="kicker">VIRTUAL FAILURE CASES · 실제 DRC 아님</small><h3>실패한 배치와 실패 규칙도 보기</h3></div></div>
         {failedPlacements.length > 0 ? <>
           <p className="chip-note" style={{ margin: '0 0 8px' }}>현재 목표 규칙에서 가상 경로를 찾지 못한 배치입니다. 같은 이유로 반복된 후보는 배치당 하나만 표시합니다.</p>
-          <div className="data-table" style={{ maxHeight: 220, overflow: 'auto' }}><table><thead><tr><th>탈락 배치</th><th>실패 이유 (가상 모델)</th><th>X 핀 도형</th></tr></thead><tbody>
-            {failedPlacements.map(c => <tr key={c.id}><td>{placementLabel(c)}</td><td style={{ color: '#c0392b' }}>{c.reject}</td><td>#{c.xRect + 1}</td></tr>)}
+          <div className="data-table" style={{ maxHeight: 220, overflow: 'auto' }}><table><thead><tr><th>탈락 배치</th><th>실패 이유 (가상 모델)</th><th>고칠 것 · 재탐색 전</th><th>X 핀 도형</th></tr></thead><tbody>
+            {failedPlacements.map(c => <tr key={c.id}><td>{placementLabel(c)}</td><td style={{ color: '#c0392b' }}>{c.reject}</td><td>{repairFor(c.reject, rules).guidance}</td><td>#{c.xRect + 1}</td></tr>)}
           </tbody></table></div>
+          {currentRepair.corrected && <button type="button" onClick={() => applyRepair(currentRepair.corrected!)} style={{ marginTop: 8 }}>현재 실패 원인의 권장 수정 적용</button>}
         </> : <p className="chip-note" style={{ margin: '0 0 8px' }}>현재 목표 규칙에서는 이 제한된 모델의 모든 배치에서 경로를 찾았습니다. 이것은 실제 DRC 통과를 뜻하지 않습니다.</p>}
         <p className="chip-note" style={{ margin: '0 0 8px' }}>아래는 현재 가상 PDK 값을 한 항목씩 일부러 바꾼 <b>독립적인 실패 시뮬레이션</b>입니다. 실제 90 nm 공정 규칙이나 발견된 제조 결함이 아닙니다.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(250px,1fr))', gap: 10 }}>
-          {failureExamples.map(example => { const failed = example.result.all.find(c => c.reject)
+          {failureExamples.map(example => { const failed = example.result.all.find(c => c.reject), repair = repairFor(failed?.reject ?? null, example.rules)
             return <div key={example.label} className="card" style={{ padding: 10, minWidth: 0 }}>
               <b style={{ fontSize: 12 }}>{example.label}</b><div style={{ fontSize: 11, margin: '5px 0' }}>{example.changed} · 후보 {example.result.all.length}개 중 가상 모델 탈락 {example.result.all.filter(c => c.reject).length}개</div>
               <div style={{ color: '#c0392b', fontSize: 12 }}>결과: {failed?.reject ?? '이 설정에서는 경로가 남아 있음'}</div>
+              {failed && <div style={{ fontSize: 12, marginTop: 5 }}><b>고칠 것:</b> {repair.guidance}</div>}
               {failed && <Snapshot c={failed} rules={example.rules} tracks={example.result.tracks} pxPerUm={Math.min(40, 240 / failed.width)} maxW={failed.width} maxH={Math.max(sourceRules.row, example.rules.row)} label={`${example.label} 가상 실패`}/>}
-              <button type="button" onClick={() => { setRules(example.rules); setPreset('custom'); setProgress(100) }} style={{ marginTop: 6 }}>이 실패 조건 적용</button>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}><button type="button" onClick={() => applyRepair(example.rules)}>이 실패 조건 적용</button>{repair.corrected && <button type="button" onClick={() => applyRepair(repair.corrected!)}>권장 수정 후 재탐색</button>}</div>
             </div> })}
         </div>
-        <p className="chip-note" style={{ margin: '8px 0 0' }}>실패 조건을 적용하면 위 탐색 결과와 탈락 이유가 함께 갱신됩니다. 기본 상태로 돌아가려면 위의 <b>가상 90 nm PDK (VPDK-90)</b> 버튼을 누르세요.</p>
+        <p className="chip-note" style={{ margin: '8px 0 0' }}>수정 버튼은 표시된 한 가지 가상 실패 원인만 고친 뒤 다시 탐색합니다. 다른 탈락 원인이 이어서 나타날 수 있으며 실제 DRC 통과를 보증하지 않습니다. 기본 상태로 돌아가려면 위의 <b>가상 90 nm PDK (VPDK-90)</b> 버튼을 누르세요.</p>
       </div>
 
       {scanInfo && <div className="card" style={{ padding: 12, marginBottom: 12 }}>
@@ -513,7 +537,7 @@ export default function ComplexStandardCellExperiment() {
           {scanDone === scanTotal && <span style={{ color: '#1D9E75' }}>완료 · 전체 {fmtN(scanTotal)}개 중 최선 확정</span>}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 10 }}>
-          {scanCur && <div style={{ minWidth: 0 }}><small><b>지금 평가 중 #{scanDone}</b> · {placementLabel(scanCur)} · X#{scanCur.xRect + 1} · y={scanCur.trackY ?? '—'}<br/>{scanCur.reject ? <span style={{ color: '#c0392b' }}>탈락: {scanCur.reject}</span> : <>길이 {round(scanCur.length)} µm · 꺾임 {scanCur.bends} · 비용 {round(scanCur.cost)}</>}</small>
+          {scanCur && <div style={{ minWidth: 0 }}><small><b>지금 평가 중 #{scanDone}</b> · {placementLabel(scanCur)} · X#{scanCur.xRect + 1} · y={scanCur.trackY ?? '—'}<br/>{scanCur.reject ? <span style={{ color: '#c0392b' }}>탈락: {scanCur.reject}<br/>고칠 것: {repairFor(scanCur.reject, rules).guidance}</span> : <>길이 {round(scanCur.length)} µm · 꺾임 {scanCur.bends} · 비용 {round(scanCur.cost)}</>}</small>
             <Snapshot c={scanCur} rules={rules} tracks={full.tracks} pxPerUm={Math.min(48, 300 / maxW)} maxW={maxW} maxH={rules.row} label="지금 평가 중"/></div>}
           {scanBest && <div style={{ minWidth: 0 }}><small><b style={{ color: '#1D9E75' }}>지금까지 최선</b> · {placementLabel(scanBest)} · X#{scanBest.xRect + 1} · y={scanBest.trackY}<br/>길이 {round(scanBest.length)} µm · 꺾임 {scanBest.bends} · 비용 <b>{round(scanBest.cost)}</b></small>
             <Snapshot c={scanBest} rules={rules} tracks={full.tracks} pxPerUm={Math.min(48, 300 / maxW)} maxW={maxW} maxH={rules.row} label="지금까지 최선"/></div>}
