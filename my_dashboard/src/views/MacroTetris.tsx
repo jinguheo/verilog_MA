@@ -73,6 +73,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { DIE_W, DIE_H, N, MIN_SPACING, MACRO_MIN_SIDE, MACRO_MAX_SIDE, REAL_CHAN_TOP, CORE_RATIO, UTIL_WARN, impliedUtil, hubDefs, N_HUBS, type Pos, type Macro, REAL_RUN_MACROS, MIXED_MACROS, REAL_RUN_HUBS, type Cost, type State, type Candidate, isLegal, compareCandidates, LO_CELL, LO_COLS, LO_ROWS, analyzeLeftover, cost, LEFTOVER_CLEAN_PCT, CHANNEL_SAFE_MARGIN, spaceBreakdown, preSignoffProxy, mulberry32, cloneState, clampMacro, stepSA, type RipUpResult, ripUpReplace, remainingStillFit, referenceCandidate, toMacroPlacementCfg, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, GLUE_TILE, GLUE_TILE_CAP, GLUE_TILES_NEEDED, GLUE_TILE_HUBS, GLUE_TILE_MAX_WIDTH_UM, type GlueTile, placeGlueTile, fillGlue, glueWirelength, bestMacroSpot, macrosSignature, stackAttempt } from '../game/macroTetrisModel'
 import { drawFreeCell, drawTileBox, LEGEND_SWATCH, TETRIS_COLORS } from '../game/tetrisPalette'
+import UsageGuide from './UsageGuide'
 import type { ReplaceSAResult, SolverJob, SolverProgress, SolverRequest } from '../game/macroTetrisWorker'
 
 type Glue = { tiles: GlueTile[]; sig: string }
@@ -828,6 +829,31 @@ export default function MacroTetris() {
       </div>
       <div className={`ai-status ${aiOn || playing || busy || searching ? 'live' : ''}`}><i/><span>{status}</span></div>
     </section>
+
+    <UsageGuide
+      title="Macro Tetris — 어떻게 활용하나"
+      goal={<>daq_subsystem(3700×2100) 안에 chan_top 매크로 8개를 <b>어디에 놓으면 좋은가</b>를 빠르게 시험합니다. 배치가 legal인지·배선 비용·표준셀이 들어갈 여유를 근사 모델로 바로 보여주고, 마음에 드는 배치는 실제 OpenLane config 좌표로 내보냅니다.</>}
+      steps={[
+        { title: '1. 시작점 고르기', body: <>이미 완성된 배치에서 시작하려면 그대로 쓰거나 <b>시나리오 → 실제 (HARD×8)</b>, 빈 판부터 만들려면 <b>▶ 쌓기 플레이</b>. 쌓는 동안 NEXT QUEUE에 다음 매크로/표준셀이 보입니다.</> },
+        { title: '2. 쌓다가 GAME OVER가 나면', body: <>쌓기 플레이는 항상 가장 낮은 비용 자리만 고르기 때문에 같은 곳에서 매번 막힙니다. <b>⟳ 자동 쌓기</b>를 누르면 무작위로 다르게 쌓으며 legal하고 표준셀 {GLUE_TILES_NEEDED}개가 다 들어가는 배치를 찾을 때까지 계속 돕니다(중지 가능).</> },
+        { title: '3. 개선하기 (가벼운 것 → 무거운 것)', body: <><b>Rip-up</b>(몇 초, 개선이 없으면 스스로 멈춤) → <b>AI ON</b>(SA가 계속 흔들어 봄, MANUAL로 바꾸면 중단) → <b>병렬 탐색</b>(레인 여러 개로 오래 돌려 최고 후보를 갱신, 개선을 못 찾는 동안은 안 멈춤).</> },
+        { title: '4. 직접 만져 보기', body: <>캔버스에서 매크로를 드래그하거나 화살표 키(20µm, Shift는 100µm)로 이동, Tab으로 다음 매크로 선택. 빨간 상태가 되면 legal이 깨진 것입니다.</> },
+        { title: '5. 표준셀이 들어가는지 보기', body: <><b>표준셀 채우기</b>를 누르면 타일 {GLUE_TILES_NEEDED}개를 놓아 봅니다. 13/13이면 들어간 것이고, 모자라면 표준셀 공간 부족입니다. 캔버스는 <b>빗금 = 빈 공간</b>(청록: 넣기 좋음, 호박색: 조각나서 어려움), <b>자홍 단색 = 실제 배치된 표준셀</b>입니다.</> },
+        { title: '6. 저장하고 비교하기', body: <>마음에 들면 <b>후보 저장</b>. 아래 후보 목록과 "지금까지 찾은 최고 후보"(자동 저장)에서 비용·배선·표준셀 여유를 비교하고, 클릭하면 캔버스로 불러옵니다.</> },
+        { title: '7. 실제로 쓰기', body: <><b>실제 config로 내보내기</b> → <code>MACROS.chan_top.instances</code> 좌표 JSON이 나옵니다. 이것을 daq_subsystem의 <code>config_hierarchical.json</code>에 붙여 OpenLane을 돌려야 signoff가 확정됩니다. 8개 모두 HARD일 때만 그대로 쓸 수 있습니다.</> },
+      ]}
+      tips={[
+        { when: '검증된 배치보다 배선을 더 줄이고 싶다', what: <><b>실제 격자로 초기화 + Rip-up</b> — 실제 signoff 통과 격자로 되돌린 뒤 바로 개선합니다.</> },
+        { when: '개선이 더 안 나온다', what: <><b>병렬 탐색</b>에서 랜덤 레인을 늘려 다른 출발점도 시도합니다.</> },
+        { when: '매크로 모양까지 바꿔 보고 싶다', what: <>시나리오 <b>혼합 (HARD4+SOFT4)</b> → <b>Rip-up+모양</b>. SOFT 크기는 what-if라 실제로 쓰려면 그 크기로 chan_top을 다시 하드닝해야 합니다.</> },
+        { when: '망쳤다', what: <>시나리오 <b>실제 (HARD×8)</b> 또는 <b>실제 격자로 초기화 + Rip-up</b>.</> },
+        { when: '다이 면적을 줄이고 싶다', what: <>이 탭은 같은 다이 안에서 <b>위치</b>만 바꿉니다. 면적은 <b>Macro Area Tetris</b>에서 탐색합니다.</> },
+      ]}
+      caveats={[
+        'legal 판정·배선 비용·표준셀 여유는 근사 모델입니다. 다만 채널 ≥300µm 같은 핵심 기준은 실제 OpenLane 실패(DPL-0034/0036)에서 나온 실측 값입니다. 최종 확정은 항상 OpenLane 실행입니다.',
+        '실제 3700×2100 격자는 가로·세로 모두 최소 간격에 딱 맞는 크기라, 이 탭에서 찾는 개선은 대부분 "배선 비용"이지 "면적"이 아닙니다.',
+      ]}
+    />
 
     <section className="chip-scorebar">
       <div><span>WEIGHTED WL</span><b>{Math.round(liveCost.wl).toLocaleString()}</b></div>

@@ -16,6 +16,7 @@ import {
   type Die, type AreaOpts, type Issue, type RepairStep, type ShapeAttempt, type TrialPlan, type CandMetrics,
 } from '../game/macroAreaModel'
 import { drawFreeCell, drawTileBox, LEGEND_SWATCH, TETRIS_COLORS } from '../game/tetrisPalette'
+import UsageGuide from './UsageGuide'
 import type { AreaRequest, AreaResponse } from '../game/macroAreaWorker'
 
 type Cur = { die: Die; state: State }
@@ -480,6 +481,29 @@ export default function MacroAreaTetris() {
       <div className={`ai-status ${busy || searching ? 'live' : ''}`}><i/><span>{statusText}</span></div>
     </section>
 
+    <UsageGuide
+      title="Macro Area Tetris — 어떻게 활용하나"
+      goal={<>매크로 위치를 바꿔서 <b>다이 면적을 더 줄일 수 있는지</b> 탐색하고, 그 과정에서 나온 <b>여러 legal 배치를 후보로 모아 비교</b>합니다. 후보는 DRC/LVS 검증 대기열로 내보냅니다.</>}
+      steps={[
+        { title: '1. 시작점 고르기', body: <><b>실제 격자로 초기화</b>는 실제 signoff를 통과한 3700×2100에서, <b>기존 성공 결과로 초기화</b>는 이 조건에서 저장해 둔 최고 결과에서 시작합니다.</> },
+        { title: '2. 통과 조건 고르기', body: <><b>밀도 40%(실제)</b>가 기본이고 50·60%는 더 느슨한 조건입니다. <b>엄격</b>은 핀 escape·전원 접근까지 요구하고 <b>완화</b>는 겹침·간격·경계·용량만 봅니다. <b>조건마다 후보 풀이 따로 저장</b>되므로 조건을 바꾸면 풀이 비어 보이는 게 정상입니다 — 그 조건에서 후보 만들기를 다시 누르세요.</> },
+        { title: '3. ▶ 면적 탐색', body: <>−5%를 먼저 시도하고 실패하면 −4→−3→−2→−1%로 낮춰 재시도합니다. 성공하면 그 배치를 새 기준으로 다시 −5%부터. −1%까지 실패하면 <b>수렴</b> = 이 모델에서 더 줄일 수 없다는 결론입니다. 실제 격자는 이미 가로·세로 모두 한계라 바로 수렴하는 게 정상입니다. 시도 기록 표에서 실패한 이유(어느 매크로가 어떤 규칙에서 막혔나)를 볼 수 있습니다.</> },
+        { title: '4. 후보 만들기', body: <>다이 높이·행 수(2/3/4행)별로 여유 분할 + 무작위 시작 12개를 돌려 통과한 배치를 전부 <b>후보 풀</b>에 쌓습니다(수렴 후 자동 실행, 수동으로도 가능).</> },
+        { title: '5. 후보 고르기', body: <>후보 풀은 <b>utilization ≥</b> 필터(기본 60%)를 통과한 것을 배선 비용 짧은 순으로 보여줍니다. 행을 누르면 보드에 그 배치와 생성 경위가 나옵니다. <b>표준셀 타일 표시</b>를 누르면 그 후보에서 표준셀이 몇 개 들어가는지와 <b>진짜 남은 여유 %</b>가 나옵니다.</> },
+        { title: '6. 검증 대기열로 내보내기', body: <>체크하거나 <b>상위 10개 선택</b> → <b>DRC/LVS 검증 목록</b>이 JSON으로 나옵니다(실제 OpenLane은 아직 자동 실행되지 않고 queued 표시까지만).</> },
+      ]}
+      tips={[
+        { when: '후보 풀이 비어 있다', what: <>위의 <b>utilization ≥</b> 값이 너무 높거나, 조건(밀도·엄격/완화)을 바꿔서 그 풀이 아직 비어 있는 경우입니다. 필터를 60% 이하로 낮추거나 후보 만들기를 다시 누르세요.</> },
+        { when: '면적을 더 줄이고 싶다', what: <>위치만 바꿔서는 한계입니다. 아래 <b>AREA FINDING</b> 카드의 <b>매크로 모양(종횡비) 재성형</b> 결과표와 실제 배치·타이밍 결과를 보세요.</> },
+        { when: '직접 고쳐 보고 싶다', what: <>보드에서 매크로를 드래그한 뒤 <b>Rip-up</b>으로 다듬고 <b>후보로 저장</b>.</> },
+        { when: '색이 헷갈린다', what: <><b>빗금 = 빈 공간</b>(청록: 표준셀 넣기 좋음, 호박색: 조각나서 어려움), <b>자홍 단색 = 실제 배치된 표준셀 타일</b>. 빨간 테두리는 실패 부위 매크로.</> },
+      ]}
+      caveats={[
+        'utilization·배선 비용·필요 밀도는 근사 모델 값이고, 필요 밀도는 실제 OpenROAD row 용량(코어 inset·매크로 halo 반영) 기준입니다. 실제 통과 여부는 OpenLane DRC/LVS로만 확정됩니다.',
+        '재성형(매크로 모양 변경) 후보는 chan_top을 그 크기로 다시 합성·배치해야 하며, 현재 4개 후보는 DRC/LVS는 통과했지만 타이밍이 닫히지 않은 상태입니다(AREA FINDING 카드 참고).',
+      ]}
+    />
+
     <section className="chip-scorebar">
       <div><span>DIE</span><b>{cur.die.w}×{cur.die.h}</b></div>
       <div><span>원래(3700×2100) 대비</span><b className="pass">{signedPct(vsBase)}</b></div>
@@ -530,7 +554,7 @@ export default function MacroAreaTetris() {
             <button onClick={() => setSearching(false)} disabled={!searching}>일시정지</button>
             <button onClick={runTrial} disabled={locked || converged !== null}>한 번 시도</button>
           </div>
-          <p className="key-help" style={{ marginTop: 4 }}>다음 시도 폭: <b>−{shrinkPct}%</b> (사다리 {SHRINK_LADDER.map(p => `${p}%`).join('→')} — 실패하면 다음 폭으로, 성공하면 −{SHRINK_LADDER[0]}%로 복귀)</p>
+          <p className="key-help" style={{ marginTop: 4 }}>다음 시도 폭: <b>−{shrinkPct}%</b> · 사다리 설명은 아래 「변수·규칙 설명」</p>
         </div>
 
         <div><span className="panel-label">통과 조건</span>
@@ -540,10 +564,7 @@ export default function MacroAreaTetris() {
           <div className="chip-switches" style={{ marginTop: 5, gridTemplateColumns: '1fr' }}>
             <button className={opts.strict ? 'active replace' : ''} onClick={() => changeOpts({ ...opts, strict: !opts.strict })} disabled={busy !== null}>{opts.strict ? '엄격: 핀 escape·전원 접근 CLEAN 필수' : '완화: 겹침·간격·경계·용량만'}</button>
           </div>
-          <p className="key-help" style={{ marginTop: 4 }}>항상: 겹침 0 · 간격 ≥{MIN_SPACING}µm · 가장자리 ≥{EDGE_MARGIN}µm · 필요 밀도(glue {REAL_GLUE.cellArea.toLocaleString()}µm² ÷ <b>실제 row 용량</b> — 코어 inset·매크로 halo {MACRO_HALO_UM}µm를 뺀 OpenROAD cutrows 모델, 실측 DEF와 일치) ≤ 목표. 엄격은 + 매크로마다 한 면 {PIN_ESCAPE_MARGIN}µm 이상(핀 escape), 전원 링 또는 {POWER_RING_MARGIN}µm 채널 접근. 조건마다 최고 결과·후보 풀이 따로 저장됩니다. 이 glue {REAL_GLUE.cellArea.toLocaleString()}µm² 중 {(REAL_GLUE_OTHER_PURPOSE_RATIO * 100).toFixed(1)}%({REAL_GLUE_OTHER_PURPOSE_CELLS.toLocaleString()}셀, 탭 {REAL_GLUE_OTHER_PURPOSE.tapCells.toLocaleString()}+타이밍 리페어 {REAL_GLUE_OTHER_PURPOSE.timingRepairBuffers.toLocaleString()}+hold 버퍼 {REAL_GLUE_OTHER_PURPOSE.holdBuffers.toLocaleString()})는 RTL 로직이 아니라 P&R이 끼워 넣은 <b>다른 용도</b> — 빈 공간처럼 보여도 실제로는 대부분 이미 목적이 정해져 있습니다.</p>
-          <div className="data-table" style={{ marginTop: 6 }}><table><thead><tr><th>룰</th><th>값</th><th>적용</th><th>근거</th></tr></thead><tbody>
-            {Object.entries(RULES).map(([k, r]) => <tr key={k}><td><code>{k}</code></td><td><b>{r.value}{r.unit}</b></td><td>{r.gate}</td><td style={{ fontSize: 11 }}>{r.desc}</td></tr>)}
-          </tbody></table></div>
+          <p className="key-help" style={{ marginTop: 4 }}>각 조건의 값·근거는 아래 「변수·규칙 설명」에 있습니다.</p>
         </div>
 
         <div><span className="panel-label">후보 · 수동 편집</span>
@@ -557,11 +578,25 @@ export default function MacroAreaTetris() {
             <button onClick={() => { const r = fillGlueD(view.die, view.macros, view.hubs, glueTilesNeeded(opts.density), opts.density); setGlue(r.tiles) }} disabled={locked}>표준셀 타일 표시 (표시용, {view.title} 기준){glue.length > 0 && ` — ${glue.length}/${glueTilesNeeded(opts.density)}개 배치됨`}</button>
           </div>
           {afterGlue && <p className="key-help" style={{ marginTop: 4 }}>{view.title}({view.die.w}×{view.die.h}) 매크로+타일 배치 후 <b>진짜 남은 여유</b>: {(afterGlue.totalEmptyCells * LO_CELL * LO_CELL / dieArea(view.die) * 100).toFixed(1)}% ({afterGlue.totalEmptyCells}칸, {(afterGlue.totalEmptyCells * LO_CELL * LO_CELL).toLocaleString()}µm² — 그중 정사각형 규칙으로 바로 쓸 수 있는 칸 {afterGlue.usableCells}개, 조각난 칸 {afterGlue.fragmentedCells}개). 위 캔버스의 초록/주황 칸이 이 자리입니다 — 타일이 이미 덮은 칸은 빠졌습니다.</p>}
-          <p className="key-help" style={{ marginTop: 4 }}>후보 만들기 = ① 지금 다이부터 3700×2100 높이까지 10µm마다(같은 폭) ② 행 수(1~4)별로 필요한 최소 다이를 closed form으로 계산한 형상(2차원 형상 sweep, MAX_ASPECT 안에서 최대 3개 — 3·4행은 아직 legal 후보 미생성) — 각 다이마다 세로 여유 분할(채널 폭 {CHANNEL_SAMPLES + 1}단계 × 위/아래 배분 3) × 가로 분배 4가지를 진단→처리 알고리즘에 통과시킵니다. 폭이 좁아 4개씩 2행으로 못 들어가는 형상은 처리 알고리즘이 3·4행으로 재구성하거나 실패로 걸러집니다. 탐색이 수렴하면 자동으로 실행됩니다.</p>
         </div>
 
         <label className="speed-control">시도 간격 <input type="range" min={0} max={1500} step={100} value={speed} onChange={e => setSpeed(Number(e.target.value))}/><b>{speed}ms</b></label>
       </aside>
+    </section>
+
+    <section className="chip-analysis-grid">
+      <article className="chip-card" style={{ gridColumn: '1 / -1' }}>
+        <div className="chip-card-title"><div><small>VARIABLES &amp; RULES</small><h3>변수·규칙 설명 — 오른쪽 패널의 값들이 뜻하는 것</h3></div><span>설명만 모아 둔 곳 · 값은 위 패널에서 바꿉니다</span></div>
+        <h4 style={{ margin: '6px 0 2px' }}>면적 탐색 — 시도 폭(사다리)</h4>
+        <p className="key-help" style={{ margin: '0 0 6px' }}>먼저 −{SHRINK_LADDER[0]}%를 시도하고, 실패하면 같은 배치에서 {SHRINK_LADDER.slice(1).map(p => `−${p}%`).join(' → ')}로 폭을 줄여 재시도합니다. 성공하면 그 결과가 새 기준이 되어 다시 −{SHRINK_LADDER[0]}%부터 시작하고, −{SHRINK_LADDER[SHRINK_LADDER.length - 1]}%마저 실패하면 수렴(이 모델 기준 최소 면적)입니다. 현재 다음 시도 폭: <b>−{shrinkPct}%</b>.</p>
+        <h4 style={{ margin: '6px 0 2px' }}>통과 조건 — 밀도 · 엄격/완화</h4>
+          <p className="key-help" style={{ margin: '6px 0 0' }}>항상: 겹침 0 · 간격 ≥{MIN_SPACING}µm · 가장자리 ≥{EDGE_MARGIN}µm · 필요 밀도(glue {REAL_GLUE.cellArea.toLocaleString()}µm² ÷ <b>실제 row 용량</b> — 코어 inset·매크로 halo {MACRO_HALO_UM}µm를 뺀 OpenROAD cutrows 모델, 실측 DEF와 일치) ≤ 목표. 엄격은 + 매크로마다 한 면 {PIN_ESCAPE_MARGIN}µm 이상(핀 escape), 전원 링 또는 {POWER_RING_MARGIN}µm 채널 접근. 조건마다 최고 결과·후보 풀이 따로 저장됩니다. 이 glue {REAL_GLUE.cellArea.toLocaleString()}µm² 중 {(REAL_GLUE_OTHER_PURPOSE_RATIO * 100).toFixed(1)}%({REAL_GLUE_OTHER_PURPOSE_CELLS.toLocaleString()}셀, 탭 {REAL_GLUE_OTHER_PURPOSE.tapCells.toLocaleString()}+타이밍 리페어 {REAL_GLUE_OTHER_PURPOSE.timingRepairBuffers.toLocaleString()}+hold 버퍼 {REAL_GLUE_OTHER_PURPOSE.holdBuffers.toLocaleString()})는 RTL 로직이 아니라 P&R이 끼워 넣은 <b>다른 용도</b> — 빈 공간처럼 보여도 실제로는 대부분 이미 목적이 정해져 있습니다.</p>
+        <div className="data-table" style={{ marginTop: 6 }}><table><thead><tr><th>룰</th><th>값</th><th>적용</th><th>근거</th></tr></thead><tbody>
+            {Object.entries(RULES).map(([k, r]) => <tr key={k}><td><code>{k}</code></td><td><b>{r.value}{r.unit}</b></td><td>{r.gate}</td><td style={{ fontSize: 11 }}>{r.desc}</td></tr>)}
+          </tbody></table></div>
+        <h4 style={{ margin: '10px 0 2px' }}>후보 만들기</h4>
+          <p className="key-help" style={{ margin: '6px 0 0' }}>후보 만들기 = ① 지금 다이부터 3700×2100 높이까지 10µm마다(같은 폭) ② 행 수(1~4)별로 필요한 최소 다이를 closed form으로 계산한 형상(2차원 형상 sweep, MAX_ASPECT 안에서 최대 3개 — 3·4행은 아직 legal 후보 미생성) — 각 다이마다 세로 여유 분할(채널 폭 {CHANNEL_SAMPLES + 1}단계 × 위/아래 배분 3) × 가로 분배 4가지를 진단→처리 알고리즘에 통과시킵니다. 폭이 좁아 4개씩 2행으로 못 들어가는 형상은 처리 알고리즘이 3·4행으로 재구성하거나 실패로 걸러집니다. 탐색이 수렴하면 자동으로 실행됩니다.</p>
+      </article>
     </section>
 
     <section className="chip-analysis-grid">
