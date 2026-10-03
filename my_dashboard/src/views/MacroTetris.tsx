@@ -369,7 +369,7 @@ export default function MacroTetris() {
   }
 
   async function solveRipUpFromReal() {
-    sourceRef.current = '실제→향상 (Rip-up)'
+    sourceRef.current = '실제 격자 초기화 + Rip-up'
     setAiOn(false)
     const result = await solveInWorker<RipUpResult>({ kind: 'ripup', state: referenceCandidate().state, passes: 3, withShapes: false }, '실제 배치에서 Rip-up 전수 탐색 중…')
     liveStateRef.current = result.state
@@ -935,7 +935,7 @@ export default function MacroTetris() {
             <button onClick={solveRipUp} disabled={locked}>Rip-up</button>
           </div>
           <div className="chip-switches" style={{ marginTop: 5 }}>
-            <button className="active replace" onClick={solveRipUpFromReal} disabled={aiOn || playing || busy !== null}>실제→향상</button>
+            <button className="active replace" onClick={solveRipUpFromReal} disabled={aiOn || playing || busy !== null} title="지금 배치를 버리고 실제 signoff 통과 격자(RUN_2026-09-23_12-48-47)로 되돌린 뒤, 바로 Rip-up을 실행합니다">실제 격자로 초기화 + Rip-up</button>
             <button className="active" onClick={solveRipUpShapes} disabled={locked}>Rip-up+모양</button>
             <button onClick={saveCandidate} disabled={partial}>후보 저장</button>
           </div>
@@ -1033,7 +1033,7 @@ export default function MacroTetris() {
           <li><b>SA 자동 진행 (확률적)</b><span>매 스텝 무작위로 하나를 옮겨보고 비용이 낮아지면 수락, 높아져도 온도에 비례한 확률로 수락 — 식으면 다시 데워서 끝나지 않고 계속 돕니다.</span></li>
           <li><b>RePlAce 스타일 (결정론적, 즉시)</b><span>전역 배치(허브로 당기기+서로 반발) → 합법화(밀어내기) 2단계로 한 번에 수렴 — 실제 RePlAce의 정전기 밀도 모델+Nesterov 경사하강 성격을 흉내.</span></li>
           <li><b>Rip-up &amp; Re-place (전수 탐색)</b><span>AI Chip Tetris와 동일한 원리 — 매크로를 하나씩 뽑아 100µm 격자의 모든 legal 위치를 평가하고, 실제로 비용이 낮아질 때만 옮깁니다. 개선되는 이동이 없으면 스스로 멈추는 결정론적 종료.</span></li>
-          <li><b>"실제→향상" = 초기화 + Rip-up 한 번에</b><span>실제로 signoff를 통과한 <code>RUN_2026-09-23_12-48-47</code> 격자에서 시작해 곧바로 Rip-up &amp; Re-place를 실행합니다.</span></li>
+          <li><b>"실제 격자로 초기화 + Rip-up" = 초기화와 개선을 한 번에</b><span>실제로 signoff를 통과한 <code>RUN_2026-09-23_12-48-47</code> 격자에서 시작해 곧바로 Rip-up &amp; Re-place를 실행합니다.</span></li>
         </ol>
       </article>
 
