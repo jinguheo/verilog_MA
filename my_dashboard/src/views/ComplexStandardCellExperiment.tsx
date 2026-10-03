@@ -228,7 +228,9 @@ export default function ComplexStandardCellExperiment() {
     const t = tracks.length && a && b ? tracks.reduce((p, q) => Math.abs(q - (moving ? cur.trackY ?? q : base.trackY ?? q) * frameRules.row / (moving ? rules.row : sourceRules.row)) < Math.abs(p - (moving ? cur.trackY ?? p : base.trackY ?? p) * frameRules.row / (moving ? rules.row : sourceRules.row)) ? q : p) : null
     return { muxW, andW, muxX, andX, tracks, a, b, t, muxFlip: moving && cur.muxFlip, andFlip: moving && cur.andFlip }
   }, [ready, base, cur, scaleStep, moveStep, frameRules.row, frameRules.m1Pitch, frameRules.m1Width, frameRules.railHalf, rules.site, rules.row, sourceRules.row, mux, and])
-  const phase = progress === 0 ? '130 nm 가상 결합 시작 배치' : progress < 35 ? '1/3 · 셀 외곽·핀·트랙 변경' : progress < 100 ? '2/3 · 선택 후보로 재배치' : '3/3 · 90 nm 가상 배치 완료'
+  const targetShort = preset === 'custom' ? '사용자 지정' : '90 nm'
+  const targetLabel = preset === 'custom' ? '사용자 지정 가상 규칙' : '90 nm 가상 PDK'
+  const phase = progress === 0 ? '130 nm 가상 결합 시작 배치' : progress < 35 ? '1/3 · 셀 외곽·핀·트랙 변경' : progress < 100 ? '2/3 · 선택 후보로 재배치' : `3/3 · ${targetShort} 가상 배치 완료`
   const overlap = frame ? frame.muxX < frame.andX + frame.andW && frame.andX < frame.muxX + frame.muxW : false
   const framePath = frame && frame.a && frame.b && frame.t !== null ? {
     h: Math.abs(cx(frame.a) - cx(frame.b)),
@@ -253,7 +255,7 @@ export default function ComplexStandardCellExperiment() {
       if (!c.reject || seen.has(key)) return false
       seen.add(key)
       return true
-    }).slice(0, 8)
+    })
   }, [full])
   const failureExamples = useMemo(() => {
     if (!ready) return []
@@ -397,13 +399,13 @@ export default function ComplexStandardCellExperiment() {
 
   const num = (label: string, value: number, onChange: (v: number) => void, step: number, min = 0.01, max = 5) => <label style={{ display: 'grid', gap: 4, fontSize: 12 }}>{label}<input type="number" min={min} max={max} step={step} value={value}
     onChange={e => onChange(Math.max(min, Math.min(max, Number(e.target.value) || min)))} style={{ width: 80 }}/></label>
-  const three = [base && { c: base, r: sourceRules, t: baseSearch!.tracks, label: '130 nm · 가상 결합 시작 배치' }, kept && { c: kept, r: rules, t: keptSearch!.tracks, label: '90 nm · 가상 규칙만 변경 (배치 유지)' },
-    cur && { c: cur, r: rules, t: full!.tracks, label: `90 nm · 전수 탐색 ${curRank === 1 ? '최적' : `${curRank}위`}` }].filter(Boolean) as { c: Candidate; r: Rules; t: number[]; label: string }[]
+  const three = [base && { c: base, r: sourceRules, t: baseSearch!.tracks, label: '130 nm · 가상 결합 시작 배치' }, kept && { c: kept, r: rules, t: keptSearch!.tracks, label: `${targetShort} · 가상 규칙만 변경 (배치 유지)` },
+    cur && { c: cur, r: rules, t: full!.tracks, label: `${targetShort} · 전수 탐색 ${curRank === 1 ? '최적' : `${curRank}위`}` }].filter(Boolean) as { c: Candidate; r: Rules; t: number[]; label: string }[]
 
   return <section className="card">
-    <div className="card-title"><div><small className="kicker">SKY130A HD → 가상 90 nm PDK · 전수 탐색 · 검증 전</small><h2>복잡한 Standard Cell 실험</h2></div><button type="button" onClick={downloadProposal} disabled={!cur}>후보 JSON 저장</button></div>
-    <p className="chip-note" style={{ marginBottom: 12 }}><b>custom_emux2_1</b> — MUX2와 AND2를 결합한 enable형 2:1 MUX 후보입니다. 논리식은 <code>Y = E · (S ? B : A)</code>입니다. 130 nm의 두 실제 라이브러리 셀을 사용하지만, 결합 셀과 90 nm 형상·규칙은 가상입니다.</p>
-    <p className="chip-note" style={{ marginBottom: 12, padding: 10, borderLeft: '4px solid #b45f06', background: 'var(--surface-muted)' }}><b>가상 실험 안내:</b> 130 nm의 개별 MUX2·AND2 크기와 핀 자료만 실제 SKY130A에서 가져왔습니다. 130 nm 결합 셀의 배치, VPDK-90 규칙, 90 nm 셀 모양과 주황색 배선은 모두 시뮬레이션입니다. 여기의 “규칙 통과”는 제한된 모델 검사이며 실제 PDK DRC·LVS 통과가 아닙니다.</p>
+    <div className="card-title"><div><small className="kicker">SKY130A HD → {targetLabel} · 전수 탐색 · 검증 전</small><h2>복잡한 Standard Cell 실험</h2></div><button type="button" onClick={downloadProposal} disabled={!cur}>후보 JSON 저장</button></div>
+    <p className="chip-note" style={{ marginBottom: 12 }}><b>custom_emux2_1</b> — MUX2와 AND2를 결합한 enable형 2:1 MUX 후보입니다. 논리식은 <code>Y = E · (S ? B : A)</code>입니다. 130 nm의 두 실제 라이브러리 셀을 사용하지만, 결합 셀과 목표 형상·규칙은 가상입니다.</p>
+    <p className="chip-note" style={{ marginBottom: 12, padding: 10, borderLeft: '4px solid #b45f06', background: 'var(--surface-muted)' }}><b>가상 실험 안내:</b> 130 nm의 개별 MUX2·AND2 크기와 핀 자료만 실제 SKY130A에서 가져왔습니다. 130 nm 결합 셀의 배치와 {targetLabel}에 따른 셀 모양·주황색 배선은 모두 시뮬레이션입니다. 여기의 “규칙 통과”는 제한된 모델 검사이며 실제 PDK DRC·LVS 통과가 아닙니다.</p>
     {loadError && <p className="init-error">{loadError}</p>}
     {!data && !loadError && <p className="chip-note">원본 셀 크기와 핀 위치를 불러오는 중입니다.</p>}
     {data && !ready && <p className="init-error">MUX2 또는 AND2의 LEF 크기가 없어 실험할 수 없습니다.</p>}
@@ -417,7 +419,7 @@ export default function ComplexStandardCellExperiment() {
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}><b style={{ fontSize: 12 }}>목표 PDK 규칙</b>
           {(['vpdk90', 'ratio'] as const).map(p => <button key={p} type="button" className={preset === p ? 'active' : ''} aria-pressed={preset === p} onClick={() => applyPreset(p)}>{PRESETS[p].label}</button>)}
           {preset === 'custom' && <span className="chip-note">직접 수정한 규칙</span>}</div>
-        <div className="data-table" style={{ marginTop: 8 }}><table><thead><tr><th>규칙</th><th>SKY130A 자료 기반 130 nm 모델</th><th>목표 (가상, 90 nm)</th><th>변화</th></tr></thead><tbody>
+        <div className="data-table" style={{ marginTop: 8 }}><table><thead><tr><th>규칙</th><th>SKY130A 자료 기반 130 nm 모델</th><th>목표 ({targetLabel})</th><th>변화</th></tr></thead><tbody>
           {([['site 폭 (µm)', 'site'], ['행 높이 (µm)', 'row'], ['met1 pitch (µm)', 'm1Pitch'], ['met1 폭 (µm)', 'm1Width'], ['전원 레일 반폭 (µm)', 'railHalf']] as [string, keyof Rules][]).map(([n, k]) =>
             <tr key={k}><td>{n}</td><td>{round(sourceRules[k])}</td><td>{round(rules[k])}</td><td>{pct(sourceRules[k], rules[k])}</td></tr>)}
           <tr><td>행 높이 / site 폭</td><td>{round(sourceRules.row / sourceRules.site)}</td><td>{round(rules.row / rules.site)}</td><td>{pct(sourceRules.row / sourceRules.site, rules.row / rules.site)}</td></tr>
@@ -506,7 +508,7 @@ export default function ComplexStandardCellExperiment() {
       <div className="card" style={{ padding: 12, marginBottom: 12 }}>
         <div className="card-title" style={{ marginBottom: 6 }}><div><small className="kicker">VIRTUAL FAILURE CASES · 실제 DRC 아님</small><h3>실패한 배치와 실패 규칙도 보기</h3></div></div>
         {failedPlacements.length > 0 ? <>
-          <p className="chip-note" style={{ margin: '0 0 8px' }}>현재 목표 규칙에서 가상 경로를 찾지 못한 배치입니다. 같은 이유로 반복된 후보는 배치당 하나만 표시합니다.</p>
+          <p className="chip-note" style={{ margin: '0 0 8px' }}>현재 목표 규칙에서 가상 경로를 찾지 못한 배치 {failedPlacements.length}/{placementsTried}가지를 모두 표시합니다. 같은 이유로 반복된 후보는 배치당 하나만 표시합니다.</p>
           <div className="data-table" style={{ maxHeight: 220, overflow: 'auto' }}><table><thead><tr><th>탈락 배치</th><th>실패 이유 (가상 모델)</th><th>고칠 것 · 재탐색 전</th><th>X 핀 도형</th></tr></thead><tbody>
             {failedPlacements.map(c => <tr key={c.id}><td>{placementLabel(c)}</td><td style={{ color: '#c0392b' }}>{c.reject}</td><td>{repairFor(c.reject, rules).guidance}</td><td>#{c.xRect + 1}</td></tr>)}
           </tbody></table></div>
@@ -558,15 +560,15 @@ export default function ComplexStandardCellExperiment() {
       </div>}
 
       {gallery.length > 0 && full130 && <div className="card" style={{ padding: 12, marginBottom: 12 }}>
-        <div className="card-title" style={{ marginBottom: 6 }}><div><small className="kicker">ALL {gallery.length} PLACEMENTS · 130 nm vs 90 nm</small><h3>배치 {gallery.length}가지 그림 — 130 nm 가상 결합 후보와 90 nm 가상 PDK 비교</h3></div>
-          <div className="layout-pills">{([['90', '90 nm 순위순'], ['130', '130 nm 순위순'], ['fixed', '배치 번호순']] as const).map(([k, l]) => <button key={k} className={gallerySort === k ? 'active' : ''} onClick={() => setGallerySort(k)}>{l}</button>)}</div></div>
+        <div className="card-title" style={{ marginBottom: 6 }}><div><small className="kicker">ALL {gallery.length} PLACEMENTS · 130 nm vs {targetShort}</small><h3>배치 {gallery.length}가지 그림 — 130 nm 가상 결합 후보와 {targetLabel} 비교</h3></div>
+          <div className="layout-pills">{([['90', `${targetShort} 순위순`], ['130', '130 nm 순위순'], ['fixed', '배치 번호순']] as const).map(([k, l]) => <button key={k} className={gallerySort === k ? 'active' : ''} onClick={() => setGallerySort(k)}>{l}</button>)}</div></div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: 13, marginBottom: 8 }}>
           <span>130 nm 가상 모델 최적 ({best130s.length}개 동점): <b>{best130s.map(g => placementLabel(g.pl)).join(' / ') || '—'}</b></span>
-          <span>90 nm 가상 모델 최적 ({best90s.length}개 동점): <b>{best90s.map(g => placementLabel(g.pl)).join(' / ') || '—'}</b></span>
-          <span>{sameBest ? '최적 배치는 두 공정에서 같음' : <b style={{ color: '#c0392b' }}>규칙이 바뀌며 최적 배치가 달라짐</b>}</span>
+          <span>{targetShort} 가상 모델 최적 ({best90s.length}개 동점): <b>{best90s.map(g => placementLabel(g.pl)).join(' / ') || '—'}</b></span>
+          <span>{sameBest ? '최적 배치는 두 규칙에서 같음' : <b style={{ color: '#c0392b' }}>규칙이 바뀌며 최적 배치가 달라짐</b>}</span>
           <span>순위가 바뀐 배치 <b>{rankChanged}</b> / {gallery.length} (동점은 같은 순위, 좌우 대칭 쌍은 늘 동점)</span>
         </div>
-        <p className="chip-note" style={{ margin: '0 0 8px' }}>각 칸의 위 그림은 SKY130A 개별 셀 자료(site 0.46 · 행 2.72 · met1 pitch 0.34 µm)로 만든 <b>가상 결합 배치</b>, 아래 그림은 가상 90 nm 규칙에서 <b>같은 배치</b>를 그린 것입니다. 같은 축척(µm)으로 크기 차이를 보여주며, 주황색 선은 제한된 핀·트랙 모델에서 고른 경로입니다. 칸을 누르면 해당 90 nm 후보가 아래 비교·애니메이션에 반영됩니다.</p>
+        <p className="chip-note" style={{ margin: '0 0 8px' }}>각 칸의 위 그림은 SKY130A 개별 셀 자료(site 0.46 · 행 2.72 · met1 pitch 0.34 µm)로 만든 <b>가상 결합 배치</b>, 아래 그림은 {targetLabel}에서 <b>같은 배치</b>를 그린 것입니다. 같은 축척(µm)으로 크기 차이를 보여주며, 주황색 선은 제한된 핀·트랙 모델에서 고른 경로입니다. 칸을 누르면 해당 목표 후보가 아래 비교·애니메이션에 반영됩니다.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: 10, maxHeight: 900, overflow: 'auto', paddingRight: 4 }}>
           {gallerySorted.map(g => { const isLib = g.k === placementKey(BASELINE_PLACEMENT), sel = cur && placementKey(cur) === g.k
             const border = g.rank90 === 1 ? '#1D9E75' : g.rank130 === 1 ? '#7F77DD' : sel ? 'var(--text-primary)' : 'var(--border-strong)'
@@ -574,13 +576,13 @@ export default function ComplexStandardCellExperiment() {
               <div style={{ fontSize: 11, fontWeight: 700 }}>#{g.idx + 1} · {placementLabel(g.pl)}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, margin: '3px 0' }}>
                 {g.rank130 === 1 && <span style={{ fontSize: 10, padding: '0 6px', borderRadius: 8, background: '#7F77DD', color: '#fff' }}>130 최적</span>}
-                {g.rank90 === 1 && <span style={{ fontSize: 10, padding: '0 6px', borderRadius: 8, background: '#1D9E75', color: '#fff' }}>90 최적</span>}
+                {g.rank90 === 1 && <span style={{ fontSize: 10, padding: '0 6px', borderRadius: 8, background: '#1D9E75', color: '#fff' }}>{targetShort} 최적</span>}
                 {isLib && <span style={{ fontSize: 10, padding: '0 6px', borderRadius: 8, background: 'var(--surface-muted)' }}>130 시작 배치 (가상)</span>}
               </div>
               <small style={{ color: '#7F77DD' }}>130 nm · {g.rank130 ?? '—'}위 · 길이 {g.c130 ? round(g.c130.length) : '—'} µm · 꺾임 {g.c130?.bends ?? '—'}</small>
               {g.c130 ? <Snapshot c={g.c130} rules={sourceRules} tracks={full130.tracks} pxPerUm={Math.min(40, 220 / galleryMaxW)} maxW={galleryMaxW} maxH={Math.max(sourceRules.row, rules.row)} label={`130 nm 가상 결합 ${placementLabel(g.pl)}`}/> : <p className="chip-note" style={{ color: '#c0392b' }}>가상 모델 실패: {full130.all.find(c => placementKey(c) === g.k)?.reject ?? '경로 없음'}</p>}
-              <small style={{ color: '#1D9E75' }}>90 nm · {g.rank90 ?? '—'}위 · 길이 {g.c90 ? round(g.c90.length) : '—'} µm · 꺾임 {g.c90?.bends ?? '—'}</small>
-              {g.c90 ? <Snapshot c={g.c90} rules={rules} tracks={full.tracks} pxPerUm={Math.min(40, 220 / galleryMaxW)} maxW={galleryMaxW} maxH={Math.max(sourceRules.row, rules.row)} label={`90 nm 가상 PDK ${placementLabel(g.pl)}`}/> : <p className="chip-note" style={{ color: '#c0392b' }}>가상 모델 실패: {full.all.find(c => placementKey(c) === g.k)?.reject ?? '경로 없음'}</p>}
+              <small style={{ color: '#1D9E75' }}>{targetShort} · {g.rank90 ?? '—'}위 · 길이 {g.c90 ? round(g.c90.length) : '—'} µm · 꺾임 {g.c90?.bends ?? '—'}</small>
+              {g.c90 ? <Snapshot c={g.c90} rules={rules} tracks={full.tracks} pxPerUm={Math.min(40, 220 / galleryMaxW)} maxW={galleryMaxW} maxH={Math.max(sourceRules.row, rules.row)} label={`${targetLabel} ${placementLabel(g.pl)}`}/> : <p className="chip-note" style={{ color: '#c0392b' }}>가상 모델 실패: {full.all.find(c => placementKey(c) === g.k)?.reject ?? '경로 없음'}</p>}
               {g.c90 && g.c130 && <div style={{ fontSize: 11, marginTop: 2 }}>
                 길이 <b>{pct(g.c130.length, g.c90.length)}</b> · 면적 <b>{pct(g.c130.area, g.c90.area)}</b> · 세로 {round(g.c130.vLen)}→{round(g.c90.vLen)} µm
                 {g.rank130 !== g.rank90 && <> · 순위 {g.rank130}→<b style={{ color: (g.rank90 ?? 99) < (g.rank130 ?? 99) ? '#1D9E75' : '#c0392b' }}>{g.rank90}</b></>}</div>}
@@ -596,7 +598,7 @@ export default function ComplexStandardCellExperiment() {
           {three.map(s => <div key={s.label} style={{ minWidth: 0 }}><small><b>{s.label}</b><br/>{placementLabel(s.c)}</small><Snapshot c={s.c} rules={s.r} tracks={s.t} pxPerUm={Math.min(48, 300 / maxW)} maxW={maxW} maxH={maxH} label={s.label}/></div>)}
         </div>
         <p className="chip-note" style={{ margin: '4px 0 0' }}>점선 = 결합 셀 외곽, 아래 파란 띠·위 빨간 띠 = VGND/VPWR met1 레일, 옅은 가로줄 = 사용 가능한 met1 트랙, 주황 = 내부 넷 M 경로. 앞의 두 그림도 배선(핀 사각형·트랙)은 전수 탐색으로 고른 최선입니다.</p>
-        <div className="data-table" style={{ marginTop: 10 }}><table><thead><tr><th>항목</th>{three.map(s => <th key={s.label}>{s.label}</th>)}<th>130 가상 시작 → 90 가상 선택</th></tr></thead><tbody>
+        <div className="data-table" style={{ marginTop: 10 }}><table><thead><tr><th>항목</th>{three.map(s => <th key={s.label}>{s.label}</th>)}<th>130 가상 시작 → {targetShort} 가상 선택</th></tr></thead><tbody>
           <tr><td colSpan={5}><b>모양</b></td></tr>
           <tr><td>결합 셀 외곽 (µm)</td>{three.map(s => <td key={s.label}>{round(s.c.width)} × {s.r.row}</td>)}<td>폭 {pct(base.width, cur.width)} · 높이 {pct(sourceRules.row, rules.row)}</td></tr>
           <tr><td>면적 (µm²)</td>{three.map(s => <td key={s.label}>{round(s.c.area)}</td>)}<td>{pct(base.area, cur.area)}</td></tr>
@@ -615,14 +617,14 @@ export default function ComplexStandardCellExperiment() {
       </div>}
 
       {frame && base && cur && <div className="card" style={{ padding: 12, overflowX: 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}><b style={{ fontSize: 12 }}>130 → 90 nm 변화 · {phase}</b><button type="button" onClick={() => { setProgress(0); setPlaying(true) }}>변화 재생</button><button type="button" onClick={() => setPlaying(false)} disabled={!playing}>일시 정지</button><label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>진행 <input type="range" min={0} max={100} value={progress} onChange={e => { setPlaying(false); setProgress(Number(e.target.value)) }}/>{progress}%</label></div>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}><b style={{ fontSize: 12 }}>130 nm → {targetShort} 변화 · {phase}</b><button type="button" onClick={() => { setProgress(0); setPlaying(true) }}>변화 재생</button><button type="button" onClick={() => setPlaying(false)} disabled={!playing}>일시 정지</button><label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>진행 <input type="range" min={0} max={100} value={progress} onChange={e => { setPlaying(false); setProgress(Number(e.target.value)) }}/>{progress}%</label></div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginTop: 8, fontSize: 12 }}>
           <span>현재 가상 외곽 <b>{round(Math.max(frame.muxX + frame.muxW, frame.andX + frame.andW))} × {round(frameRules.row)} µm</b></span>
           <span>가상 met1 트랙 <b>{frame.tracks.length}개</b></span>
           <span>표시 경로 <b>{framePath ? `${round(framePath.h + framePath.v)} µm` : '없음'}</b></span>
           <span>배치 상태 <b>{overlap ? '전환 중 겹침' : '외곽 겹침 없음'}</b></span>
         </div>
-        <svg viewBox={`0 0 ${maxW * scale + pad * 2} ${maxH * scale + pad * 2}`} role="img" aria-label="130nm 가상 결합 배치에서 90nm 가상 후보로 변화하는 셀 외곽, 핀, met1 트랙과 내부 연결" style={{ display: 'block', width: '100%', minWidth: 380, maxWidth: 800, margin: '10px auto' }}>
+        <svg viewBox={`0 0 ${maxW * scale + pad * 2} ${maxH * scale + pad * 2}`} role="img" aria-label={`130 nm 가상 결합 배치에서 ${targetLabel} 후보로 변화하는 셀 외곽, 핀, met1 트랙과 내부 연결`} style={{ display: 'block', width: '100%', minWidth: 380, maxWidth: 800, margin: '10px auto' }}>
           <rect x={sx(0)} y={sy(sourceRules.row)} width={base.width * scale} height={sourceRules.row * scale} fill="none" stroke="var(--text-secondary)" strokeDasharray="6 4" opacity={0.5}/>
           {frame.tracks.map(y => <line key={y} x1={sx(Math.min(frame.muxX, frame.andX))} x2={sx(Math.max(frame.muxX + frame.muxW, frame.andX + frame.andW))} y1={sy(y)} y2={sy(y)} stroke="#378ADD" strokeWidth={1} opacity={0.25}/>)}
           {[{ cell: mux!, x: frame.muxX, width: frame.muxW, flip: frame.muxFlip, label: 'MUX2', color: '#378ADD' }, { cell: and!, x: frame.andX, width: frame.andW, flip: frame.andFlip, label: 'AND2', color: '#1D9E75' }].map(item => <g key={item.label}>
@@ -644,7 +646,7 @@ export default function ComplexStandardCellExperiment() {
       <p className="chip-note" style={{ marginTop: 10 }}><b>탐색 모델의 가정:</b> 셀마다 SKY130A의 site 수를 유지하고, 핀 도형은 셀 크기에 비례해 이동(FN이면 좌우 반전)합니다. 내부 넷 M만 met1 트랙 하나로 연결하고 핀 도형을 배선 시작점으로 쓸 수 있다고 가정합니다. 다른 신호 넷, 셀 내부 배선 장애물(OBS), 비아와 간격의 상세 규칙은 검사하지 않습니다. 이는 소자 수준의 셀 내부 P&R이나 실제 DRC가 아닙니다.</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 10, marginTop: 12 }}>
-        <div className="card" style={{ padding: 12 }}><small>원본 셀의 실제 GDS 렌더 · 참고</small><div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>{SOURCE.map(name => <figure key={name} style={{ margin: 0 }}><img src={`/stdcells/layout/sky130_fd_sc_hd/${name}.png`} alt={`SKY130A ${name} 원본 GDS 렌더`} style={{ maxWidth: 180, maxHeight: 120, background: '#fff' }}/><figcaption style={{ fontSize: 11 }}>{name}</figcaption></figure>)}</div><small>90 nm GDS는 아직 생성되지 않았습니다.</small></div>
+        <div className="card" style={{ padding: 12 }}><small>원본 셀의 실제 GDS 렌더 · 참고</small><div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>{SOURCE.map(name => <figure key={name} style={{ margin: 0 }}><img src={`/stdcells/layout/sky130_fd_sc_hd/${name}.png`} alt={`SKY130A ${name} 원본 GDS 렌더`} style={{ maxWidth: 180, maxHeight: 120, background: '#fff' }}/><figcaption style={{ fontSize: 11 }}>{name}</figcaption></figure>)}</div><small>{targetLabel}의 GDS는 생성되지 않았습니다.</small></div>
         <div className="card" style={{ padding: 12 }}><small>재사용한 원본 소자</small><h3 style={{ margin: '4px 0' }}>{mux!.devices.length + and!.devices.length}개</h3><small>두 SPICE 셀의 소자 수 합계 · 새 레이아웃 미생성</small></div>
       </div>
       <div className="card" style={{ padding: 12, marginTop: 12 }}>
@@ -654,7 +656,7 @@ export default function ComplexStandardCellExperiment() {
           <span>선택값 <b>{selected}</b> → 출력 <b>Y = {output}</b></span>
         </div>
       </div>
-      <p className="chip-note" style={{ marginTop: 12 }}><b>판정:</b> 기존 셀의 단순 크기 변경만으로는 90 nm용 단일 표준 셀이 완성되지 않습니다. 새 규칙에 맞는 소자·핀·전원 레일·내부 배선 P&R이 필요할 수 있습니다. 실제 목표 PDK가 생기면 GDS를 만든 뒤 DRC·LVS·기생 추출·타이밍 특성화를 해야 하며, 현재 화면은 이들 검증을 실행하지 않습니다.</p>
+      <p className="chip-note" style={{ marginTop: 12 }}><b>판정:</b> 기존 셀의 단순 크기 변경만으로는 {targetLabel}에 대응하는 단일 표준 셀이 완성되지 않습니다. 새 규칙에 맞는 소자·핀·전원 레일·내부 배선 P&R이 필요할 수 있습니다. 실제 목표 PDK가 생기면 GDS를 만든 뒤 DRC·LVS·기생 추출·타이밍 특성화를 해야 하며, 현재 화면은 이들 검증을 실행하지 않습니다.</p>
     </>}
   </section>
 }
