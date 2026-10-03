@@ -226,6 +226,24 @@ export default function ComplexStandardCellExperiment() {
   const placementsTried = full ? new Set(full.all.map(c => `${c.order}|${c.muxFlip}|${c.andFlip}|${c.gapSites}`)).size : 0
   const rejectedTotal = full ? Object.values(full.rejected).reduce((s, v) => s + v, 0) : 0
   const bestPlacementCount = full ? new Map(full.valid.map(c => [`${c.order}|${c.muxFlip}|${c.andFlip}|${c.gapSites}`, c])).size : 0
+  const failedPlacements = useMemo(() => {
+    const seen = new Set<string>()
+    return (full?.all ?? []).filter(c => {
+      const key = placementKey(c)
+      if (!c.reject || seen.has(key)) return false
+      seen.add(key)
+      return true
+    }).slice(0, 8)
+  }, [full])
+  const failureExamples = useMemo(() => {
+    if (!ready) return []
+    const examples = [
+      { label: '배선 pitch가 폭보다 작음', changed: 'met1 pitch = 폭의 90%', rules: { ...rules, m1Pitch: round(rules.m1Width * 0.9) } },
+      { label: '전원 레일 사이에 트랙 없음', changed: '행 높이 = 레일 반폭 × 2 (pitch는 폭보다 크게 유지)',
+        rules: { ...rules, row: round(rules.railHalf * 2), m1Pitch: Math.max(rules.m1Pitch, round(rules.m1Width + 0.01)) } },
+    ]
+    return examples.map(example => ({ ...example, result: searchAll(mux!, and!, example.rules, [BASELINE_PLACEMENT], weights) }))
+  }, [ready, mux, and, rules, weights])
 
   // ---- timing analysis: measure the real search, then extrapolate the candidate count to larger composites ----
   const bench = useMemo(() => {
@@ -463,6 +481,27 @@ export default function ComplexStandardCellExperiment() {
         <p className="chip-note" style={{ margin: '6px 0 0' }}>상위 15개를 표시합니다. 행을 누르면 그 후보가 아래 비교·애니메이션에 반영됩니다. 같은 비용이면 면적 → 길이 순으로 정렬합니다.</p>
       </div>
 
+      <div className="card" style={{ padding: 12, marginBottom: 12 }}>
+        <div className="card-title" style={{ marginBottom: 6 }}><div><small className="kicker">VIRTUAL FAILURE CASES · 실제 DRC 아님</small><h3>실패한 배치와 실패 규칙도 보기</h3></div></div>
+        {failedPlacements.length > 0 ? <>
+          <p className="chip-note" style={{ margin: '0 0 8px' }}>현재 목표 규칙에서 가상 경로를 찾지 못한 배치입니다. 같은 이유로 반복된 후보는 배치당 하나만 표시합니다.</p>
+          <div className="data-table" style={{ maxHeight: 220, overflow: 'auto' }}><table><thead><tr><th>탈락 배치</th><th>실패 이유 (가상 모델)</th><th>X 핀 도형</th></tr></thead><tbody>
+            {failedPlacements.map(c => <tr key={c.id}><td>{placementLabel(c)}</td><td style={{ color: '#c0392b' }}>{c.reject}</td><td>#{c.xRect + 1}</td></tr>)}
+          </tbody></table></div>
+        </> : <p className="chip-note" style={{ margin: '0 0 8px' }}>현재 목표 규칙에서는 이 제한된 모델의 모든 배치에서 경로를 찾았습니다. 이것은 실제 DRC 통과를 뜻하지 않습니다.</p>}
+        <p className="chip-note" style={{ margin: '0 0 8px' }}>아래는 현재 가상 PDK 값을 한 항목씩 일부러 바꾼 <b>독립적인 실패 시뮬레이션</b>입니다. 실제 90 nm 공정 규칙이나 발견된 제조 결함이 아닙니다.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(250px,1fr))', gap: 10 }}>
+          {failureExamples.map(example => { const failed = example.result.all.find(c => c.reject)
+            return <div key={example.label} className="card" style={{ padding: 10, minWidth: 0 }}>
+              <b style={{ fontSize: 12 }}>{example.label}</b><div style={{ fontSize: 11, margin: '5px 0' }}>{example.changed} · 후보 {example.result.all.length}개 중 가상 모델 탈락 {example.result.all.filter(c => c.reject).length}개</div>
+              <div style={{ color: '#c0392b', fontSize: 12 }}>결과: {failed?.reject ?? '이 설정에서는 경로가 남아 있음'}</div>
+              {failed && <Snapshot c={failed} rules={example.rules} tracks={example.result.tracks} pxPerUm={Math.min(40, 240 / failed.width)} maxW={failed.width} maxH={Math.max(sourceRules.row, example.rules.row)} label={`${example.label} 가상 실패`}/>}
+              <button type="button" onClick={() => { setRules(example.rules); setPreset('custom'); setProgress(100) }} style={{ marginTop: 6 }}>이 실패 조건 적용</button>
+            </div> })}
+        </div>
+        <p className="chip-note" style={{ margin: '8px 0 0' }}>실패 조건을 적용하면 위 탐색 결과와 탈락 이유가 함께 갱신됩니다. 기본 상태로 돌아가려면 위의 <b>가상 90 nm PDK (VPDK-90)</b> 버튼을 누르세요.</p>
+      </div>
+
       {scanInfo && <div className="card" style={{ padding: 12, marginBottom: 12 }}>
         <div className="card-title" style={{ marginBottom: 6 }}><div><small className="kicker">LIVE SCAN</small><h3>탐색 과정 — 후보를 하나씩 평가하며 최선이 바뀌는 과정</h3></div>
           <div style={{ display: 'flex', gap: 8 }}><button type="button" onClick={() => setScanI(0)}>탐색 과정 재생</button>{scanI !== null && <button type="button" onClick={() => setScanI(null)}>결과로 건너뛰기</button>}</div></div>
@@ -515,9 +554,9 @@ export default function ComplexStandardCellExperiment() {
                 {isLib && <span style={{ fontSize: 10, padding: '0 6px', borderRadius: 8, background: 'var(--surface-muted)' }}>130 시작 배치 (가상)</span>}
               </div>
               <small style={{ color: '#7F77DD' }}>130 nm · {g.rank130 ?? '—'}위 · 길이 {g.c130 ? round(g.c130.length) : '—'} µm · 꺾임 {g.c130?.bends ?? '—'}</small>
-              {g.c130 ? <Snapshot c={g.c130} rules={sourceRules} tracks={full130.tracks} pxPerUm={Math.min(40, 220 / galleryMaxW)} maxW={galleryMaxW} maxH={Math.max(sourceRules.row, rules.row)} label={`130 nm 가상 결합 ${placementLabel(g.pl)}`}/> : <p className="chip-note">가상 모델에서 경로 없음</p>}
+              {g.c130 ? <Snapshot c={g.c130} rules={sourceRules} tracks={full130.tracks} pxPerUm={Math.min(40, 220 / galleryMaxW)} maxW={galleryMaxW} maxH={Math.max(sourceRules.row, rules.row)} label={`130 nm 가상 결합 ${placementLabel(g.pl)}`}/> : <p className="chip-note" style={{ color: '#c0392b' }}>가상 모델 실패: {full130.all.find(c => placementKey(c) === g.k)?.reject ?? '경로 없음'}</p>}
               <small style={{ color: '#1D9E75' }}>90 nm · {g.rank90 ?? '—'}위 · 길이 {g.c90 ? round(g.c90.length) : '—'} µm · 꺾임 {g.c90?.bends ?? '—'}</small>
-              {g.c90 ? <Snapshot c={g.c90} rules={rules} tracks={full.tracks} pxPerUm={Math.min(40, 220 / galleryMaxW)} maxW={galleryMaxW} maxH={Math.max(sourceRules.row, rules.row)} label={`90 nm 가상 PDK ${placementLabel(g.pl)}`}/> : <p className="chip-note">가상 모델에서 경로 없음</p>}
+              {g.c90 ? <Snapshot c={g.c90} rules={rules} tracks={full.tracks} pxPerUm={Math.min(40, 220 / galleryMaxW)} maxW={galleryMaxW} maxH={Math.max(sourceRules.row, rules.row)} label={`90 nm 가상 PDK ${placementLabel(g.pl)}`}/> : <p className="chip-note" style={{ color: '#c0392b' }}>가상 모델 실패: {full.all.find(c => placementKey(c) === g.k)?.reject ?? '경로 없음'}</p>}
               {g.c90 && g.c130 && <div style={{ fontSize: 11, marginTop: 2 }}>
                 길이 <b>{pct(g.c130.length, g.c90.length)}</b> · 면적 <b>{pct(g.c130.area, g.c90.area)}</b> · 세로 {round(g.c130.vLen)}→{round(g.c90.vLen)} µm
                 {g.rank130 !== g.rank90 && <> · 순위 {g.rank130}→<b style={{ color: (g.rank90 ?? 99) < (g.rank130 ?? 99) ? '#1D9E75' : '#c0392b' }}>{g.rank90}</b></>}</div>}
