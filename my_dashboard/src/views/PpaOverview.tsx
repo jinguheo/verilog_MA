@@ -1,4 +1,5 @@
 import { ReactNode } from 'react'
+import AntennaExplainer from './AntennaExplainer'
 
 // "PPA 실험 요약" 탭 — PPA1/2/3의 목적, 요구 사항, 블록 그림, 진행 상황을 한 화면에 모은다.
 // 수치와 상태는 PPA 실험 1/2/3 탭, analog/README.md, ppa3_adc_capture 실행 로그에서 확인한 값만 쓴다.
@@ -232,5 +233,9 @@ export default function PpaOverview() {
       ]}
       note="지금까지의 라우팅 결과는 '후보 기준선'이며 signoff 결과가 아닙니다. vendor GDS는 SHA-256 전후 동일하게 보호되고 검증 복사본만 변경됩니다."
     />
+    <section className="card">
+      <div className="card-title"><div><small className="kicker">GLOSSARY</small><h3>PPA 3에서 남은 antenna 2건이란?</h3></div><span className="connection">용어 설명</span></div>
+      <AntennaExplainer defaultOpen />
+    </section>
   </section>
 }

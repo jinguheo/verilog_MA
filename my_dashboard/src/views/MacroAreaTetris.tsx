@@ -18,6 +18,7 @@ import {
 import { drawFreeCell, drawTileBox, LEGEND_SWATCH, TETRIS_COLORS } from '../game/tetrisPalette'
 import UsageGuide from './UsageGuide'
 import type { AreaRequest, AreaResponse } from '../game/macroAreaWorker'
+import AntennaExplainer from './AntennaExplainer'
 
 type Cur = { die: Die; state: State }
 type TrialRec = { n: number; plan: TrialPlan; attempts: ShapeAttempt[]; accepted: { die: Die; util: number } | null; note: string; converged: boolean }
@@ -206,6 +207,16 @@ const RESHAPE_BASE = { w: 800, h: 800 }
 const dieMm2 = (d: [number, number]) => d[0] * d[1] / 1e6
 const setupBadge = (wns: number) => wns < 0 ? <span className="warning-badge">setup 위반</span> : <span className="ok-badge">setup 통과</span>
 const signedNs = (v: number, d = 3) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(d)}`
+// 2026-10-04: 타이밍 완화(axi_clk 52 -> 54 ns) 후 재실행 결과 + antenna 수리 강화 재실행 (tools/wsl/118~123, logs/reshape_try_*.summary)
+const AXI54_RUNS: { shape: string; run: string; setup: string; hold: string; drc: string; antenna: string; status: string; ok: boolean }[] = [
+  { shape: '650×985', run: 'axi54 (전체 flow)', setup: '+0.436', hold: '+0.125', drc: 'route 0 · Magic 0 · KLayout 0 · LVS 0', antenna: '2 nets', status: '타이밍·DRC·LVS 통과 / antenna 미달', ok: false },
+  { shape: '590×1085', run: 'axi54 (STA까지)', setup: '+1.357', hold: '-', drc: 'route 0 (Magic/KLayout/LVS 미실행)', antenna: '1 net (net37, 상한의 2.2배)', status: 'antenna 미달', ok: false },
+  { shape: '590×1085', run: 'axi54ant · 수리 margin 30 / 반복 6', setup: '+1.395', hold: '-', drc: 'route 0 (Magic/KLayout/LVS 미실행)', antenna: '1 net (net456, 1.58배 — 다른 net으로 이동)', status: 'antenna 미달', ok: false },
+  { shape: '450×1422', run: 'axi54 (STA까지)', setup: '+0.358', hold: '-', drc: 'route 0 (Magic/KLayout/LVS 미실행)', antenna: '1 net (net1017)', status: 'antenna 미달', ok: false },
+  { shape: '450×1422', run: 'axi54ant · 수리 margin 30 / 반복 6', setup: '+0.492', hold: '-', drc: 'route 0 (Magic/KLayout/LVS 미실행)', antenna: '1 net (net285, 1.27배 — 다른 net으로 이동)', status: 'antenna 미달', ok: false },
+  { shape: '590×1085 · 450×1422', run: 'axi54ant2 · 수리 margin 60 / 반복 10', setup: '실행 중', hold: '-', drc: '-', antenna: '실행 중 (2026-10-04 22:48 시작, 23:40경 완료 예정)', status: '결과 대기', ok: false },
+]
+
 const RESHAPE_SHAPES = [
   { w: 800, h: 800, file: '800x800', die: [3700, 2100] as [number, number], wns: 0.994, hold: 0.125, label: '800×800 (현재, 실제 signoff)', note: '실제 완주 run — DRC 0 · LVS 0' },
   { w: 650, h: 985, file: '650x985', die: [3100, 2470] as [number, number], wns: -0.139, hold: 0.125, label: '650×985', note: '배치 legal · displacement 0.0µm' },
@@ -863,6 +874,12 @@ export default function MacroAreaTetris() {
           <tr><td>450×1422</td><td><span className="ok-badge">0 / 0 / 0</span></td><td><span className="ok-badge">0</span></td><td><span className="warning-badge">−0.460</span></td><td>+0.138</td><td><b>0</b></td><td>12단</td><td>849,663µm (+3.1%)</td><td>6.559 (+6.7%)</td></tr>
         </tbody></table></div>
         <p className="rule-disclaimer"><b>읽는 법:</b> 4개 모두 <b>배치·라우팅·DRC·LVS는 깨끗</b>합니다 — 모양을 바꿔도 물리적으로는 문제없이 만들어집니다. 다만 같은 SDC·같은 설정으로는 <b>setup 타이밍이 닫히지 않습니다</b>(기존 800×800은 +0.99ns). 위반은 전부 최악 코너(ss_100C_1v60)의 <code>axi_clk</code> 레지스터↔레지스터 경로 1~4개이고, 원인은 배치 불가가 아니라 async FIFO read pointer(<code>u_cdc_fifo.fifo_rptr_q</code>) 경로에 <b>hold 수정용 delay 셀(dlygate4sd3, 각 1.1~1.9ns)이 11~18개 직렬로 끼어든 것</b>입니다(기존은 1개). 모양별 특징: <b>650×985</b> 위반이 가장 작고(−0.14, 경로 2개) 배선·전력 증가도 가장 작음 · <b>590×1085</b> 다이 면적은 가장 작지만 배선 +4.1%·전력 +10.6%로 가장 비쌈 · <b>500×1280</b> 배선·인스턴스는 기존과 같은데 타이밍이 가장 나쁨(−2.69, 경로 4개, hold 18단) · <b>450×1422</b> 안테나 위반 0으로 유일하게 깨끗하지만 타이밍 −0.46. 따라서 이 4개는 &quot;signoff 통과 후보&quot;가 아니라 <b>hold repair 설정을 조정해 타이밍을 다시 닫아야 하는 후보</b>입니다 — 단일 seed 1회 결과라 이 순위가 필연적이라고 단정할 수는 없습니다.</p>
+        <h4 style={{ margin: '14px 0 4px', fontSize: 13 }}>타이밍 완화(axi_clk 52 → 54 ns) 후 재실행 + antenna 수리 강화 (2026-10-04)</h4>
+        <div className="data-table"><table><thead><tr><th>chan_top 다이</th><th>실행</th><th>setup WNS (ns)</th><th>hold WNS</th><th>DRC / LVS</th><th>antenna</th><th>판정</th></tr></thead><tbody>
+          {AXI54_RUNS.map((r, i) => <tr key={i}><td>{r.shape}</td><td>{r.run}</td><td><b style={{ color: r.setup.startsWith('+') ? '#1D9E75' : undefined }}>{r.setup}</b></td><td>{r.hold}</td><td>{r.drc}</td><td>{r.antenna}</td><td>{r.ok ? <span className="ok-badge">닫힘</span> : <span className="warning-badge">{r.status}</span>}</td></tr>)}
+        </tbody></table></div>
+        <p className="rule-disclaimer"><b>읽는 법:</b> 클럭만 52 → 54 ns로 완화하면 <b>setup은 세 후보 모두 통과</b>합니다(+0.36 ~ +1.40ns). 다만 이것은 설계를 고친 것이 아니라 <b>제약을 완화</b>한 것이라 &quot;타이밍 닫힘&quot;으로 인정할지는 별도 결정이 필요합니다. 그리고 <b>antenna가 1~2건 남아</b> 모두 signoff 기준(0건)에 못 미칩니다. 수리를 강화하면 원래 위반 net은 고쳐지지만 detailed routing이 배선을 다시 바꾸면서 <b>다른 net 하나</b>가 새로 걸립니다(상한 대비 2.2배 → 1.58배, 1.27배로 점점 작아지는 중). antenna와 RC의 차이는 아래 설명을 참고하세요.</p>
+        <AntennaExplainer />
         <p className="chip-note" style={{ marginTop: 8 }}>초록 가로줄은 전원망(PDN) 스트랩, 보라색 칸은 표준셀(밝을수록 촘촘), 진한 세로 줄무늬는 tap/endcap 셀 열 — 라우팅 전이라 배선은 안 보입니다. 스크린샷은 <code>samples/sample_test_4/asic/chan_top/config_reshape_*.json</code>(각 W×H, 나머지는 config.json과 동일) + <code>tools/wsl/114_render_chan_top_reshapes.sh</code>로 재현 가능합니다.</p>
       </article>
     </section>

@@ -182,3 +182,9 @@
 .ppaov-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .ppaov-legend i { width: 16px; height: 10px; border: 1.5px solid; border-radius: 3px; display: inline-block; }
 @media (max-width: 900px) { .ppaov-cols { grid-template-columns: 1fr; } }
+
+/* 안테나 설명 블록 */
+.ant-explain { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-muted); padding: var(--sp-3) var(--sp-4); margin-top: var(--sp-3); }
+.ant-explain > summary { cursor: pointer; font-size: var(--text-sm); color: var(--text); }
+.ant-explain-body { display: grid; gap: var(--sp-3); margin-top: var(--sp-3); }
+.ant-explain-body p { margin: 0; color: var(--text-secondary); line-height: 1.65; font-size: var(--text-sm); }
