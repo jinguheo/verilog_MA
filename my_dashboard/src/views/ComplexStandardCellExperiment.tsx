@@ -164,7 +164,9 @@ function Snapshot({ c, rules, tracks, pxPerUm, maxW, maxH, label }: { c: Candida
   </svg>
 }
 
-export default function ComplexStandardCellExperiment() {
+// level='five': 5개 이하(2셀 MUX+AND 전수 탐색 + 2~5셀 후보군), level='ten': 10개 이하(6~10셀 후보군 + SA, 시간 분석),
+// level='twenty': 20개 이상(20~50셀 후보군 + SA).
+export default function ComplexStandardCellExperiment({ level = 'five' }: { level?: 'five' | 'ten' | 'twenty' }) {
   const [data, setData] = useState<SourceData | null>(null)
   const [loadError, setLoadError] = useState('')
   const [preset, setPreset] = useState<'vpdk90' | 'ratio' | 'custom'>('vpdk90')
@@ -282,13 +284,13 @@ export default function ComplexStandardCellExperiment() {
   // Measured per-placement evaluation time t_p(n) for the real-cell circuit of the SA experiment; exhaustive time
   // = N_placements(n) × t_p(n), SA time = M(n) moves × t_p(n). The verdict compares the two measured-based times.
   const scaling = useMemo(() => {
-    if (!data) return []
+    if (!data || level !== 'ten') return []
     return [2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => {
       const tp = benchPlacement(data, n, rules, weights)
       const placements = placementsOf(n), moves = saMoves(n)
       return { n, nets: netCount(n), placements, moves, tp, tEx: tp === null ? NaN : placements * tp / 1e6, tSa: tp === null ? NaN : moves * tp / 1e6 }
     })
-  }, [data, rules, weights])
+  }, [data, rules, weights, level])
   const YEAR = 86400 * 365
   const verdictRow = (r: { tEx: number; tSa: number }) => !Number.isFinite(r.tEx) ? { t: '—', c: undefined }
     : r.tEx >= YEAR ? { t: '전수 비현실적 → 휴리스틱', c: '#8e1b10' } : r.tEx <= r.tSa ? { t: '전수 (이 모델의 최적 보장)', c: '#1D9E75' } : { t: 'SA 추정 시간이 짧음', c: '#c0392b' }
@@ -403,17 +405,19 @@ export default function ComplexStandardCellExperiment() {
     cur && { c: cur, r: rules, t: full!.tracks, label: `${targetShort} · 전수 탐색 ${curRank === 1 ? '최적' : `${curRank}위`}` }].filter(Boolean) as { c: Candidate; r: Rules; t: number[]; label: string }[]
 
   return <section className="card">
-    <div className="card-title"><div><small className="kicker">SKY130A HD → {targetLabel} · 전수 탐색 · 검증 전</small><h2>복잡한 Standard Cell 실험</h2></div><button type="button" onClick={downloadProposal} disabled={!cur}>후보 JSON 저장</button></div>
-    <p className="chip-note" style={{ marginBottom: 12 }}><b>custom_emux2_1</b> — MUX2와 AND2를 결합한 enable형 2:1 MUX 후보입니다. 논리식은 <code>Y = E · (S ? B : A)</code>입니다. 130 nm의 두 실제 라이브러리 셀을 사용하지만, 결합 셀과 목표 형상·규칙은 가상입니다.</p>
+    <div className="card-title"><div><small className="kicker">SKY130A HD → {targetLabel} · 전수 탐색 · 검증 전</small><h2>{level === 'five' ? '복잡한 표준셀 실험 (5개 이하)' : level === 'ten' ? '더 복잡한 표준셀 실험 (10개 이하)' : '매우 복잡한 표준셀 실험 (20개 이상)'}</h2></div><button type="button" onClick={downloadProposal} disabled={!cur}>후보 JSON 저장</button></div>
+    {level === 'ten' && <p className="chip-note" style={{ marginBottom: 12 }}><b>6~10개 표준셀</b>로 이루어진 복합 셀 후보(가산기·카운터·ALU 슬라이스 등)를 만들어 봅니다. 배치 가짓수가 천만 ~ 수십조라 전수 탐색이 어려워 <b>SA</b>로 찾고, 6셀 후보는 전수 탐색으로 정답과 대조합니다. 목표 규칙은 가상 PDK이고 모든 셀·핀은 실제 SKY130A HD입니다. 5개 이하 후보와 2셀 전수 탐색은 <b>복잡한 표준셀 실험 (5개 이하)</b> 탭에, 20~50셀은 <b>매우 복잡한 표준셀 실험 (20개 이상)</b> 탭에 있습니다.</p>}
+    {level === 'twenty' && <p className="chip-note" style={{ marginBottom: 12 }}><b>20~50개 표준셀</b>로 이루어진 복합 셀 후보(4·8비트 가산기, 8비트 카운터, 4비트 ALU 등)입니다. 배치 가짓수가 10^18 이상이라 전수 탐색은 불가능하고 검증할 정답도 없어, <b>SA</b>의 결과가 seed마다 같은 답에 모이는지로 신뢰를 가늠합니다. SA의 이동 횟수는 셀 수에 비례해서만 늘기 때문에 셀이 많을수록 탐색 공간 대비 평가 비율이 급격히 작아지고, 같은 규칙으로도 시간은 넷 수에 따라 달라집니다. 목표 규칙은 가상 PDK이고 모든 셀·핀은 실제 SKY130A HD입니다.</p>}
+    {level === 'five' && <p className="chip-note" style={{ marginBottom: 12 }}><b>custom_emux2_1</b> — MUX2와 AND2를 결합한 enable형 2:1 MUX 후보입니다. 논리식은 <code>Y = E · (S ? B : A)</code>입니다. 130 nm의 두 실제 라이브러리 셀을 사용하지만, 결합 셀과 목표 형상·규칙은 가상입니다. 아래 2셀 전수 탐색 뒤에 <b>2~5셀 후보군</b>(전가산기·4:1 MUX 등)도 같은 방식으로 탐색합니다. 6~10셀은 <b>더 복잡한 표준셀 실험 (10개 이하)</b> 탭에서 다룹니다.</p>}
     <p className="chip-note" style={{ marginBottom: 12, padding: 10, borderLeft: '4px solid #b45f06', background: 'var(--surface-muted)' }}><b>가상 실험 안내:</b> 130 nm의 개별 MUX2·AND2 크기와 핀 자료만 실제 SKY130A에서 가져왔습니다. 130 nm 결합 셀의 배치와 {targetLabel}에 따른 셀 모양·주황색 배선은 모두 시뮬레이션입니다. 여기의 “규칙 통과”는 제한된 모델 검사이며 실제 PDK DRC·LVS 통과가 아닙니다.</p>
     {loadError && <p className="init-error">{loadError}</p>}
     {!data && !loadError && <p className="chip-note">원본 셀 크기와 핀 위치를 불러오는 중입니다.</p>}
     {data && !ready && <p className="init-error">MUX2 또는 AND2의 LEF 크기가 없어 실험할 수 없습니다.</p>}
     {ready && full && <>
-      <div className="data-table" style={{ marginBottom: 14 }}><table><thead><tr><th>구성</th><th>PDK 원본</th><th>후보 내부 연결</th></tr></thead><tbody>
+      {level === 'five' && <div className="data-table" style={{ marginBottom: 14 }}><table><thead><tr><th>구성</th><th>PDK 원본</th><th>후보 내부 연결</th></tr></thead><tbody>
         <tr><td>MUX</td><td><code>sky130_fd_sc_hd__mux2_1</code> · {mux!.devices.length}개 소자 · {mux!.info.size![0]} × {sourceHeight} µm ({Math.round(mux!.info.size![0] / SOURCE_SITE)} site) · 출력 X 핀 사각형 {mux!.info.pins.find(p => p.n === 'X')?.rects.length}개</td><td>A0=A, A1=B, S=S, X=M</td></tr>
         <tr><td>AND</td><td><code>sky130_fd_sc_hd__and2_1</code> · {and!.devices.length}개 소자 · {and!.info.size![0]} × {sourceHeight} µm ({Math.round(and!.info.size![0] / SOURCE_SITE)} site)</td><td>A=E, B=M, X=Y</td></tr>
-      </tbody></table></div>
+      </tbody></table></div>}
 
       <div className="card" style={{ padding: 12, marginBottom: 12 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}><b style={{ fontSize: 12 }}>목표 PDK 규칙</b>
@@ -430,7 +434,18 @@ export default function ComplexStandardCellExperiment() {
         </div>
       </div>
 
-      {bench && <div className="card" style={{ padding: 12, marginBottom: 12 }}>
+      {level !== 'five' && <div className="card" style={{ padding: 12, marginBottom: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'end', gap: 10 }}>
+          <b style={{ fontSize: 12, alignSelf: 'center' }}>비용 = 배선 길이 합 +</b>
+          {num('꺾임 1회당 (µm)', weights.bend, v => setWeights(w => ({ ...w, bend: v })), 0.05, 0, 5)}
+          {num('세로 구간 추가 가중', weights.vertical, v => setWeights(w => ({ ...w, vertical: v })), 0.1, 0, 10)}
+          {num('면적 가중 (/µm²)', weights.area, v => setWeights(w => ({ ...w, area: v })), 0.01, 0, 1)}
+          <button type="button" onClick={() => setWeights(DEFAULT_WEIGHTS)}>기본 가중치</button>
+        </div>
+        <p className="chip-note" style={{ margin: '6px 0 0' }}>가중치는 후보군 탐색의 비용 모델입니다. 세로 구간·꺾임 벌점은 가상 값이며 실제 층 사용·비아·RC를 계산한 것이 아닙니다. 바꾸면 아래 후보 탐색 결과가 초기화됩니다.</p>
+      </div>}
+
+      {level === 'ten' && bench && <div className="card" style={{ padding: 12, marginBottom: 12 }}>
         <div className="card-title" style={{ marginBottom: 6 }}><div><small className="kicker">TIME ANALYSIS · 먼저 분석</small><h3>전수 탐색이 가능한가 — 실제 측정 시간으로 판단</h3></div>
           <span className="connection" style={{ color: '#1D9E75' }}>현재 2셀: 전수 (즉시)</span></div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
@@ -446,7 +461,7 @@ export default function ComplexStandardCellExperiment() {
             <div>배치 수 N<sub>배치</sub>(n) = n! (셀 순서) × 2<sup>n</sup> (셀마다 N/FN) × {MAX_GAP_SITES + 1}<sup>n−1</sup> (셀 사이 간격 0~{MAX_GAP_SITES} site)</div>
             <div>t<sub>p</sub>(n) = 배치 하나를 평가하는 시간 — 그 배치의 넷 전부를 각자 최선의 (핀 사각형 쌍 × met1 트랙)으로 배선해 비용 합산. <b>n마다 이 브라우저에서 실측</b> (넷이 많을수록 길어짐)</div>
             {(() => { const r = scaling.find(x => x.n === 4); return r && r.tp !== null ? <div><b>예 (n=4, 넷 {r.nets}개):</b> T<sub>전수</sub> = 4!·2⁴·3³ × {round(r.tp)} µs = {fmtN(r.placements)} × {round(r.tp)} µs = <b>{fmtTime(r.tEx)}</b> · T<sub>SA</sub> = {fmtN(r.moves)} × {round(r.tp)} µs = <b>{fmtTime(r.tSa)}</b></div> : null })()}
-            <div style={{ color: 'var(--text-secondary)' }}>위 2셀(custom_emux2_1)은 후보 {fmtN(full.all.length)}개를 {fmtTime(bench.ms / 1000)}에 전부 평가 (실측). 아래 표는 SA 실험의 실제 셀 회로(nand2·inv·mux2·and2·xor2·nor2·or2·a21oi·buf·nand2) 앞 n개 기준입니다.</div>
+            <div style={{ color: 'var(--text-secondary)' }}>2셀(custom_emux2_1, 5개 이하 탭)은 후보 {fmtN(full.all.length)}개를 {fmtTime(bench.ms / 1000)}에 전부 평가 (실측). 아래 표는 SA 실험의 실제 셀 회로(nand2·inv·mux2·and2·xor2·nor2·or2·a21oi·buf·nand2) 앞 n개 기준입니다.</div>
           </div>
         </div>
         <div className="data-table" style={{ marginTop: 10 }}><table><thead><tr><th>셀 수 · 넷 수</th><th>배치 수 N<br/><small>n!·2ⁿ·{MAX_GAP_SITES + 1}ⁿ⁻¹</small></th><th>t<sub>p</sub> (실측)</th><th>전수 탐색<br/><small>N × t<sub>p</sub></small></th><th>SA<br/><small>M × t<sub>p</sub></small></th><th>판정</th></tr></thead><tbody>
@@ -473,6 +488,7 @@ export default function ComplexStandardCellExperiment() {
           </div>
       </div>}
 
+      {level === 'five' && <>
       <div className="card" style={{ padding: 12, marginBottom: 12 }}>
         <div className="card-title" style={{ marginBottom: 6 }}><div><small className="kicker">EXHAUSTIVE SEARCH</small><h3>가능한 조합 전부를 시도해 비용이 가장 낮은 것 선택</h3></div>
           {cur && curRank !== 1 && <button type="button" onClick={() => setPickedId(null)}>최적 후보로 돌아가기</button>}</div>
@@ -590,8 +606,11 @@ export default function ComplexStandardCellExperiment() {
         </div>
       </div>}
 
-      <CellSaExperiment data={data} rules={rules} weights={weights} exhaustiveSec={n => scaling.find(r => r.n === n)?.tEx}/>
+      </>}
 
+      <CellSaExperiment key={level} data={data} rules={rules} weights={weights} tier={level === 'five' ? 1 : level === 'ten' ? 2 : 3}/>
+
+      {level === 'five' && <>
       {base && kept && cur && <div className="card" style={{ padding: 12, marginBottom: 12 }}>
         <b style={{ fontSize: 12 }}>무엇이 얼마나 바뀌나 — 같은 축척(µm)으로 나란히</b>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 10, marginTop: 8 }}>
@@ -657,6 +676,8 @@ export default function ComplexStandardCellExperiment() {
         </div>
       </div>
       <p className="chip-note" style={{ marginTop: 12 }}><b>판정:</b> 기존 셀의 단순 크기 변경만으로는 {targetLabel}에 대응하는 단일 표준 셀이 완성되지 않습니다. 새 규칙에 맞는 소자·핀·전원 레일·내부 배선 P&R이 필요할 수 있습니다. 실제 목표 PDK가 생기면 GDS를 만든 뒤 DRC·LVS·기생 추출·타이밍 특성화를 해야 하며, 현재 화면은 이들 검증을 실행하지 않습니다.</p>
+      </>}
+      {level !== 'five' && <p className="chip-note" style={{ marginTop: 10 }}><b>탐색 모델의 가정:</b> 셀마다 SKY130A의 site 수를 유지하고 핀 도형은 셀 크기에 비례해 이동(FN이면 좌우 반전)합니다. 후보 안의 내부 연결(드라이버→싱크 2핀 넷)만 met1 트랙 하나로 잇고, 넷끼리는 독립이라 같은 트랙을 공유해 생기는 충돌은 검사하지 않습니다. 클록·전원·외부 입력, 셀 내부 배선 장애물(OBS), 비아와 간격의 상세 규칙도 검사하지 않습니다. 소자 수준의 셀 내부 P&R이나 실제 DRC가 아니며, 실제 목표 PDK가 생기면 GDS를 만든 뒤 DRC·LVS·기생 추출·타이밍 특성화가 필요합니다.</p>}
     </>}
   </section>
 }

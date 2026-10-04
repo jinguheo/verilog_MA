@@ -139,16 +139,16 @@ export default function StandardCells() {
   const [sel, setSel] = useState('nand2_1')
   const [data, setData] = useState<Record<string, Record<string, CellData>>>({})
   const [loadErr, setLoadErr] = useState('')
-  const [subTab, setSubTab] = useState<'library' | 'background' | 'experiment' | 'complex'>(() => {
+  const [subTab, setSubTab] = useState<'library' | 'background' | 'experiment' | 'complex' | 'complex10' | 'complex50'>(() => {
     const requested = new URLSearchParams(window.location.search).get('tab')
-    return requested === 'background' || requested === 'experiment' || requested === 'complex' ? requested : 'library'
+    return requested === 'background' || requested === 'experiment' || requested === 'complex' || requested === 'complex10' || requested === 'complex50' ? requested : 'library'
   })
   const [imageFailed, setImageFailed] = useState(false)
   const lib = libs.find(l => l.id === libId) ?? libs[0]
   const libData = data[libId] ?? null
   const site = libId === 'sky130_fd_sc_hvl' ? { name: 'unithv', w: 0.48, h: 4.07 } : pdk.techlef?.site
   const libertyFile = libId === 'sky130_fd_sc_hvl' ? 'lib/…__tt_025C_3v30.lib' : libId === 'sky130_ef_sc_hd' ? '물리 전용 셀 · Liberty 없음' : 'lib/…__tt_025C_1v80.lib'
-  const selectSubTab = (next: 'library' | 'background' | 'experiment' | 'complex') => {
+  const selectSubTab = (next: 'library' | 'background' | 'experiment' | 'complex' | 'complex10' | 'complex50') => {
     setSubTab(next)
     const url = new URL(window.location.href)
     url.searchParams.set('page', 'stdcells')
@@ -192,10 +192,12 @@ export default function StandardCells() {
       <button type="button" role="tab" aria-selected={subTab === 'library'} className={subTab === 'library' ? 'active' : ''} onClick={() => selectSubTab('library')}>셀 라이브러리</button>
       <button type="button" role="tab" aria-selected={subTab === 'background'} className={subTab === 'background' ? 'active' : ''} onClick={() => selectSubTab('background')}>배경 지식</button>
       <button type="button" role="tab" aria-selected={subTab === 'experiment'} className={subTab === 'experiment' ? 'active' : ''} onClick={() => selectSubTab('experiment')}>PDK 변경 실험</button>
-      <button type="button" role="tab" aria-selected={subTab === 'complex'} className={subTab === 'complex' ? 'active' : ''} onClick={() => selectSubTab('complex')}>복잡한 Standard Cell 실험</button>
+      <button type="button" role="tab" aria-selected={subTab === 'complex'} className={subTab === 'complex' ? 'active' : ''} onClick={() => selectSubTab('complex')}>복잡한 표준셀 실험 (5개 이하)</button>
+      <button type="button" role="tab" aria-selected={subTab === 'complex10'} className={subTab === 'complex10' ? 'active' : ''} onClick={() => selectSubTab('complex10')}>더 복잡한 표준셀 실험 (10개 이하)</button>
+      <button type="button" role="tab" aria-selected={subTab === 'complex50'} className={subTab === 'complex50' ? 'active' : ''} onClick={() => selectSubTab('complex50')}>매우 복잡한 표준셀 실험 (20개 이상)</button>
     </div>
     {subTab === 'experiment' ? <PdkChangeExperiment libId={libId} libraryRowHeight={lib.rowHeight} cellName={sel} cell={cell}
-      cells={libData} availableCells={Object.keys(libData ?? {})} onSelectCell={setSel} onOpenLibrary={() => selectSubTab('library')}/> : subTab === 'complex' ? <ComplexStandardCellExperiment/> : subTab === 'background' ? <>
+      cells={libData} availableCells={Object.keys(libData ?? {})} onSelectCell={setSel} onOpenLibrary={() => selectSubTab('library')}/> : subTab === 'complex' ? <ComplexStandardCellExperiment level="five"/> : subTab === 'complex10' ? <ComplexStandardCellExperiment level="ten"/> : subTab === 'complex50' ? <ComplexStandardCellExperiment level="twenty"/> : subTab === 'background' ? <>
     <section className="card">
       <div className="card-title"><div><small className="kicker">PDK FILES</small><h3>표준 셀과 PDK 파일을 읽는 법</h3></div></div>
         <p className="chip-note" style={{ margin: '0 0 10px' }}>Standard Cells 탭은 설치된 {pdk.name} PDK의 기존 셀을 보여줍니다. 셀을 새로 설계하거나 DRC·LVS 통과를 판정하는 도구는 아닙니다. 현재 프로젝트의 디지털 P&amp;R은 주로 <code>sky130_fd_sc_hd</code>를 사용합니다.</p>

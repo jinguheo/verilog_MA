@@ -452,14 +452,18 @@ function PpaExperimentThree({ onApply }: { onApply: () => void }) {
       </div>
     </section>
     <section className="ppa-result-card">
-      <div className="card-title"><div><small className="kicker">PPA3 CHECKPOINT · AUDITED 2026-09-29</small><h3>Offline route 확보 · 최종 signoff 재개 지점</h3></div><span className="analog-badge blocked">routed candidate · signoff blocked</span></div>
-      <p>1250×600µm PPA3 wrapper의 ADC/SRAM 고정 배치와 detailed-routing 이미지는 확보했습니다. 다만 CDAC Magic DRC 잔여 6건과 새 GDS의 DRC/LVS가 닫히지 않아 이 결과를 최종 물리 PPA로 부르지는 않습니다.</p>
+      <div className="card-title"><div><small className="kicker">PPA3 CHECKPOINT · AUDITED 2026-10-03</small><h3>Offline route 확보 · 최종 signoff 재개 지점</h3></div><span className="analog-badge blocked">routed candidate · signoff blocked</span></div>
+      <p>1250×600µm PPA3 wrapper의 ADC/SRAM 고정 배치와 detailed-routing 이미지는 확보했습니다. 다만 <b>OpenLane 실행이 74단계 중 59단계(Magic.WriteLEF)에서 중단</b>돼 OpenLane 자체의 DRC/LVS/XOR 검사는 한 번도 돌지 않았고, <b>antenna 위반 2건이 남아 있으며</b>, CDAC Magic DRC 잔여 6건도 닫히지 않아 이 결과를 최종 물리 PPA로 부르지는 않습니다.</p>
       <div className="ppa-result-grid">
         <article><small>구현 완료</small><b>RTL + OpenLane routed baseline</b><span className="ok-text">통합 top lint pass · 1250 × 600 µm · ADC/SRAM 고정 배치 · routing 이미지</span></article>
-                <article><small>정합 결과</small><b>CDAC DRC 84 → 6</b><span className="warn-text">Magic 원본에서 job별 GDS 재생성</span></article>
+        <article><small>실행 중단 지점</small><b>59 / 74단계 · Magic.WriteLEF</b><span className="warn-text"><code>RUN_2026-09-24_14-07-59</code> · 09-24 14:54 중단(에러 종료 아님) · <code>final/</code>·<code>metrics.json</code> 없음</span></article>
+        <article><small>실측 (중단 시점까지)</small><b>route DRC 0 · setup/hold 위반 0</b><span className="ok-text">9개 코너 · 최악 setup +11.2 ns(max_ss) · hold +0.18 ns(min_ff) · util 64.9%</span></article>
+        <article><small>남은 위반</small><b>antenna 2건 (2 nets / 2 pins)</b><span className="warn-text">repairantennas 이후에도 남음 · max-slew 29 · max-cap 1 · 아직 미수리</span></article>
+        <article><small>아직 안 돈 단계</small><b>antenna 속성·XOR·Magic/KLayout DRC·LVS</b><span>59번 이후 약 15단계 — top-level signoff 수치 없음</span></article>
+        <article><small>정합 결과</small><b>CDAC DRC 84 → 6</b><span className="warn-text">Magic 원본에서 job별 GDS 재생성 · CDAC LVS / KLayout DRC는 미실행(09-24 14:18 작업)</span></article>
         <article><small>원본 보호</small><b>vendor GDS unchanged</b><span className="ok-text">SHA-256 전후 동일 · 검증 복사본만 변경</span></article>
-        <article><small>다음 재개 지점</small><b>잔여 6건 physical closure</b><span><code>diff/tap.18,20</code> · 우측 MV nwell/P-tap 영역</span></article>
-        <article><small>최종 승격 조건</small><b>CDAC DRC/LVS 통과</b><span>대칭축·dummy·guard ring·핀 접근성 보존 후 재실행</span></article>
+        <article><small>다음 재개 지점</small><b>antenna 2건 + CDAC 잔여 6건</b><span><code>diff/tap.18,20</code> · 우측 MV nwell/P-tap 영역 · 이후 OpenLane 59단계부터 재개</span></article>
+        <article><small>최종 승격 조건</small><b>CDAC DRC/LVS 통과 · top signoff 완주</b><span>대칭축·dummy·guard ring·핀 접근성 보존 후 재실행</span></article>
         <article><small>최종 산출물</small><b>PEX 기반 PPA3</b><span>기생 RC 포함 성능·전력·면적과 Pareto 비교</span></article>
       </div>
     </section>
@@ -468,7 +472,7 @@ function PpaExperimentThree({ onApply }: { onApply: () => void }) {
       <tr><td>전력 / 면적</td><td>≤ 15 mW · ≤ 100,000 µm²</td><td>ADC 실측 65,628.68 µm² + CDAC 수리 여유</td></tr>
       <tr><td>아날로그 macro</td><td>좌측 고정 · CDAC 대칭축과 dummy/guard ring 보존</td><td>배치 변경으로 INL/DNL·기생 RC를 악화시키지 않음</td></tr>
       <tr><td>디지털 / SRAM</td><td>우측 분리 · CDC는 두 영역 사이</td><td>PPA2 capture path와 SRAM pin 접근성 재사용</td></tr>
-      <tr><td>실행 게이트</td><td>잔여 DRC 6 수정 → CDAC LVS → top DRC/LVS → PEX</td><td>job별 격리 검증 · 물리 통과 전 PPA 측정 금지</td></tr>
+      <tr><td>실행 게이트</td><td>antenna 2건 수리 → 잔여 DRC 6 수정 → CDAC LVS → OpenLane 59단계 이후 완주(top DRC/LVS) → PEX</td><td>job별 격리 검증 · 물리 통과 전 PPA 측정 금지</td></tr>
     </tbody></table></div>
     <button className="ppa-preset-button" type="button" onClick={onApply}>이 PPA 실험 3 설정을 현재 설계에 적용</button>
   </section>

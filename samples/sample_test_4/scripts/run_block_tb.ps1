@@ -180,8 +180,18 @@ $tbDefines = @{
 }
 
 $tbs = @('tb_skid_buffer', 'tb_cnt_sat', 'tb_axil_slave', 'tb_daq_csr', 'tb_pkt_align', 'tb_pkt_check', 'tb_chan_ctrl', 'tb_chan_top', 'tb_dma_sched', 'tb_desc_fetch', 'tb_axi_rd_master', 'tb_axi_wr_master', 'tb_wr_track', 'tb_irq_ctrl', 'tb_perf_cnt', 'tb_daq_subsystem', 'tb_sar_adc_ch', 'tb_adc_cal_lut', 'tb_adc_capture_buffer', 'tb_adc_byte_to_sample', 'tb_adc_stream_capture')
+$allTbs = $tbs
 if ($Mutant) { $tbs = @("tb_$($mutantOwner[$Mutant])") }
-if ($Only)   { $tbs = $tbs | Where-Object { $Only -contains $_ } }
+if ($Only) {
+    # `powershell -File ... -Only a,b` delivers "a,b" as ONE string, so split it. A name that
+    # matches nothing must fail loudly - an empty selection used to print "all block
+    # testbenches passed" and exit 0 without running a single test.
+    $Only = @($Only | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    $unknown = @($Only | Where-Object { $allTbs -notcontains $_ })
+    if ($unknown.Count -gt 0) { Write-Host "unknown testbench in -Only: $($unknown -join ', ')" -ForegroundColor Red; exit 1 }
+    $tbs = $tbs | Where-Object { $Only -contains $_ }
+}
+if (@($tbs).Count -eq 0) { Write-Host "no testbench selected - nothing was run" -ForegroundColor Red; exit 1 }
 
 $ErrorActionPreference = 'Continue'
 $fail = 0

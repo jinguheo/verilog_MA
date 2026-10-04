@@ -69,7 +69,15 @@ $tops = @(
     @{ name = 'adc_stream_capture'; files = @("$daqRoot\filelist\pkg.f", "$daqRoot\rtl\analog_if\adc_byte_to_sample.sv", "$daqRoot\rtl\analog_if\adc_capture_sram.sv", "$daqRoot\rtl\analog_if\adc_capture_buffer.sv", "$daqRoot\rtl\analog_if\adc_stream_capture.sv") }
     @{ name = 'ppa3_adc_capture_top'; lint_args = @('-Wno-UNUSEDSIGNAL', '-Wno-UNDRIVEN'); defines = @('ADC_CAPTURE_USE_SRAM22'); files = @("$daqRoot\filelist\pkg.f", "$workspace\analog\build\sky130_ef_ip__adc3v_12bit\sky130_ef_ip__adc3v_12bit.blackbox.v", "$workspace\analog\third_party\sram22_sky130_macros\sram22_1024x32m8w8\sram22_1024x32m8w8.v", "$daqRoot\rtl\analog_if\sar_adc_ch.sv", "$daqRoot\rtl\analog_if\adc_byte_to_sample.sv", "$daqRoot\rtl\analog_if\adc_capture_sram.sv", "$daqRoot\rtl\analog_if\adc_capture_buffer.sv", "$daqRoot\rtl\analog_if\adc_stream_capture.sv", "$daqRoot\rtl\analog_if\ppa3_adc_capture_top.sv") }
 )
-if ($Only) { $tops = $tops | Where-Object { $Only -contains $_.name } }
+if ($Only) {
+    # Same pitfall as run_block_tb.ps1: `-File ... -Only a,b` arrives as one string, and an empty
+    # selection must fail instead of reporting a vacuous pass.
+    $Only = @($Only | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    $unknown = @($Only | Where-Object { $tops.name -notcontains $_ })
+    if ($unknown.Count -gt 0) { Write-Host "unknown lint top in -Only: $($unknown -join ', ')" -ForegroundColor Red; exit 1 }
+    $tops = $tops | Where-Object { $Only -contains $_.name }
+}
+if (@($tops).Count -eq 0) { Write-Host "no lint top selected - nothing was run" -ForegroundColor Red; exit 1 }
 
 $fail = 0
 $runs = 0
