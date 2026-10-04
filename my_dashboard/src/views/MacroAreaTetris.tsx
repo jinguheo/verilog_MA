@@ -9,7 +9,7 @@
 // 배선이 짧은 순으로 실제 OpenLane DRC/LVS 검증 대상으로 내보낸다.
 // 모델: game/macroAreaModel.ts, 계산: 웹 워커.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { hubDefs, N_HUBS, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, LO_CELL, MIN_SPACING, CHANNEL_SAFE_MARGIN, PIN_ESCAPE_MARGIN, POWER_RING_MARGIN, REAL_CHAN_TOP, cloneState, type State, type GlueTile, type Macro, type Pos } from '../game/macroTetrisModel'
+import { hubDefs, N_HUBS, REAL_GLUE, glueCoverage, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, LO_CELL, MIN_SPACING, CHANNEL_SAFE_MARGIN, PIN_ESCAPE_MARGIN, POWER_RING_MARGIN, REAL_CHAN_TOP, cloneState, type State, type GlueTile, type Macro, type Pos } from '../game/macroTetrisModel'
 import {
   BASE_DIE, EDGE_MARGIN, SHRINK_LADDER, SHAPE_LABEL, ISSUE_LABEL, CHANNEL_SAMPLES, analyzeLeftoverD, costD, gateReason, diagnoseD,
   summarizeIssues, requiredDensity, rowCapacityD, MACRO_HALO_UM, dieArea, dieUtil, glueTilesNeeded, fillGlueD, shapeStart, RESHAPE_PRESETS, toAreaCfg, candidateDies, shapeVariantDies, baseFor, metricsOf, layoutSig, scaleHubs, RULES,
@@ -87,7 +87,7 @@ function scaleFor(die: Die): number {
   return Math.min(CANVAS_W / Math.max(BASE_DIE.w, die.w), CANVAS_H / Math.max(BASE_DIE.h, die.h))
 }
 
-function drawArea(ctx: CanvasRenderingContext2D, v: BoardView, glue: GlueTile[], sel: number | null) {
+function drawArea(ctx: CanvasRenderingContext2D, v: BoardView, glue: GlueTile[], sel: number | null, hlPiece: number | null = null) {
   const { die, macros, hubs, issues } = v
   const s = scaleFor(die)
   ctx.clearRect(0, 0, CANVAS_W, CANVAS_H)
@@ -153,6 +153,7 @@ function drawArea(ctx: CanvasRenderingContext2D, v: BoardView, glue: GlueTile[],
   // 이제 정사각형이 아니라 가변 폭(row 조각)이라 t.w를 그대로, 높이는 LO_CELL.
   glue.forEach((t, i) => {
     drawTileBox(ctx, t.x * s, t.y * s, t.w * s, LO_CELL * s)
+    if (hlPiece === i) { ctx.strokeStyle = '#FFE066'; ctx.lineWidth = 3; ctx.strokeRect(t.x * s - 1, t.y * s - 1, t.w * s + 2, LO_CELL * s + 2) }
     ctx.fillStyle = TETRIS_COLORS.tile.text; ctx.font = 'bold 8px sans-serif'
     ctx.fillText(`S${i + 1}`, t.x * s + 3, t.y * s + 10)
   })
@@ -233,7 +234,8 @@ export default function MacroAreaTetris() {
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const [openTrial, setOpenTrial] = useState<number | null>(null)
   const [board, setBoard] = useState<BoardView | null>(null)
-  const [glue, setGlue] = useState<GlueTile[]>([])
+  const [showTiles, setShowTiles] = useState(true)
+  const [selPiece, setSelPiece] = useState<number | null>(null)
   const [sel, setSel] = useState<number | null>(null)
   const [speed, setSpeed] = useState(300)
   const [exportText, setExportText] = useState<{ title: string; text: string } | null>(null)
@@ -259,13 +261,20 @@ export default function MacroAreaTetris() {
   // 후보를 보고 있으면(board) 그 후보 기준, 아니면 지금 작업 중인 배치(cur) 기준 —
   // 표준셀 타일 버튼·"진짜 남은 여유" 계산이 화면에 실제로 보이는 다이를 따라간다.
   const view: BoardView = board ?? { die: cur.die, macros: cur.state.macros, hubs: cur.state.hubs, issues: diagnoseD(cur.die, cur.state, opts), title: '현재 배치' }
+  // 표준셀 타일은 버튼으로 켜는 게 아니라 지금 화면의 배치(현재 배치든 후보든)에서 항상 계산해
+  // 보여 준다 — 후보를 눌러도 그 후보의 표준셀이 같이 보이게. 끄고 싶으면 아래 토글.
+  const glueResult = useMemo(
+    () => fillGlueD(view.die, view.macros, view.hubs, glueTilesNeeded(opts.density), opts.density),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [view.die.w, view.die.h, layoutSig(view.die, view.macros), opts.density])
+  const glue: GlueTile[] = showTiles ? glueResult.tiles : []
   // 매크로 + "이미 배치된" 표준셀 타일까지 뺀, 진짜 아직 안 쓰인 칸 — 표준셀 타일
   // 표시를 켰을 때만 의미 있음(꺼져있으면 glue=[]라 매크로만 뺀 값과 같아짐).
   const afterGlue = glue.length > 0 ? analyzeLeftoverD(view.die, view.macros, glue.map(t => ({ x: t.x, y: t.y, w: t.w, h: LO_CELL }))) : null
 
   useEffect(() => {
     const ctx = canvasRef.current?.getContext('2d')
-    if (ctx) drawArea(ctx, view, glue, board ? null : sel)
+    if (ctx) drawArea(ctx, view, glue, board ? null : sel, selPiece !== null && selPiece < glue.length ? selPiece : null)
   })
 
   useEffect(() => { writeJson(candKey(opts), cands) }, [cands, opts])
@@ -342,7 +351,7 @@ export default function MacroAreaTetris() {
       if (msg.kind === 'ripup') {
         setBusy(null)
         const next = { die: curRef.current.die, state: msg.state }
-        setCur(next); setGlue([]); setBoard(null)
+        setCur(next); setBoard(null)
         setNarration(msg.moves > 0 ? `Rip-up: 매크로 ${msg.moves}번 이동 — 비용 ${Math.round(msg.before).toLocaleString()} → ${Math.round(msg.after).toLocaleString()}` : 'Rip-up: 더 개선되는 이동 없음')
         return
       }
@@ -361,7 +370,7 @@ export default function MacroAreaTetris() {
       setShrinkPct(r.nextPct)
       if (acc) {
         const next = { die: acc.die, state: acc.state }
-        setCur(next); setGlue(acc.glue.tiles); setBoard(null)
+        setCur(next); setBoard(null)
         pendingRef.current.push({ die: acc.die, macros: acc.state.macros, hubs: acc.state.hubs, method: `면적 탐색 #${n} (−${r.plan.pct}%, ${SHAPE_LABEL[acc.shape]})`, source: 'search', steps: acc.steps, event: `면적 탐색 #${n} 통과 — 목표 ${mm2(r.plan.targetArea)}mm² (−${r.plan.pct}%)` })
         flushCandidates()
         considerBest(next, n)
@@ -431,7 +440,7 @@ export default function MacroAreaTetris() {
     if (busy !== null) restartWorker()
     const s = which === 'best' ? startFrom(o) : { cur: shapeStart(o.shape), label: baseLabel(o) }
     setStart(s); setCur(s.cur); setShrinkPct(SHRINK_LADDER[0]); setTrials([]); setLiveAttempts([])
-    setSearching(false); setBusy(null); setConverged(null); setGlue([]); setBoard(null); setSel(null); setExportText(null); setGenProgress(null)
+    setSearching(false); setBusy(null); setConverged(null); setBoard(null); setSel(null); setExportText(null); setGenProgress(null)
     setNarration(`${s.label}에서 다시 시작`)
   }
 
@@ -463,6 +472,8 @@ export default function MacroAreaTetris() {
   }
 
   const ranked = useMemo(() => cands.filter(k => k.metrics.util >= utilMin - 1e-9).sort((a, b) => a.metrics.wl - b.metrics.wl || b.metrics.util - a.metrics.util || a.metrics.cost - b.metrics.cost), [cands, utilMin])
+  // 후보 풀의 각 후보도 표준셀을 같이 채워 보고(조각 수 · 필요 면적 대비) 한 열로 보여 준다.
+  const poolGlue = useMemo(() => new Map(ranked.slice(0, 200).map(k => [k.id, fillGlueD(k.die, k.macros, k.hubs, glueTilesNeeded(opts.density), opts.density)] as const)), [ranked, opts.density])
   const selected = cands.find(k => k.id === selCand) ?? null
 
   function exportSelected() {
@@ -495,7 +506,7 @@ export default function MacroAreaTetris() {
     const y = Math.round(Math.min(cur.die.h - EDGE_MARGIN - m.h, Math.max(EDGE_MARGIN, p.y - d.dy)) / DRAG_SNAP) * DRAG_SNAP
     if (x === m.x && y === m.y) return
     setCur({ die: cur.die, state: { ...cur.state, macros: cur.state.macros.map((q, k) => (k === d.idx ? { ...q, x, y } : q)) } })
-    setGlue([])
+    
   }
   function onMouseUp() { dragRef.current = null }
 
@@ -520,7 +531,7 @@ export default function MacroAreaTetris() {
         { title: '2. 통과 조건 고르기', body: <><b>밀도 40%(실제)</b>가 기본이고 50·60%는 더 느슨한 조건입니다. <b>엄격</b>은 핀 escape·전원 접근까지 요구하고 <b>완화</b>는 겹침·간격·경계·용량만 봅니다. <b>조건마다 후보 풀이 따로 저장</b>되므로 조건을 바꾸면 풀이 비어 보이는 게 정상입니다 — 그 조건에서 후보 만들기를 다시 누르세요.</> },
         { title: '3. ▶ 면적 탐색', body: <>−5%를 먼저 시도하고 실패하면 −4→−3→−2→−1%로 낮춰 재시도합니다. 성공하면 그 배치를 새 기준으로 다시 −5%부터. −1%까지 실패하면 <b>수렴</b> = 이 모델에서 더 줄일 수 없다는 결론입니다. 실제 격자는 이미 가로·세로 모두 한계라 바로 수렴하는 게 정상입니다. 시도 기록 표에서 실패한 이유(어느 매크로가 어떤 규칙에서 막혔나)를 볼 수 있습니다.</> },
         { title: '4. 후보 만들기', body: <>다이 높이·행 수(2/3/4행)별로 여유 분할 + 무작위 시작 12개를 돌려 통과한 배치를 전부 <b>후보 풀</b>에 쌓습니다(수렴 후 자동 실행, 수동으로도 가능).</> },
-        { title: '5. 후보 고르기', body: <>후보 풀은 <b>utilization ≥</b> 필터(기본 60%)를 통과한 것을 배선 비용 짧은 순으로 보여줍니다. 행을 누르면 보드에 그 배치와 생성 경위가 나옵니다. <b>표준셀 타일 표시</b>를 누르면 그 후보에서 표준셀이 몇 개 들어가는지와 <b>진짜 남은 여유 %</b>가 나옵니다.</> },
+        { title: '5. 후보 고르기', body: <>후보 풀은 <b>utilization ≥</b> 필터(기본 60%)를 통과한 것을 배선 비용 짧은 순으로 보여줍니다. 행을 누르면 보드에 그 배치와 생성 경위가 나옵니다. 후보를 누르면 그 후보의 <b>표준셀 타일(자홍 단색)이 기본으로 같이</b> 보이고(끄는 토글 있음), 후보 풀 표의 <b>표준셀 열</b>에서 조각 수와 필요 면적 대비 %를 바로 비교할 수 있습니다. 아래 <b>조각별 표</b>는 조각마다 담는 면적을 보여주고, 행에 마우스를 올리면 캔버스에서 그 조각이 노란 테두리로 강조됩니다. <b>진짜 남은 여유 %</b>도 같이 나옵니다.</> },
         { title: '6. 검증 대기열로 내보내기', body: <>체크하거나 <b>상위 10개 선택</b> → <b>DRC/LVS 검증 목록</b>이 JSON으로 나옵니다(실제 OpenLane은 아직 자동 실행되지 않고 queued 표시까지만).</> },
       ]}
       tips={[
@@ -553,7 +564,7 @@ export default function MacroAreaTetris() {
           style={{ width: '100%', height: 'auto', background: '#101726', border: '2px solid var(--border-strong)', borderRadius: 8, display: 'block', cursor: locked || board ? 'default' : 'grab' }}
           onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
         />
-        {board && <div style={{ marginTop: 6 }}><button className="chip-link-button" onClick={() => { setBoard(null); setGlue([]) }} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '0.5px solid var(--border-strong)', background: 'var(--surface-1)', color: 'var(--text-primary)', cursor: 'pointer' }}>← 현재 배치로 돌아가기</button></div>}
+        {board && <div style={{ marginTop: 6 }}><button className="chip-link-button" onClick={() => { setBoard(null); }} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '0.5px solid var(--border-strong)', background: 'var(--surface-1)', color: 'var(--text-primary)', cursor: 'pointer' }}>← 현재 배치로 돌아가기</button></div>}
         {view.issues.length > 0 && <div className="data-table" style={{ marginTop: 6 }}><table><thead><tr><th>실패 부위</th><th>내용</th></tr></thead><tbody>
           {view.issues.slice(0, 10).map((is, k) => <tr key={k}><td><b>{ISSUE_LABEL[is.kind]}</b></td><td>{is.detail}</td></tr>)}
           {view.issues.length > 10 && <tr><td colSpan={2}>… 외 {view.issues.length - 10}건</td></tr>}
@@ -613,7 +624,7 @@ export default function MacroAreaTetris() {
           </div>
           {genProgress && <p className="key-help" style={{ marginTop: 4 }}>후보 생성 다이 {genProgress.done}/{genProgress.total} · 통과 배치 {genProgress.found}개</p>}
           <div className="chip-switches" style={{ marginTop: 5, gridTemplateColumns: '1fr' }}>
-            <button onClick={() => { const r = fillGlueD(view.die, view.macros, view.hubs, glueTilesNeeded(opts.density), opts.density); setGlue(r.tiles) }} disabled={locked}>표준셀 타일 표시 (표시용, {view.title} 기준){glue.length > 0 && ` — ${glue.length}/${glueTilesNeeded(opts.density)}개 배치됨`}</button>
+            <button className={showTiles ? 'active' : ''} onClick={() => setShowTiles(v => !v)} disabled={locked}>{showTiles ? '표준셀 타일 보이는 중 (누르면 숨김)' : '표준셀 타일 숨김 (누르면 보임)'} — {glueResult.tiles.length}조각 · 필요 면적 {Math.round(glueResult.coverage * 100)}%</button>
           </div>
           {afterGlue && <p className="key-help" style={{ marginTop: 4 }}>{view.title}({view.die.w}×{view.die.h}) 매크로+타일 배치 후 <b>진짜 남은 여유</b>: {(afterGlue.totalEmptyCells * LO_CELL * LO_CELL / dieArea(view.die) * 100).toFixed(1)}% ({afterGlue.totalEmptyCells}칸, {(afterGlue.totalEmptyCells * LO_CELL * LO_CELL).toLocaleString()}µm² — 그중 정사각형 규칙으로 바로 쓸 수 있는 칸 {afterGlue.usableCells}개, 조각난 칸 {afterGlue.fragmentedCells}개). 위 캔버스의 초록/주황 칸이 이 자리입니다 — 타일이 이미 덮은 칸은 빠졌습니다.</p>}
         </div>
@@ -633,6 +644,17 @@ export default function MacroAreaTetris() {
             {Object.entries(RULES).map(([k, r]) => <tr key={k}><td><code>{k}</code></td><td><b>{r.value}{r.unit}</b></td><td>{r.gate}</td><td style={{ fontSize: 11 }}>{r.desc}</td></tr>)}
           </tbody></table></div>
         <h4 style={{ margin: '10px 0 2px' }}>후보 만들기</h4>
+          {showTiles && glueResult.tiles.length > 0 && <div style={{ marginTop: 6 }}>
+            <span className="panel-label">표준셀 조각별 — {view.title} · {glueResult.tiles.length}조각이 필요 면적의 {Math.round(glueResult.coverage * 100)}%를 담음</span>
+            <div className="data-table" style={{ maxHeight: 220, overflow: 'auto', marginTop: 4 }}><table>
+              <thead><tr><th>조각</th><th>허브</th><th>위치</th><th>크기</th><th>담는 면적</th><th>누적</th></tr></thead>
+              <tbody>{glueResult.tiles.map((t, i) => <tr key={i} onMouseEnter={() => setSelPiece(i)} onMouseLeave={() => setSelPiece(null)} style={{ cursor: 'pointer', background: selPiece === i ? 'var(--accent-soft)' : undefined }}>
+                <td><b>S{i + 1}</b></td><td><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 4, background: hubDefs[t.hub].color, marginRight: 4 }}/>{hubDefs[t.hub].name}</td>
+                <td>({t.x}, {t.y})</td><td>{t.w}×{LO_CELL}µm</td><td>{Math.round(t.w * LO_CELL * opts.density).toLocaleString()}µm²</td><td>{Math.round(glueCoverage(glueResult.tiles.slice(0, i + 1), opts.density) * 100)}%</td>
+              </tr>)}</tbody>
+            </table></div>
+            <p className="key-help" style={{ marginTop: 4 }}>행에 마우스를 올리면 캔버스에서 그 조각이 노란 테두리로 강조됩니다. 필요한 glue 셀 면적은 {REAL_GLUE.cellArea.toLocaleString()}µm²이고, 100µm 틈에 들어간 조각은 {Math.round(100 * LO_CELL * opts.density).toLocaleString()}µm²밖에 못 담아서 개수가 아니라 이 면적 합이 100%가 될 때까지 조각을 더 얹습니다.</p>
+          </div>}
           <p className="key-help" style={{ margin: '6px 0 0' }}>후보 만들기 = ① 지금 다이부터 3700×2100 높이까지 10µm마다(같은 폭) ② 행 수(1~4)별로 필요한 최소 다이를 closed form으로 계산한 형상(2차원 형상 sweep, MAX_ASPECT 안에서 최대 3개 — 3·4행은 아직 legal 후보 미생성) — 각 다이마다 세로 여유 분할(채널 폭 {CHANNEL_SAMPLES + 1}단계 × 위/아래 배분 3) × 가로 분배 4가지를 진단→처리 알고리즘에 통과시킵니다. 폭이 좁아 4개씩 2행으로 못 들어가는 형상은 처리 알고리즘이 3·4행으로 재구성하거나 실패로 걸러집니다. 탐색이 수렴하면 자동으로 실행됩니다.</p>
       </article>
     </section>
@@ -664,7 +686,7 @@ export default function MacroAreaTetris() {
             <p className="chip-note"><b>#{t.n} 상세</b> — 후보 다이별 진단·처리 단계. 단계를 누르면 그 시점 배치가 위 보드에 실패 부위와 함께 그려집니다.</p>
             {t.attempts.map((a, ai) => <div key={ai} className="data-table" style={{ marginTop: 6 }}><table>
               <thead><tr><th colSpan={4}>{SHAPE_LABEL[a.shape]} · {a.die.w}×{a.die.h}µm ({mm2(dieArea(a.die))}mm²) — {a.ok ? '통과' : `실패: ${a.reason}`}</th></tr><tr><th>단계</th><th>무엇을 했나</th><th>결과 진단</th><th>적용</th></tr></thead>
-              <tbody>{a.steps.map((s, si) => <tr key={si} onClick={() => { setBoard({ die: a.die, macros: s.macros, hubs: scaleHubs(start.cur.state.hubs, start.cur.die, a.die), issues: s.issues, title: `#${t.n} ${SHAPE_LABEL[a.shape]} ${a.die.w}×${a.die.h} · ${s.action}` }); setGlue([]) }} style={{ cursor: 'pointer' }}>
+              <tbody>{a.steps.map((s, si) => <tr key={si} onClick={() => { setBoard({ die: a.die, macros: s.macros, hubs: scaleHubs(start.cur.state.hubs, start.cur.die, a.die), issues: s.issues, title: `#${t.n} ${SHAPE_LABEL[a.shape]} ${a.die.w}×${a.die.h} · ${s.action}` }); }} style={{ cursor: 'pointer' }}>
                 <td><b>{s.action}</b></td><td style={{ fontSize: 11 }}>{s.why}</td>
                 <td style={{ fontSize: 11 }}>{s.ok ? <span className="ok-badge">통과</span> : summarizeIssues(s.issues)}</td>
                 <td>{s.applied ? '적용' : '불가·건너뜀'}</td>
@@ -685,15 +707,15 @@ export default function MacroAreaTetris() {
           <button onClick={exportSelected} disabled={checked.size === 0} style={{ fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '0.5px solid var(--border-strong)', background: 'var(--surface-1)', color: 'var(--text-primary)', cursor: 'pointer' }}>선택 {checked.size}개 → DRC/LVS 검증 목록</button>
           <button onClick={() => { if (window.confirm('이 조건의 후보 풀과 히스토리를 모두 지울까요?')) { setCands([]); setChecked(new Set()); setSelCand(null) } }} disabled={cands.length === 0} style={{ fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '0.5px solid var(--border-strong)', background: 'var(--surface-1)', color: 'var(--text-secondary)', cursor: 'pointer' }}>후보 풀 비우기</button>
         </div>
-        <div className="data-table" style={{ marginTop: 8, maxHeight: 420, overflow: 'auto' }}><table><thead><tr><th/><th>순위</th><th>ID</th><th>다이</th><th>util</th><th>배선 비용</th><th>필요 밀도</th><th>핀/전원 막힘</th><th>만든 방법</th><th>발견</th><th>검증</th></tr></thead><tbody>
-          {ranked.slice(0, 200).map((k, i) => <tr key={k.id} onClick={() => { setSelCand(k.id); setBoard({ die: k.die, macros: k.macros, hubs: k.hubs, issues: [], title: `후보 ${k.id}` }); setGlue([]) }} style={{ cursor: 'pointer', background: k.id === selCand ? 'var(--accent-soft)' : undefined }}>
+        <div className="data-table" style={{ marginTop: 8, maxHeight: 420, overflow: 'auto' }}><table><thead><tr><th/><th>순위</th><th>ID</th><th>다이</th><th>util</th><th>배선 비용</th><th>필요 밀도</th><th>표준셀 (조각 · 면적)</th><th>핀/전원 막힘</th><th>만든 방법</th><th>발견</th><th>검증</th></tr></thead><tbody>
+          {ranked.slice(0, 200).map((k, i) => <tr key={k.id} onClick={() => { setSelCand(k.id); setBoard({ die: k.die, macros: k.macros, hubs: k.hubs, issues: [], title: `후보 ${k.id}` }); }} style={{ cursor: 'pointer', background: k.id === selCand ? 'var(--accent-soft)' : undefined }}>
             <td onClick={e => e.stopPropagation()}><input type="checkbox" checked={checked.has(k.id)} onChange={() => setChecked(prev => { const n = new Set(prev); if (n.has(k.id)) n.delete(k.id); else n.add(k.id); return n })}/></td>
             <td>{i + 1}</td><td><code>{k.id}</code></td><td>{k.die.w}×{k.die.h}</td><td><b>{pct(k.metrics.util, 2)}</b></td>
-            <td>{Math.round(k.metrics.wl).toLocaleString()}</td><td>{pct(k.metrics.reqDensity)}</td><td>{k.metrics.pin}/{k.metrics.power}</td>
+            <td>{Math.round(k.metrics.wl).toLocaleString()}</td><td>{pct(k.metrics.reqDensity)}</td><td>{(() => { const g = poolGlue.get(k.id); return g ? <span style={{ color: g.complete ? 'var(--text-success)' : 'var(--text-danger)' }}>{g.tiles.length}조각 · {Math.round(g.coverage * 100)}%</span> : '-' })()}</td><td>{k.metrics.pin}/{k.metrics.power}</td>
             <td style={{ fontSize: 11 }}>{k.method}</td><td>{k.found}</td>
             <td>{k.verify === 'queued' ? <span className="warning-badge">대기열</span> : '미실행'}</td>
           </tr>)}
-          {ranked.length === 0 && <tr><td colSpan={11}>{cands.length === 0 ? '아직 후보가 없습니다 — ▶ 면적 탐색 또는 후보 만들기를 누르세요.' : `utilization ${pct(utilMin)} 이상인 후보가 없습니다 — 기준을 낮춰 보세요.`}</td></tr>}
+          {ranked.length === 0 && <tr><td colSpan={12}>{cands.length === 0 ? '아직 후보가 없습니다 — ▶ 면적 탐색 또는 후보 만들기를 누르세요.' : `utilization ${pct(utilMin)} 이상인 후보가 없습니다 — 기준을 낮춰 보세요.`}</td></tr>}
         </tbody></table></div>
         <p className="chip-note">같은 배치(10µm 단위 좌표가 같은 것)가 다른 방법으로 다시 나오면 새 후보를 만들지 않고 "발견" 횟수와 히스토리에 누적합니다. 배선 비용이 같으면 utilization이 높은 순. 이 순위는 근사 모델 기준이고, 실제 통과 여부는 OpenLane DRC/LVS로만 확정됩니다.</p>
       </article>
@@ -713,7 +735,7 @@ export default function MacroAreaTetris() {
           </ol>
           {selected.steps.length > 0 && <>
             <span className="panel-label">처리 단계 (누르면 보드에 표시)</span>
-            <div className="data-table"><table><tbody>{selected.steps.map((s, si) => <tr key={si} onClick={() => { setBoard({ die: selected.die, macros: s.macros, hubs: selected.hubs, issues: s.issues, title: `후보 ${selected.id} · ${s.action}` }); setGlue([]) }} style={{ cursor: 'pointer' }}>
+            <div className="data-table"><table><tbody>{selected.steps.map((s, si) => <tr key={si} onClick={() => { setBoard({ die: selected.die, macros: s.macros, hubs: selected.hubs, issues: s.issues, title: `후보 ${selected.id} · ${s.action}` }); }} style={{ cursor: 'pointer' }}>
               <td><b>{s.action}</b></td><td style={{ fontSize: 11 }}>{s.ok ? '통과' : summarizeIssues(s.issues)}</td>
             </tr>)}</tbody></table></div>
           </>}
@@ -816,12 +838,12 @@ export default function MacroAreaTetris() {
         <article className="game-done"><header><b>random legal start 연결</b><em>DONE · 2026-09-29</em></header><p>후보 생성이 <code>seeds: 0</code>으로 호출돼 무작위 시작점이 전혀 없었습니다 — 이제 12개(로드맵 권장 8~16개 범위)를 실제로 흩뿌려 deterministic 여유 분할 후보에 더합니다. 다만 지금 붙은 건 Macro Tetris의 <b>Rip-up(greedy 다듬기)</b>까지고, 온도 기반으로 일부 나쁜 이동도 받아들이는 <b>SA 자체는 아직</b>입니다 — local minimum 탈출력은 SA를 실제로 붙여야 더 좋아집니다.</p><small>남은 일: repairFrom의 polish를 SA로 교체</small></article>
         <article className="game-done" style={{ gridColumn: 'span 3' }}>
           <header><b>표준셀 타일 — 가변 폭 row-run</b><em>DONE · 2026-09-29</em></header>
-          <p>"표준셀 타일 표시" 디버그 오버레이가 고정 300×300µm 정사각형이라, 남는 공간이 필요 면적의 2.3배(row-run 계산 기준)인데도 자투리로 쪼개져 있어 실측 grid에서 13개 중 12개만 들어갔습니다. 이제 매크로 배치는 <b>그대로 두고</b> 타일만 실제 OpenROAD cutrows처럼 한 줄(row) 안에서 옆으로 이어진 빈 칸을 폭 그대로 쓰도록 바꿔 13/13 전부 들어갑니다 — 위 "표준셀 타일 표시" 버튼에 배치 개수가 바로 뜹니다. S1·S3·S9처럼 매크로 하나 폭보다 넓은 타일이 나오면 정상입니다.</p>
+          <p>"표준셀 타일 표시" 디버그 오버레이가 고정 300×300µm 정사각형이라, 남는 공간이 필요 면적의 2.3배(row-run 계산 기준)인데도 자투리로 쪼개져 있어 실측 grid에서 13개 중 12개만 들어갔습니다. 이제 매크로 배치는 <b>그대로 두고</b> 타일만 실제 OpenROAD cutrows처럼 한 줄(row) 안에서 옆으로 이어진 빈 칸을 폭 그대로 쓰도록 바꿨습니다. <b>정정(2026-10-04):</b> 이때 "13/13 전부 들어간다"고 한 것은 개수 기준이라 과장이었습니다 — 13개 중 8개는 매크로 사이 100µm 틈의 100×100 조각(각 4,000µm²)이라 13개가 담는 셀 면적은 212,000µm²로 필요한 460,614µm²의 <b>46%</b>뿐이었습니다. 지금은 면적 합이 100%가 될 때까지 조각을 더 얹어(실제 격자 <b>36조각 · 108%</b>) 완료를 면적으로 판정하고, 버튼·후보 풀·최고 후보에 조각 수와 면적 %가 같이 뜹니다. S1·S3·S9처럼 매크로 하나 폭보다 넓은 타일이 나오면 정상입니다.</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, margin: '8px 0' }}>
             <figure style={{ margin: 0 }}><img src="/macro-area/glue_tiles_off.png" alt="타일 표시 끄기 — 매크로만 보이는 초기 화면" style={{ width: '100%', borderRadius: 6, border: '1px solid var(--border)' }}/><figcaption style={{ marginTop: 4, color: 'var(--text-muted)', fontSize: 8 }}>초기 화면 — 매크로만(타일 표시 끔)</figcaption></figure>
-            <figure style={{ margin: 0 }}><img src="/macro-area/glue_tiles_on.png" alt="타일 표시 켜기 — S1·S3·S9가 매크로 폭보다 넓은 가변 폭 타일" style={{ width: '100%', borderRadius: 6, border: '1px solid var(--border)' }}/><figcaption style={{ marginTop: 4, color: 'var(--text-muted)', fontSize: 8 }}>타일 표시 켬 — 13/13, S1·S3·S9가 매크로 폭보다 넓음</figcaption></figure>
+            <figure style={{ margin: 0 }}><img src="/macro-area/glue_tiles_on.png" alt="타일 표시 켜기 — S1·S3·S9가 매크로 폭보다 넓은 가변 폭 타일" style={{ width: '100%', borderRadius: 6, border: '1px solid var(--border)' }}/><figcaption style={{ marginTop: 4, color: 'var(--text-muted)', fontSize: 8 }}>타일 표시 켬 (당시 13개 · 면적 46% — 현재는 36조각 · 108%), S1·S3·S9가 매크로 폭보다 넓음</figcaption></figure>
           </div>
-          <small>확인: macroTetrisModel.regression.ts에 fillGlue 13/13 회귀 고정 · 매크로 위치·util·필요 밀도는 이 변경으로 바뀌지 않음</small>
+          <small>확인: macroTetrisModel.regression.ts에 "조각 36개로 필요 면적 108%"와 "공칭 13개는 46%"를 고정 · 매크로 위치·util·필요 밀도는 이 변경으로 바뀌지 않음</small>
         </article>
         <article><header><b>복수 선택·그룹 이동</b><em>P2 · NOT IMPLEMENTED</em></header><p>현재는 macro 하나만 drag할 수 있습니다. 그룹 선택 패턴은 다른 게임에 있지만 Macro Area에는 아직 연결되지 않았습니다.</p><small>목표: channel 행 전체 수동 조정 + snapshot</small></article>
         <article><header><b>실제 net 연결 비용</b><em>P0 · NEXT</em></header><p>모든 macro를 모든 hub에 연결하는 근사 비용을 macro↔hub connectivity와 criticality 가중치로 교체합니다. pin 위치가 있으면 HPWL도 함께 계산합니다.</p><small>검증: proxy 순위 ↔ GlobalRoute wirelength 상관도</small></article>

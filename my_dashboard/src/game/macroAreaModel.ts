@@ -14,7 +14,7 @@ import {
   GRID_COLS, GRID_ROWS, HOTSPOT_RATIO, PIN_ESCAPE_MARGIN, POWER_RING_MARGIN,
   LO_CELL, USABLE_SQUARE, GLUE_TILE, GLUE_TILE_CAP, REAL_GLUE, REAL_RUN_MACROS, REAL_RUN_HUBS,
   gapBetween, overlapAmount, rasterizeSegment, mulberry32, internalProjectionGaps, CHANNEL_SAFE_MARGIN,
-  STD_CELL_ROW_HEIGHT_UM, STD_CELL_SITE_WIDTH_UM,
+  STD_CELL_ROW_HEIGHT_UM, STD_CELL_SITE_WIDTH_UM, glueCoverage, GLUE_TILE_MAX_COUNT,
   type Macro, type Pos, type State, type Cost, type GlueTile,
 } from './macroTetrisModel'
 
@@ -358,7 +358,7 @@ export function glueHubOrder(needed: number): number[] {
   return order
 }
 
-export type GlueResultD = { tiles: GlueTile[]; needed: number; complete: boolean; mode: 'hub' | 'pack' }
+export type GlueResultD = { tiles: GlueTile[]; needed: number; complete: boolean; coverage: number; mode: 'hub' | 'pack' }
 
 // 정사각형(3×3칸) 규칙은 실제 표준셀 row 배치와 안 맞았다 — OpenROAD는 macro와
 // 겹치는 row만 잘라내고(cutrows) 남은 조각은 길든 짧든 그대로 다 쓰는데, 정사각형
@@ -391,9 +391,13 @@ export function fillGlueD(d: Die, macros: Macro[], hubs: Pos[], needed: number, 
   // 높을수록 같은 폭에 더 많은 면적이 들어가므로 필요한 폭(targetCells)은 줄어든다.
   const targetCells = Math.max(1, Math.round(GLUE_TILE_CAP / (LO_CELL * LO_CELL * density)))
   const tiles: GlueTile[] = []
-  for (const hub of order) {
+  // 공칭 개수(needed)를 허브 순서로 채운 뒤, 용량이 필요한 glue 면적에 못 미치면 같은
+  // 순서로 조각을 더 얹는다 — 완료는 개수가 아니라 면적(coverage ≥ 1)으로 판정한다.
+  // (100µm 틈에 들어간 100×100 조각은 공칭 타일의 11%밖에 못 담아서 개수만 맞춰서는 모자란다.)
+  for (let i = 0; i < order.length || (glueCoverage(tiles, density) < 1 && tiles.length < GLUE_TILE_MAX_COUNT); i++) {
     const free = freeRunsD(d, macros, tiles)
     if (free.length === 0) break
+    const hub = order[i % order.length]
     const t = hubs[hub]
     let best = free[0], bestD = Infinity
     for (const f of free) {
@@ -404,7 +408,8 @@ export function fillGlueD(d: Die, macros: Macro[], hubs: Pos[], needed: number, 
     const useCells = Math.min(best.len, targetCells)
     tiles.push({ x: best.c0 * LO_CELL, y: best.row * LO_CELL, w: useCells * LO_CELL, hub })
   }
-  return { tiles, needed, complete: tiles.length === needed, mode: 'hub' }
+  const coverage = glueCoverage(tiles, density)
+  return { tiles, needed, complete: coverage >= 1, coverage, mode: 'hub' }
 }
 
 // ---- 면적 탐색 공통 타입 ----

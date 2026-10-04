@@ -10,7 +10,7 @@
 // scattered (actually-failed) layout BETTER than the real passing grid layout
 // on every metric except channel width - this script exists so that kind of
 // mis-ranking can never silently come back after a future cost-function edit.
-import { cost, isLegal, preSignoffProxy, REAL_RUN_HUBS, REAL_RUN_MACROS, fillGlue, REAL_GLUE, stackAttempt, mulberry32, GLUE_TILES_NEEDED, type Macro } from './macroTetrisModel'
+import { cost, isLegal, preSignoffProxy, REAL_RUN_HUBS, REAL_RUN_MACROS, fillGlue, REAL_GLUE, stackAttempt, mulberry32, glueCoverage, type Macro } from './macroTetrisModel'
 
 type RealRun = { name: string; expectLegal: boolean; why: string; locations: [number, number][] }
 
@@ -77,9 +77,16 @@ if (gridEntry?.legal) {
   const gridRun = REAL_RUNS.find(r => r.name.startsWith('grid'))!
   const macros = runToMacros(gridRun.locations)
   const glue = fillGlue(macros, REAL_RUN_HUBS.map(h => ({ ...h })))
-  const ok = glue.complete && glue.tiles.length === glue.needed
-  console.log(`${ok ? 'PASS' : 'FAIL'}  glue-tile row-run fit at real grid: ${glue.tiles.length}/${glue.needed} tiles placed (needed area ${REAL_GLUE.cellArea}um^2)`)
+  // Completion is by AREA, not count: the first 13 (nominal) tiles only carry 212,000 um^2 of
+  // cells (46% of the needed 460,614) because 8 of them are 100x100 slivers in the macro gaps.
+  const nominal = glue.tiles.slice(0, glue.needed)
+  const nominalCov = glueCoverage(nominal)
+  const ok = glue.complete && glue.coverage >= 1 && glue.tiles.length > glue.needed
+  console.log(`${ok ? 'PASS' : 'FAIL'}  glue-tile row-run fit at real grid: ${glue.tiles.length} pieces cover ${(glue.coverage * 100).toFixed(0)}% of the needed ${REAL_GLUE.cellArea}um^2`)
   if (!ok) failures++
+  const okNominal = Math.abs(nominalCov - 0.46) < 0.02
+  console.log(`${okNominal ? 'PASS' : 'FAIL'}  the first ${glue.needed} nominal tiles alone cover only ${(nominalCov * 100).toFixed(0)}% (count-based "13/13" would have overstated it)`)
+  if (!okNominal) failures++
 }
 
 // Auto-stack ("자동 쌓기"): the deterministic greedy stacker dead-ends at the same macro every
@@ -93,7 +100,7 @@ if (gridEntry?.legal) {
     const r = stackAttempt(REAL_RUN_MACROS.map(m => ({ ...m })), REAL_RUN_HUBS.map(h => ({ ...h })), mulberry32(4242 + a * 7919), topK)
     if (r.ok) {
       const c = cost({ macros: r.macros, hubs: REAL_RUN_HUBS.map(h => ({ ...h })) })
-      if (isLegal(c) && r.tiles.length === GLUE_TILES_NEEDED && r.macros.length === REAL_RUN_MACROS.length) found = a + 1
+      if (isLegal(c) && glueCoverage(r.tiles) >= 1 && r.macros.length === REAL_RUN_MACROS.length) found = a + 1
     }
   }
   const ok = found > 0

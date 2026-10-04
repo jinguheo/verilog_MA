@@ -822,21 +822,37 @@ export function placeGlueTile(macros: Macro[], tiles: GlueTile[], hub: number, h
   return { x: best.c0 * LO_CELL, y: best.row * LO_CELL, w: useCells * LO_CELL, hub }
 }
 
-export type GlueResult = { tiles: GlueTile[]; needed: number; wl: number; complete: boolean }
+// 타일이 실제로 담는 셀 면적 = 폭 × 한 줄 높이(LO_CELL) × 목표 밀도. 타일 "개수"만 세면
+// 틀린다 — 매크로 사이 100µm 틈에 들어간 100×100 조각은 4,000µm²밖에 못 담는데(공칭
+// 타일 36,000µm²의 11%) 개수로는 똑같이 1개다. 실제 확인: 실제 격자에서 13개를 채우면
+// 용량이 212,000µm²로 필요한 glue 460,614µm²의 46%뿐이었다.
+export function glueCapacityUm2(tiles: { w: number }[], density: number = REAL_GLUE.targetDensity): number {
+  return tiles.reduce((s, t) => s + t.w * LO_CELL * density, 0)
+}
+export function glueCoverage(tiles: { w: number }[], density: number = REAL_GLUE.targetDensity): number {
+  return glueCapacityUm2(tiles, density) / REAL_GLUE.cellArea
+}
+// 면적을 다 채울 때까지 늘려도 이 개수를 넘기지 않는다(자리가 정말 없을 때 무한 반복 방지).
+export const GLUE_TILE_MAX_COUNT = 120
+
+export type GlueResult = { tiles: GlueTile[]; needed: number; wl: number; complete: boolean; coverage: number }
 
 export function glueWirelength(tiles: GlueTile[], hubs: Pos[]): number {
   return tiles.reduce((s, t) => s + Math.abs(t.x + t.w / 2 - hubs[t.hub].x) + Math.abs(t.y + LO_CELL / 2 - hubs[t.hub].y), 0)
 }
 
-// 13개를 순서대로 한 번에 채운다. 들어갈 자리가 없으면 거기서 멈춘다(complete=false).
+// 공칭 13개를 허브 순서대로 채운 뒤, 용량이 필요한 glue 면적에 못 미치면(짧은 조각이 많이
+// 끼면 그렇다) 같은 허브 순서로 조각을 더 얹어 면적을 채운다. 완료 = 면적을 다 담음
+// (개수가 아니라). 들어갈 자리가 없으면 거기서 멈춘다(complete=false).
 export function fillGlue(macros: Macro[], hubs: Pos[]): GlueResult {
   const tiles: GlueTile[] = []
-  for (const hub of GLUE_TILE_HUBS) {
-    const t = placeGlueTile(macros, tiles, hub, hubs)
+  for (let i = 0; i < GLUE_TILES_NEEDED || (glueCoverage(tiles) < 1 && tiles.length < GLUE_TILE_MAX_COUNT); i++) {
+    const t = placeGlueTile(macros, tiles, GLUE_TILE_HUBS[i % GLUE_TILE_HUBS.length], hubs)
     if (!t) break
     tiles.push(t)
   }
-  return { tiles, needed: GLUE_TILES_NEEDED, wl: glueWirelength(tiles, hubs), complete: tiles.length === GLUE_TILES_NEEDED }
+  const coverage = glueCoverage(tiles)
+  return { tiles, needed: GLUE_TILES_NEEDED, wl: glueWirelength(tiles, hubs), complete: coverage >= 1, coverage }
 }
 
 // ---- 하나씩 쌓기(자동 플레이) ----
@@ -918,7 +934,7 @@ export function stackAttempt(shapes: Macro[], hubs: Pos[], rng: () => number, to
   const c = cost({ macros: placed, hubs })
   if (!isLegal(c)) return { ok: false, macros: placed, tiles: [], failAt: null, reason: '매크로는 다 놓였지만 최종 배치가 legal하지 않음' }
   const g = fillGlue(placed, hubs)
-  if (!g.complete) return { ok: false, macros: placed, tiles: g.tiles, failAt: null, reason: `표준셀 ${g.tiles.length}/${g.needed}개만 들어감` }
+  if (!g.complete) return { ok: false, macros: placed, tiles: g.tiles, failAt: null, reason: `표준셀 조각 ${g.tiles.length}개로 필요 면적의 ${Math.round(g.coverage * 100)}%만 채워짐` }
   return { ok: true, macros: placed, tiles: g.tiles, failAt: null, reason: '완료' }
 }
 

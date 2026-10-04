@@ -70,8 +70,8 @@
 // 아니다. 허브 위치는 실제 배선 경로가 아니라 신호 그룹의 전기적 중심
 // 근사치다. 여기서 찾은 후보는 config_hierarchical.json의
 // MACROS.chan_top.instances에 반영해 실제 OpenLane 실행을 돌려야 최종 확정된다.
-import { useEffect, useRef, useState } from 'react'
-import { DIE_W, DIE_H, N, MIN_SPACING, MACRO_MIN_SIDE, MACRO_MAX_SIDE, REAL_CHAN_TOP, CORE_RATIO, UTIL_WARN, impliedUtil, hubDefs, N_HUBS, type Pos, type Macro, REAL_RUN_MACROS, MIXED_MACROS, REAL_RUN_HUBS, type Cost, type State, type Candidate, isLegal, compareCandidates, LO_CELL, LO_COLS, LO_ROWS, analyzeLeftover, cost, LEFTOVER_CLEAN_PCT, CHANNEL_SAFE_MARGIN, spaceBreakdown, preSignoffProxy, mulberry32, cloneState, clampMacro, stepSA, type RipUpResult, ripUpReplace, remainingStillFit, referenceCandidate, toMacroPlacementCfg, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, GLUE_TILE, GLUE_TILE_CAP, GLUE_TILES_NEEDED, GLUE_TILE_HUBS, GLUE_TILE_MAX_WIDTH_UM, type GlueTile, placeGlueTile, fillGlue, glueWirelength, bestMacroSpot, macrosSignature, stackAttempt } from '../game/macroTetrisModel'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { DIE_W, DIE_H, N, MIN_SPACING, MACRO_MIN_SIDE, MACRO_MAX_SIDE, REAL_CHAN_TOP, CORE_RATIO, UTIL_WARN, impliedUtil, hubDefs, N_HUBS, type Pos, type Macro, REAL_RUN_MACROS, MIXED_MACROS, REAL_RUN_HUBS, type Cost, type State, type Candidate, isLegal, compareCandidates, LO_CELL, LO_COLS, LO_ROWS, analyzeLeftover, cost, LEFTOVER_CLEAN_PCT, CHANNEL_SAFE_MARGIN, spaceBreakdown, preSignoffProxy, mulberry32, cloneState, clampMacro, stepSA, type RipUpResult, ripUpReplace, remainingStillFit, referenceCandidate, toMacroPlacementCfg, REAL_GLUE, REAL_GLUE_OTHER_PURPOSE, REAL_GLUE_OTHER_PURPOSE_CELLS, REAL_GLUE_OTHER_PURPOSE_RATIO, REAL_GLUE_OTHER_PURPOSE_AREA, GLUE_TILE, GLUE_TILE_CAP, GLUE_TILES_NEEDED, GLUE_TILE_HUBS, GLUE_TILE_MAX_WIDTH_UM, glueCoverage, GLUE_TILE_MAX_COUNT, type GlueTile, placeGlueTile, fillGlue, glueWirelength, bestMacroSpot, macrosSignature, stackAttempt } from '../game/macroTetrisModel'
 import { drawFreeCell, drawTileBox, LEGEND_SWATCH, TETRIS_COLORS } from '../game/tetrisPalette'
 import UsageGuide from './UsageGuide'
 import type { ReplaceSAResult, SolverJob, SolverProgress, SolverRequest } from '../game/macroTetrisWorker'
@@ -110,7 +110,7 @@ const problemFacts = [
   ['chan_top 내부 실측', '다이 640,000 · 코어 613,701 · 셀 319,066 µm² (46,009셀, util 52%)', 'final/metrics.json의 design__die__area / core__area / instance__area__stdcell / instance__count / instance__utilization'],
   ['표준셀(glue) 면적', `라우팅 후 ${REAL_GLUE.cellArea.toLocaleString()} µm² (${REAL_GLUE.cellCount.toLocaleString()}셀) · 합성 직후 ${REAL_GLUE.synthArea.toLocaleString()} µm²`, '격자 baseline hierarchical_auto_20260924_142552의 design__instance__area__stdcell(탭셀·리페어/hold 버퍼 포함)과 06-yosys-synthesis/reports/stat.rpt'],
   ['↳ 그중 다른 용도(탭·타이밍/hold 버퍼)', `${REAL_GLUE_OTHER_PURPOSE_CELLS.toLocaleString()}셀 (${(REAL_GLUE_OTHER_PURPOSE_RATIO * 100).toFixed(1)}%) · 약 ${REAL_GLUE_OTHER_PURPOSE_AREA.toLocaleString()} µm²`, `탭셀 ${REAL_GLUE_OTHER_PURPOSE.tapCells.toLocaleString()} + 타이밍 리페어 버퍼 ${REAL_GLUE_OTHER_PURPOSE.timingRepairBuffers.toLocaleString()} + hold 버퍼 ${REAL_GLUE_OTHER_PURPOSE.holdBuffers.toLocaleString()} — RTL이 작성한 로직이 아니라 P&R이 나중에 끼워 넣은 것. 면적은 평균 셀 크기로 추정(카테고리별 실측 없음)`],
-  ['표준셀 타일', `최대 ${GLUE_TILE_MAX_WIDTH_UM}×${LO_CELL} µm(가변 폭) × 최대 ${GLUE_TILES_NEEDED}개`, `PL_TARGET_DENSITY_PCT=40 → 턴당 목표 ${GLUE_TILE_CAP.toLocaleString()} µm². 정사각형(${GLUE_TILE}×${GLUE_TILE}) 규칙은 실측 결과 남는 공간이 충분해도 13개 중 12개만 들어가 실제 row 배치처럼 가변 폭 조각으로 바꿈(회귀 테스트로 100% 배치 확인). 모듈별 면적은 flatten돼 없어서 전체를 타일로 나누고 허브 가중치(3:1:1)로 배분한 근사`],
+  ['표준셀 타일', `최대 ${GLUE_TILE_MAX_WIDTH_UM}×${LO_CELL} µm(가변 폭) 조각 — 개수가 아니라 담는 면적 합이 필요 면적의 100%가 될 때까지(공칭 ${GLUE_TILES_NEEDED}개는 출발점일 뿐)`, `PL_TARGET_DENSITY_PCT=40 → 턴당 목표 ${GLUE_TILE_CAP.toLocaleString()} µm². 정사각형(${GLUE_TILE}×${GLUE_TILE}) 규칙은 실측 결과 남는 공간이 충분해도 13개 중 12개만 들어가 실제 row 배치처럼 가변 폭 조각으로 바꿨습니다. 다만 매크로 사이 100µm 틈 조각은 4,000µm²밖에 못 담아서 공칭 13개는 필요 면적의 46%뿐이었고(2026-10-04 확인), 지금은 면적 합이 100%가 될 때까지 조각을 더 얹습니다(실제 격자: 36조각 · 108%). 모듈별 면적은 flatten돼 없어서 전체를 타일로 나누고 허브 가중치(3:1:1)로 배분한 근사`],
   ['신호 그룹(넷)', 'dma_sched(가중치 3) · csr(1) · irq_perf(1)', 'daq_subsystem.sv의 실제 per-channel fan-out 배열을 3그룹으로 단순화'],
   ['최소 spacing', `${MIN_SPACING} µm`, '실제 성공한 config_hierarchical.json 격자 배치와 같은 수준 — "legal"이 실제 signoff 사례와 비슷한 여유를 의미하도록 맞춤'],
   ['배선 층', 'li1 ~ met5 (6개 라우팅 레이어)', 'chan_top 실제 실행의 RT_MIN_LAYER=met1 / RT_MAX_LAYER=met5 (+li1) — resolved.json에서 확인'],
@@ -167,14 +167,19 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, state: State,
     ctx.strokeRect(p.x * sx, p.y * sy, p.w * sx, p.h * sy)
     ctx.setLineDash([])
 
-    // 안쪽 점선 사각형 = 실제 chan_top 표준셀 면적(319,066µm²)을 같은 가로세로비로
-    // 그린 것. 매크로보다 크면(활용률 >100%) 로직이 물리적으로 안 들어간다.
+    // 안쪽 연두 점선+반투명 채움 = chan_top 매크로 내부의 실제 표준셀 면적.
+    // 바깥의 자홍 단색 타일(top-level glue 표준셀)과 계층을 확실히 구분한다.
     const u = impliedUtil(p)
     const k = Math.min(1, Math.sqrt(REAL_CHAN_TOP.cellArea / (p.w * p.h)))
     const lw = p.w * k, lh = p.h * k
-    ctx.strokeStyle = u > 1 ? '#C0392B' : u > UTIL_WARN ? '#E6784E' : '#0F6E56'
+    const innerX = (p.x + (p.w - lw) / 2) * sx
+    const innerY = (p.y + (p.h - lh) / 2) * sy
+    ctx.fillStyle = u > 1 ? 'rgba(255,77,77,0.19)' : 'rgba(166,255,92,0.16)'
+    ctx.fillRect(innerX, innerY, lw * sx, lh * sy)
+    ctx.strokeStyle = u > 1 ? '#FF4D4D' : u > UTIL_WARN ? '#FFE066' : '#A6FF5C'
+    ctx.lineWidth = 1.7
     ctx.setLineDash([3, 3])
-    ctx.strokeRect((p.x + (p.w - lw) / 2) * sx, (p.y + (p.h - lh) / 2) * sy, lw * sx, lh * sy)
+    ctx.strokeRect(innerX, innerY, lw * sx, lh * sy)
     ctx.setLineDash([])
 
     ctx.fillStyle = '#042C53'
@@ -188,7 +193,15 @@ function draw(ctx: CanvasRenderingContext2D, w: number, h: number, state: State,
 
   // 표준셀 타일 — 이제 정사각형이 아니라 가변 폭(row 조각)이라 t.w를 그대로 쓴다.
   // 자기 허브 색 테두리 + 허브까지 가는 연결선.
+  // 썸네일처럼 작은 캔버스에서는 타일이 몇 픽셀뿐이라 흰 테두리·번호·허브선이 오히려
+  // 뭉개져 보인다 — 단색으로만 그려 "채워진 자리"가 보이게 한다.
+  const compact = w < 300
   glue.forEach((t, i) => {
+    if (compact) {
+      ctx.fillStyle = TETRIS_COLORS.tile.fill
+      ctx.fillRect(t.x * sx, t.y * sy, Math.max(1.5, t.w * sx), Math.max(1.5, LO_CELL * sy))
+      return
+    }
     const def = hubDefs[t.hub], hub = state.hubs[t.hub]
     const cx = t.x + t.w / 2, cy = t.y + LO_CELL / 2
     ctx.strokeStyle = def.color + '88'
@@ -293,6 +306,7 @@ export default function MacroTetris() {
 
   function setGlue(g: Glue | null) {
     glueRef.current = g
+    if (g === null) lastAutoSigRef.current = '' // tiles were dropped (scenario/reset/play) - allow the auto-fill to run again
     setGlueView(g)
   }
 
@@ -519,9 +533,31 @@ export default function MacroTetris() {
     setGlue({ tiles: r.tiles, sig: macrosSignature(st.macros) })
     redraw(selected)
     setNarration(r.complete
-      ? `표준셀 타일 ${r.tiles.length}/${r.needed}개 전부 배치 — 허브까지 표준셀 WL ${Math.round(r.wl).toLocaleString()}`
-      : `표준셀 공간 부족 — ${r.tiles.length}/${r.needed}개만 들어감 (남은 ${(r.needed - r.tiles.length) * GLUE_TILE_CAP / 1000}k µm²의 셀이 놓일 자리가 없음)`)
+      ? `표준셀 조각 ${r.tiles.length}개로 필요한 셀 면적의 ${Math.round(r.coverage * 100)}%를 채움 — 허브까지 표준셀 WL ${Math.round(r.wl).toLocaleString()}`
+      : `표준셀 공간 부족 — 조각 ${r.tiles.length}개로 필요한 셀 면적의 ${Math.round(r.coverage * 100)}%만 채워짐 (남은 ${Math.round((1 - r.coverage) * REAL_GLUE.cellArea / 1000)}k µm²의 셀이 놓일 자리가 없음)`)
   }
+
+  // 표준셀 타일 자동 표시 — 예전에는 "표준셀 채우기"를 눌러야만 보였다. 이제는 매크로 8개가 놓인
+  // 배치가 가만히 있으면(드래그·AI·쌓기 플레이 중이 아닐 때) 그 배치 기준으로 타일을 알아서 채워
+  // 보여 준다. 매크로가 바뀌면 다음 정지 때 다시 채운다. 같은 배치는 한 번만 시도(lastAutoSigRef).
+  const selectedRef = useRef(selected)
+  selectedRef.current = selected
+  const lastAutoSigRef = useRef('')
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (playing || busy || aiOn || autoRef.current || dragRef.current) return
+      const st = liveStateRef.current
+      if (st.macros.length !== N || currentGlue().length > 0) return
+      const sig = macrosSignature(st.macros)
+      if (lastAutoSigRef.current === sig) return
+      lastAutoSigRef.current = sig
+      const r = fillGlue(st.macros, st.hubs)
+      setGlue({ tiles: r.tiles, sig })
+      redraw(selectedRef.current)
+    }, 400)
+    return () => window.clearInterval(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing, busy, aiOn])
 
   // ---- 하나씩 쌓기 플레이: 빈 다이에서 매크로 8개 → 표준셀 타일 13개 순서로 ----
   function startPlay() {
@@ -539,7 +575,7 @@ export default function MacroTetris() {
     setPlayView({ ...playRef.current })
     setPlaying(true)
     redraw()
-    setNarration(`쌓기 시작 — 매크로 ${shapes.length}개를 하나씩 놓은 뒤 표준셀 타일 ${GLUE_TILES_NEEDED}개를 채웁니다`)
+    setNarration(`쌓기 시작 — 매크로 ${shapes.length}개를 하나씩 놓은 뒤 표준셀 타일을 필요한 면적이 찰 때까지 채웁니다`)
   }
 
   function stopPlay() {
@@ -588,7 +624,7 @@ export default function MacroTetris() {
       const fin = liveStateRef.current, c = cost(fin)
       autoRef.current = false
       setAutoStack(null)
-      const message = `완료 — 자동 쌓기 ${attempt + 1}번째 시도에서 legal 배치 발견 · 매크로 ${fin.macros.length}개 · 표준셀 ${r.tiles.length}/${GLUE_TILES_NEEDED} · 매크로 WL ${Math.round(c.wl).toLocaleString()} · 표준셀 WL ${Math.round(glueWirelength(r.tiles, fin.hubs)).toLocaleString()} · 여유 공간 ${c.usableLeftoverPct}%`
+      const message = `완료 — 자동 쌓기 ${attempt + 1}번째 시도에서 legal 배치 발견 · 매크로 ${fin.macros.length}개 · 표준셀 조각 ${r.tiles.length}개(필요 면적의 ${Math.round(glueCoverage(r.tiles) * 100)}%) · 매크로 WL ${Math.round(c.wl).toLocaleString()} · 표준셀 WL ${Math.round(glueWirelength(r.tiles, fin.hubs)).toLocaleString()} · 여유 공간 ${c.usableLeftoverPct}%`
       playRef.current = { queue: [], pos: 0, result: { ok: true, message } }
       setPlayView({ ...playRef.current })
       setNarration(message)
@@ -646,15 +682,20 @@ export default function MacroTetris() {
     } else {
       const tiles = currentGlue()
       const t = placeGlueTile(st.macros, tiles, item.hub, st.hubs)
-      if (!t) { endPlay(false, `표준셀 공간 부족 — ${tiles.length}/${GLUE_TILES_NEEDED}개만 들어감`); return }
+      if (!t) { endPlay(false, `표준셀 공간 부족 — 조각 ${tiles.length}개로 필요한 셀 면적의 ${Math.round(glueCoverage(tiles) * 100)}%만 채워짐`); return }
       setGlue({ tiles: [...tiles, t], sig: macrosSignature(st.macros) })
       redraw()
-      setNarration(`표준셀 타일 S${tiles.length + 1} → ${hubDefs[item.hub].name} 허브 근처 (${t.x}, ${t.y})`)
+      setNarration(`표준셀 타일 S${tiles.length + 1} → ${hubDefs[item.hub].name} 허브 근처 (${t.x}, ${t.y}) · 면적 ${Math.round(glueCoverage([...tiles, t]) * 100)}%`)
     }
     p.pos++
+    // 공칭 13개를 다 놓았어도 담는 면적이 필요한 glue 면적에 못 미치면(짧은 조각이 많이 끼면 그렇다)
+    // 조각을 더 얹는다 — 완료는 개수가 아니라 면적으로 판정한다.
+    if (p.pos >= p.queue.length && glueCoverage(currentGlue()) < 1 && currentGlue().length < GLUE_TILE_MAX_COUNT) {
+      p.queue.push({ kind: 'glue', hub: GLUE_TILE_HUBS[p.queue.length % GLUE_TILE_HUBS.length], idx: p.queue.length })
+    }
     if (p.pos < p.queue.length) { setPlayView({ ...p }); return }
     const fin = liveStateRef.current, c = cost(fin), tiles = currentGlue()
-    endPlay(true, `완료 — 매크로 ${fin.macros.length}개 · 표준셀 ${tiles.length}/${GLUE_TILES_NEEDED} · 매크로 WL ${Math.round(c.wl).toLocaleString()} · 표준셀 WL ${Math.round(glueWirelength(tiles, fin.hubs)).toLocaleString()} · 여유 공간 ${c.usableLeftoverPct}%`)
+    endPlay(true, `완료 — 매크로 ${fin.macros.length}개 · 표준셀 조각 ${tiles.length}개(필요 면적의 ${Math.round(glueCoverage(tiles) * 100)}%) · 매크로 WL ${Math.round(c.wl).toLocaleString()} · 표준셀 WL ${Math.round(glueWirelength(tiles, fin.hubs)).toLocaleString()} · 여유 공간 ${c.usableLeftoverPct}%`)
   }
 
   useEffect(() => {
@@ -825,7 +866,7 @@ export default function MacroTetris() {
       <div>
         <small>SELF-PLAYING PHYSICAL DESIGN GAME · 실제 매크로 배치</small>
         <h2>Macro Tetris</h2>
-        <p>daq_subsystem hierarchical 트랙의 실제 배치 문제입니다. <b>▶ 쌓기 플레이</b>를 누르면 AI가 빈 다이에 매크로 8개를 하나씩 놓고, 이어서 실제 표준셀 {REAL_GLUE.cellArea.toLocaleString()}µm²를 {GLUE_TILES_NEEDED}개 타일로 남은 영역에 채웁니다. 다 놓인 뒤에는 드래그·크기 변경·AI 솔버로 계속 고칠 수 있습니다 — 초록 칸은 표준셀을 넣기 좋은 여유 공간, 주황 칸은 조각나서 쓰기 어려운 공간, 보라 타일은 배치된 표준셀입니다.</p>
+        <p>daq_subsystem hierarchical 트랙의 실제 배치 문제입니다. <b>▶ 쌓기 플레이</b>를 누르면 AI가 빈 다이에 매크로 8개를 하나씩 놓고, 이어서 실제 표준셀 {REAL_GLUE.cellArea.toLocaleString()}µm²를 담을 때까지 남은 영역에 타일 조각을 채웁니다. 다 놓인 뒤에는 드래그·크기 변경·AI 솔버로 계속 고칠 수 있습니다 — 연한 초록 빗금은 표준셀을 놓을 수 있는 빈 영역, 자홍 단색 타일은 실제 배치 완료된 top-level 표준셀, 매크로 안의 연두 점선은 chan_top 내부 표준셀 면적입니다.</p>
       </div>
       <div className={`ai-status ${aiOn || playing || busy || searching ? 'live' : ''}`}><i/><span>{status}</span></div>
     </section>
@@ -838,7 +879,7 @@ export default function MacroTetris() {
         { title: '2. 쌓다가 GAME OVER가 나면', body: <>쌓기 플레이는 항상 가장 낮은 비용 자리만 고르기 때문에 같은 곳에서 매번 막힙니다. <b>⟳ 자동 쌓기</b>를 누르면 무작위로 다르게 쌓으며 legal하고 표준셀 {GLUE_TILES_NEEDED}개가 다 들어가는 배치를 찾을 때까지 계속 돕니다(중지 가능).</> },
         { title: '3. 개선하기 (가벼운 것 → 무거운 것)', body: <><b>Rip-up</b>(몇 초, 개선이 없으면 스스로 멈춤) → <b>AI ON</b>(SA가 계속 흔들어 봄, MANUAL로 바꾸면 중단) → <b>병렬 탐색</b>(레인 여러 개로 오래 돌려 최고 후보를 갱신, 개선을 못 찾는 동안은 안 멈춤).</> },
         { title: '4. 직접 만져 보기', body: <>캔버스에서 매크로를 드래그하거나 화살표 키(20µm, Shift는 100µm)로 이동, Tab으로 다음 매크로 선택. 빨간 상태가 되면 legal이 깨진 것입니다.</> },
-        { title: '5. 표준셀이 들어가는지 보기', body: <><b>표준셀 채우기</b>를 누르면 타일 {GLUE_TILES_NEEDED}개를 놓아 봅니다. 13/13이면 들어간 것이고, 모자라면 표준셀 공간 부족입니다. 캔버스는 <b>빗금 = 빈 공간</b>(초록: 넣기 좋음, 호박색: 조각나서 어려움), <b>자홍 단색 = 실제 배치된 표준셀</b>입니다.</> },
+        { title: '5. 표준셀이 들어가는지 보기', body: <><b>표준셀 채우기</b>(또는 자동 표시)는 필요한 glue 셀 면적을 다 담을 때까지 조각을 놓아 봅니다. <b>STD CELL 배치 100% 이상</b>이어야 들어간 것이고, 모자라면 표준셀 공간 부족입니다. 아래 "표준셀 조각" 표에서 조각마다 담는 면적을 볼 수 있습니다. 캔버스는 <b>빗금 = 빈 공간</b>(초록: 넣기 좋음, 호박색: 조각나서 어려움), <b>자홍 단색 = 실제 배치된 표준셀</b>입니다.</> },
         { title: '6. 저장하고 비교하기', body: <>마음에 들면 <b>후보 저장</b>. 아래 후보 목록과 "지금까지 찾은 최고 후보"(자동 저장)에서 비용·배선·표준셀 여유를 비교하고, 클릭하면 캔버스로 불러옵니다.</> },
         { title: '7. 실제로 쓰기', body: <><b>실제 config로 내보내기</b> → <code>MACROS.chan_top.instances</code> 좌표 JSON이 나옵니다. 이것을 daq_subsystem의 <code>config_hierarchical.json</code>에 붙여 OpenLane을 돌려야 signoff가 확정됩니다. 8개 모두 HARD일 때만 그대로 쓸 수 있습니다.</> },
       ]}
@@ -860,7 +901,7 @@ export default function MacroTetris() {
       <div><span>BEST 후보 비용</span><b className="pass">{savedBest ? Math.round(savedBest.total).toLocaleString() : '-'}</b></div>
       <div><span>STATE</span><b className={isLegal(liveCost) ? 'pass' : 'warn'}>{isLegal(liveCost) ? 'LEGAL' : 'ILLEGAL'}</b></div>
       <div><span>STD-CELL 여유</span><b className={proxy.leftoverClean ? 'pass' : 'warn'}>{liveCost.usableLeftoverPct}%</b></div>
-      <div><span>STD CELL 배치</span><b className={glueTiles.length === GLUE_TILES_NEEDED ? 'pass' : 'warn'}>{glueTiles.length}/{GLUE_TILES_NEEDED}</b></div>
+      <div><span>STD CELL 배치</span><b className={glueCoverage(glueTiles) >= 1 ? 'pass' : 'warn'}>{Math.round(glueCoverage(glueTiles) * 100)}%</b><small>{glueTiles.length}개 조각 · 필요 면적 기준</small></div>
       <div><span>CONFIDENCE</span><b className={proxy.confidence >= 90 ? 'pass' : 'warn'}>{proxy.confidence}%</b></div>
     </section>
 
@@ -885,6 +926,7 @@ export default function MacroTetris() {
           <span><span style={LEGEND_SWATCH.usable}/>빈 공간 · 표준셀 넣기 좋음 (빗금)</span>
           <span><span style={LEGEND_SWATCH.fragmented}/>빈 공간 · 조각나서 쓰기 어려움 (반대 방향 빗금)</span>
           <span><span style={LEGEND_SWATCH.tile}/>실제 배치된 표준셀 타일 (단색 · S번호, 최대 {GLUE_TILE_MAX_WIDTH_UM}×{LO_CELL}µm 가변 폭, 턴당 {GLUE_TILE_CAP.toLocaleString()}µm²)</span>
+          <span><span style={{ display: 'inline-block', width: 20, height: 12, marginRight: 4, border: '2px dashed #A6FF5C', borderRadius: 2, background: 'rgba(166,255,92,.16)' }}/>매크로 내부 표준셀 면적 (연두 점선)</span>
         </div>
       </div>
 
@@ -980,6 +1022,18 @@ export default function MacroTetris() {
       </aside>
     </section>
 
+    {glueTiles.length > 0 && <section className="chip-card">
+      <div className="chip-card-title"><div><small>STD CELL PIECES · 조각별</small><h3>실제 들어간 표준셀 조각 {glueTiles.length}개</h3></div><span>필요 면적의 {Math.round(glueCoverage(glueTiles) * 100)}%</span></div>
+      <p className="chip-note">개수가 아니라 <b>조각마다 담는 셀 면적</b>이 중요합니다 — 매크로 사이 100µm 틈에 들어간 조각은 {(100 * LO_CELL * REAL_GLUE.targetDensity).toLocaleString()}µm²밖에 못 담고, 한 줄로 길게 이어진 조각은 최대 {Math.round(GLUE_TILE_MAX_WIDTH_UM * LO_CELL * REAL_GLUE.targetDensity).toLocaleString()}µm²까지 담습니다. 필요한 glue 셀 면적은 {REAL_GLUE.cellArea.toLocaleString()}µm²입니다.</p>
+      <div className="data-table" style={{ maxHeight: 320, overflow: 'auto' }}><table>
+        <thead><tr><th>조각</th><th>허브</th><th>위치 (x, y)</th><th>크기</th><th>담는 셀 면적</th><th>누적</th></tr></thead>
+        <tbody>{glueTiles.map((t, i) => {
+          const cum = glueCoverage(glueTiles.slice(0, i + 1))
+          return <tr key={i}><td><b>S{i + 1}</b></td><td><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 4, background: hubDefs[t.hub].color, marginRight: 4 }}/>{hubDefs[t.hub].name}</td><td>({t.x}, {t.y})</td><td>{t.w}×{LO_CELL}µm</td><td>{Math.round(t.w * LO_CELL * REAL_GLUE.targetDensity).toLocaleString()}µm²</td><td>{Math.round(cum * 100)}%</td></tr>
+        })}</tbody>
+      </table></div>
+    </section>}
+
     <section className="chip-analysis-grid">
       <article className="chip-card">
         <div className="chip-card-title"><div><small>BEST SO FAR · 항상 저장</small><h3>지금까지 찾은 최고 후보</h3></div><span>{partial ? '쌓는 중' : '이 모양 구성 기준'}</span></div>
@@ -990,6 +1044,10 @@ export default function MacroTetris() {
               <div><dt>비용</dt><dd>{Math.round(savedBest.total).toLocaleString()}</dd></div>
               <div><dt>배선 비용</dt><dd>{Math.round(savedBest.wl).toLocaleString()}</dd></div>
               <div><dt>표준셀 여유</dt><dd>{savedBest.leftover}%</dd></div>
+              {(() => {
+                const g = savedBest.state.macros.length === N ? fillGlue(savedBest.state.macros, savedBest.state.hubs) : null
+                return g && <div><dt>표준셀 배치</dt><dd style={{ color: g.complete ? 'var(--text-success)' : 'var(--text-danger)' }}>{g.tiles.length}조각 · 필요 면적 {Math.round(g.coverage * 100)}% · WL {Math.round(g.wl).toLocaleString()}</dd></div>
+              })()}
               <div><dt>찾은 곳</dt><dd>{savedBest.source}</dd></div>
               <div><dt>찾은 시각</dt><dd>{savedBest.foundAt}</dd></div>
             </dl>
@@ -1198,16 +1256,20 @@ function btnStyle(disabled: boolean): React.CSSProperties {
 function CandidateThumb({ cand, rank, onClick }: { cand: Candidate; rank: number; onClick: () => void }) {
   const ref = useRef<HTMLCanvasElement | null>(null)
   const w = 150, h = 85
+  // 후보는 매크로 배치만 저장하지만 표준셀 타일은 그 배치에서 결정적으로 정해진다 — 같은
+  // 방식(fillGlue)으로 채워 썸네일에도 함께 그리고, 필요한 셀 면적을 얼마나 담는지 보여 준다.
+  const glue = useMemo(() => (cand.state.macros.length === N ? fillGlue(cand.state.macros, cand.state.hubs) : null), [cand])
   useEffect(() => {
     const ctx = ref.current?.getContext('2d')
-    if (ctx) draw(ctx, w, h, cand.state, cand.c, null)
-  }, [cand])
+    if (ctx) draw(ctx, w, h, cand.state, cand.c, null, glue?.tiles ?? [])
+  }, [cand, glue])
   const legal = isLegal(cand.c)
   return <div style={{ width: 150, cursor: 'pointer' }} onClick={onClick}>
     <canvas ref={ref} width={w} height={h} style={{ width: '100%', height: 'auto', background: 'var(--surface-1)', borderRadius: 4, border: rank === 0 ? '1.5px solid var(--text-primary)' : '0.5px solid var(--border-strong)' }}/>
     <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 3 }}>{cand.label}</div>
     <div style={{ fontSize: 11, color: legal ? 'var(--text-success)' : 'var(--text-danger)' }}>{legal ? 'legal' : 'illegal'} · WL {Math.round(cand.c.wl)}</div>
     <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>spacing 위반 {cand.c.spacingViolations} · 혼잡 {cand.c.congestionCells}칸</div>
+    {glue && <div style={{ fontSize: 11, color: glue.complete ? 'var(--text-success)' : 'var(--text-danger)' }}>표준셀 {glue.tiles.length}조각 · 필요 면적 {Math.round(glue.coverage * 100)}%</div>}
   </div>
 }
 
