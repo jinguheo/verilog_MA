@@ -159,3 +159,26 @@
 @media (max-width: 1150px) { .analog-two-column { grid-template-columns: 1fr; } .analog-tools { grid-template-columns: repeat(2,1fr); } .analog-circuit-facts { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .sram-visual-grid,.converter-diagrams,.layout-evidence-grid { grid-template-columns: 1fr; } .strategy-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width: 700px) { .analog-form,.analog-form fieldset,.analog-tools,.comparison-tool-status { grid-template-columns: 1fr; } .analog-tabs { width: 100%; overflow-x: auto; } .analog-tabs button { white-space: nowrap; } .tool-guide>label { grid-template-columns: 1fr; } .cdac-flow { display: grid; grid-template-columns: 1fr; } .cdac-flow>em { display: none; } }
+
+/* PPA 실험 요약 탭 */
+.ppaov { display: grid; gap: var(--sp-4); }
+.ppaov-intro, .ppaov-purpose, .ppaov-note { margin: 0; color: var(--text-secondary); line-height: 1.6; }
+.ppaov-card { display: grid; gap: var(--sp-3); }
+.ppaov-diagram { padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius-md); background: #fff; }
+.ppaov-svg { width: 100%; height: auto; max-height: 360px; display: block; }
+.ppaov-caption { margin: var(--sp-2) 0 0; color: #4a5263; font-size: var(--text-xs); }
+.ppaov-cols { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--sp-4); }
+.ppaov-bar { display: flex; gap: 3px; margin: 6px 0; }
+.ppaov-bar i { flex: 1; height: 8px; border-radius: 4px; background: var(--border); }
+.ppaov-bar i.done { background: var(--success, #2a9d5c); }
+.ppaov-bar i.partial { background: #e0a21a; }
+.ppaov-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ppaov-steps li { display: grid; grid-template-columns: 74px 1fr; gap: var(--sp-2); align-items: start; font-size: var(--text-sm); }
+.ppaov-steps em { font-style: normal; font-size: var(--text-xs); font-weight: 700; text-align: center; padding: 2px 6px; border-radius: 999px; }
+.ppaov-steps li.done em { background: var(--success-soft, #dff3e7); color: #1d7a45; }
+.ppaov-steps li.partial em { background: #fdf0cf; color: #8a6410; }
+.ppaov-steps li.todo em { background: var(--surface-muted); color: var(--text-muted); border: 1px solid var(--border); }
+.ppaov-legend { display: flex; flex-wrap: wrap; gap: var(--sp-3); font-size: var(--text-xs); color: var(--text-muted); }
+.ppaov-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.ppaov-legend i { width: 16px; height: 10px; border: 1.5px solid; border-radius: 3px; display: inline-block; }
+@media (max-width: 900px) { .ppaov-cols { grid-template-columns: 1fr; } }

@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import AnalogVsDigital from './AnalogVsDigital'
 import MemoryDesign from './MemoryDesign'
 import AdcDacComparison from './AdcDacComparison'
+import PpaOverview from './PpaOverview'
 
 const API = 'http://127.0.0.1:8788'
 
@@ -45,14 +46,14 @@ const optimalSramPreset = {
 }
 
 const initialForm = {...balancedPpaPreset}
-type AnalogTab = 'circuit' | 'requirements' | 'ppa_experiment' | 'ppa_experiment_2' | 'ppa_experiment_3' | 'vs_digital' | 'memory_design' | 'adc_dac'
+type AnalogTab = 'circuit' | 'requirements' | 'ppa_overview' | 'ppa_experiment' | 'ppa_experiment_2' | 'ppa_experiment_3' | 'vs_digital' | 'memory_design' | 'adc_dac'
 const ANALOG_TAB_STORAGE_KEY = 'veriolg-ma:analog-tab'
 
 function initialAnalogTab(): AnalogTab {
   const fallback: AnalogTab = 'circuit'
   try {
     const saved = window.localStorage.getItem(ANALOG_TAB_STORAGE_KEY) as AnalogTab | null
-    return saved && ['circuit','requirements','ppa_experiment','ppa_experiment_2','ppa_experiment_3','vs_digital','memory_design','adc_dac'].includes(saved) ? saved : fallback
+    return saved && ['circuit','requirements','ppa_overview','ppa_experiment','ppa_experiment_2','ppa_experiment_3','vs_digital','memory_design','adc_dac'].includes(saved) ? saved : fallback
   } catch { return fallback }
 }
 
@@ -182,6 +183,7 @@ export default function AnalogDesign() {
     <div className="analog-tabs" role="tablist" aria-label="아날로그 및 메모리 작업">
       <button role="tab" aria-selected={tab === 'circuit'} className={tab === 'circuit' ? 'active' : ''} onClick={() => setTab('circuit')}>전체 아날로그 회로도</button>
       <button role="tab" aria-selected={tab === 'requirements'} className={tab === 'requirements' ? 'active' : ''} onClick={() => setTab('requirements')}>현재 설계</button>
+      <button role="tab" aria-selected={tab === 'ppa_overview'} className={tab === 'ppa_overview' ? 'active' : ''} onClick={() => setTab('ppa_overview')}>PPA 실험 요약</button>
       <button role="tab" aria-selected={tab === 'ppa_experiment'} className={tab === 'ppa_experiment' ? 'active' : ''} onClick={() => setTab('ppa_experiment')}>PPA 실험 1</button>
       <button role="tab" aria-selected={tab === 'ppa_experiment_2'} className={tab === 'ppa_experiment_2' ? 'active' : ''} onClick={() => setTab('ppa_experiment_2')}>PPA 실험 2</button>
       <button role="tab" aria-selected={tab === 'ppa_experiment_3'} className={tab === 'ppa_experiment_3' ? 'active' : ''} onClick={() => setTab('ppa_experiment_3')}>PPA 실험 3</button>
@@ -281,6 +283,7 @@ export default function AnalogDesign() {
       </tbody></table></div>
     </section>
     </div>
+    {tab === 'ppa_overview' && <PpaOverview/>}
     {tab === 'ppa_experiment' && <PpaExperimentOne onApply={applyBalancedPpaPreset}/>}
     {tab === 'ppa_experiment_2' && <PpaExperimentTwo/>}
     {tab === 'ppa_experiment_3' && <PpaExperimentThree onApply={applyPpa3PlacementPreset}/>}
