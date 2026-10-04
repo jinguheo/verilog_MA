@@ -84,7 +84,23 @@ const MAX_SAVED_CANDIDATES = 64
 const loadSavedCandidates = (): CandidateResult[] => {
   try {
     const parsed = JSON.parse(localStorage.getItem(SAVED_CANDIDATES_KEY) ?? '[]')
-    return Array.isArray(parsed) ? parsed.slice(0, MAX_SAVED_CANDIDATES) : []
+    if (!Array.isArray(parsed)) return []
+    const unique = new Map<string, CandidateResult>()
+    for (const item of parsed) {
+      try {
+        if (!item?.state?.floorplanReady || !Array.isArray(item.state.board)) continue
+        const metrics = measureBoard(item.state.board)
+        if (metrics.violations > 0) continue
+        const candidate: CandidateResult = {
+          ...item, violations: 0, congestion: metrics.congestion,
+          score: Math.round(100000 + evaluatePlacement(item.state.board) * 100),
+        }
+        const signature = placementSignature(item.state.board)
+        const old = unique.get(signature)
+        if (!old || candidate.score > old.score) unique.set(signature, candidate)
+      } catch { /* skip outdated or malformed stored candidates */ }
+    }
+    return [...unique.values()].sort((a, b) => b.score - a.score).slice(0, MAX_SAVED_CANDIDATES)
   } catch {
     return []
   }
@@ -631,7 +647,17 @@ export default function ChipTetris() {
         <div className="full-next-queue"><span className="panel-label">ALL REMAINING PLACEMENT</span><div className="next-row all-items">{remainingRequired.map((id, index) => <div className={`queued-block ${index === 0 ? 'current' : ''}`} key={`${id}-${index}`}><em>{index === 0 ? 'NOW' : `NEXT ${index}`}</em><MiniBlock id={id} physicalSize={BLOCKS[id].physicalKind === 'neighbor-region' ? appliedRegionSizes[id as InitBlockId] : undefined}/></div>)}{futurePlacementStages.map((stage, index) => <div className={`queued-stage ${stage.done ? 'done' : !game.floorplanReady && index === 0 ? 'waiting' : ''}`} key={stage.id}><em>{stage.done ? 'DONE' : `STEP ${remainingRequired.length + index + 1}`}</em><b>{stage.label}</b><small>{stage.detail}</small></div>)}</div><small className="queue-note">현재 블록부터 필수 영역, 표준셀 채우기, Re-place, SA, 후보 평가까지 모두 표시합니다.</small></div>
         <div className="placement-progress">{PLACEMENT_SEQUENCE.map((id, index) => <div key={id} className={index < game.placements ? 'done' : index === game.placements && !game.floorplanReady ? 'current' : ''}><i>{index < game.placements ? '✓' : index + 1}</i><span>{BLOCKS[id].label}</span><small>{index < 2 ? 'MACRO' : 'STD REGION'}</small></div>)}</div>
         <div className={`sa-progress-panel ${saRunning ? 'running' : saProgress.stage === 'complete' ? 'complete' : ''}`}><div className="sa-progress-head"><div><span className="panel-label">SA PROGRESS</span><b>{saStageLabel}</b></div><strong>{Math.round(saPercent)}%</strong></div><div className="sa-progress-track"><i style={{ width: `${saPercent}%` }}/></div><div className="sa-progress-metrics"><span><small>ITERATION</small><b>{saProgress.stage === 'replace' ? `R ${saProgress.iteration}/2` : `${saProgress.iteration}/${saProgress.total}`}</b></span><span><small>경과</small><b>{(saProgress.elapsedMs / 1000).toFixed(1)}s</b></span><span><small>예상 총시간</small><b>~{(saProgress.estimatedMs / 1000).toFixed(1)}s</b></span><span><small>예상 잔여</small><b>~{(saRemainingMs / 1000).toFixed(1)}s</b></span></div><small className="sa-progress-note">{saRunning ? `accepted ${saProgress.accepted}/${saProgress.attempted} · Worker에서 계산 중이라 화면 조작은 유지됩니다.` : saProgress.stage === 'complete' ? `SA 완료 · 실제 ${(saProgress.elapsedMs / 1000).toFixed(1)}초` : `후보당 ${SA_ITERATIONS} iteration · 최근 실측 기준 약 ${(SA_INITIAL_ESTIMATE_MS / 1000).toFixed(1)}초 예상`}</small></div>
-        {(champion || savedCandidates.length > 0) && <div className="candidate-results">{champion && <div className="winner"><b>ELITE</b><span>G{champion.generation} #{champion.index}</span><strong>{champion.score.toLocaleString()}</strong><small>현재 실행 최고</small></div>}{savedCandidates.slice(0, 7).map(result => <div key={result.savedAt}><b>G{result.generation}</b><span>#{result.index} · {result.profile}</span><strong>{result.score.toLocaleString()}</strong><small>LEGAL · C{result.congestion}</small></div>)}</div>}
+        {(champion || savedCandidates.length > 0) && <div className="candidate-results">{champion && <div className="winner"><b>ELITE</b><span>G{champion.generation} #{champion.index}</span><strong>{champion.score.toLocaleString()}</strong><small>모델상 최고 · 물리 검증 전</small></div>}{savedCandidates.slice(0, 7).map(result => <div key={result.savedAt}><b>G{result.generation}</b><span>#{result.index} · {result.profile}</span><strong>{result.score.toLocaleString()}</strong><small>모델 LEGAL · C{result.congestion}</small></div>)}</div>}
+        {savedCandidates.length > 0 && <div className="data-table" style={{ maxHeight: 300, overflow: 'auto' }}>
+          <table><thead><tr><th>모델 순위</th><th>후보</th><th>점수</th><th>1위 대비</th><th>혼잡</th><th>재배치</th><th>시작 방식</th></tr></thead><tbody>
+            {savedCandidates.slice(0, 16).map((result, rank) => <tr key={`${result.savedAt}-${rank}`}>
+              <td>{rank + 1}</td><td>G{result.generation} #{result.index}</td><td>{result.score.toLocaleString()}</td>
+              <td>{rank === 0 ? '기준' : (result.score - savedCandidates[0].score).toLocaleString()}</td>
+              <td>{result.congestion}</td><td>{result.replacements}</td><td>{result.profile}</td>
+            </tr>)}
+          </tbody></table>
+          <p className="chip-note">같은 배치 signature는 하나로 합쳐 저장합니다. 위 점수·혼잡은 게임 모델의 비교값이며 OpenLane 통과 결과는 아닙니다.</p>
+        </div>}
         <div className="ai-decision"><span className="panel-label">NOW / NEXT</span>{game.gameOver && running ? <><b>illegal 후보 자동 폐기</b><p>저장된 legal 후보는 유지한 채 다음 seed로 즉시 넘어갑니다.</p></> : game.floorplanReady ? !standardCellsDone ? <><b>후보 #{candidateIndex} · 표준셀 자동 배치</b><p>{stdFillCount}/{stdFillTarget} · 목표 이용률 실측 7.8%</p></> : <><b>후보 #{candidateIndex} · 최종 탐색 pass {searchPasses + 1}</b><p>Replace→SA로 탐색하고, legal 후보를 저장한 뒤 다음 후보를 계속 만듭니다.</p></> : plan ? <><b>{running ? '배치 중' : '대기 중'} · {BLOCKS[plan.id].label} → ({plan.x + 1}, {plan.y + 1})</b><p>{game.placements < 2 ? '매크로를 하나씩 완료합니다.' : '매크로 완료 후 표준셀 이웃 영역을 직접 배치합니다.'}</p></> : <b>legal move 없음</b>}<small>{running ? game.lastEvent : 'AI START를 누르면 저장된 후보를 유지하며 탐색을 계속합니다.'}</small></div>
         <div className="chip-switches"><button className={running && aiEnabled ? 'active' : ''} onClick={startAi}>{running && aiEnabled ? 'FAST EVOLUTION' : 'START EVOLUTION'}</button><button className="active replace" disabled>REPLACE → SA</button><button onClick={() => setRunning(false)} disabled={!running}>Pause</button><button className="stop" onClick={stopEvolution} disabled={!running && !saRunning}>STOP</button><button onClick={stepAi} disabled={game.gameOver || saRunning}>AI step</button><button onClick={() => dispatch({ type: 'replace' })} disabled={game.gameOver || game.placements < 2 || saRunning}>Re-place now</button><button onClick={reset}>Reset</button></div>
         <label className="speed-control">빠른 자동 간격 <input type="range" min="10" max="200" step="10" value={speed} onChange={event => setSpeed(Number(event.target.value))}/><b>{speed} ms</b></label>

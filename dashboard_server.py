@@ -31,6 +31,7 @@ from layout_candidate_runner import (
     start_verification_batch as start_layout_verification_batch,
     status as layout_candidate_status,
 )
+from macro_area_verification import get_batch as get_macro_area_batch, start_batch as start_macro_area_batch
 
 
 MAX_SCAN_FILES = 5_000
@@ -325,6 +326,12 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_error(404, 'Unknown verification batch'); return
             payload = json.dumps(batch, ensure_ascii=False).encode('utf-8')
             self.send_response(200); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
+        if route.startswith('/api/macro-area/verification-batches/'):
+            batch = get_macro_area_batch(route.rsplit('/', 1)[-1])
+            if not batch:
+                self.send_error(404, 'Unknown Macro Area verification batch'); return
+            payload = json.dumps(batch, ensure_ascii=False).encode('utf-8')
+            self.send_response(200); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
         if route.startswith('/api/layout-candidates/assets/'):
             parts = route.split('/')
             path = layout_candidate_asset(parts[-2], parts[-1]) if len(parts) >= 6 else None
@@ -368,7 +375,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_error(404, 'Unknown optimization task'); return
             payload = json.dumps(task, ensure_ascii=False).encode('utf-8')
             self.send_response(200); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
-        if route not in {'/api/physical-design/configure', '/api/physical-design/parsac/run', '/api/layout-candidates/optimize', '/api/layout-candidates/prepare', '/api/layout-candidates/run', '/api/layout-candidates/verify-history', '/api/analog/select', '/api/analog/run'}:
+        if route not in {'/api/physical-design/configure', '/api/physical-design/parsac/run', '/api/layout-candidates/optimize', '/api/layout-candidates/prepare', '/api/layout-candidates/run', '/api/layout-candidates/verify-history', '/api/macro-area/verify', '/api/analog/select', '/api/analog/run'}:
             self.send_error(404, 'Not Found'); return
         try:
             length = int(self.headers.get('Content-Length', '0'))
@@ -387,6 +394,8 @@ class Handler(BaseHTTPRequestHandler):
                 result = start_layout_candidate_job(body)
             elif route == '/api/layout-candidates/verify-history':
                 result = start_layout_verification_batch(body)
+            elif route == '/api/macro-area/verify':
+                result = start_macro_area_batch(body)
             elif route == '/api/analog/select':
                 result = create_study(body)
             else:

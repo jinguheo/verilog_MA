@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run a generated ppa3_adc_capture candidate through a staged OpenLane flow.
+# Run a generated candidate config through a staged OpenLane flow.
 # Args: <config.json> <run-tag> <layout-output-dir> [screen|signoff|full] [shared-state]
 set -euo pipefail
 
@@ -59,12 +59,12 @@ case "$MODE" in
     ;;
 esac
 
-RUN_DIR="$REPO/samples/sample_test_4/asic/ppa3_adc_capture/runs/$RUN_TAG"
+RUN_DIR="$(dirname "$CFG")/runs/$RUN_TAG"
 GDS="$(find "$RUN_DIR/final/gds" -name '*.gds' 2>/dev/null | head -1 || true)"
 if [ -n "$GDS" ]; then
   LYP="$(find -L "$HOME/.volare/volare/sky130/versions" "$HOME/eda/pdk" -name 'sky130A.lyp' 2>/dev/null | head -1 || true)"
   mkdir -p "$OUT"
-  klayout -z -rd gds="$GDS" -rd lyp="${LYP:-}" -rd out="$OUT" -rd name="ppa3_adc_capture_candidate" -r "$REPO/tools/wsl/render_all_gds.py" || true
+  klayout -z -rd gds="$GDS" -rd lyp="${LYP:-}" -rd out="$OUT" -rd name="$(basename "$(dirname "$CFG")")_candidate" -r "$REPO/tools/wsl/render_all_gds.py" || true
 fi
 
 echo "run dir: $RUN_DIR"

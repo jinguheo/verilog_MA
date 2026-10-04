@@ -25,7 +25,13 @@ type HistEvent = { t: string; text: string }
 type Cand = {
   id: string; sig: string; die: Die; macros: Macro[]; hubs: Pos[]; metrics: CandMetrics
   method: string; source: 'search' | 'generate' | 'manual'; steps: RepairStep[]
-  history: HistEvent[]; found: number; verify: 'not-run' | 'queued'
+  history: HistEvent[]; found: number; verify: 'not-run' | 'queued' | 'screened-out' | 'passed' | 'failed'
+}
+type VerificationBatch = {
+  id: string; status: 'queued' | 'running' | 'complete' | 'failed'; phase: string; stage: string
+  current: number; total: number; shortlisted: number; passed: number; failed: number; error?: string
+  scope?: string
+  results: { id: string; status: string; error?: string; checks?: Record<string, string>; screening?: { estimated_wirelength_um: number; setup_wns_ns: number } }[]
 }
 type BoardView = { die: Die; macros: Macro[]; hubs: Pos[]; issues: Issue[]; title: string }
 type Best = { die: Die; state: State; util: number; round: number; foundAt: string }
@@ -232,6 +238,8 @@ export default function MacroAreaTetris() {
   const [genProgress, setGenProgress] = useState<{ done: number; total: number; found: number } | null>(null)
   const [selCand, setSelCand] = useState<string | null>(null)
   const [checked, setChecked] = useState<Set<string>>(new Set())
+  const [verificationBatch, setVerificationBatch] = useState<VerificationBatch | null>(() => readJson<VerificationBatch>('macro-area-verification-last'))
+  const [verificationError, setVerificationError] = useState<string | null>(null)
   const [openTrial, setOpenTrial] = useState<number | null>(null)
   const [board, setBoard] = useState<BoardView | null>(null)
   const [showTiles, setShowTiles] = useState(true)
@@ -278,6 +286,27 @@ export default function MacroAreaTetris() {
   })
 
   useEffect(() => { writeJson(candKey(opts), cands) }, [cands, opts])
+  useEffect(() => { if (verificationBatch) writeJson('macro-area-verification-last', verificationBatch) }, [verificationBatch])
+
+  useEffect(() => {
+    if (!verificationBatch || !['queued', 'running'].includes(verificationBatch.status)) return
+    const id = window.setInterval(async () => {
+      try {
+        const response = await fetch(`http://127.0.0.1:8788/api/macro-area/verification-batches/${verificationBatch.id}`)
+        if (!response.ok) throw new Error(`검증 상태 조회 실패 (HTTP ${response.status})`)
+        const next = await response.json() as VerificationBatch
+        setVerificationBatch({ ...next, scope: verificationBatch.scope })
+        const states = new Map(next.results.map(result => [result.id, result.status]))
+        if (verificationBatch.scope !== optsKey(optsRef.current)) return
+        setCands(current => current.map(candidate => {
+          const state = states.get(candidate.id)
+          const verify = state === 'passed' ? 'passed' : state === 'failed' || state === 'screen-failed' ? 'failed' : state === 'screened-out' ? 'screened-out' : candidate.verify
+          return verify === candidate.verify ? candidate : { ...candidate, verify, history: capHistory([...candidate.history, { t: now(), text: `OpenLane 검증: ${state}` }]) }
+        }))
+      } catch (error) { setVerificationError(error instanceof Error ? error.message : String(error)) }
+    }, 3000)
+    return () => window.clearInterval(id)
+  }, [verificationBatch?.id, verificationBatch?.status])
 
   function considerBest(next: Cur, round: number) {
     const u = dieUtil(next.die, next.state.macros)
@@ -481,7 +510,24 @@ export default function MacroAreaTetris() {
     if (list.length === 0) return
     const payload = list.map(k => ({ id: k.id, die: k.die, util: Number(k.metrics.util.toFixed(4)), weighted_wl: Math.round(k.metrics.wl), config: JSON.parse(toAreaCfg(k.die, k.macros, opts.density)) }))
     setExportText({ title: `DRC/LVS 검증 대기열 — 후보 ${list.length}개`, text: JSON.stringify(payload, null, 2) })
-    addHistory(list.map(k => k.id), `DRC/LVS 검증 대기열에 추가 (${list.length}개 묶음) — 아직 OpenLane 미실행`, { verify: 'queued' })
+    addHistory(list.map(k => k.id), `OpenLane용 JSON 생성 (${list.length}개) — 실제 검증은 아직 실행하지 않음`)
+  }
+
+  async function verifySelected() {
+    const list = cands.filter(k => checked.has(k.id))
+    if (list.length < 1 || list.length > 10) return
+    setVerificationError(null)
+    try {
+      const response = await fetch('http://127.0.0.1:8788/api/macro-area/verify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shape: opts.shape ?? '800x800', density: opts.density,
+          candidates: list.map(k => ({ id: k.id, die: k.die, macros: k.macros.map(m => ({ x: m.x, y: m.y })) })) }),
+      })
+      const batch = await response.json()
+      if (!response.ok) throw new Error(batch.message ?? `HTTP ${response.status}`)
+      setVerificationBatch({ ...(batch as VerificationBatch), scope: optsKey(opts) })
+      addHistory(list.map(k => k.id), `OpenLane 실제 검증 작업 ${batch.id} 시작`, { verify: 'queued' })
+    } catch (error) { setVerificationError(error instanceof Error ? error.message : String(error)) }
   }
 
   function toCanvas(e: React.MouseEvent<HTMLCanvasElement>) {
@@ -558,7 +604,7 @@ export default function MacroAreaTetris() {
 
     <section className="chip-game-layout">
       <div className="chip-board-wrap">
-        <div className="zone-headings"><span>보고 있는 것: {view.title}</span><span>{view.die.w}×{view.die.h}µm</span><span>{view.issues.length ? `실패 부위 ${view.issues.length}건` : '통과'}</span></div>
+        <div className="zone-headings"><span>보고 있는 것: {view.title}</span><span>{view.die.w}×{view.die.h}µm</span><span>{view.issues.length ? `모델 실패 부위 ${view.issues.length}건` : '모델 조건 통과 · 물리 검증 별도'}</span></div>
         <canvas
           ref={canvasRef} width={CANVAS_W} height={CANVAS_H}
           style={{ width: '100%', height: 'auto', background: '#101726', border: '2px solid var(--border-strong)', borderRadius: 8, display: 'block', cursor: locked || board ? 'default' : 'grab' }}
@@ -575,7 +621,7 @@ export default function MacroAreaTetris() {
           <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: 'rgba(192,57,43,0.6)', marginRight: 4 }}/>줄여서 없어진 면적</span>
           <span><span style={LEGEND_SWATCH.usable}/>빈 공간 · 표준셀 넣기 좋음 (빗금)</span>
           <span><span style={LEGEND_SWATCH.fragmented}/>빈 공간 · 조각나서 쓰기 어려움 — 좁은 채널·가장자리 (반대 방향 빗금)</span>
-          <span><span style={LEGEND_SWATCH.tile}/>실제 배치된 표준셀 타일 (단색 · S번호)</span>
+          <span><span style={LEGEND_SWATCH.tile}/>모델에서 배치한 표준셀 타일 (단색 · S번호)</span>
         </div>
       </div>
 
@@ -700,20 +746,24 @@ export default function MacroAreaTetris() {
 
     <section className="chip-analysis-grid">
       <article className="chip-card" style={{ gridColumn: 'span 2' }}>
-        <div className="chip-card-title"><div><small>CANDIDATE POOL · 조건별 저장</small><h3>utilization 기준 통과 · 배선 짧은 순</h3></div><span>{ranked.length}개 / 전체 {cands.length}개</span></div>
+        <div className="chip-card-title"><div><small>CANDIDATE POOL · 모델 조건 통과</small><h3>utilization 기준 통과 · 추정 배선 짧은 순</h3></div><span>{ranked.length}개 / 전체 {cands.length}개</span></div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
           <label className="speed-control" style={{ gridTemplateColumns: 'auto 90px', margin: 0 }}>utilization ≥ <input type="number" min={60} max={90} step={0.5} value={Math.round(utilMin * 1000) / 10} onChange={e => setUtilMin(Math.max(0, Math.min(1, Number(e.target.value) / 100)))}/></label>
           <button onClick={() => setChecked(new Set(ranked.slice(0, 10).map(k => k.id)))} disabled={ranked.length === 0} style={{ fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '0.5px solid var(--border-strong)', background: 'var(--surface-1)', color: 'var(--text-primary)', cursor: 'pointer' }}>상위 10개 선택</button>
           <button onClick={exportSelected} disabled={checked.size === 0} style={{ fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '0.5px solid var(--border-strong)', background: 'var(--surface-1)', color: 'var(--text-primary)', cursor: 'pointer' }}>선택 {checked.size}개 → DRC/LVS 검증 목록</button>
+          <button onClick={verifySelected} disabled={checked.size < 1 || checked.size > 10 || (opts.shape ?? '800x800') !== '800x800' || verificationBatch?.status === 'queued' || verificationBatch?.status === 'running'} title={(opts.shape ?? '800x800') !== '800x800' ? '재성형 chan_top의 독립 물리 view 연결이 필요합니다' : '최대 10개를 global route·STA로 선별하고 Top 3만 상세 배선·DRC/LVS 실행'}>선택 후보 OpenLane 실제 검증</button>
           <button onClick={() => { if (window.confirm('이 조건의 후보 풀과 히스토리를 모두 지울까요?')) { setCands([]); setChecked(new Set()); setSelCand(null) } }} disabled={cands.length === 0} style={{ fontSize: 12, padding: '5px 10px', borderRadius: 6, border: '0.5px solid var(--border-strong)', background: 'var(--surface-1)', color: 'var(--text-secondary)', cursor: 'pointer' }}>후보 풀 비우기</button>
         </div>
+        {verificationBatch && verificationBatch.scope === optsKey(opts) && <p className="chip-note">OpenLane {verificationBatch.status} · {verificationBatch.stage} · {verificationBatch.current}/{verificationBatch.phase === 'signoff' ? verificationBatch.shortlisted : verificationBatch.total} · PASS {verificationBatch.passed} · FAIL {verificationBatch.failed}{verificationBatch.error ? ` · ${verificationBatch.error}` : ''}</p>}
+        {verificationError && <p className="rule-disclaimer">검증 요청/조회 오류: {verificationError}</p>}
+        {(opts.shape ?? '800x800') !== '800x800' && <p className="chip-note">재성형 매크로는 이 배치 검증 경로에 사용할 signoff 물리 view 연결이 아직 없어 실제 검증 버튼이 비활성화됩니다.</p>}
         <div className="data-table" style={{ marginTop: 8, maxHeight: 420, overflow: 'auto' }}><table><thead><tr><th/><th>순위</th><th>ID</th><th>다이</th><th>util</th><th>배선 비용</th><th>필요 밀도</th><th>표준셀 (조각 · 면적)</th><th>핀/전원 막힘</th><th>만든 방법</th><th>발견</th><th>검증</th></tr></thead><tbody>
           {ranked.slice(0, 200).map((k, i) => <tr key={k.id} onClick={() => { setSelCand(k.id); setBoard({ die: k.die, macros: k.macros, hubs: k.hubs, issues: [], title: `후보 ${k.id}` }); }} style={{ cursor: 'pointer', background: k.id === selCand ? 'var(--accent-soft)' : undefined }}>
             <td onClick={e => e.stopPropagation()}><input type="checkbox" checked={checked.has(k.id)} onChange={() => setChecked(prev => { const n = new Set(prev); if (n.has(k.id)) n.delete(k.id); else n.add(k.id); return n })}/></td>
             <td>{i + 1}</td><td><code>{k.id}</code></td><td>{k.die.w}×{k.die.h}</td><td><b>{pct(k.metrics.util, 2)}</b></td>
             <td>{Math.round(k.metrics.wl).toLocaleString()}</td><td>{pct(k.metrics.reqDensity)}</td><td>{(() => { const g = poolGlue.get(k.id); return g ? <span style={{ color: g.complete ? 'var(--text-success)' : 'var(--text-danger)' }}>{g.tiles.length}조각 · {Math.round(g.coverage * 100)}%</span> : '-' })()}</td><td>{k.metrics.pin}/{k.metrics.power}</td>
             <td style={{ fontSize: 11 }}>{k.method}</td><td>{k.found}</td>
-            <td>{k.verify === 'queued' ? <span className="warning-badge">대기열</span> : '미실행'}</td>
+            <td>{k.verify === 'passed' ? <span className="ok-badge">OpenLane PASS</span> : k.verify === 'failed' ? <span className="warning-badge">OpenLane FAIL</span> : k.verify === 'screened-out' ? 'GRT 선별 제외' : k.verify === 'queued' ? <span className="warning-badge">준비됨/진행 중 · 결과 없음</span> : 'OpenLane 미실행'}</td>
           </tr>)}
           {ranked.length === 0 && <tr><td colSpan={12}>{cands.length === 0 ? '아직 후보가 없습니다 — ▶ 면적 탐색 또는 후보 만들기를 누르세요.' : `utilization ${pct(utilMin)} 이상인 후보가 없습니다 — 기준을 낮춰 보세요.`}</td></tr>}
         </tbody></table></div>

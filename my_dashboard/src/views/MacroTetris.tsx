@@ -248,6 +248,7 @@ export default function MacroTetris() {
   const playRef = useRef<Play | null>(null)
   const [playView, setPlayView] = useState<Play | null>(null)
   const [playing, setPlaying] = useState(false)
+  const beforePlayRef = useRef<{ state: State; glue: Glue | null } | null>(null)
   // AI Chip Tetris의 "6개 배치마다 자동 RE-PLACE" 아이디어를 옮긴 것 — 그리디하게
   // 하나씩 쌓다 보면 초반 선택이 나중 매크로를 몰아넣는데, 3개마다 지금까지 놓인
   // 것들을 빠르게 한 번 더 다듬어(position-only rip-up) 그 비효율을 게임 중간에
@@ -563,6 +564,12 @@ export default function MacroTetris() {
   function startPlay() {
     sourceRef.current = '쌓기 플레이'
     const shapes = liveStateRef.current.macros.length === N ? liveStateRef.current.macros : REAL_RUN_MACROS
+    if (!playRef.current?.result) {
+      beforePlayRef.current = {
+        state: cloneState(liveStateRef.current),
+        glue: glueRef.current ? { tiles: glueRef.current.tiles.map(t => ({ ...t })), sig: glueRef.current.sig } : null,
+      }
+    }
     const queue: PlayItem[] = [
       ...shapes.map((m, i) => ({ kind: 'macro' as const, macro: { ...m }, idx: i })),
       ...GLUE_TILE_HUBS.map((hub, i) => ({ kind: 'glue' as const, hub, idx: i })),
@@ -584,11 +591,22 @@ export default function MacroTetris() {
     setPlaying(false)
   }
 
+  function restoreBeforePlay() {
+    const previous = beforePlayRef.current
+    if (!previous) return
+    stopPlay()
+    liveStateRef.current = cloneState(previous.state)
+    setGlue(previous.glue)
+    setSelected(null)
+    sourceRef.current = '쌓기 이전 배치 복원'
+    redraw()
+    setNarration('쌓기 시작 전 배치를 복원했습니다. 드래그하거나 다른 탐색 방법을 선택할 수 있습니다.')
+  }
+
   // ---- 자동 쌓기: legal하고 표준셀까지 전부 들어가는 결과를 찾을 때까지 계속 시도 ----
   // 일반 쌓기는 항상 비용이 가장 낮은 자리만 골라 같은 곳에서 매번 GAME OVER가 난다.
   // 여기서는 시도마다 상위 후보 중 무작위로 골라 다르게 쌓고(stackAttempt), 실패하면
   // 후보 폭(topK)을 조금씩 넓혀 가며 바로 다시 시도한다. 한 번에 약 0.1초.
-  const AUTO_STACK_MAX_ATTEMPTS = 1500
   const autoRef = useRef(false)
   const [autoStack, setAutoStack] = useState<{ attempt: number; topK: number; reason: string; best: number } | null>(null)
 
@@ -635,12 +653,6 @@ export default function MacroTetris() {
     const reason = `${r.reason} (매크로 ${r.macros.length}/${shapes.length}개까지)`
     setAutoStack({ attempt: attempt + 1, topK, reason, best: nBest })
     setNarration(`자동 쌓기 시도 #${attempt + 1} (후보 폭 ${topK}) — 실패: ${reason} · 최고 ${nBest}/${shapes.length}개 · 계속 찾는 중…`)
-    if (attempt + 1 >= AUTO_STACK_MAX_ATTEMPTS) {
-      autoRef.current = false
-      setAutoStack(null)
-      setNarration(`자동 쌓기 ${AUTO_STACK_MAX_ATTEMPTS}번 시도에도 legal한 배치를 못 찾음 — 마지막 실패: ${reason}`)
-      return
-    }
     setTimeout(() => autoStep(shapes, attempt + 1, nBest), 25)
   }
 
@@ -899,7 +911,7 @@ export default function MacroTetris() {
     <section className="chip-scorebar">
       <div><span>WEIGHTED WL</span><b>{Math.round(liveCost.wl).toLocaleString()}</b></div>
       <div><span>BEST 후보 비용</span><b className="pass">{savedBest ? Math.round(savedBest.total).toLocaleString() : '-'}</b></div>
-      <div><span>STATE</span><b className={isLegal(liveCost) ? 'pass' : 'warn'}>{isLegal(liveCost) ? 'LEGAL' : 'ILLEGAL'}</b></div>
+      <div><span>MODEL STATE</span><b className={isLegal(liveCost) ? 'pass' : 'warn'}>{isLegal(liveCost) ? 'MODEL LEGAL' : 'MODEL ILLEGAL'}</b></div>
       <div><span>STD-CELL 여유</span><b className={proxy.leftoverClean ? 'pass' : 'warn'}>{liveCost.usableLeftoverPct}%</b></div>
       <div><span>STD CELL 배치</span><b className={glueCoverage(glueTiles) >= 1 ? 'pass' : 'warn'}>{Math.round(glueCoverage(glueTiles) * 100)}%</b><small>{glueTiles.length}개 조각 · 필요 면적 기준</small></div>
       <div><span>CONFIDENCE</span><b className={proxy.confidence >= 90 ? 'pass' : 'warn'}>{proxy.confidence}%</b></div>
@@ -919,6 +931,8 @@ export default function MacroTetris() {
             <span>{playView.result.message}</span>
             <button onClick={startPlay}>다시 쌓기</button>
             <button className="active" onClick={startAutoStack}>자동 쌓기 (legal 찾을 때까지)</button>
+            <button onClick={restoreBeforePlay} disabled={!beforePlayRef.current}>이전 배치 복원</button>
+            <button onClick={() => { stopPlay(); setNarration('쌓기 결과를 닫았습니다. 현재 배치를 살펴보거나 다른 기능을 선택하세요.') }}>현재 배치 살펴보기</button>
           </div>}
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
@@ -1113,7 +1127,7 @@ export default function MacroTetris() {
         <div className="chip-card-title"><div><small>HEURISTIC SEARCH</small><h3>AI가 하는 일</h3></div><span>쌓기 · SA · RePlAce · Rip-up</span></div>
         <ol className="strategy-list">
           <li><b>▶ 쌓기 플레이 (탐욕 + 선검사)</b><span>빈 다이에 매크로를 하나씩, 부분 배치 비용이 가장 낮은 legal 자리에 놓습니다. 남은 매크로가 더 들어갈 수 없게 막는 자리는 빠른 패킹 검사로 미리 뺍니다(이게 없으면 매크로 3에서 GAME OVER). 매크로가 다 놓이면 표준셀 타일 최대 {GLUE_TILES_NEEDED}개를 각자 허브에 가장 가까운 빈 자리에, 한 줄 안에서 이어진 폭만큼(정사각형이 아니라 가변 폭) 채웁니다.</span></li>
-          <li><b>⟳ 자동 쌓기 (legal 찾을 때까지)</b><span>쌓기 플레이는 항상 비용이 가장 낮은 자리만 골라서 같은 입력이면 매번 같은 곳에서 GAME OVER가 납니다(실측: 매크로 7). 자동 쌓기는 시도마다 비용이 낮은 legal 자리 상위 K개 중에서 무작위로 골라 다르게 쌓고, 실패하면 K를 3→16까지 넓혀 가며 legal하고 표준셀 {GLUE_TILES_NEEDED}개가 전부 들어간 배치가 나올 때까지 계속 시도합니다(최대 1,500번, 한 번에 약 0.1초, 중지 버튼 있음). 실측 14회 반복에서 전부 1~15번째 시도에서 찾았습니다.</span></li>
+          <li><b>⟳ 자동 쌓기 (legal 찾을 때까지)</b><span>쌓기 플레이는 항상 비용이 가장 낮은 자리만 골라서 같은 입력이면 매번 같은 곳에서 GAME OVER가 납니다(실측: 매크로 7). 자동 쌓기는 시도마다 비용이 낮은 legal 자리 상위 K개 중에서 무작위로 골라 다르게 쌓고, 실패하면 K를 3→16까지 넓혀 가며 legal하고 표준셀 {GLUE_TILES_NEEDED}개가 전부 들어간 배치를 찾을 때까지 계속 시도합니다(중지 버튼 있음). 실측 14회 반복에서 전부 1~15번째 시도에서 찾았습니다.</span></li>
           <li><b>SA 자동 진행 (확률적)</b><span>매 스텝 무작위로 하나를 옮겨보고 비용이 낮아지면 수락, 높아져도 온도에 비례한 확률로 수락 — 식으면 다시 데워서 끝나지 않고 계속 돕니다.</span></li>
           <li><b>RePlAce 스타일 (결정론적, 즉시)</b><span>전역 배치(허브로 당기기+서로 반발) → 합법화(밀어내기) 2단계로 한 번에 수렴 — 실제 RePlAce의 정전기 밀도 모델+Nesterov 경사하강 성격을 흉내.</span></li>
           <li><b>Rip-up &amp; Re-place (전수 탐색)</b><span>AI Chip Tetris와 동일한 원리 — 매크로를 하나씩 뽑아 100µm 격자의 모든 legal 위치를 평가하고, 실제로 비용이 낮아질 때만 옮깁니다. 개선되는 이동이 없으면 스스로 멈추는 결정론적 종료.</span></li>
