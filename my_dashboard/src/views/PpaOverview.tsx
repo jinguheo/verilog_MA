@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
 import AntennaExplainer from './AntennaExplainer'
+import ppa3Runs from '../data/ppa3Runs.json'
 
 // "PPA 실험 요약" 탭 — PPA1/2/3의 목적, 요구 사항, 블록 그림, 진행 상황을 한 화면에 모은다.
 // 수치와 상태는 PPA 실험 1/2/3 탭, analog/README.md, ppa3_adc_capture 실행 로그에서 확인한 값만 쓴다.
@@ -138,6 +139,20 @@ function ExperimentCard({ id, title, badge, badgeKind, purpose, diagram, caption
   </section>
 }
 
+// PPA3 실제 run 결과 (python tools/collect_ppa3_results.py 가 run 폴더의 state_out.json / final/metrics.json 에서 읽음)
+interface Ppa3Run {
+  run: string; label: string; state: 'finished' | 'running' | 'stopped' | 'unknown'; exit_code: number | null
+  last_step: string | null; updated: string
+  metrics: { setup_ws?: number | null; hold_ws?: number | null; antenna_nets?: number | null; route_drc?: number | null; magic_drc?: number | null; klayout_drc?: number | null; lvs?: number | null; xor?: number | null; utilization?: number | null; power?: number | null }
+}
+const PPA3_RUNS = ppa3Runs.runs as unknown as Ppa3Run[]
+const notRun = <span style={{ color: 'var(--text-muted)' }}>미실행</span>
+const cnt = (v?: number | null) => v == null ? notRun : <b style={{ color: v === 0 ? 'var(--success)' : 'var(--danger)' }}>{v}</b>
+const ns = (v?: number | null) => v == null ? '-' : `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(2)}`
+const stepName = (s: string | null) => s ? s.replace(/^\d+-/, '') : '-'
+const ppa3State = (r: Ppa3Run) => r.state === 'running' ? <span className="connection">실행 중</span> : r.state === 'finished' ? <span className="ok-badge">완주</span>
+  : <span className="warning-badge">{r.exit_code ? `중단 (exit ${r.exit_code})` : '중단·미완'}</span>
+
 export default function PpaOverview() {
   return <section className="ppaov">
     <section className="card">
@@ -235,6 +250,17 @@ export default function PpaOverview() {
       ]}
       note="지금까지의 라우팅 결과는 '후보 기준선'이며 signoff 결과가 아닙니다. vendor GDS는 SHA-256 전후 동일하게 보호되고 검증 복사본만 변경됩니다."
     />
+    <section className="card">
+      <div className="card-title"><div><small className="kicker">PPA 3 · REAL RUNS</small><h3>PPA 3 실제 실행 결과 (run 폴더에서 자동 수집)</h3></div><span className="connection">{(ppa3Runs.generated as string).replace('T', ' ')} 기준</span></div>
+      <div className="data-table"><table><thead><tr><th>실행</th><th>상태</th><th>마지막 완료 단계</th><th>setup / hold WNS (ns)</th><th>antenna</th><th>route DRC</th><th>Magic DRC</th><th>KLayout DRC</th><th>LVS</th><th>XOR</th></tr></thead><tbody>
+        {PPA3_RUNS.map(r => <tr key={r.run}>
+          <td><b>{r.run.startsWith('RUN_') ? 'baseline' : r.run}</b><small style={{ display: 'block', color: 'var(--text-muted)' }}>{r.label}</small></td>
+          <td>{ppa3State(r)}</td><td>{stepName(r.last_step)}<small style={{ display: 'block', color: 'var(--text-muted)' }}>{r.updated.replace('T', ' ')}</small></td>
+          <td>{ns(r.metrics.setup_ws)} / {ns(r.metrics.hold_ws)}</td><td>{cnt(r.metrics.antenna_nets)}</td><td>{cnt(r.metrics.route_drc)}</td><td>{cnt(r.metrics.magic_drc)}</td><td>{cnt(r.metrics.klayout_drc)}</td><td>{cnt(r.metrics.lvs)}</td><td>{cnt(r.metrics.xor)}</td>
+        </tr>)}
+      </tbody></table></div>
+      <p className="ppaov-note">&quot;미실행&quot;은 통과가 아니라 <b>그 단계까지 아직 안 갔다</b>는 뜻입니다. 이어받은 run(<code>ppa3_antfix3_signoff</code>, <code>ppa3_fin*</code>)은 앞 단계 값을 이전 run의 상태에서 물려받습니다. 위반이 있어도 flow를 끝까지 돌리는 설정(<code>config_antfix4</code>)에서도 개수는 숨기지 않고 그대로 기록됩니다.</p>
+    </section>
     <section className="card">
       <div className="card-title"><div><small className="kicker">GLOSSARY</small><h3>antenna 위반이란? (PPA 3 baseline 2건 → 재실행 0건)</h3></div><span className="connection">용어 설명</span></div>
       <AntennaExplainer defaultOpen />
