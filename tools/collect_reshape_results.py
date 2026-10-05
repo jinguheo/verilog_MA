@@ -11,6 +11,7 @@ Writes  my_dashboard/src/data/reshapeRuns.json
 """
 import json
 import re
+import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
@@ -104,7 +105,18 @@ def summary_state(name: str):
     return (starts[-1] if starts else None), (last_exit > last_start >= 0), (int(exits[-1]) if exits else None)
 
 
+def live_tags():
+    """run tags of openlane processes currently alive in WSL (None if WSL cannot be queried)."""
+    try:
+        out = subprocess.run(["wsl.exe", "-e", "bash", "-c", "ps -eo args | grep 'openlane --run-tag'"],
+                             capture_output=True, text=True, timeout=30).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return set(re.findall(r"--run-tag (\S+)", out))
+
+
 def collect():
+    alive = live_tags()
     rows = []
     for run in sorted(RUNS.glob("reshape_*")):
         parsed = parse_name(run.name)
@@ -148,10 +160,12 @@ def collect():
             row["antenna"] = ant
             if metrics.get("antenna_nets") is None and ant["post_route"]:
                 metrics["antenna_nets"] = ant["nets"]
-        # 'running' = unfinished and written to within the last 15 minutes
+        # 'running' = unfinished and the openlane process is alive (fallback: written to within 15 minutes);
+        # long single steps (Magic DRC, ...) write nothing for a long time, so the file age alone is not enough
         if not row["finished_ok"] and row["updated"]:
             age_min = (time.time() - datetime.fromisoformat(row["updated"]).timestamp()) / 60
-            row["state"] = "running" if age_min < 15 else "interrupted"
+            is_alive = (run.name in alive) if alive is not None else age_min < 15
+            row["state"] = "running" if is_alive else "interrupted"
         else:
             row["state"] = "finished" if row["finished_ok"] else "unknown"
         rows.append(row)

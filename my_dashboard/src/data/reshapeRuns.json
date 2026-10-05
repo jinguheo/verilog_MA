@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-05T13:43",
+ "generated": "2026-10-05T14:08",
  "runs": [
   {
    "run": "reshape_full_450x1422",
@@ -186,11 +186,11 @@
     "ant_iters": 10,
     "heuristic_um": 40
    },
-   "last_step": "04-odb-heuristicdiodeinsertion",
+   "last_step": "06-openroad-stamidpnr-3",
    "started": "2026-10-05T13:21:32",
    "finished_ok": false,
    "metrics_source": "antenna check only",
-   "updated": "2026-10-05T13:41",
+   "updated": "2026-10-05T14:08",
    "metrics": {},
    "antenna": {
     "step": "02-openroad-checkantennas",
@@ -1068,11 +1068,11 @@
     "ant_iters": 10,
     "heuristic_um": 90
    },
-   "last_step": "19-openroad-irdropreport",
+   "last_step": "25-checker-xor",
    "started": "2026-10-05T13:25:38",
    "finished_ok": false,
    "metrics_source": "antenna check only",
-   "updated": "2026-10-05T13:42",
+   "updated": "2026-10-05T13:52",
    "metrics": {
     "antenna_nets": 0
    },
