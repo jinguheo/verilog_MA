@@ -613,5 +613,415 @@
       "sa_seeds": 32,
       "sa_iterations_per_seed": 240
     }
+  },
+  {
+    "id": "20261003-145500-5dbf68",
+    "created_at": "2026-10-03T05:55:00.006383+00:00",
+    "baseline_label": "PPA3 current routed best (PPA2-derived placement)",
+    "design": "ppa3_adc_capture_top",
+    "signature": "u_adc:86.000:199.000:N|u_capture_path.u_capture.u_capture_sram.u_sram22:350.000:116.000:N",
+    "metrics": {
+      "baseline": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 661.808
+      },
+      "candidate": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 534.722
+      },
+      "routing_reduction_um": 127.086,
+      "routing_reduction_pct": 19.203,
+      "improved": true
+    },
+    "placements": [
+      {
+        "instance": "u_adc",
+        "x": 86.0,
+        "y": 199.0,
+        "orientation": "N"
+      },
+      {
+        "instance": "u_capture_path.u_capture.u_capture_sram.u_sram22",
+        "x": 350.0,
+        "y": 116.0,
+        "orientation": "N"
+      }
+    ],
+    "search": {
+      "method": "macro-replace+sa",
+      "rank": 1,
+      "cost": 550.766,
+      "sa_seeds": 32,
+      "sa_iterations_per_seed": 240
+    }
+  },
+  {
+    "id": "20261003-145500-da4bcf",
+    "created_at": "2026-10-03T05:55:00.018956+00:00",
+    "baseline_label": "PPA3 current routed best (PPA2-derived placement)",
+    "design": "ppa3_adc_capture_top",
+    "signature": "u_adc:87.000:151.000:N|u_capture_path.u_capture.u_capture_sram.u_sram22:351.000:68.000:N",
+    "metrics": {
+      "baseline": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 661.808
+      },
+      "candidate": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 534.722
+      },
+      "routing_reduction_um": 127.086,
+      "routing_reduction_pct": 19.203,
+      "improved": true
+    },
+    "placements": [
+      {
+        "instance": "u_adc",
+        "x": 87.0,
+        "y": 151.0,
+        "orientation": "N"
+      },
+      {
+        "instance": "u_capture_path.u_capture.u_capture_sram.u_sram22",
+        "x": 351.0,
+        "y": 68.0,
+        "orientation": "N"
+      }
+    ],
+    "search": {
+      "method": "macro-replace+sa",
+      "rank": 2,
+      "cost": 550.816,
+      "sa_seeds": 32,
+      "sa_iterations_per_seed": 240
+    }
+  },
+  {
+    "id": "20261003-145500-8b530b",
+    "created_at": "2026-10-03T05:55:00.033136+00:00",
+    "baseline_label": "PPA3 current routed best (PPA2-derived placement)",
+    "design": "ppa3_adc_capture_top",
+    "signature": "u_adc:87.000:150.000:N|u_capture_path.u_capture.u_capture_sram.u_sram22:351.000:67.000:N",
+    "metrics": {
+      "baseline": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 661.808
+      },
+      "candidate": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 534.722
+      },
+      "routing_reduction_um": 127.086,
+      "routing_reduction_pct": 19.203,
+      "improved": true
+    },
+    "placements": [
+      {
+        "instance": "u_adc",
+        "x": 87.0,
+        "y": 150.0,
+        "orientation": "N"
+      },
+      {
+        "instance": "u_capture_path.u_capture.u_capture_sram.u_sram22",
+        "x": 351.0,
+        "y": 67.0,
+        "orientation": "N"
+      }
+    ],
+    "search": {
+      "method": "macro-replace+sa",
+      "rank": 3,
+      "cost": 550.816,
+      "sa_seeds": 32,
+      "sa_iterations_per_seed": 240
+    }
+  },
+  {
+    "id": "20261003-145500-a9255b",
+    "created_at": "2026-10-03T05:55:00.046833+00:00",
+    "baseline_label": "PPA3 current routed best (PPA2-derived placement)",
+    "design": "ppa3_adc_capture_top",
+    "signature": "u_adc:88.000:199.000:N|u_capture_path.u_capture.u_capture_sram.u_sram22:352.000:116.000:N",
+    "metrics": {
+      "baseline": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 661.808
+      },
+      "candidate": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 534.722
+      },
+      "routing_reduction_um": 127.086,
+      "routing_reduction_pct": 19.203,
+      "improved": true
+    },
+    "placements": [
+      {
+        "instance": "u_adc",
+        "x": 88.0,
+        "y": 199.0,
+        "orientation": "N"
+      },
+      {
+        "instance": "u_capture_path.u_capture.u_capture_sram.u_sram22",
+        "x": 352.0,
+        "y": 116.0,
+        "orientation": "N"
+      }
+    ],
+    "search": {
+      "method": "macro-replace+sa",
+      "rank": 4,
+      "cost": 550.866,
+      "sa_seeds": 32,
+      "sa_iterations_per_seed": 240
+    }
+  },
+  {
+    "id": "20261003-145500-3c19d0",
+    "created_at": "2026-10-03T05:55:00.056693+00:00",
+    "baseline_label": "PPA3 current routed best (PPA2-derived placement)",
+    "design": "ppa3_adc_capture_top",
+    "signature": "u_adc:98.000:137.000:N|u_capture_path.u_capture.u_capture_sram.u_sram22:362.000:54.000:N",
+    "metrics": {
+      "baseline": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 661.808
+      },
+      "candidate": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 534.722
+      },
+      "routing_reduction_um": 127.086,
+      "routing_reduction_pct": 19.203,
+      "improved": true
+    },
+    "placements": [
+      {
+        "instance": "u_adc",
+        "x": 98.0,
+        "y": 137.0,
+        "orientation": "N"
+      },
+      {
+        "instance": "u_capture_path.u_capture.u_capture_sram.u_sram22",
+        "x": 362.0,
+        "y": 54.0,
+        "orientation": "N"
+      }
+    ],
+    "search": {
+      "method": "macro-replace+sa",
+      "rank": 5,
+      "cost": 551.366,
+      "sa_seeds": 32,
+      "sa_iterations_per_seed": 240
+    }
+  },
+  {
+    "id": "20261003-145500-204e86",
+    "created_at": "2026-10-03T05:55:00.067192+00:00",
+    "baseline_label": "PPA3 current routed best (PPA2-derived placement)",
+    "design": "ppa3_adc_capture_top",
+    "signature": "u_adc:102.000:149.000:N|u_capture_path.u_capture.u_capture_sram.u_sram22:366.000:66.000:N",
+    "metrics": {
+      "baseline": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 661.808
+      },
+      "candidate": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 534.722
+      },
+      "routing_reduction_um": 127.086,
+      "routing_reduction_pct": 19.203,
+      "improved": true
+    },
+    "placements": [
+      {
+        "instance": "u_adc",
+        "x": 102.0,
+        "y": 149.0,
+        "orientation": "N"
+      },
+      {
+        "instance": "u_capture_path.u_capture.u_capture_sram.u_sram22",
+        "x": 366.0,
+        "y": 66.0,
+        "orientation": "N"
+      }
+    ],
+    "search": {
+      "method": "macro-replace+sa",
+      "rank": 6,
+      "cost": 551.566,
+      "sa_seeds": 32,
+      "sa_iterations_per_seed": 240
+    }
+  },
+  {
+    "id": "20261003-145500-ffb76b",
+    "created_at": "2026-10-03T05:55:00.078387+00:00",
+    "baseline_label": "PPA3 current routed best (PPA2-derived placement)",
+    "design": "ppa3_adc_capture_top",
+    "signature": "u_adc:100.000:136.000:N|u_capture_path.u_capture.u_capture_sram.u_sram22:364.000:52.000:N",
+    "metrics": {
+      "baseline": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 661.808
+      },
+      "candidate": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 534.808
+      },
+      "routing_reduction_um": 127.0,
+      "routing_reduction_pct": 19.19,
+      "improved": true
+    },
+    "placements": [
+      {
+        "instance": "u_adc",
+        "x": 100.0,
+        "y": 136.0,
+        "orientation": "N"
+      },
+      {
+        "instance": "u_capture_path.u_capture.u_capture_sram.u_sram22",
+        "x": 364.0,
+        "y": 52.0,
+        "orientation": "N"
+      }
+    ],
+    "search": {
+      "method": "macro-replace+sa",
+      "rank": 7,
+      "cost": 551.764,
+      "sa_seeds": 32,
+      "sa_iterations_per_seed": 240
+    }
+  },
+  {
+    "id": "20261003-145500-b8bc26",
+    "created_at": "2026-10-03T05:55:00.089378+00:00",
+    "baseline_label": "PPA3 current routed best (PPA2-derived placement)",
+    "design": "ppa3_adc_capture_top",
+    "signature": "u_adc:107.000:168.000:N|u_capture_path.u_capture.u_capture_sram.u_sram22:371.000:85.000:N",
+    "metrics": {
+      "baseline": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 661.808
+      },
+      "candidate": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 534.722
+      },
+      "routing_reduction_um": 127.086,
+      "routing_reduction_pct": 19.203,
+      "improved": true
+    },
+    "placements": [
+      {
+        "instance": "u_adc",
+        "x": 107.0,
+        "y": 168.0,
+        "orientation": "N"
+      },
+      {
+        "instance": "u_capture_path.u_capture.u_capture_sram.u_sram22",
+        "x": 371.0,
+        "y": 85.0,
+        "orientation": "N"
+      }
+    ],
+    "search": {
+      "method": "macro-replace+sa",
+      "rank": 8,
+      "cost": 551.816,
+      "sa_seeds": 32,
+      "sa_iterations_per_seed": 240
+    }
+  },
+  {
+    "id": "20261003-145500-fa6354",
+    "created_at": "2026-10-03T05:55:00.098313+00:00",
+    "baseline_label": "PPA3 current routed best (PPA2-derived placement)",
+    "design": "ppa3_adc_capture_top",
+    "signature": "u_adc:116.000:191.000:N|u_capture_path.u_capture.u_capture_sram.u_sram22:380.000:108.000:N",
+    "metrics": {
+      "baseline": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 661.808
+      },
+      "candidate": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 534.722
+      },
+      "routing_reduction_um": 127.086,
+      "routing_reduction_pct": 19.203,
+      "improved": true
+    },
+    "placements": [
+      {
+        "instance": "u_adc",
+        "x": 116.0,
+        "y": 191.0,
+        "orientation": "N"
+      },
+      {
+        "instance": "u_capture_path.u_capture.u_capture_sram.u_sram22",
+        "x": 380.0,
+        "y": 108.0,
+        "orientation": "N"
+      }
+    ],
+    "search": {
+      "method": "macro-replace+sa",
+      "rank": 9,
+      "cost": 552.266,
+      "sa_seeds": 32,
+      "sa_iterations_per_seed": 240
+    }
+  },
+  {
+    "id": "20261003-145500-154a2e",
+    "created_at": "2026-10-03T05:55:00.106401+00:00",
+    "baseline_label": "PPA3 current routed best (PPA2-derived placement)",
+    "design": "ppa3_adc_capture_top",
+    "signature": "u_adc:119.000:121.000:N|u_capture_path.u_capture.u_capture_sram.u_sram22:383.000:38.000:N",
+    "metrics": {
+      "baseline": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 661.808
+      },
+      "candidate": {
+        "hard_macro_utilization_pct": 61.599,
+        "estimated_routing_length_um": 534.722
+      },
+      "routing_reduction_um": 127.086,
+      "routing_reduction_pct": 19.203,
+      "improved": true
+    },
+    "placements": [
+      {
+        "instance": "u_adc",
+        "x": 119.0,
+        "y": 121.0,
+        "orientation": "N"
+      },
+      {
+        "instance": "u_capture_path.u_capture.u_capture_sram.u_sram22",
+        "x": 383.0,
+        "y": 38.0,
+        "orientation": "N"
+      }
+    ],
+    "search": {
+      "method": "macro-replace+sa",
+      "rank": 10,
+      "cost": 552.416,
+      "sa_seeds": 32,
+      "sa_iterations_per_seed": 240
+    }
   }
 ]
