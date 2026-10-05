@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-05T14:08",
+ "generated": "2026-10-05T14:27",
  "runs": [
   {
    "run": "reshape_full_450x1422",
@@ -186,11 +186,72 @@
     "ant_iters": 10,
     "heuristic_um": 40
    },
-   "last_step": "06-openroad-stamidpnr-3",
+   "last_step": "18-openroad-stapostpnr",
    "started": "2026-10-05T13:21:32",
+   "finished_ok": true,
+   "metrics_source": "final/metrics.json",
+   "updated": "2026-10-05T14:19",
+   "metrics": {
+    "setup_ws": -0.21122659774697994,
+    "hold_ws": 0.14392798471533713,
+    "setup_vio": 1,
+    "route_drc": 0,
+    "magic_drc": null,
+    "klayout_drc": null,
+    "lvs": null,
+    "antenna_nets": 4,
+    "wirelength": 871175,
+    "power": 6.787257194519043
+   },
+   "antenna": {
+    "step": "09-openroad-checkantennas-1",
+    "nets": 4,
+    "violations": [
+     {
+      "ratio": 1.71,
+      "net": "net407",
+      "pin": "_16342_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.64,
+      "net": "net119",
+      "pin": "output119/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.26,
+      "net": "net234",
+      "pin": "_15165_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.18,
+      "net": "net178",
+      "pin": "_15914_/S",
+      "layer": "met1"
+     }
+    ],
+    "post_route": true
+   },
+   "state": "finished"
+  },
+  {
+   "run": "reshape_try_450x1422_axi54ant4",
+   "shape": "450x1422",
+   "variant": "axi54ant4",
+   "scope": "partial",
+   "knobs": {
+    "axi_period": 54,
+    "ant_margin": 120,
+    "ant_iters": 15,
+    "heuristic_um": 40
+   },
+   "last_step": "04-odb-heuristicdiodeinsertion",
+   "started": "2026-10-05T14:11:49",
    "finished_ok": false,
    "metrics_source": "antenna check only",
-   "updated": "2026-10-05T14:08",
+   "updated": "2026-10-05T14:21",
    "metrics": {},
    "antenna": {
     "step": "02-openroad-checkantennas",
@@ -1061,20 +1122,29 @@
    "run": "reshape_try_590x1085_axi54ant2",
    "shape": "590x1085",
    "variant": "axi54ant2",
-   "scope": "partial",
+   "scope": "full",
    "knobs": {
     "axi_period": 54,
     "ant_margin": 60,
     "ant_iters": 10,
     "heuristic_um": 90
    },
-   "last_step": "25-checker-xor",
+   "last_step": "38-misc-reportmanufacturability",
    "started": "2026-10-05T13:25:38",
-   "finished_ok": false,
-   "metrics_source": "antenna check only",
-   "updated": "2026-10-05T13:52",
+   "finished_ok": true,
+   "metrics_source": "final/metrics.json",
+   "updated": "2026-10-05T14:24",
    "metrics": {
-    "antenna_nets": 0
+    "setup_ws": 1.2672174779307086,
+    "hold_ws": 0.14382473397112688,
+    "setup_vio": 0,
+    "route_drc": 0,
+    "magic_drc": 0,
+    "klayout_drc": 0,
+    "lvs": 0,
+    "antenna_nets": 0,
+    "wirelength": 859854,
+    "power": 6.80542516708374
    },
    "antenna": {
     "step": "09-openroad-checkantennas-1",
@@ -1082,7 +1152,7 @@
     "violations": [],
     "post_route": true
    },
-   "state": "running"
+   "state": "finished"
   },
   {
    "run": "reshape_full_650x985",
