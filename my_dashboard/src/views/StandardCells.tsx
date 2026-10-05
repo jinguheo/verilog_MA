@@ -36,6 +36,65 @@ const fmt = (n: number) => n.toLocaleString()
 const isP = (m: string) => m.includes('pfet')
 const isN = (m: string) => m.includes('nfet')
 
+// 배치(P&R)와 그 앞뒤에서 자주 만나는 약어 — [분류, 약어, Full name, 쉬운 설명, 이 프로젝트에서].
+// "이 프로젝트에서"는 실제 실행 로그·final/ 폴더·config에서 본 값만 적는다.
+const ABBR_GROUPS = ['파일 형식', '배치·배선 단계', '검증 (signoff)', '타이밍', '셀·공정', '탐색 기법'] as const
+const ABBREVIATIONS: ReadonlyArray<readonly [(typeof ABBR_GROUPS)[number], string, string, string, string]> = [
+  ['파일 형식', 'LEF', 'Library Exchange Format', '부품 카탈로그. 셀·매크로의 외곽 크기, 핀 위치, 배선 금지 영역(OBS), 금속층 규칙', 'chan_top.lef = SIZE 800×800 µm. 상위(daq_subsystem)는 이 LEF만 보고 배치'],
+  ['파일 형식', 'DEF', 'Design Exchange Format', '배치도. 다이 크기, 인스턴스 좌표·방향(COMPONENTS), IO 핀(PINS), 연결(NETS)', '단계마다 저장됨. 13번(floorplan) DEF는 IO 핀 좌표가 미확정, 24번(ioplacement)부터 FIXED 좌표'],
+  ['파일 형식', 'GDS (GDSII)', 'Graphic Data System II', '제조용 마스크 도형(층별 다각형). DRC·XOR의 검사 대상', 'final/gds/chan_top.gds. 상위 칩은 8개 매크로 GDS + 배선 도형으로 조립'],
+  ['파일 형식', 'SPEF', 'Standard Parasitic Exchange Format', 'PEX가 뽑은 넷별 기생 저항(R)·커패시턴스(C). STA가 읽어 실제 배선 지연을 계산', 'final/spef/min · nom · max 세 가지 (MACROS.spef에 연결)'],
+  ['파일 형식', 'SDC', 'Synopsys Design Constraints', '타이밍 제약. 클럭 주기, IO 지연 예산, false path, max delay 등', 'constraints/chan_top.sdc (src 14 ns / axi 52 ns), daq_subsystem.sdc'],
+  ['파일 형식', 'SDF', 'Standard Delay Format', '셀·배선 지연값을 담은 파일. 지연을 반영한 게이트 레벨 시뮬레이션에 사용', 'final/sdf'],
+  ['파일 형식', 'Liberty (.lib)', '약어 아님 — 파일 형식 이름', '셀의 기능과 PVT 코너별 타이밍·전력 모델. 합성·STA가 읽음', '표준셀 lib + 매크로 lib(chan_top__<코너>.lib, 코너 9개)'],
+  ['파일 형식', 'SPICE / CDL', 'Simulation Program with Integrated Circuit Emphasis / Circuit Description Language', '트랜지스터 단위 회로. LVS에서 레이아웃에서 추출한 회로와 비교하는 기준', 'final/spice. Netgen LVS의 비교 대상'],
+  ['파일 형식', 'NL / PNL', 'Netlist / Powered Netlist', '게이트 연결 목록. PNL은 전원(VPWR/VGND) 핀까지 연결한 버전', 'final/nl/chan_top.nl.v, final/pnl'],
+  ['파일 형식', 'VH', 'Verilog Header', '포트 목록만 있는 블랙박스 스텁. 상위 합성이 매크로 내부를 다시 합성하지 않게 함', 'final/vh/chan_top.vh — MACROS의 vh로 연결돼 daq_subsystem 합성이 chan_top을 블랙박스로 읽음'],
+  ['파일 형식', 'ODB', 'OpenDB (OpenROAD 내부 DB)', '배치·배선 상태를 통째로 담는 OpenROAD 데이터베이스', '단계 폴더마다 .odb가 저장되어 체크포인트 재개(--from)의 출발점이 됨'],
+
+  ['배치·배선 단계', 'P&R', 'Place and Route', '셀·매크로를 놓고(Place) 금속 배선으로 잇는(Route) 물리 설계 전체', 'OpenLane 단계 13~55번이 이 구간'],
+  ['배치·배선 단계', 'PDN', 'Power Distribution Network', 'VDD/GND를 칩 전체에 공급하는 굵은 금속 격자(스트랩)', 'FP_PDN_VERTICAL_LAYER = met4, HORIZONTAL = met5 (chan_top resolved.json)'],
+  ['배치·배선 단계', 'TAP', 'Well Tap Cell', '웰·기판 전위를 주기적으로 잡아 래치업을 막는 셀. 표준셀 행 사이에 일정 간격으로 삽입', '18번 TapEndcapInsertion. 매크로가 미배치면 TAP-0032 경고'],
+  ['배치·배선 단계', 'GPL / GP', 'Global Placement', '셀의 대략적 위치를 정하는 전역 배치. 겹침을 허용한 채 배선 길이를 줄임', '27번. chan_top 2분 6초. 엔진은 RePlAce(OpenROAD 전역 배치기 이름)'],
+  ['배치·배선 단계', 'DPL / DP', 'Detailed Placement (legalization)', '전역 배치 결과를 행·사이트 격자에 겹침 없이 정렬(합법화)', '33번. DPL-0036 = 합법화 실패 (macrotetris v1이 hold 버퍼를 못 놓고 실패)'],
+  ['배치·배선 단계', 'CTS', 'Clock Tree Synthesis', '클럭을 모든 플립플롭에 비슷한 지연으로 나눠주는 버퍼 트리 생성', '34번. chan_top 53초'],
+  ['배치·배선 단계', 'RSZ', 'Resizer (OpenROAD 타이밍 리페어 엔진)', '버퍼 삽입·셀 교체·핀 스왑으로 setup/hold 위반을 수리', '36번 ResizerTimingPostCTS가 22~52분. RSZ-0062 = setup 위반을 다 못 고침'],
+  ['배치·배선 단계', 'GRT / GR', 'Global Routing', '배선의 대략 경로(어느 구역·층으로 갈지)를 먼저 정함. 용량 초과면 혼잡 실패', '38번. GRT-0118 "Routing congestion too high" = macrotetris v2 실패'],
+  ['배치·배선 단계', 'DRT', 'Detailed Routing (TritonRoute)', '실제 금속 도형으로 배선 확정. DRC 규칙을 지키며 짬', '43번. 8코어를 거의 다 씀'],
+  ['배치·배선 단계', 'HPWL', 'Half-Perimeter WireLength', '넷을 감싸는 최소 사각형의 반둘레. 배치 단계에서 배선 길이를 싸게 추정하는 표준 지표', 'Macro Tetris의 WL은 신호 그룹 허브까지의 가중 맨해튼 거리 근사(HPWL과 같은 계열)'],
+  ['배치·배선 단계', 'WL', 'WireLength', '배선 길이. 짧을수록 지연·전력·혼잡이 유리', '다만 WL만 줄이면 채널이 좁아져 실패한 사례(v1·v2)가 있음'],
+  ['배치·배선 단계', 'Util', 'Utilization', '셀 면적 ÷ 코어 면적. 높을수록 빽빽해 라우팅이 어려움', 'chan_top 실측 52%. 이 탭 기준 매크로 내부 util ≤70%'],
+  ['배치·배선 단계', 'OBS', 'Obstruction', 'LEF에서 "여기엔 배선하지 마라"고 표시한 영역(매크로 내부 등)', 'GRT 로그의 Blockages 수에 반영'],
+  ['배치·배선 단계', 'ECO', 'Engineering Change Order', 'signoff 근처에서 작은 변경만 국소적으로 반영하는 수정 방식', 'OpenLane 표준 flow엔 없음 — 변경 시 전체 재실행 또는 체크포인트 재개'],
+
+  ['검증 (signoff)', 'DRC', 'Design Rule Check', '제조 규칙(최소 폭·간격·덮임 등) 위반 검사', 'Magic DRC + KLayout DRC 이중 검사. 12배 큰 칩이라 시간이 오래 걸림'],
+  ['검증 (signoff)', 'LVS', 'Layout Versus Schematic', '레이아웃에서 추출한 회로가 원래 회로(SPICE)와 같은지 비교', 'Netgen LVS'],
+  ['검증 (signoff)', 'ERC', 'Electrical Rule Check', '전기적 규칙(플로팅 입력, 전원 연결 등) 검사', 'OpenLane에서는 Disconnected Pins(47~48번)·Illegal Overlap(67번) 체크가 비슷한 역할'],
+  ['검증 (signoff)', 'XOR', 'eXclusive OR (두 GDS의 도형 차이 비교)', 'Magic과 KLayout이 각각 만든 GDS를 겹쳐서 다른 도형이 없는지 확인', '60~61번 KLayout XOR / XOR checker'],
+  ['검증 (signoff)', 'PEX / RCX', 'Parasitic EXtraction / Resistance-Capacitance eXtraction', '실제 배선 모양에서 기생 R·C를 뽑는 단계(RCX는 OpenROAD의 PEX 엔진)', '53번 RCX 1분 11초 → 54번 최종 STA가 SPEF를 읽음'],
+  ['검증 (signoff)', 'IR drop', 'I × R drop', '전원망 저항 때문에 셀에 도달하는 전압이 떨어지는 현상', '55번 IRDropReport'],
+
+  ['타이밍', 'STA', 'Static Timing Analysis', '시뮬레이션 없이 모든 경로의 지연을 계산해 클럭 주기를 만족하는지 검사', '12·30·35·37·42·54번에서 단계별로 수행'],
+  ['타이밍', 'PVT', 'Process, Voltage, Temperature', '공정 편차·전압·온도 조합 = 코너. 코너마다 지연이 달라 전부 검사', '9개 코너 (min/nom/max × tt/ss/ff)'],
+  ['타이밍', 'TT / SS / FF', 'Typical-Typical / Slow-Slow / Fast-Fast', 'NMOS·PMOS 속도 코너. SS는 가장 느려 setup에, FF는 가장 빨라 hold에 불리', '코너 이름 예: nom_ss_100C_1v60 = nom RC, SS, 100°C, 1.60V'],
+  ['타이밍', 'WNS / TNS / WS', 'Worst Negative Slack / Total Negative Slack / Worst Slack', 'slack = 여유 시간. WNS는 가장 나쁜 위반, TNS는 위반의 합, WS는 부호 포함 최악 여유', 'chan_top signoff: setup WS +0.99 ns, TNS 0'],
+  ['타이밍', 'Setup / Hold', '(약어 아님)', 'setup은 데이터가 클럭 전에 충분히 일찍 도착해야 하는 조건(주기가 길수록 유리), hold는 클럭 후에 너무 일찍 바뀌지 말아야 하는 조건(주기와 무관)', '30분~1시간 걸린 36번 리페어가 이 둘을 수리'],
+  ['타이밍', 'CDC', 'Clock Domain Crossing', '서로 다른 클럭 영역 사이 신호 전달. 동기화 회로·비동기 FIFO 필요', 'chan_top의 src_clk ↔ axi_clk (prim_fifo_async)'],
+  ['타이밍', 'CTS skew', '(약어 아님)', '클럭이 플립플롭마다 도착하는 시간 차이', 'STA 리포트의 skew.max/min.rpt'],
+
+  ['셀·공정', 'PDK', 'Process Design Kit', '공정이 제공하는 설계 키트 — 셀 라이브러리, 규칙(DRC/LVS 덱), 모델', 'sky130A (volare로 설치)'],
+  ['셀·공정', 'sky130_fd_sc_hd', 'SkyWater 130nm · foundry digital · standard cell · high density', 'SkyWater 130nm 공정의 고밀도 디지털 표준셀 라이브러리', '이 프로젝트 디지털 P&R이 쓰는 라이브러리'],
+  ['셀·공정', 'NMOS / PMOS', 'N-type / P-type Metal-Oxide-Semiconductor', 'CMOS를 이루는 두 트랜지스터. PMOS는 위쪽(VDD, n-well), NMOS는 아래쪽(GND, p기판)', '표준셀 한 줄 안에서 위/아래로 나뉘어 배치'],
+  ['셀·공정', 'VPWR / VGND', '(sky130 전원 핀 이름) Power / Ground', 'sky130 셀의 전원·접지 핀. 일반적으로 VDD/VSS와 같은 역할', 'PNL(전원 연결 netlist)과 PDN이 이 핀을 잇는다'],
+  ['셀·공정', 'li1 · licon · mcon · met1~5', 'local interconnect 1 · local-interconnect contact · metal contact · metal 1~5', '아래부터 확산/폴리 → licon → li1 → mcon → met1 → via … met5. 층마다 수직/수평이 번갈아 나옴', '라우팅은 met1~met5, 셀 내부 배선은 li1'],
+  ['셀·공정', 'PPA', 'Power, Performance, Area', '전력·성능·면적 세 축의 트레이드오프', 'PPA 실험 탭들의 평가 기준'],
+  ['셀·공정', 'RTL', 'Register Transfer Level', '레지스터와 그 사이 로직으로 쓴 하드웨어 기술(SystemVerilog)', 'OpenLane의 입력 (합성 전)'],
+
+  ['탐색 기법', 'SA', 'Simulated Annealing', '나빠지는 이동도 온도에 비례한 확률로 받아들이며 점점 식혀 국소 최적을 벗어나는 탐색', 'Macro Tetris·표준셀 SA 실험의 탐색 엔진'],
+  ['탐색 기법', 'ParSAC', 'Parallel Simulated Annealing with Constraints', '경계·그룹·고정 위치 제약을 지원하는 병렬 SA 매크로 floorplanner', '설치 완료, 경계/그룹 제약 확인. 아직 본 실행엔 미투입'],
+  ['탐색 기법', 'RePlAce', '(OpenROAD 전역 배치기 이름)', '정전기 밀도 모델 + Nesterov 경사하강으로 셀을 퍼뜨리며 배선 길이를 줄이는 해석적 배치기', 'OpenLane GlobalPlacement(27번)가 사용. 이 탭의 "RePlAce 스타일"은 그 성격을 단순화한 흉내'],
+]
+
 function cellName(lib: Lib, g: Group, v: Variant, data: Record<string, CellData> | null): string {
   const withDrive = `${g.base}_${v.drive}`
   if (!data || data[withDrive]) return withDrive
@@ -220,6 +279,18 @@ export default function StandardCells() {
         <tr><td><b>이 프로젝트에서</b></td><td>현재 흐름(OpenLane + sky130A)은 PDK 셀을 그대로 사용합니다. 커스텀 셀은 PDK 원본을 덮어쓰지 말고 별도 라이브러리(예: <code>sky130_custom</code>)로 만들어 OpenLane 설정이 가리키게 하는 것이 안전합니다 — 덮어쓰면 같은 PDK를 쓰는 다른 설계까지 바뀝니다.</td></tr>
         <tr><td><b>표준셀이 아닌 대상</b> <small>(아래 카드에 실측)</small></td><td>SRAM·아날로그·I/O 패드는 별도 GDS+LEF 매크로로 두고 P&amp;R은 배치만 하며, 하위 블록(chan_top 등)은 먼저 P&amp;R해 하나의 매크로로 만든 뒤 상위(daq_subsystem)에서 glue 표준셀과 함께 배치합니다.</td></tr>
       </tbody></table></div>
+    </section>
+
+    <section className="card">
+      <div className="card-title"><div><small className="kicker">GLOSSARY</small><h3>배치에 쓰이는 약어와 Full name</h3></div><span className="connection">{ABBREVIATIONS.length}개</span></div>
+      <p className="chip-note" style={{ margin: '0 0 10px' }}>P&amp;R 로그·config·이 대시보드에서 마주치는 약어를 분류별로 모았습니다. 마지막 열은 이 프로젝트의 실제 실행(chan_top 완주 실행, hierarchical daq_subsystem 실행)에서 본 값입니다.</p>
+      {ABBR_GROUPS.map(group => <div key={group} style={{ marginBottom: 14 }}>
+        <h4 style={{ margin: '0 0 6px' }}>{group}</h4>
+        <div className="data-table"><table><thead><tr><th style={{ width: '12%' }}>약어</th><th style={{ width: '22%' }}>Full name</th><th style={{ width: '34%' }}>의미</th><th>이 프로젝트에서</th></tr></thead><tbody>
+          {ABBREVIATIONS.filter(a => a[0] === group).map(a => <tr key={a[1]}><td><b>{a[1]}</b></td><td style={{ fontSize: 12 }}>{a[2]}</td><td style={{ fontSize: 12 }}>{a[3]}</td><td style={{ fontSize: 12 }}>{a[4]}</td></tr>)}
+        </tbody></table></div>
+      </div>)}
+      <p className="chip-note">흐름으로 이으면: <b>RTL → 합성 → (SDC·LEF·Liberty) → floorplan → PDN → GPL → DPL → CTS → RSZ → GRT → DRT → RCX(PEX) → STA(SPEF) → GDS → DRC·LVS·XOR</b> 순서입니다. 앞쪽 STA는 추정 기생 성분, 뒤쪽(PEX 이후) STA가 signoff 값입니다.</p>
     </section>
 
     <section className="card">
