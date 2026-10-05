@@ -126,8 +126,6 @@ export const CANDIDATES: Circuit[] = [
   circuit('cnt10buf', 3, '10비트 카운터 + 상위 2비트 출력 버퍼 (30셀)', '10비트 동기 카운터(DFF 10·XOR 9·AND 8·INV 1)에 상위 2비트 Q 버퍼 2개', ...counterN(10, 2)),
   circuit('cnt12buf', 3, '12비트 카운터 + 상위 6비트 출력 버퍼 (40셀)', '12비트 동기 카운터(DFF 12·XOR 11·AND 10·INV 1)에 상위 6비트 Q 버퍼 6개', ...counterN(12, 6)),
 ]
-// 크기별 비교에 쓰는 셀 수: 2단계 8·9·10셀, 3단계 20·30·40셀 (크기마다 구조가 다른 후보 2개 이상)
-const SIZE_SETS: Record<2 | 3, number[]> = { 2: [8, 9, 10], 3: [20, 30, 40] }
 const TIER_INFO = {
   1: { title: '복잡한 standard cell · 2~5셀', how: '전수 탐색', desc: '배치 가짓수가 24 ~ 311,040가지라 전부 평가해 정확한 최적을 구합니다.' },
   2: { title: '더 복잡한 standard cell · 6~10셀', how: 'SA', desc: '가짓수가 천만 ~ 수십조라 전수 탐색이 어렵습니다. SA로 찾고, 6셀은 전수 탐색으로 정답과 대조할 수 있습니다.' },
@@ -269,6 +267,8 @@ type Live = { seed: number; stage: number; stages: number; T: number; cur: numbe
 type Cancel = { current: boolean }
 type Summary = { cost: number; width: number; area: number; wl: number }
 type BatchRow = { id: string; label: string; n: number; nets: number; method: string; summary: Summary | null; init: Summary | null; ms: number; extra: string }
+type SavedRow = { id: string; sa: State; summary: Summary }
+type SavedRun = { rows: SavedRow[]; complete?: boolean; previous?: SavedRow[]; best?: SavedRow[] }
 
 // 가장 단순한 배치: 셀을 netlist에 적은 순서 그대로, 전부 N 방향, 간격 0
 const initState = (n: number): State => ({ order: Array.from({ length: n }, (_, i) => i), flip: new Array(n).fill(false), gaps: new Array(Math.max(0, n - 1)).fill(0) })
@@ -359,7 +359,8 @@ export default function CellSaExperiment({ data, rules, weights, tier }: { data:
   const [exLive, setExLive] = useState<{ done: number; total: number; best: number } | null>(null)
   const [view, setView] = useState<'sa' | 'ex'>('ex')
   const [batch, setBatch] = useState<{ tier: 1 | 2 | 3; rows: BatchRow[]; running: boolean; label: string } | null>(null)
-  const [cmp, setCmp] = useState<{ tier: number; rows: CmpRow[]; running: boolean; label: string } | null>(null)
+  const [cmp, setCmp] = useState<{ tier: number; rows: CmpRow[]; running: boolean; label: string; previous: SavedRun | null } | null>(null)
+  const [improve, setImprove] = useState<{ id: string; attempts: number; running: boolean } | null>(null)
   const cancel = useRef<Cancel>({ current: false })
   const tierList = useMemo(() => CANDIDATES.filter(c => c.tier === tier), [tier])
   const cand = CANDIDATES.find(c => c.id === candId) ?? tierList[0]
@@ -370,7 +371,7 @@ export default function CellSaExperiment({ data, rules, weights, tier }: { data:
   // 후보를 바꾼 직후 한 번은 이전 후보의 결과가 state에 남아 있다 — 그 배치를 새 후보의 셀 목록에 그리면 인덱스가 어긋나 화면이 죽으므로, 실행한 후보·규칙의 결과만 보여 준다.
   const results = runKey === key ? resultsRaw : []
   const live = runKey === key ? liveRaw : null
-  const running = !!live || !!exLive || !!batch?.running || !!cmp?.running
+  const running = !!live || !!exLive || !!batch?.running || !!cmp?.running || !!improve?.running
   // 후보마다 배치 1개 평가 시간(µs)을 재서 전수 탐색에 걸릴 시간을 추정한다(해당 단계 후보만, 한 번만 측정).
   const usPer = useMemo(() => {
     const m = new Map<string, number>()
@@ -433,31 +434,118 @@ export default function CellSaExperiment({ data, rules, weights, tier }: { data:
     setBatch({ tier, rows: [...rows], running: false, label: '' })
   }
 
-  // 크기별 비교: SIZE_SETS 크기의 후보마다 SA(seed 여러 개 중 최선)를 실제로 돌리고, 초기 배치와 나란히 비교한다.
+  // 모든 후보의 기본 배치를 즉시 계산한다. SA 결과는 이후 후보별로 채운다.
   const cmpSeeds = tier === 3 ? 2 : 3
+  const simpleRows = useMemo(() => {
+    if (!data || tier === 1) return []
+    return tierList.flatMap(c => {
+      const x = buildCtx(data, c, rules, weights)
+      if (!x) return []
+      const init = initState(x.n)
+      return [{ id: c.id, label: c.label, n: c.insts.length, nets: c.nets.length, ctx: x, init, initS: summarize(x, init) }]
+    })
+  }, [data, tier, tierList, rules, weights])
+  const comparisonKey = `stdcell-sa-v1|${tier}|${JSON.stringify(rules)}|${JSON.stringify(weights)}`
+  const [savedRun, setSavedRun] = useState<SavedRun | null>(null)
+  const [loadedKey, setLoadedKey] = useState('')
+  const autoStarted = useRef(false)
+  const keyRef = useRef(comparisonKey)
+  keyRef.current = comparisonKey
+  useEffect(() => {
+    autoStarted.current = false // 규칙·가중치가 바뀌면 새 조건의 저장 결과를 다시 확인하고, 없으면 자동 실행한다
+    try {
+      const raw = localStorage.getItem(comparisonKey)
+      setSavedRun(raw ? JSON.parse(raw) as SavedRun : null)
+    } catch { setSavedRun(null) }
+    setLoadedKey(comparisonKey)
+  }, [comparisonKey])
+  const matchingSavedRun = loadedKey === comparisonKey ? savedRun : null
+
+  // 새 실행이 시작될 때 직전 결과를 고정해 두고, 끝난 후보부터 비교한다.
   const runCompare = async () => {
     if (!data || tier === 1) return
     cancel.current = { current: false }
     const cc = cancel.current
-    const list = tierList.filter(c => SIZE_SETS[tier].includes(c.insts.length))
-    const rows: CmpRow[] = []
-    setCmp({ tier, rows, running: true, label: '' })
-    for (const c of list) {
+    const resume = matchingSavedRun?.complete === false
+    const previous: SavedRun | null = resume ? { rows: matchingSavedRun.previous ?? [], complete: true }
+      : cmp?.rows.length ? { rows: cmp.rows.map(r => ({ id: r.id, sa: r.sa, summary: r.saS })), complete: true } : matchingSavedRun
+    const rows: CmpRow[] = resume ? simpleRows.flatMap(r => {
+      const saved = matchingSavedRun.rows.find(item => item.id === r.id)
+      return saved ? [{ ...r, sa: saved.sa, saS: saved.summary, ms: 0, seeds: cmpSeeds }] : []
+    }) : []
+    const priorBest = matchingSavedRun?.best ?? matchingSavedRun?.rows ?? []
+    const persist = (complete: boolean) => {
+      const current = rows.map(r => ({ id: r.id, sa: r.sa, summary: r.saS }))
+      const best = [...priorBest]
+      for (const row of current) {
+        const index = best.findIndex(item => item.id === row.id)
+        if (index < 0) best.push(row)
+        else if (row.summary.cost < best[index].summary.cost - 1e-9) best[index] = row
+      }
+      const saved: SavedRun = { rows: current, complete, previous: previous?.rows ?? [], best }
+      try { localStorage.setItem(comparisonKey, JSON.stringify(saved)) } catch { /* storage can be unavailable */ }
+      if (keyRef.current === comparisonKey) setSavedRun(saved) // 규칙을 바꿔 취소된 실행이 새 규칙 화면에 옛 결과를 덮어쓰지 않게
+    }
+    setCmp({ tier, rows, running: true, label: '', previous })
+    const seedOffset = Math.floor(Math.random() * 1000000) + 1
+    for (const c of tierList) {
       if (cc.current) break
-      setCmp({ tier, rows: [...rows], running: true, label: c.label })
+      if (rows.some(r => r.id === c.id)) continue
+      setCmp({ tier, rows: [...rows], running: true, label: c.label, previous })
       const x = buildCtx(data, c, rules, weights)
       if (!x) continue
       let best: SaResult | null = null, ms = 0
       for (let sd = 1; sd <= cmpSeeds && !cc.current; sd++) {
-        const r = await annealOnce(x, sd, cc)
+        const r = await annealOnce(x, seedOffset + sd, cc)
         if (r) { ms += r.ms; if (!best || r.best < best.best) best = r }
       }
       if (!best) continue
       const init = initState(x.n)
       rows.push({ id: c.id, label: c.label, n: c.insts.length, nets: c.nets.length, ctx: x, init, sa: best.bestState, initS: summarize(x, init), saS: summarize(x, best.bestState), ms, seeds: cmpSeeds })
+      persist(false)
+      setCmp({ tier, rows: [...rows], running: true, label: c.label, previous })
     }
-    setCmp({ tier, rows: [...rows], running: false, label: '' })
+    persist(!cc.current && rows.length === simpleRows.length)
+    if (keyRef.current === comparisonKey) setCmp({ tier, rows: [...rows], running: false, label: '', previous })
   }
+  const runUntilBetter = async (id: string) => {
+    if (!data || tier === 1 || running) return
+    const c = tierList.find(item => item.id === id)
+    const x = c && buildCtx(data, c, rules, weights)
+    if (!c || !x) return
+    const oldRun = matchingSavedRun
+    const bestSoFar = oldRun?.best?.find(item => item.id === id) ?? oldRun?.rows.find(item => item.id === id)
+    const target = bestSoFar?.summary.cost ?? summarize(x, initState(x.n)).cost
+    cancel.current = { current: false }
+    const cc = cancel.current
+    const seedOffset = Math.floor(Math.random() * 1000000) + 1
+    setImprove({ id, attempts: 0, running: true })
+    for (let attempt = 1; !cc.current; attempt++) {
+      const result = await annealOnce(x, seedOffset + attempt, cc)
+      if (!result) break
+      const summary = summarize(x, result.bestState)
+      if (summary.cost < target - 1e-9) {
+        const found = { id, sa: result.bestState, summary }
+        const current = (oldRun?.rows ?? []).filter(item => item.id !== id)
+        current.push(found)
+        const best = (oldRun?.best ?? oldRun?.rows ?? []).filter(item => item.id !== id)
+        best.push(found)
+        const saved: SavedRun = { rows: current, complete: current.length === simpleRows.length, previous: oldRun?.rows ?? [], best }
+        try { localStorage.setItem(comparisonKey, JSON.stringify(saved)) } catch { /* storage can be unavailable */ }
+        if (keyRef.current === comparisonKey) setSavedRun(saved)
+        setCmp(null)
+        setImprove({ id, attempts: attempt, running: false })
+        return
+      }
+      setImprove({ id, attempts: attempt, running: true })
+    }
+    setImprove({ id, attempts: 0, running: false })
+  }
+  useEffect(() => {
+    if (tier === 1 || !data || !simpleRows.length || loadedKey !== comparisonKey || (matchingSavedRun && matchingSavedRun.complete !== false) || autoStarted.current) return
+    autoStarted.current = true
+    void runCompare()
+  }, [tier, data, simpleRows, loadedKey, comparisonKey, matchingSavedRun])
 
   const exKnown = ex && ex.key === key ? ex : null
   const bestRun = results.length ? results.reduce((a, b) => b.best < a.best ? b : a) : null
@@ -473,7 +561,7 @@ export default function CellSaExperiment({ data, rules, weights, tier }: { data:
   return <div className="card" style={{ padding: 12, marginBottom: 12 }}>
     <div className="card-title" style={{ marginBottom: 6 }}><div><small className="kicker">CANDIDATE POOL · 실측</small><h3>{tier === 1 ? '복잡한 표준셀 후보군 (5개 이하)' : tier === 2 ? '더 복잡한 표준셀 후보군 (6~10개)' : '매우 복잡한 표준셀 후보군 (20~50개)'} — 배치·배선 탐색</h3></div></div>
     <p className="chip-note" style={{ margin: '0 0 8px' }}><b>{info.title}</b> — 후보 {tierList.length}개. {info.desc} 모든 셀·핀은 실제 sky130 hd이고, 내부 연결(드라이버→싱크)만 넷으로 셉니다. 클록·전원·외부 입력은 넷에 넣지 않았습니다.</p>
-    {tier !== 1 && <CompareSection tier={tier} cmp={cmp} running={running || !data} seeds={cmpSeeds} onRun={runCompare} onOpen={id => { if (!running) { setCandId(id); window.scrollTo?.({ top: 0 }) } }}/>}
+    {tier !== 1 && <CompareSection tier={tier} simpleRows={simpleRows} savedRun={matchingSavedRun} cmp={cmp} running={running || !data} improving={improve} seeds={cmpSeeds} onRun={runCompare} onImprove={runUntilBetter} onStop={() => { cancel.current.current = true }} onOpen={id => { if (!running) { setCandId(id); window.scrollTo?.({ top: 0 }) } }}/>} 
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: 8, marginBottom: 10 }}>
       {tierList.map(c => { const on = c.id === cand.id, us = usPer.get(c.id)
         return <button key={c.id} type="button" disabled={running} onClick={() => setCandId(c.id)} style={{ textAlign: 'left', padding: 10, borderRadius: 8, cursor: running ? 'default' : 'pointer',
@@ -493,7 +581,7 @@ export default function CellSaExperiment({ data, rules, weights, tier }: { data:
         : <><button type="button" className="active" disabled={!ctx || running} onClick={runSA}>SA 실행</button>
           <button type="button" disabled={!ctx || running || n > MAX_EXHAUSTIVE_N} onClick={runExhaustive} title={n > MAX_EXHAUSTIVE_N ? `${MAX_EXHAUSTIVE_N}셀까지만 전수 검증` : ''}>전수 탐색으로 검증</button></>}
       <label style={{ display: 'grid', gap: 3, fontSize: 12 }}>SA seed 수<select value={seeds} disabled={running} onChange={e => setSeeds(Number(e.target.value))}>{[1, 3, 5, 10].map(v => <option key={v} value={v}>{v}</option>)}</select></label>
-      <button type="button" disabled={!data || running} onClick={runBatch}>{tier === 1 ? '이 단계 후보 전부 전수 탐색해 비교' : tier === 2 ? '이 단계 후보 전부 SA(3 seed)로 비교' : '이 단계 후보 전부 SA(seed 1개)로 빠르게 비교'}</button>
+      {tier === 1 && <button type="button" disabled={!data || running} onClick={runBatch}>이 단계 후보 전부 전수 탐색해 비교</button>}
       {running && <button type="button" onClick={() => { cancel.current.current = true }}>중지</button>}
     </div>
     {!data && <p className="chip-note">셀 데이터를 불러오는 중입니다.</p>}
@@ -560,7 +648,7 @@ export default function CellSaExperiment({ data, rules, weights, tier }: { data:
 // ---- 초기 배치(netlist 순서 그대로) vs SA 배치 비교 ----
 const dPct = (a: number, b: number) => a > 0 ? (b / a - 1) * 100 : 0
 const dTone = (v: number) => v < -0.05 ? '#1D9E75' : v > 0.05 ? '#C0392B' : 'var(--text-secondary)'
-const dText = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`
+const dText = (v: number) => Math.abs(v) < 0.05 ? '0.0%' : `${v > 0 ? '+' : ''}${v.toFixed(1)}%`
 
 // 같은 비용 모델·같은 축척으로 초기 배치와 SA 배치를 위아래로 그리고 지표를 비교한다.
 function LayoutPair({ ctx, init, sa }: { ctx: Ctx; init: State; sa: State }) {
@@ -579,30 +667,49 @@ function LayoutPair({ ctx, init, sa }: { ctx: Ctx; init: State; sa: State }) {
 }
 
 type CmpRow = { id: string; label: string; n: number; nets: number; ctx: Ctx; init: State; sa: State; initS: Summary; saS: Summary; ms: number; seeds: number }
+type SimpleRow = Pick<CmpRow, 'id' | 'label' | 'n' | 'nets' | 'ctx' | 'init' | 'initS'>
 
-function CompareSection({ tier, cmp, running, seeds, onRun, onOpen }: { tier: 2 | 3; cmp: { tier: number; rows: CmpRow[]; running: boolean; label: string } | null; running: boolean; seeds: number; onRun: () => void; onOpen: (id: string) => void }) {
-  const sizes = SIZE_SETS[tier]
-  const rows = cmp?.tier === tier ? [...cmp.rows].sort((x, y) => x.n - y.n || x.label.localeCompare(y.label)) : []
-  const total = CANDIDATES.filter(c => c.tier === tier && sizes.includes(c.insts.length)).length
+function CompareSection({ tier, simpleRows, savedRun, cmp, running, improving, seeds, onRun, onImprove, onStop, onOpen }: {
+  tier: 2 | 3; simpleRows: SimpleRow[]; savedRun: SavedRun | null
+  cmp: { tier: number; rows: CmpRow[]; running: boolean; label: string; previous: SavedRun | null } | null
+  running: boolean; improving: { id: string; attempts: number; running: boolean } | null
+  seeds: number; onRun: () => void; onImprove: (id: string) => void; onStop: () => void; onOpen: (id: string) => void
+}) {
+  const rows = [...simpleRows].sort((x, y) => x.n - y.n || x.label.localeCompare(y.label))
+  const current = cmp?.tier === tier ? cmp.rows.map(r => ({ id: r.id, sa: r.sa, summary: r.saS })) : savedRun?.rows ?? []
+  const previous = cmp?.tier === tier ? cmp.previous?.rows ?? [] : savedRun?.previous ?? []
+  const best = savedRun?.best ?? savedRun?.rows ?? []
+  const find = (list: { id: string; sa: State; summary: Summary }[], id: string) => list.find(r => r.id === id)
   return <div className="card" style={{ padding: 12, marginBottom: 12, borderLeft: '4px solid #1D9E75' }}>
-    <div className="card-title" style={{ marginBottom: 6 }}><div><small className="kicker">INITIAL vs SA · 실제로 만들어 비교</small><h3>초기 배치와 SA 배치 비교 — {sizes.join('·')}셀 후보</h3></div>
-      <button type="button" className="active" disabled={running} onClick={onRun}>{sizes.join('·')}셀 후보 {total}개 만들어 비교 (후보당 SA seed {seeds}개 중 최선)</button></div>
-    <p className="chip-note" style={{ margin: '0 0 8px' }}><b>초기 배치</b>는 셀을 회로 정의(netlist)에 적은 순서 그대로 한 줄에 놓고 전부 N 방향, 간격 0으로 둔 가장 단순한 배치입니다. <b>SA 배치</b>는 SA가 순서·좌우 뒤집기·간격을 바꿔 찾은 최선입니다. 둘 다 같은 가상 규칙과 같은 비용 모델(면적 + 넷 배선)로 계산합니다. 후보는 비트 단위로 이어 쓴 순서라 초기 배치도 나쁘지 않은 편이어서, 개선폭은 "순서를 잘 정해 둔 사람의 배치"에 대한 이득입니다.</p>
-    {cmp?.running && cmp.tier === tier && <p className="chip-note" style={{ margin: '0 0 8px', color: '#C0A02B' }}>진행 중: {cmp.label} ({rows.length}/{total})</p>}
-    {rows.length === 0 && !cmp?.running && <p className="chip-note" style={{ margin: 0 }}>위 버튼을 누르면 {sizes.join('·')}셀 후보를 실제로 만들어(SA 실행) 초기 배치와 나란히 보여줍니다.</p>}
+    <div className="card-title" style={{ marginBottom: 6 }}><div><small className="kicker">전체 후보 · 기본 배치와 SA 비교</small><h3>{tier === 2 ? '10개 이하' : '20개 이상'} 후보 {rows.length}개 레이아웃</h3></div>
+      <div><button type="button" className="active" disabled={running || rows.length === 0} onClick={onRun}>전체 후보 SA 새로 실행 (후보당 seed {seeds}개)</button>{(cmp?.running || improving?.running) && <button type="button" onClick={onStop}>중지</button>}</div></div>
+    <p className="chip-note" style={{ margin: '0 0 8px' }}>기본 방식은 회로에 적힌 셀 순서, N 방향, 간격 0으로 즉시 배치합니다. 저장된 결과가 없으면 전체 후보 SA를 자동 실행합니다. 새 실행 결과는 기본 방식·직전 SA·역대 최선과 비교합니다. 완료한 후보부터 이 브라우저에 저장하고, 중단되면 이어서 실행합니다.</p>
+    {cmp?.running && cmp.tier === tier && <p className="chip-note" style={{ margin: '0 0 8px', color: '#C0A02B' }}>SA 진행 중: {cmp.label} ({cmp.rows.length}/{rows.length})</p>}
+    {improving?.running && <p className="chip-note" style={{ margin: '0 0 8px', color: '#C0A02B' }}>더 나은 결과 탐색 중: {rows.find(r => r.id === improving.id)?.label} · SA {improving.attempts}회 완료 (위 중지 버튼으로 멈출 수 있습니다)</p>}
     {rows.length > 0 && <>
-      <div className="data-table"><table><thead><tr><th>후보</th><th>셀</th><th>넷</th><th>비용: 초기 → SA</th><th>폭 (µm): 초기 → SA</th><th>배선 길이 (µm): 초기 → SA</th><th>SA 시간</th></tr></thead><tbody>
-        {rows.map(r => { const dc = dPct(r.initS.cost, r.saS.cost), dw = dPct(r.initS.width, r.saS.width), dl = dPct(r.initS.wl, r.saS.wl)
-          return <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => onOpen(r.id)}><td><b>{r.label}</b></td><td>{r.n}</td><td>{r.nets}</td>
-            <td>{round(r.initS.cost)} → <b>{round(r.saS.cost)}</b> <span style={{ color: dTone(dc), fontWeight: 700 }}>({dText(dc)})</span></td>
-            <td>{round(r.initS.width)} → <b>{round(r.saS.width)}</b> <span style={{ color: dTone(dw), fontWeight: 700 }}>({dText(dw)})</span></td>
-            <td>{round(r.initS.wl)} → <b>{round(r.saS.wl)}</b> <span style={{ color: dTone(dl), fontWeight: 700 }}>({dText(dl)})</span></td>
-            <td>{r.ms < 1000 ? `${round(r.ms)} ms` : `${round(r.ms / 1000)} 초`}</td></tr> })}
+      <div className="data-table"><table><thead><tr><th>후보</th><th>셀</th><th>기본 비용</th><th>직전 SA</th><th>새 SA</th><th>역대 최선</th><th>기본 대비</th><th>직전 대비</th><th>역대 최선 대비</th></tr></thead><tbody>
+        {rows.map(r => { const now = find(current, r.id), old = find(previous, r.id), record = find(best, r.id)
+          return <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => onOpen(r.id)}><td><b>{r.label}</b></td><td>{r.n}</td><td>{round(r.initS.cost)}</td>
+            <td>{old ? round(old.summary.cost) : '—'}</td><td>{now ? <b>{round(now.summary.cost)}</b> : '실행 전'}</td><td>{record ? round(record.summary.cost) : '—'}</td>
+            <td>{now ? <span style={{ color: dTone(dPct(r.initS.cost, now.summary.cost)) }}>{dText(dPct(r.initS.cost, now.summary.cost))}</span> : '—'}</td>
+            <td>{now && old ? <span style={{ color: dTone(dPct(old.summary.cost, now.summary.cost)) }}>{dText(dPct(old.summary.cost, now.summary.cost))}</span> : '—'}</td>
+            <td>{now && record ? <span style={{ color: dTone(dPct(record.summary.cost, now.summary.cost)) }}>{dText(dPct(record.summary.cost, now.summary.cost))}</span> : '—'}</td></tr> })}
       </tbody></table></div>
-      {rows.map(r => <details key={r.id} open style={{ marginTop: 10 }}>
-        <summary style={{ cursor: 'pointer', fontSize: 13 }}><b>{r.n}셀 · {r.label}</b> — 비용 {dText(dPct(r.initS.cost, r.saS.cost))} · 배선 {dText(dPct(r.initS.wl, r.saS.wl))} · 폭 {dText(dPct(r.initS.width, r.saS.width))}</summary>
-        <div style={{ marginTop: 6 }}><LayoutPair ctx={r.ctx} init={r.init} sa={r.sa}/></div>
-      </details>)}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(360px,1fr))', gap: 12, marginTop: 12 }}>
+        {rows.map(r => { const now = find(current, r.id), old = find(previous, r.id), record = find(best, r.id)
+          const scale = Math.max(6, Math.min(30, 1100 / Math.max(r.initS.width, now?.summary.width ?? 0, old?.summary.width ?? 0, record?.summary.width ?? 0)))
+          return <article key={r.id} className="card" style={{ padding: 12, margin: 0, minWidth: 0, borderTop: '3px solid #1D9E75' }}>
+            <b>{r.n}셀 · {r.label}</b>
+            <div style={{ margin: '8px 0 2px', fontSize: 12 }}><b>기본 방식</b> · 비용 {round(r.initS.cost)} · 폭 {round(r.initS.width)} µm · 배선 {round(r.initS.wl)} µm</div>
+            <RowView ctx={r.ctx} st={r.init} S={scale}/>
+            {old && <><div style={{ margin: '8px 0 2px', fontSize: 12 }}><b>직전 SA</b> · 비용 {round(old.summary.cost)} · 폭 {round(old.summary.width)} µm · 배선 {round(old.summary.wl)} µm</div><RowView ctx={r.ctx} st={old.sa} S={scale}/></>}
+            {record && (!now || JSON.stringify(record.sa) !== JSON.stringify(now.sa)) && <><div style={{ margin: '8px 0 2px', fontSize: 12 }}><b>역대 최선</b> · 비용 {round(record.summary.cost)} · 폭 {round(record.summary.width)} µm · 배선 {round(record.summary.wl)} µm</div><RowView ctx={r.ctx} st={record.sa} S={scale}/></>}
+            {now ? <><div style={{ margin: '8px 0 2px', fontSize: 12 }}><b style={{ color: '#1D9E75' }}>새 SA</b> · 비용 {round(now.summary.cost)} · 폭 {round(now.summary.width)} µm · 배선 {round(now.summary.wl)} µm</div><RowView ctx={r.ctx} st={now.sa} S={scale}/>
+              <p className="chip-note" style={{ margin: '6px 0 0' }}>기본 대비 비용 {dText(dPct(r.initS.cost, now.summary.cost))}{old ? ` · 직전 SA 대비 ${dText(dPct(old.summary.cost, now.summary.cost))}` : ''}</p></>
+              : <p className="chip-note" style={{ margin: '6px 0 0' }}>SA 실행 전 · 기본 레이아웃 표시 중</p>}
+            <button type="button" disabled={running || !record} onClick={() => onImprove(r.id)} style={{ marginTop: 8 }}>이 후보에서 더 나은 배치 찾을 때까지 SA 반복</button>
+          </article> })}
+      </div>
     </>}
   </div>
 }
