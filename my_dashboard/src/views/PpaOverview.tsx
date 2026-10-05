@@ -249,6 +249,7 @@ export default function PpaOverview() {
         ['partial', 'signoff 결과: Magic DRC 15,861,362건(GDS 전체 기준, 그중 15,859,501건이 SRAM macro 내부 · 나머지 1,861건은 ADC macro와 top-level) · KLayout DRC 1건(npc.2) · LVS 363건 불일치 · 겹침 84건'],
         ['partial', 'CDAC 6건은 복사본에서 해결(0건) — ADC 전체 19건 + PPA 3용 macro GDS 반영이 남음'],
         ['partial', 'LVS 불일치 원인 확인됨(2026-10-05): 레이아웃에서 SRAM·ADC macro의 전원 핀이 어느 net에도 안 연결돼 있고(추출 netlist에 u_sram22/vdd, u_adc/vccd 같은 단독 net), 표준셀 전원은 VPWR/VGND인데 설계 netlist는 macro를 vccd/vssd/vdda/vssa에 묶음. PDN 설정(PDN_MACRO_CONNECTIONS = vccd vssd)이 실제 grid 전원 이름과 달라서 macro가 PDN에 안 붙은 것으로 보임 — 전원 구조(1.8 V 디지털 / 3.3 V 아날로그) 결정이 필요'],
+        ['partial', '전원 단순화(단일 전원) 시도 2026-10-05: macro 전원 핀을 표준셀 grid(VPWR/VGND)에 묶었지만 PDN이 연결하지 못함 — 전원 grid 검사에서 위반 17만 건. SRAM 전원 핀은 macro 내부 met2 mesh(1,100여 개 도형)이고 ADC 전원 rail(met5)은 grid strap과 위치가 맞지 않음. strap 간격을 60 µm로 줄여도 u_adc/vccd, vssa 등이 계속 미연결 → 사용자 정의 PDN 설정이 필요'],
         ['todo', 'KLayout npc.2 1건 · top-level과 ADC의 나머지 DRC 1,861건 분류'],
         ['todo', 'PEX 기반 최종 PPA · Pareto 비교'],
       ]}
