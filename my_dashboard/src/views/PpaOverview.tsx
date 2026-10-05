@@ -162,7 +162,7 @@ export default function PpaOverview() {
       <div className="data-table"><table><thead><tr><th>실험</th><th>한 줄 목적</th><th>범위</th><th>상태</th></tr></thead><tbody>
         <tr><td><b>PPA 1</b></td><td>공개 12-bit SAR ADC를 골라 면적·물리 검증 기준점 확보</td><td>아날로그 IP · DRC/LVS</td><td><span className="analog-badge blocked">물리 게이트 보류</span> CDAC DRC 6건</td></tr>
         <tr><td><b>PPA 2</b></td><td>ADC 샘플을 이벤트 전후로 4 KB SRAM에 저장·전송하는 데이터 경로</td><td>RTL · 기능 검증</td><td><span className="analog-badge ok">완료</span> TB 3종 PASS · lint pass</td></tr>
-        <tr><td><b>PPA 3</b></td><td>ADC + CDC + SRAM을 한 die에 배치·라우팅해 물리 구현</td><td>OpenLane · signoff</td><td><span className="analog-badge blocked">진행 중</span> antenna는 0건 확인 · Magic.WriteLEF에서 막힘</td></tr>
+        <tr><td><b>PPA 3</b></td><td>ADC + CDC + SRAM을 한 die에 배치·라우팅해 물리 구현</td><td>OpenLane · signoff</td><td><span className="analog-badge blocked">flow 완주 · signoff 위반 남음</span> antenna 0 · XOR 0 · Magic DRC/LVS는 위반 있음</td></tr>
       </tbody></table></div>
       <Legend />
     </section>
@@ -237,16 +237,18 @@ export default function PpaOverview() {
         ['Pareto 가중', '2 : 1 : 2'],
         ['아날로그 macro', '좌측 고정 · CDAC 대칭축 · dummy · guard ring 보존'],
         ['디지털 / SRAM', '우측 분리 · CDC는 두 영역 사이 · readout 핀이 외곽을 향함'],
-        ['실행 게이트', 'antenna 0(재실행에서 확인) → Magic.WriteLEF 통과 → CDAC DRC 0 · LVS → top DRC/LVS → PEX'],
+        ['실행 게이트', 'antenna 0 · XOR 0 확인됨 → Magic DRC(SRAM 내부 제외 판정) · KLayout DRC 1건 · LVS 불일치 해소 → PEX'],
       ]}
       steps={[
         ['done', 'wrapper RTL (ppa3_adc_capture_top) lint pass'],
         ['done', 'floorplan 고정 — ADC (40,150) · SRAM (430,65)'],
         ['done', 'baseline: OpenLane 59/74단계까지 실행 — route DRC 0 · setup/hold 위반 0 · util 64.9%'],
         ['done', 'antenna 수리 재실행 — 7건 → 0건 (ppa3_antfix2, 2026-10-04: 긴 배선 300µm 분할 repair + heuristic diode) · route DRC 0 · 최악 setup +10.39 ns'],
-        ['partial', 'Magic.WriteLEF 단계 fatal(SRAM macro GDS layer 읽기 오류 97건) — 오류를 무시하는 재개 run(antfix3_signoff)은 중간에 멈춰 있고 실행 중인 run은 없음'],
+        ['done', 'Magic.WriteLEF 통과 — SRAM macro GDS의 읽기 오류 97건을 무시하는 설정으로 (MAGIC_CAPTURE_ERRORS=false)'],
+        ['done', 'OpenLane 전 단계 완주 (ppa3_antfix4_signoff, 2026-10-05) — 위반이 있어도 끝까지 돌리는 설정, 개수는 그대로 기록'],
+        ['partial', 'signoff 결과: Magic DRC 15,861,362건(GDS 전체 기준, 그중 15,859,501건이 SRAM macro 내부 · 나머지 1,861건은 ADC macro와 top-level) · KLayout DRC 1건(npc.2) · LVS 363건 불일치 · 겹침 84건'],
         ['partial', 'CDAC 6건은 복사본에서 해결(0건) — ADC 전체 19건 + PPA 3용 macro GDS 반영이 남음'],
-        ['todo', '59단계 이후: antenna 속성 · XOR · Magic/KLayout DRC · LVS (약 15단계, 한 번도 안 돎)'],
+        ['todo', 'LVS 불일치 원인 확인 (SRAM/ADC macro를 SPICE 없이 비교한 것으로 추정 — 미확인) · KLayout npc.2 1건 · top-level과 ADC의 나머지 DRC 1,861건 분류'],
         ['todo', 'PEX 기반 최종 PPA · Pareto 비교'],
       ]}
       note="지금까지의 라우팅 결과는 '후보 기준선'이며 signoff 결과가 아닙니다. vendor GDS는 SHA-256 전후 동일하게 보호되고 검증 복사본만 변경됩니다."
