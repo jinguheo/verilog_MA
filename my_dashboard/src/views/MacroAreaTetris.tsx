@@ -898,6 +898,16 @@ export default function MacroAreaTetris() {
           <tr><td>450×1422</td><td><span className="ok-badge">0 / 0 / 0</span></td><td><span className="ok-badge">0</span></td><td><span className="warning-badge">−0.460</span></td><td>+0.138</td><td><b>0</b></td><td>12단</td><td>849,663µm (+3.1%)</td><td>6.559 (+6.7%)</td></tr>
         </tbody></table></div>
         <p className="rule-disclaimer"><b>읽는 법:</b> 4개 모두 <b>배치·라우팅·DRC·LVS는 깨끗</b>합니다 — 모양을 바꿔도 물리적으로는 문제없이 만들어집니다. 다만 같은 SDC·같은 설정으로는 <b>setup 타이밍이 닫히지 않습니다</b>(기존 800×800은 +0.99ns). 위반은 전부 최악 코너(ss_100C_1v60)의 <code>axi_clk</code> 레지스터↔레지스터 경로 1~4개이고, 원인은 배치 불가가 아니라 async FIFO read pointer(<code>u_cdc_fifo.fifo_rptr_q</code>) 경로에 <b>hold 수정용 delay 셀(dlygate4sd3, 각 1.1~1.9ns)이 11~18개 직렬로 끼어든 것</b>입니다(기존은 1개). 모양별 특징: <b>650×985</b> 위반이 가장 작고(−0.14, 경로 2개) 배선·전력 증가도 가장 작음 · <b>590×1085</b> 다이 면적은 가장 작지만 배선 +4.1%·전력 +10.6%로 가장 비쌈 · <b>500×1280</b> 배선·인스턴스는 기존과 같은데 타이밍이 가장 나쁨(−2.69, 경로 4개, hold 18단) · <b>450×1422</b> 안테나 위반 0으로 유일하게 깨끗하지만 타이밍 −0.46. 따라서 이 4개는 &quot;signoff 통과 후보&quot;가 아니라 <b>hold repair 설정을 조정해 타이밍을 다시 닫아야 하는 후보</b>입니다 — 단일 seed 1회 결과라 이 순위가 필연적이라고 단정할 수는 없습니다.</p>
+        <div className="chip-card" style={{ marginTop: 14 }}>
+          <div className="chip-card-title"><div><small>SUMMARY · 2026-10-05 14:15 기준</small><h3>재성형 후보별 정리 — 일부 성공, 일부 실패</h3></div></div>
+          <div className="data-table"><table><thead><tr><th>후보</th><th>결과</th><th>근거</th></tr></thead><tbody>
+            <tr><td><b>590×1085</b></td><td><span className="ok-badge">가장 유력</span></td><td>axi 54 ns에서 setup +1.36 ns · 수리 margin 60에서 antenna 0건(10 → 30 → 60: 1 → 1 → 0건). DRC/LVS/최종 타이밍은 진행 중</td></tr>
+            <tr><td><b>650×985</b></td><td><span className="warning-badge">부분 성공</span></td><td>axi 54 ns 전체 flow에서 setup +0.44 · DRC 0 · LVS 0까지 통과, antenna 2건만 남음(수리 강화는 아직 안 돌림)</td></tr>
+            <tr><td><b>450×1422</b></td><td><span className="warning-badge">antenna 미해결</span></td><td>52 ns에서는 antenna 0건이지만 setup −0.46 · 54 ns에서는 setup 통과했으나 antenna 1건 → 수리 강화 시 오히려 4건(margin 60, diode 40µm 모두). 더 강한 설정 재실행 중</td></tr>
+            <tr><td><b>500×1280</b></td><td><span className="danger-badge">탈락</span></td><td>52 ns에서 setup −2.69(가장 나쁨) · antenna 2건. 54 ns 재실행은 하지 않음</td></tr>
+          </tbody></table></div>
+          <p className="chip-note" style={{ marginTop: 6 }}>공통 전제: setup 통과는 axi 클럭을 52 → 54 ns로 <b>완화</b>한 조건입니다(설계 수정이 아님). 이 완화를 &quot;타이밍 닫힘&quot;으로 인정할지는 아직 정하지 않았습니다. 아래 표가 실제 run 결과 전체이며 숫자는 이 요약보다 우선합니다.</p>
+        </div>
         <h4 style={{ margin: '14px 0 4px', fontSize: 13 }}>재성형 chan_top 실제 실행 결과 전체 (2026-10-03 ~ 10-05)</h4>
         <div className="data-table"><table><thead><tr><th>chan_top 다이</th><th>실행 조건</th><th>setup WNS (ns)</th><th>hold WNS</th><th>route / Magic / KLayout DRC · LVS</th><th>antenna (최종)</th><th>판정</th><th>마지막 갱신</th></tr></thead><tbody>
           {RESHAPE_RUNS.map(r => {
