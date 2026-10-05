@@ -1,0 +1,56 @@
+/* 화면 전체 일관성 규칙 — 가장 마지막에 로드되어 페이지마다 따로 만들어진 스타일을 한 가지로 맞춘다.
+   새 화면을 만들 때는 아래 공용 클래스(.card, .chip-card, .kicker, 상태 배지, 탭 막대)를 그대로 쓰면 된다. */
+
+/* ---------- 1. 상태 배지: 4종류(.connection / .ok-badge / .warning-badge / .analog-badge)를 한 모양으로 ---------- */
+.connection, .ok-badge, .warning-badge, .danger-badge, .analog-badge {
+  display: inline-block; flex: none; vertical-align: middle;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: var(--text-xs); font-weight: 700; line-height: 1.5; white-space: nowrap;
+}
+.connection, .ok-badge, .analog-badge.ok { color: var(--success); background: var(--success-soft); }
+.warning-badge, .connection.warning, .analog-badge.blocked { color: var(--warning); background: var(--warning-soft); }
+.danger-badge, .analog-badge.failed { color: var(--danger); background: var(--danger-soft); }
+.analog-badge.running { color: var(--accent-strong); background: var(--accent-soft); }
+
+/* ---------- 2. 탭 막대: 밑줄 탭(Sample Test)으로 통일 ---------- */
+.sample-tabs, .analog-tabs, .pipeline-pages, .general-tabs, .layout-pills[role="tablist"] {
+  display: flex; flex-wrap: wrap; gap: 2px; width: auto;
+  margin: 0 0 var(--sp-5); padding: 0; border: 0; border-bottom: 1px solid var(--border);
+  border-radius: 0; background: transparent; overflow: visible;
+}
+.sample-tabs button, .analog-tabs button, .pipeline-pages button, .general-tabs button, .layout-pills[role="tablist"] button {
+  border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; box-shadow: none;
+  padding: var(--sp-3) var(--sp-4); margin-bottom: -1px;
+  color: var(--text-muted); font-size: var(--text-md); font-weight: 600; white-space: nowrap;
+}
+.sample-tabs button:hover, .analog-tabs button:hover, .pipeline-pages button:hover, .general-tabs button:hover, .layout-pills[role="tablist"] button:hover {
+  color: var(--accent-strong); background: transparent; border-color: transparent; border-bottom-color: var(--border-strong);
+}
+.sample-tabs button.active, .analog-tabs button.active, .pipeline-pages button.active, .general-tabs button.active, .layout-pills[role="tablist"] button.active {
+  color: var(--accent-strong); font-weight: 700; background: transparent; border-color: transparent; border-bottom-color: var(--accent); box-shadow: none;
+}
+
+/* ---------- 3. 카드: .chip-card 도 .card 와 같은 윤곽·제목 크기 ---------- */
+.chip-card { border-radius: var(--radius-lg); padding: var(--sp-5); }
+.chip-card-title { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--sp-4); margin-bottom: var(--sp-4); }
+.chip-card-title h3 { margin: 2px 0 0; font-size: var(--text-lg); font-weight: 700; color: var(--text); }
+.card h3 { font-size: var(--text-lg); font-weight: 700; color: var(--text); margin: 2px 0 0; }
+
+/* ---------- 4. kicker(작은 영문 제목) 한 가지 색·크기 ---------- */
+.chip-game-hero small, .chip-card-title small, .actual-flow-head small, .actual-algorithm-title small,
+.layout-flow-comparison-head small, .roadmap-head small {
+  color: var(--text-muted); font-size: var(--text-xs); font-weight: 700; letter-spacing: .1em;
+}
+
+/* ---------- 5. 읽기 편하게: 본문 줄 길이·줄 간격 ---------- */
+.card > p, .chip-card > p, .ppa-result-card > p, .ppa-experiment > p, .section-heading > p {
+  max-width: 88ch; line-height: 1.65; color: var(--text-secondary);
+}
+.key-help, .chip-note, .rule-disclaimer { line-height: 1.7; }
+.card + .card, .card + .chip-card, .chip-card + .card { margin-top: var(--sp-5); }
+td, th { line-height: 1.5; vertical-align: top; }
+.data-table table th { white-space: nowrap; }
+code { font-size: .92em; }
+
+/* ---------- 6. 사이드바 구분 라벨은 읽을 수 있는 크기로 ---------- */
+.nav-label { font-size: var(--text-xs); }

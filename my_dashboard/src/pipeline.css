@@ -29,7 +29,7 @@
 }
 .pipeline-step.pass { border-color: rgba(21, 200, 130, .4); }
 .pipeline-step.blocked { border-color: rgba(230, 140, 60, .4); }
-.pipeline-step span { font-size: 10px; color: #8a93ab; letter-spacing: .1em; }
+.pipeline-step span { font-size: 11px; color: #8a93ab; letter-spacing: .1em; }
 .pipeline-step b { text-transform: uppercase; font-size: var(--text-sm); letter-spacing: .02em; }
 .pipeline-step small { font-size: var(--text-sm); line-height: 1.4; color: #c3cadb; flex: 1; }
 .pipeline-step em { font-style: normal; font-size: var(--text-xs); font-weight: 700; color: #4fd497; }

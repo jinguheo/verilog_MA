@@ -14,7 +14,7 @@
 .run-item i { font-style: normal; font-size: 18px; color: var(--text-muted); }
 
 .run-detail { display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--sp-3); align-items: center; border-top: 1px solid var(--border); padding: var(--sp-3) var(--sp-4); background: var(--surface-muted); }
-.run-detail small { display: block; font-size: 10px; letter-spacing: .08em; color: var(--text-muted); }
+.run-detail small { display: block; font-size: 11px; letter-spacing: .08em; color: var(--text-muted); }
 .run-detail b { display: block; font-size: var(--text-sm); color: var(--text-secondary); margin-top: 4px; }
 .run-detail a { font-size: var(--text-sm); font-weight: 700; text-decoration: none; color: var(--accent); background: var(--accent-soft); border-radius: var(--radius-sm); padding: var(--sp-2) var(--sp-3); white-space: nowrap; }
 

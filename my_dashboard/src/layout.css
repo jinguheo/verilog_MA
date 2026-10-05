@@ -57,7 +57,7 @@
 .nav-entry:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 .nav-label {
   display: block; margin: var(--sp-1) var(--sp-2) 6px;
-  font-size: 10px; letter-spacing: .1em; font-weight: 700;
+  font-size: 11px; letter-spacing: .1em; font-weight: 700;
   color: var(--sidebar-muted); text-transform: uppercase;
 }
 
@@ -81,7 +81,7 @@
 .sidebar nav button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sidebar nav button em {
   margin-left: auto; flex: none; font-style: normal;
-  font-size: 10px; font-weight: 700; color: var(--sidebar-muted);
+  font-size: 11px; font-weight: 700; color: var(--sidebar-muted);
   background: rgba(255, 255, 255, .05); border-radius: 999px; padding: 2px 6px;
 }
 .sidebar nav button:hover { background: var(--sidebar-hover); color: var(--sidebar-text-strong); }

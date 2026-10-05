@@ -49,8 +49,8 @@
   --shadow-md: 0 6px 20px rgba(15, 23, 42, .08);
 
   /* Type scale */
-  --text-xs: 11px; --text-sm: 12px; --text-base: 13px; --text-md: 14px;
-  --text-lg: 16px; --text-xl: 20px; --text-2xl: 26px; --text-3xl: 32px;
+  --text-xs: 12px; --text-sm: 13px; --text-base: 14px; --text-md: 15px;
+  --text-lg: 17px; --text-xl: 20px; --text-2xl: 26px; --text-3xl: 32px;
 
   color: var(--text);
   background: var(--bg);
