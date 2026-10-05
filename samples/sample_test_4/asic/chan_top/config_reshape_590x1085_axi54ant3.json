@@ -1,0 +1,74 @@
+{
+  "DESIGN_NAME": "chan_top",
+  "//": [
+    "Placement-feasibility probe for the Macro Area Tetris 'reshape' lever",
+    "(my_dashboard AREA FINDING card, 2026-09-27): the dashboard's die-level",
+    "packing search found that reshaping chan_top from 800x800 to 590x1085",
+    "(same silicon area) would shrink daq_subsystem's floorplan by -1.72%,",
+    "but that result only checks the OUTER packing problem (does an 800x800",
+    "or 590x1085 box satisfy the channel/pin/power gates against its",
+    "neighbours) - it says nothing about whether chan_top's own 46,009 cells",
+    "can actually be placed inside a 590x1085 die. This config exists to",
+    "answer exactly that, cheaply: same RTL/constraints/diode strategy as",
+    "config.json, only DIE_AREA changed, run with --to",
+    "OpenROAD.DetailedPlacement so it stops right after placement legality",
+    "is decided instead of continuing into CTS/route/DRC/LVS (hours more).",
+    "",
+    "See tools/wsl/112_run_chan_top_reshape_590x1085.sh for how this is run.",
+    "Not used by any other config or script - config.json (DIE_AREA",
+    "800x800) remains the signed-off source of truth for chan_top."
+  ],
+  "VERILOG_FILES": [
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_util_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_mubi_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_flop.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_flop_2sync.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_clock_mux2.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_rst_sync.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_fifo_async.sv",
+    "dir::../../rtl/pkg/axi_pkg.sv",
+    "dir::../../rtl/pkg/daq_pkg.sv",
+    "dir::../../rtl/common/skid_buffer.sv",
+    "dir::../../rtl/stream/pkt_align.sv",
+    "dir::../../rtl/stream/pkt_check.sv",
+    "dir::../../rtl/stream/chan_ctrl.sv",
+    "dir::../../rtl/stream/chan_top.sv"
+  ],
+  "VERILOG_INCLUDE_DIRS": [
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl"
+  ],
+  "USE_SYNLIG": true,
+  "CLOCK_PORT": "axi_clk_i",
+  "CLOCK_PERIOD": 52,
+  "PNR_SDC_FILE": "dir::../constraints/chan_top_reshape_axi54.sdc",
+  "SIGNOFF_SDC_FILE": "dir::../constraints/chan_top_reshape_axi54.sdc",
+  "FP_SIZING": "absolute",
+  "//DIE_AREA": [
+    "Reshaped from the signed-off 800x800 (640,000 um^2) to 590x1085",
+    "(640,150 um^2, same area within rounding) - the dashboard's",
+    "'search optimum' aspect ratio where the die-level horizontal and",
+    "vertical packing pressure balance out. Cell area is unchanged",
+    "(~172,790 um^2 -> still ~27% utilisation), so PL_TARGET_DENSITY_PCT",
+    "is left at 40 unchanged from config.json."
+  ],
+  "DIE_AREA": [
+    0,
+    0,
+    590,
+    1085
+  ],
+  "PL_TARGET_DENSITY_PCT": 40,
+  "DIODE_INSERTION_STRATEGY": 6,
+  "//TIMING_CLOSURE_VARIANT": [
+    "axi_clk 52 -> 54 ns (separate SDC copy); the 650x985 trial closed setup at +0.436ns with this, see tools/wsl/118_run_reshape_variant.sh. Not the signed-off config."
+  ],
+  "GRT_ANTENNA_MARGIN": 60,
+  "GRT_ANTENNA_ITERS": 10,
+  "//ANTENNA_VARIANT": [
+    "axi54 + GRT_ANTENNA_MARGIN 60 / ITERS 10 + HEURISTIC_ANTENNA_THRESHOLD 90 -> 40 um (heuristic diode inserter adds diodes to shorter nets too).",
+    "Fallback if axi54ant2 still leaves an antenna net. Run: bash 122_run_reshape_antenna.sh <shape> sta axi54ant3. Not the signed-off config."
+  ],
+  "HEURISTIC_ANTENNA_THRESHOLD": 40
+}
