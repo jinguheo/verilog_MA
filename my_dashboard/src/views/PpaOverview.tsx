@@ -172,11 +172,12 @@ export default function PpaOverview() {
         ['done', '면적 측정 — 65,628.68 µm², 예산 통과'],
         ['done', 'Netgen LVS match (adapter 수정)'],
         ['done', 'switch dependency 교정(34a2361) · EF_SW_RST 경계 보정 (CDAC Magic DRC 84 → 6)'],
-        ['partial', 'CDAC 잔여 DRC 6건(diff/tap.18,20) 수정 — 미해결'],
+        ['done', 'CDAC 잔여 DRC 6건(diff/tap.18,20) → 0건 — 검증용 복사본에서 수정 (LVS/KLayout 결과는 수정 전과 동일, 2026-10-05)'],
+        ['partial', 'ADC 전체 Magic DRC는 같은 규칙 19건이 CDAC 밖(비교기·상위)에 남음'],
         ['todo', '새 GDS 기준 KLayout DRC · CDAC LVS 재실행'],
         ['todo', 'PEX 후 성능·전력 실측 · Pareto 비교'],
       ]}
-      note="핵심 막힘: CDAC 상위 조립의 대칭 U자형 tap/nwell 경계 6건. 이 건이 닫혀야 PPA 3의 최종 signoff 승격도 가능합니다."
+      note="CDAC 단독의 6건은 닫혔지만, ADC 전체에는 같은 규칙 위반 19건이 남아 있어 PPA 3의 최종 signoff 승격은 아직 가능하지 않습니다."
     />
 
     <ExperimentCard
@@ -228,7 +229,7 @@ export default function PpaOverview() {
         ['done', 'baseline: OpenLane 59/74단계까지 실행 — route DRC 0 · setup/hold 위반 0 · util 64.9%'],
         ['done', 'antenna 수리 재실행 — 7건 → 0건 (ppa3_antfix2, 2026-10-04: 긴 배선 300µm 분할 repair + heuristic diode) · route DRC 0 · 최악 setup +10.39 ns'],
         ['partial', 'Magic.WriteLEF 단계 fatal(SRAM macro GDS layer 읽기 오류 97건) — 오류를 무시하는 재개 run(antfix3_signoff)은 중간에 멈춰 있고 실행 중인 run은 없음'],
-        ['partial', 'CDAC 잔여 DRC 6건 — PPA 1과 같은 막힘'],
+        ['partial', 'CDAC 6건은 복사본에서 해결(0건) — ADC 전체 19건 + PPA 3용 macro GDS 반영이 남음'],
         ['todo', '59단계 이후: antenna 속성 · XOR · Magic/KLayout DRC · LVS (약 15단계, 한 번도 안 돎)'],
         ['todo', 'PEX 기반 최종 PPA · Pareto 비교'],
       ]}

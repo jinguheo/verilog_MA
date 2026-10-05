@@ -316,7 +316,7 @@ function PpaExperimentOne({ onApply }: { onApply: () => void }) {
       </div>
     </section>
     <section className="ppa-result-card">
-      <div className="card-title"><div><small className="kicker">LAYOUT FIX PLAN · CHECKPOINT</small><h3>현재 작업: CDAC 잔여 경계 DRC 6건</h3></div><span className="analog-badge blocked">6 remaining</span></div>
+      <div className="card-title"><div><small className="kicker">LAYOUT FIX PLAN · CHECKPOINT</small><h3>CDAC 잔여 경계 DRC 6건 → 0건 (복사본 수정, 2026-10-05)</h3></div><span className="analog-badge ok">CDAC 0 · ADC 전체 19 남음</span></div>
       <p>CACE는 GDS가 아니라 Magic 원본(.mag)을 우선 검사한다는 사실을 로그와 코드로 확인했습니다. analog-switch dependency를 공식 DRC/LVS 수정 커밋 <code>34a2361</code>로 올리고 EF_SW_RST stitching을 맞춰 CDAC Magic DRC를 84건에서 6건으로 줄였습니다.</p>
       <div className="ppa-result-grid">
         <article><small>CDAC 단독 DRC</small><b>6 violations</b><span className="warn-text">84 → 9 → 6 · 2026-09-23</span></article>
@@ -329,7 +329,7 @@ function PpaExperimentOne({ onApply }: { onApply: () => void }) {
     </section>
     <section className="ppa-result-card">
       <div className="card-title"><div><small className="kicker">CHECKPOINT · 2026-09-23</small><h3>작업 현황 및 재개 순서</h3></div><span className="connection">paused checkpoint</span></div>
-      <p>공식 dependency 수정과 EF_SW_RST 경계 보정은 검증됐습니다. 남은 6건은 CDAC 상위 조립의 대칭 U자형 tap 경계이며, CACE의 하위 .mag 날짜 처리 오류를 우회한 뒤 새 GDS·LVS를 다시 닫아야 합니다.</p>
+      <p>공식 dependency 수정과 EF_SW_RST 경계 보정은 검증됐습니다. 남은 6건은 <code>cdac_dummy_switch</code> 두 인스턴스의 P-tap ring이 MV nwell 경계에서 0.18 µm밖에 안 떨어져 있던 것(규칙 0.43 µm)이었고, nwell/dnwell 경계와 N-tap ring을 0.25 µm 바깥으로 옮겨 <b>CDAC Magic DRC 6 → 0</b>으로 닫았습니다(검증용 복사본, 원본 unchanged · <code>analog/repairs/cdac_tap_fix/</code>). 같은 CACE 실행에서 Netgen LVS(51, pin 이름 불일치)와 KLayout DRC(2, EF_SW_RST)는 수정 전과 똑같아 이번 수정이 바꾸지 않았음을 확인했습니다. 단, <b>ADC 전체 Magic DRC에는 같은 규칙 19건이 CDAC 밖(비교기·상위)에 남아 있고</b> PPA3 macro GDS에는 아직 반영하지 않았습니다.</p>
       <div className="ppa-result-grid">
         <article><small>완료</small><b>후보·면적·LVS 확인</b><span>ADC 후보 선정 · 65,628.68 µm² · Netgen LVS match</span></article>
         <article><small>완료</small><b>switch dependency 교정</b><span><code>34a2361</code> · simple switch DRC 0</span></article>
@@ -337,7 +337,7 @@ function PpaExperimentOne({ onApply }: { onApply: () => void }) {
         <article><small>보류</small><b>PEX / Pareto</b><span>물리 하드 게이트가 열릴 때까지 측정하지 않음</span></article>
       </div>
       <div className="data-table"><table><thead><tr><th>순서</th><th>다음 할 일</th><th>완료 기준</th></tr></thead><tbody>
-        <tr><td>1</td><td>잔여 6건의 CDAC 상위 tap/nwell stitching 경계를 대칭 보정</td><td>CDAC Magic DRC 6 → 0</td></tr>
+        <tr><td>1</td><td>잔여 6건의 CDAC 상위 tap/nwell stitching 경계를 대칭 보정</td><td><span className="ok-text">완료: CDAC Magic DRC 6 → 0 (2026-10-05)</span></td></tr>
         <tr><td>2</td><td>CACE 하위 .mag 날짜 처리 오류를 우회하고 GDS를 강제 재생성</td><td>현재 계층 해시와 GDS 일치</td></tr>
         <tr><td>3</td><td>새 GDS에서 KLayout DRC와 CDAC LVS 재실행</td><td>DRC 0 · LVS match</td></tr>
         <tr><td>4</td><td>비교기·상위 ADC DRC를 새 dependency 기준으로 재측정</td><td>전체 Magic/KLayout DRC 0</td></tr>
@@ -464,7 +464,7 @@ function PpaExperimentThree({ onApply }: { onApply: () => void }) {
         <article><small>아직 안 돈 단계</small><b>antenna 속성·XOR·Magic/KLayout DRC·LVS</b><span>WriteLEF 이후 남은 단계 — top-level signoff 수치 없음</span></article>
         <article><small>정합 결과</small><b>CDAC DRC 84 → 6</b><span className="warn-text">Magic 원본에서 job별 GDS 재생성 · CDAC LVS / KLayout DRC는 미실행(09-24 14:18 작업)</span></article>
         <article><small>원본 보호</small><b>vendor GDS unchanged</b><span className="ok-text">SHA-256 전후 동일 · 검증 복사본만 변경</span></article>
-        <article><small>다음 재개 지점</small><b>Magic.WriteLEF fatal + CDAC 잔여 6건</b><span><code>diff/tap.18,20</code> · 우측 MV nwell/P-tap 영역 · antenna는 재실행에서 0건 확인(baseline의 2건은 해소 방향)</span></article>
+        <article><small>다음 재개 지점</small><b>Magic.WriteLEF fatal + ADC 전체 DRC 19건</b><span>CDAC 6건은 복사본에서 0건으로 해결 · 남은 19건도 같은 <code>diff/tap.18,20</code> 규칙(CDAC 밖) · antenna는 재실행에서 0건 확인</span></article>
         <article><small>최종 승격 조건</small><b>CDAC DRC/LVS 통과 · top signoff 완주</b><span>대칭축·dummy·guard ring·핀 접근성 보존 후 재실행</span></article>
         <article><small>최종 산출물</small><b>PEX 기반 PPA3</b><span>기생 RC 포함 성능·전력·면적과 Pareto 비교</span></article>
       </div>
@@ -474,7 +474,7 @@ function PpaExperimentThree({ onApply }: { onApply: () => void }) {
       <tr><td>전력 / 면적</td><td>≤ 15 mW · ≤ 100,000 µm²</td><td>ADC 실측 65,628.68 µm² + CDAC 수리 여유</td></tr>
       <tr><td>아날로그 macro</td><td>좌측 고정 · CDAC 대칭축과 dummy/guard ring 보존</td><td>배치 변경으로 INL/DNL·기생 RC를 악화시키지 않음</td></tr>
       <tr><td>디지털 / SRAM</td><td>우측 분리 · CDC는 두 영역 사이</td><td>PPA2 capture path와 SRAM pin 접근성 재사용</td></tr>
-      <tr><td>실행 게이트</td><td>antenna 수리(재실행 0건 확인) → Magic.WriteLEF fatal 해소 → 잔여 DRC 6 수정 → CDAC LVS → 이후 단계 완주(top DRC/LVS) → PEX</td><td>job별 격리 검증 · 물리 통과 전 PPA 측정 금지</td></tr>
+      <tr><td>실행 게이트</td><td>antenna 수리(재실행 0건 확인) → Magic.WriteLEF fatal 해소 → ADC 전체 DRC 19건 수정 + 수정한 CDAC를 macro GDS에 반영 → CDAC LVS → 이후 단계 완주(top DRC/LVS) → PEX</td><td>job별 격리 검증 · 물리 통과 전 PPA 측정 금지</td></tr>
     </tbody></table></div>
     <button className="ppa-preset-button" type="button" onClick={onApply}>이 PPA 실험 3 설정을 현재 설계에 적용</button>
   </section>
