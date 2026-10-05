@@ -146,7 +146,7 @@ export default function PpaOverview() {
       <div className="data-table"><table><thead><tr><th>실험</th><th>한 줄 목적</th><th>범위</th><th>상태</th></tr></thead><tbody>
         <tr><td><b>PPA 1</b></td><td>공개 12-bit SAR ADC를 골라 면적·물리 검증 기준점 확보</td><td>아날로그 IP · DRC/LVS</td><td><span className="analog-badge blocked">물리 게이트 보류</span> CDAC DRC 6건</td></tr>
         <tr><td><b>PPA 2</b></td><td>ADC 샘플을 이벤트 전후로 4 KB SRAM에 저장·전송하는 데이터 경로</td><td>RTL · 기능 검증</td><td><span className="analog-badge ok">완료</span> TB 3종 PASS · lint pass</td></tr>
-        <tr><td><b>PPA 3</b></td><td>ADC + CDC + SRAM을 한 die에 배치·라우팅해 물리 구현</td><td>OpenLane · signoff</td><td><span className="analog-badge blocked">진행 중</span> 59/74단계 · antenna 2건</td></tr>
+        <tr><td><b>PPA 3</b></td><td>ADC + CDC + SRAM을 한 die에 배치·라우팅해 물리 구현</td><td>OpenLane · signoff</td><td><span className="analog-badge blocked">진행 중</span> antenna는 0건 확인 · Magic.WriteLEF에서 막힘</td></tr>
       </tbody></table></div>
       <Legend />
     </section>
@@ -220,13 +220,14 @@ export default function PpaOverview() {
         ['Pareto 가중', '2 : 1 : 2'],
         ['아날로그 macro', '좌측 고정 · CDAC 대칭축 · dummy · guard ring 보존'],
         ['디지털 / SRAM', '우측 분리 · CDC는 두 영역 사이 · readout 핀이 외곽을 향함'],
-        ['실행 게이트', 'antenna 0 → CDAC DRC 0 · LVS → top DRC/LVS → PEX'],
+        ['실행 게이트', 'antenna 0(재실행에서 확인) → Magic.WriteLEF 통과 → CDAC DRC 0 · LVS → top DRC/LVS → PEX'],
       ]}
       steps={[
         ['done', 'wrapper RTL (ppa3_adc_capture_top) lint pass'],
         ['done', 'floorplan 고정 — ADC (40,150) · SRAM (430,65)'],
-        ['done', 'OpenLane 59/74단계까지 실행 — route DRC 0 · setup/hold 위반 0 · util 64.9%'],
-        ['partial', 'antenna 2건 수리 — 수리 재실행 진행 중 (ppa3_antenna_fix 등)'],
+        ['done', 'baseline: OpenLane 59/74단계까지 실행 — route DRC 0 · setup/hold 위반 0 · util 64.9%'],
+        ['done', 'antenna 수리 재실행 — 7건 → 0건 (ppa3_antfix2, 2026-10-04) · route DRC 0 · 최악 setup +10.39 ns'],
+        ['partial', 'Magic.WriteLEF 단계 fatal(SRAM macro GDS layer 읽기 오류 97건) — 재개 run 중단됨'],
         ['partial', 'CDAC 잔여 DRC 6건 — PPA 1과 같은 막힘'],
         ['todo', '59단계 이후: antenna 속성 · XOR · Magic/KLayout DRC · LVS (약 15단계, 한 번도 안 돎)'],
         ['todo', 'PEX 기반 최종 PPA · Pareto 비교'],
@@ -234,7 +235,7 @@ export default function PpaOverview() {
       note="지금까지의 라우팅 결과는 '후보 기준선'이며 signoff 결과가 아닙니다. vendor GDS는 SHA-256 전후 동일하게 보호되고 검증 복사본만 변경됩니다."
     />
     <section className="card">
-      <div className="card-title"><div><small className="kicker">GLOSSARY</small><h3>PPA 3에서 남은 antenna 2건이란?</h3></div><span className="connection">용어 설명</span></div>
+      <div className="card-title"><div><small className="kicker">GLOSSARY</small><h3>antenna 위반이란? (PPA 3 baseline 2건 → 재실행 0건)</h3></div><span className="connection">용어 설명</span></div>
       <AntennaExplainer defaultOpen />
     </section>
   </section>

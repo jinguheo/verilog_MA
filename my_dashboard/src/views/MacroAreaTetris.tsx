@@ -19,6 +19,7 @@ import { drawFreeCell, drawTileBox, LEGEND_SWATCH, TETRIS_COLORS } from '../game
 import UsageGuide from './UsageGuide'
 import type { AreaRequest, AreaResponse } from '../game/macroAreaWorker'
 import AntennaExplainer from './AntennaExplainer'
+import reshapeRuns from '../data/reshapeRuns.json'
 
 type Cur = { die: Die; state: State }
 type TrialRec = { n: number; plan: TrialPlan; attempts: ShapeAttempt[]; accepted: { die: Die; util: number } | null; note: string; converged: boolean }
@@ -207,15 +208,38 @@ const RESHAPE_BASE = { w: 800, h: 800 }
 const dieMm2 = (d: [number, number]) => d[0] * d[1] / 1e6
 const setupBadge = (wns: number) => wns < 0 ? <span className="warning-badge">setup 위반</span> : <span className="ok-badge">setup 통과</span>
 const signedNs = (v: number, d = 3) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(d)}`
-// 2026-10-04: 타이밍 완화(axi_clk 52 -> 54 ns) 후 재실행 결과 + antenna 수리 강화 재실행 (tools/wsl/118~123, logs/reshape_try_*.summary)
-const AXI54_RUNS: { shape: string; run: string; setup: string; hold: string; drc: string; antenna: string; status: string; ok: boolean }[] = [
-  { shape: '650×985', run: 'axi54 (전체 flow)', setup: '+0.436', hold: '+0.125', drc: 'route 0 · Magic 0 · KLayout 0 · LVS 0', antenna: '2 nets', status: '타이밍·DRC·LVS 통과 / antenna 미달', ok: false },
-  { shape: '590×1085', run: 'axi54 (STA까지)', setup: '+1.357', hold: '-', drc: 'route 0 (Magic/KLayout/LVS 미실행)', antenna: '1 net (net37, 상한의 2.2배)', status: 'antenna 미달', ok: false },
-  { shape: '590×1085', run: 'axi54ant · 수리 margin 30 / 반복 6', setup: '+1.395', hold: '-', drc: 'route 0 (Magic/KLayout/LVS 미실행)', antenna: '1 net (net456, 1.58배 — 다른 net으로 이동)', status: 'antenna 미달', ok: false },
-  { shape: '450×1422', run: 'axi54 (STA까지)', setup: '+0.358', hold: '-', drc: 'route 0 (Magic/KLayout/LVS 미실행)', antenna: '1 net (net1017)', status: 'antenna 미달', ok: false },
-  { shape: '450×1422', run: 'axi54ant · 수리 margin 30 / 반복 6', setup: '+0.492', hold: '-', drc: 'route 0 (Magic/KLayout/LVS 미실행)', antenna: '1 net (net285, 1.27배 — 다른 net으로 이동)', status: 'antenna 미달', ok: false },
-  { shape: '590×1085 · 450×1422', run: 'axi54ant2 · 수리 margin 60 / 반복 10', setup: '실행 중', hold: '-', drc: '-', antenna: '실행 중 (2026-10-04 22:48 시작, 23:40경 완료 예정)', status: '결과 대기', ok: false },
-]
+// 실제 OpenLane run 폴더에서 읽은 값 (python tools/collect_reshape_results.py 로 갱신) — 손으로 적은 숫자가 아니다.
+interface ReshapeRun {
+  run: string; shape: string; variant: string; scope: string; state: 'finished' | 'running' | 'interrupted' | 'unknown'
+  started: string | null; updated: string | null; last_step: string | null
+  knobs: { axi_period: number; ant_margin: number; ant_iters: number; heuristic_um: number }
+  metrics: { setup_ws?: number | null; hold_ws?: number | null; route_drc?: number | null; magic_drc?: number | null; klayout_drc?: number | null; lvs?: number | null; antenna_nets?: number | null }
+  antenna?: { step: string; nets: number | null; post_route: boolean; violations: { ratio: number; net: string; pin: string }[] }
+}
+const RESHAPE_RUNS = reshapeRuns.runs as unknown as ReshapeRun[]
+const RESHAPE_RUNS_GENERATED = reshapeRuns.generated as string
+const fmtNs = (v?: number | null) => v == null ? '-' : signedNs(v)
+const runCondition = (r: ReshapeRun) => {
+  const k = r.knobs
+  const parts = [`axi ${k.axi_period} ns`]
+  if (k.ant_margin !== 10 || k.ant_iters !== 3) parts.push(`antenna 수리 margin ${k.ant_margin}/반복 ${k.ant_iters}`)
+  if (k.heuristic_um !== 90) parts.push(`diode 기준거리 ${k.heuristic_um}µm`)
+  if (r.variant.startsWith('hold0')) parts.push(`hold margin 0${r.variant.includes('setup') ? ' + setup margin 조정' : ''}`)
+  return parts.join(' · ')
+}
+// 판정: 타이밍·antenna·DRC·LVS를 모두 확인한 run만 "닫힘". 측정이 없는 항목은 "미측정"으로 두고 통과로 치지 않는다.
+function reshapeVerdict(r: ReshapeRun): { label: string; kind: 'ok' | 'warn' | 'info' } {
+  const m = r.metrics
+  if (r.state === 'running') return { label: '실행 중', kind: 'info' }
+  if (r.state === 'interrupted' && m.setup_ws == null) return { label: m.antenna_nets != null ? `중단됨 (antenna ${m.antenna_nets}건만 확인)` : '중단됨', kind: 'warn' }
+  const miss: string[] = []
+  if (m.setup_ws != null && m.setup_ws < 0) miss.push('setup 미달')
+  if (m.hold_ws != null && m.hold_ws < 0) miss.push('hold 미달')
+  if (m.antenna_nets != null && m.antenna_nets > 0) miss.push(`antenna ${m.antenna_nets}건`)
+  if (m.route_drc == null || m.magic_drc == null || m.klayout_drc == null || m.lvs == null) miss.push('DRC/LVS 미실행')
+  else if (m.route_drc + m.magic_drc + m.klayout_drc + m.lvs > 0) miss.push('DRC/LVS 위반')
+  return miss.length ? { label: miss.join(' · '), kind: 'warn' } : { label: '닫힘', kind: 'ok' }
+}
 
 const RESHAPE_SHAPES = [
   { w: 800, h: 800, file: '800x800', die: [3700, 2100] as [number, number], wns: 0.994, hold: 0.125, label: '800×800 (현재, 실제 signoff)', note: '실제 완주 run — DRC 0 · LVS 0' },
@@ -874,11 +898,24 @@ export default function MacroAreaTetris() {
           <tr><td>450×1422</td><td><span className="ok-badge">0 / 0 / 0</span></td><td><span className="ok-badge">0</span></td><td><span className="warning-badge">−0.460</span></td><td>+0.138</td><td><b>0</b></td><td>12단</td><td>849,663µm (+3.1%)</td><td>6.559 (+6.7%)</td></tr>
         </tbody></table></div>
         <p className="rule-disclaimer"><b>읽는 법:</b> 4개 모두 <b>배치·라우팅·DRC·LVS는 깨끗</b>합니다 — 모양을 바꿔도 물리적으로는 문제없이 만들어집니다. 다만 같은 SDC·같은 설정으로는 <b>setup 타이밍이 닫히지 않습니다</b>(기존 800×800은 +0.99ns). 위반은 전부 최악 코너(ss_100C_1v60)의 <code>axi_clk</code> 레지스터↔레지스터 경로 1~4개이고, 원인은 배치 불가가 아니라 async FIFO read pointer(<code>u_cdc_fifo.fifo_rptr_q</code>) 경로에 <b>hold 수정용 delay 셀(dlygate4sd3, 각 1.1~1.9ns)이 11~18개 직렬로 끼어든 것</b>입니다(기존은 1개). 모양별 특징: <b>650×985</b> 위반이 가장 작고(−0.14, 경로 2개) 배선·전력 증가도 가장 작음 · <b>590×1085</b> 다이 면적은 가장 작지만 배선 +4.1%·전력 +10.6%로 가장 비쌈 · <b>500×1280</b> 배선·인스턴스는 기존과 같은데 타이밍이 가장 나쁨(−2.69, 경로 4개, hold 18단) · <b>450×1422</b> 안테나 위반 0으로 유일하게 깨끗하지만 타이밍 −0.46. 따라서 이 4개는 &quot;signoff 통과 후보&quot;가 아니라 <b>hold repair 설정을 조정해 타이밍을 다시 닫아야 하는 후보</b>입니다 — 단일 seed 1회 결과라 이 순위가 필연적이라고 단정할 수는 없습니다.</p>
-        <h4 style={{ margin: '14px 0 4px', fontSize: 13 }}>타이밍 완화(axi_clk 52 → 54 ns) 후 재실행 + antenna 수리 강화 (2026-10-04)</h4>
-        <div className="data-table"><table><thead><tr><th>chan_top 다이</th><th>실행</th><th>setup WNS (ns)</th><th>hold WNS</th><th>DRC / LVS</th><th>antenna</th><th>판정</th></tr></thead><tbody>
-          {AXI54_RUNS.map((r, i) => <tr key={i}><td>{r.shape}</td><td>{r.run}</td><td><b style={{ color: r.setup.startsWith('+') ? '#1D9E75' : undefined }}>{r.setup}</b></td><td>{r.hold}</td><td>{r.drc}</td><td>{r.antenna}</td><td>{r.ok ? <span className="ok-badge">닫힘</span> : <span className="warning-badge">{r.status}</span>}</td></tr>)}
+        <h4 style={{ margin: '14px 0 4px', fontSize: 13 }}>재성형 chan_top 실제 실행 결과 전체 (2026-10-03 ~ 10-05)</h4>
+        <div className="data-table"><table><thead><tr><th>chan_top 다이</th><th>실행 조건</th><th>setup WNS (ns)</th><th>hold WNS</th><th>route / Magic / KLayout DRC · LVS</th><th>antenna (최종)</th><th>판정</th><th>마지막 갱신</th></tr></thead><tbody>
+          {RESHAPE_RUNS.map(r => {
+            const m = r.metrics
+            const v = reshapeVerdict(r)
+            const worst = r.antenna?.post_route ? r.antenna.violations.slice(0, 2).map(x => `${x.net} ×${x.ratio}`).join(', ') : ''
+            const drc = m.route_drc == null ? <span style={{ color: 'var(--text-muted)' }}>미실행</span> : `${m.route_drc} / ${m.magic_drc ?? '미실행'} / ${m.klayout_drc ?? '미실행'} · LVS ${m.lvs ?? '미실행'}`
+            return <tr key={r.run}>
+              <td>{r.shape.replace('x', '×')}</td><td>{runCondition(r)}</td>
+              <td><b style={{ color: m.setup_ws == null ? undefined : m.setup_ws < 0 ? '#c0392b' : '#1D9E75' }}>{fmtNs(m.setup_ws)}</b></td><td>{fmtNs(m.hold_ws)}</td><td>{drc}</td>
+              <td>{m.antenna_nets == null ? <span style={{ color: 'var(--text-muted)' }}>미측정</span> : <><b>{m.antenna_nets}건</b>{worst && <small style={{ display: 'block', color: 'var(--text-muted)' }}>{worst}</small>}</>}</td>
+              <td><span className={v.kind === 'ok' ? 'ok-badge' : v.kind === 'warn' ? 'warning-badge' : 'connection'}>{v.label}</span></td>
+              <td><small style={{ color: 'var(--text-muted)' }}>{r.updated ? r.updated.replace('T', ' ') : '-'}</small></td>
+            </tr>
+          })}
         </tbody></table></div>
-        <p className="rule-disclaimer"><b>읽는 법:</b> 클럭만 52 → 54 ns로 완화하면 <b>setup은 세 후보 모두 통과</b>합니다(+0.36 ~ +1.40ns). 다만 이것은 설계를 고친 것이 아니라 <b>제약을 완화</b>한 것이라 &quot;타이밍 닫힘&quot;으로 인정할지는 별도 결정이 필요합니다. 그리고 <b>antenna가 1~2건 남아</b> 모두 signoff 기준(0건)에 못 미칩니다. 수리를 강화하면 원래 위반 net은 고쳐지지만 detailed routing이 배선을 다시 바꾸면서 <b>다른 net 하나</b>가 새로 걸립니다(상한 대비 2.2배 → 1.58배, 1.27배로 점점 작아지는 중). antenna와 RC의 차이는 아래 설명을 참고하세요.</p>
+        <p className="chip-note" style={{ marginTop: 6 }}>이 표는 <code>runs/reshape_*</code> 폴더의 실제 결과(<code>final/metrics.json</code>, 마지막 antenna 검사)를 <code>tools/collect_reshape_results.py</code>가 읽어 만든 것입니다(생성 {RESHAPE_RUNS_GENERATED.replace('T', ' ')}). 이전 실험(axi 52 ns, 10-03)과 새 실험(axi 54 ns · antenna 수리 강화, 10-04~05)이 같은 표에 섞여 있으니 &quot;실행 조건&quot;과 &quot;마지막 갱신&quot;으로 구분하세요. &quot;미측정·미실행&quot;은 통과가 아니라 <b>아직 안 돌았다</b>는 뜻입니다.</p>
+        <p className="rule-disclaimer"><b>읽는 법 (2026-10-05 13:40 기준):</b> 클럭만 52 → 54 ns로 완화하면 <b>setup은 54 ns 실행 전부 통과</b>합니다. 다만 이것은 설계를 고친 것이 아니라 <b>제약을 완화</b>한 것이라 &quot;타이밍 닫힘&quot;으로 인정할지는 별도 결정이 필요합니다. 남은 문제는 <b>antenna</b>입니다. 590×1085는 수리 margin을 10 → 30 → 60으로 올리자 <b>1건 → 1건(다른 net) → 0건</b>이 되었고, 450×1422는 1건 → 1건 → <b>4건(오히려 증가)</b>이라 diode 기준거리를 낮춘 시도를 따로 돌리고 있습니다. 같은 설정에서 net이 바뀌며 남는 이유는 아래 설명을 참고하세요. 또 650×985의 <code>hold0</code>(hold margin 0)는 setup을 −0.139 → −0.096로 조금 줄였지만 <b>hold가 −0.003 ns로 위반</b>이 되었고, 여기에 setup margin을 조정한 <code>hold0_setup</code>은 소수점 끝까지 같은 값이라 두 번째 설정은 결과를 바꾸지 못했습니다.</p>
         <AntennaExplainer />
         <p className="chip-note" style={{ marginTop: 8 }}>초록 가로줄은 전원망(PDN) 스트랩, 보라색 칸은 표준셀(밝을수록 촘촘), 진한 세로 줄무늬는 tap/endcap 셀 열 — 라우팅 전이라 배선은 안 보입니다. 스크린샷은 <code>samples/sample_test_4/asic/chan_top/config_reshape_*.json</code>(각 W×H, 나머지는 config.json과 동일) + <code>tools/wsl/114_render_chan_top_reshapes.sh</code>로 재현 가능합니다.</p>
       </article>
@@ -900,7 +937,7 @@ export default function MacroAreaTetris() {
       </div>
       <div className="roadmap-section-title future"><div><small>ROADMAP STATUS</small><h5>완료·부분 구현·미연결 항목</h5></div><span>2026-09-30 코드 기준</span></div>
       <div className="roadmap-grid">
-        <article className="game-done"><header><b>chan_top 재성형 실제 배치 검증</b><em>DONE · 2026-10-03 · 타이밍 미달</em></header><p>위 AREA FINDING 표의 PASS 4개(650×985 · 590×1085 · 500×1280 · 450×1422)는 원래 다이 레벨 패킹 계산일 뿐이었는데, 각각 <code>DIE_AREA</code>만 바꾼 chan_top을 실제 OpenLane으로 synthesis부터 <code>--to OpenROAD.DetailedPlacement</code>까지 다시 돌려 4개 전부 legalize 확인(최종 displacement 0.0µm, DPL 에러 없음) — 실제 배치 스크린샷도 있습니다. <b>2026-10-03 전체 flow 결과: 4개 모두 라우팅·DRC·LVS 0건, setup 타이밍은 −0.14~−2.69ns로 미달</b>(기존 +0.99ns) — 원인은 CDC FIFO 경로의 hold delay 셀 11~18단. 즉 "물리적으로 만들어진다"는 확인됐고 "타이밍 closure"가 다음 과제입니다.</p><small>재현: config_reshape_*.json + tools/wsl/114_render_chan_top_reshapes.sh</small></article>
+        <article className="game-done"><header><b>chan_top 재성형 실제 배치 검증</b><em>DONE · 2026-10-03 · 후속 진행 중 (2026-10-05)</em></header><p>위 AREA FINDING 표의 PASS 4개(650×985 · 590×1085 · 500×1280 · 450×1422)는 원래 다이 레벨 패킹 계산일 뿐이었는데, 각각 <code>DIE_AREA</code>만 바꾼 chan_top을 실제 OpenLane으로 synthesis부터 <code>--to OpenROAD.DetailedPlacement</code>까지 다시 돌려 4개 전부 legalize 확인(최종 displacement 0.0µm, DPL 에러 없음) — 실제 배치 스크린샷도 있습니다. <b>2026-10-03 전체 flow 결과: 4개 모두 라우팅·DRC·LVS 0건, setup 타이밍은 −0.14~−2.69ns로 미달</b>(기존 +0.99ns) — 원인은 CDC FIFO 경로의 hold delay 셀 11~18단. <b>2026-10-04~05 후속:</b> axi 클럭을 54 ns로 완화하면 setup은 통과(650×985 전체 flow는 DRC·LVS도 0)했지만 antenna가 남아, 수리 margin을 올려 재실행 중입니다 — 590×1085는 margin 60에서 antenna 0건, 450×1422는 오히려 4건. 최신 숫자는 위 AREA FINDING 표(실제 run 폴더에서 읽음)를 보세요.</p><small>재현: config_reshape_*.json + tools/wsl/114_render_chan_top_reshapes.sh</small></article>
         <article className="game-done"><header><b>진짜 남은 여유 공간 표시</b><em>DONE · 2026-09-30</em></header><p>leftover 초록/주황 오버레이가 매크로만 빼고 계산돼서, 표준셀 타일을 이미 채운 뒤에도 그 자리가 계속 "여유"로 보였습니다 — <code>analyzeLeftoverD</code>에 배치된 타일도 빼는 옵션을 추가해, 타일 표시를 켜면 <b>진짜 아직 안 쓰인 칸</b>만 남깁니다(수치도 표시: "매크로+타일 배치 후 진짜 남은 여유 N%"). 같이 고침: 표준셀 타일 버튼이 예전엔 항상 작업 중인 배치(cur) 기준이라 후보를 보고 있어도 조용히 현재 배치로 튕겨나갔는데, 이제 지금 화면에 보이는 것(후보든 처리 단계든) 기준으로 채웁니다.</p><small>확인: 후보 C0001(3700×2100) 선택 → 타일 13/13 채움 → 진짜 남은 여유 27.3% 라이브 확인</small></article>
         <article className="game-done"><header><b>random legal start 연결</b><em>DONE · 2026-09-29</em></header><p>후보 생성이 <code>seeds: 0</code>으로 호출돼 무작위 시작점이 전혀 없었습니다 — 이제 12개(로드맵 권장 8~16개 범위)를 실제로 흩뿌려 deterministic 여유 분할 후보에 더합니다. 다만 지금 붙은 건 Macro Tetris의 <b>Rip-up(greedy 다듬기)</b>까지고, 온도 기반으로 일부 나쁜 이동도 받아들이는 <b>SA 자체는 아직</b>입니다 — local minimum 탈출력은 SA를 실제로 붙여야 더 좋아집니다.</p><small>남은 일: repairFrom의 polish를 SA로 교체</small></article>
         <article className="game-done" style={{ gridColumn: 'span 3' }}>

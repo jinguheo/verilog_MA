@@ -1,0 +1,1314 @@
+{
+ "generated": "2026-10-05T13:43",
+ "runs": [
+  {
+   "run": "reshape_full_450x1422",
+   "shape": "450x1422",
+   "variant": "base",
+   "scope": "full",
+   "knobs": {
+    "axi_period": 52,
+    "ant_margin": 10,
+    "ant_iters": 3,
+    "heuristic_um": 90
+   },
+   "last_step": "75-misc-reportmanufacturability",
+   "started": "2026-10-03T02:53:31",
+   "finished_ok": true,
+   "metrics_source": "final/metrics.json",
+   "updated": "2026-10-03T03:00",
+   "metrics": {
+    "setup_ws": -0.4599378785791232,
+    "hold_ws": 0.13803969469310048,
+    "setup_vio": 1,
+    "route_drc": 0,
+    "magic_drc": 0,
+    "klayout_drc": 0,
+    "lvs": 0,
+    "antenna_nets": 0,
+    "wirelength": 849663,
+    "power": 6.558939456939697
+   },
+   "antenna": {
+    "step": "46-openroad-checkantennas-1",
+    "nets": 0,
+    "violations": [],
+    "post_route": true
+   },
+   "state": "finished"
+  },
+  {
+   "run": "reshape_try_450x1422_axi54",
+   "shape": "450x1422",
+   "variant": "axi54",
+   "scope": "partial",
+   "knobs": {
+    "axi_period": 54,
+    "ant_margin": 10,
+    "ant_iters": 3,
+    "heuristic_um": 90
+   },
+   "last_step": "22-openroad-stapostpnr",
+   "started": "2026-10-04T20:59:34",
+   "finished_ok": true,
+   "metrics_source": "final/metrics.json",
+   "updated": "2026-10-04T21:45",
+   "metrics": {
+    "setup_ws": 0.35768722329771996,
+    "hold_ws": 0.13785228904124355,
+    "setup_vio": 0,
+    "route_drc": 0,
+    "magic_drc": null,
+    "klayout_drc": null,
+    "lvs": null,
+    "antenna_nets": 1,
+    "wirelength": 851107,
+    "power": 6.562906265258789
+   },
+   "antenna": {
+    "step": "13-openroad-checkantennas-1",
+    "nets": 1,
+    "violations": [
+     {
+      "ratio": 2.0,
+      "net": "net1017",
+      "pin": "_18335_/RESET_B",
+      "layer": "met3"
+     }
+    ],
+    "post_route": true
+   },
+   "state": "finished"
+  },
+  {
+   "run": "reshape_try_450x1422_axi54ant",
+   "shape": "450x1422",
+   "variant": "axi54ant",
+   "scope": "partial",
+   "knobs": {
+    "axi_period": 54,
+    "ant_margin": 30,
+    "ant_iters": 6,
+    "heuristic_um": 90
+   },
+   "last_step": "18-openroad-stapostpnr",
+   "started": "2026-10-04T22:16:02",
+   "finished_ok": true,
+   "metrics_source": "final/metrics.json",
+   "updated": "2026-10-04T22:47",
+   "metrics": {
+    "setup_ws": 0.49190519716506764,
+    "hold_ws": 0.13667967144947057,
+    "setup_vio": 0,
+    "route_drc": 0,
+    "magic_drc": null,
+    "klayout_drc": null,
+    "lvs": null,
+    "antenna_nets": 1,
+    "wirelength": 851146,
+    "power": 6.566174507141113
+   },
+   "antenna": {
+    "step": "09-openroad-checkantennas-1",
+    "nets": 1,
+    "violations": [
+     {
+      "ratio": 1.27,
+      "net": "net285",
+      "pin": "_14238_/S",
+      "layer": "met1"
+     }
+    ],
+    "post_route": true
+   },
+   "state": "finished"
+  },
+  {
+   "run": "reshape_try_450x1422_axi54ant2",
+   "shape": "450x1422",
+   "variant": "axi54ant2",
+   "scope": "partial",
+   "knobs": {
+    "axi_period": 54,
+    "ant_margin": 60,
+    "ant_iters": 10,
+    "heuristic_um": 90
+   },
+   "last_step": "14-checker-wirelength",
+   "started": "2026-10-04T22:48:24",
+   "finished_ok": false,
+   "metrics_source": "antenna check only",
+   "updated": "2026-10-04T23:18",
+   "metrics": {
+    "antenna_nets": 4
+   },
+   "antenna": {
+    "step": "09-openroad-checkantennas-1",
+    "nets": 4,
+    "violations": [
+     {
+      "ratio": 1.7,
+      "net": "net170",
+      "pin": "_16028_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.51,
+      "net": "net407",
+      "pin": "_16342_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.06,
+      "net": "net708",
+      "pin": "_14281_/A1",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.05,
+      "net": "net1021",
+      "pin": "fanout1020/A",
+      "layer": "met1"
+     }
+    ],
+    "post_route": true
+   },
+   "state": "interrupted"
+  },
+  {
+   "run": "reshape_try_450x1422_axi54ant3",
+   "shape": "450x1422",
+   "variant": "axi54ant3",
+   "scope": "partial",
+   "knobs": {
+    "axi_period": 54,
+    "ant_margin": 60,
+    "ant_iters": 10,
+    "heuristic_um": 40
+   },
+   "last_step": "04-odb-heuristicdiodeinsertion",
+   "started": "2026-10-05T13:21:32",
+   "finished_ok": false,
+   "metrics_source": "antenna check only",
+   "updated": "2026-10-05T13:41",
+   "metrics": {},
+   "antenna": {
+    "step": "02-openroad-checkantennas",
+    "nets": 91,
+    "violations": [
+     {
+      "ratio": 4.53,
+      "net": "net78",
+      "pin": "_10658_/B",
+      "layer": "met2"
+     },
+     {
+      "ratio": 3.51,
+      "net": "net114",
+      "pin": "output114/A",
+      "layer": "met3"
+     },
+     {
+      "ratio": 3.31,
+      "net": "net40",
+      "pin": "_14383_/A0",
+      "layer": "met1"
+     },
+     {
+      "ratio": 2.79,
+      "net": "net37",
+      "pin": "_14274_/A0",
+      "layer": "met3"
+     },
+     {
+      "ratio": 2.79,
+      "net": "net37",
+      "pin": "_14299_/A0",
+      "layer": "met3"
+     },
+     {
+      "ratio": 2.79,
+      "net": "net37",
+      "pin": "_14448_/A1",
+      "layer": "met3"
+     },
+     {
+      "ratio": 2.72,
+      "net": "src_clk_i",
+      "pin": "clkbuf_0_src_clk_i/A",
+      "layer": "met4"
+     },
+     {
+      "ratio": 2.57,
+      "net": "_07624_",
+      "pin": "_11409_/B",
+      "layer": "met1"
+     },
+     {
+      "ratio": 2.55,
+      "net": "net47",
+      "pin": "_14269_/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 2.31,
+      "net": "net40",
+      "pin": "_14358_/A1",
+      "layer": "met3"
+     },
+     {
+      "ratio": 2.31,
+      "net": "net40",
+      "pin": "_14433_/A1",
+      "layer": "met3"
+     },
+     {
+      "ratio": 2.21,
+      "net": "net37",
+      "pin": "_14324_/A0",
+      "layer": "met3"
+     },
+     {
+      "ratio": 2.21,
+      "net": "net37",
+      "pin": "_14349_/A1",
+      "layer": "met3"
+     },
+     {
+      "ratio": 2.21,
+      "net": "net37",
+      "pin": "_14399_/A1",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.94,
+      "net": "net68",
+      "pin": "_10628_/B",
+      "layer": "met2"
+     },
+     {
+      "ratio": 1.94,
+      "net": "net1305",
+      "pin": "fanout397/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.9,
+      "net": "net304",
+      "pin": "_13876_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.83,
+      "net": "net49",
+      "pin": "output49/A",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.76,
+      "net": "net365",
+      "pin": "_12969_/S",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.64,
+      "net": "net373",
+      "pin": "_12856_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.62,
+      "net": "net95",
+      "pin": "output95/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.58,
+      "net": "net640",
+      "pin": "fanout636/A",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.56,
+      "net": "net1104",
+      "pin": "hold15/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.56,
+      "net": "_05971_",
+      "pin": "_14495_/A1",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.55,
+      "net": "net631",
+      "pin": "fanout626/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.54,
+      "net": "net326",
+      "pin": "_13534_/S",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.54,
+      "net": "net315",
+      "pin": "_13825_/S",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.54,
+      "net": "net381",
+      "pin": "_12707_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.51,
+      "net": "net148",
+      "pin": "_16611_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.5,
+      "net": "net88",
+      "pin": "_10980_/B",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.5,
+      "net": "net88",
+      "pin": "output88/A",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.49,
+      "net": "net361",
+      "pin": "_13095_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.46,
+      "net": "net424",
+      "pin": "_14503_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.46,
+      "net": "net37",
+      "pin": "_14274_/A0",
+      "layer": "met2"
+     },
+     {
+      "ratio": 1.46,
+      "net": "net178",
+      "pin": "_15908_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.45,
+      "net": "net1021",
+      "pin": "_18357_/RESET_B",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.45,
+      "net": "net354",
+      "pin": "_13224_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.44,
+      "net": "net394",
+      "pin": "_12679_/S",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.41,
+      "net": "net66",
+      "pin": "output66/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.41,
+      "net": "net296",
+      "pin": "_13947_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.38,
+      "net": "net266",
+      "pin": "_14801_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.38,
+      "net": "net265",
+      "pin": "_14804_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.38,
+      "net": "net275",
+      "pin": "_14700_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.36,
+      "net": "_05971_",
+      "pin": "_14495_/A1",
+      "layer": "met2"
+     },
+     {
+      "ratio": 1.33,
+      "net": "net436",
+      "pin": "_14577_/B2",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.33,
+      "net": "net209",
+      "pin": "_15452_/S",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.32,
+      "net": "net1277",
+      "pin": "_11614_/C1",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.3,
+      "net": "net1109",
+      "pin": "fanout995/A",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.3,
+      "net": "net1023",
+      "pin": "_20197_/RESET_B",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.28,
+      "net": "net230",
+      "pin": "_15223_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.27,
+      "net": "net170",
+      "pin": "_15988_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.26,
+      "net": "net303",
+      "pin": "_13874_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.26,
+      "net": "net73",
+      "pin": "_10506_/B",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.26,
+      "net": "net73",
+      "pin": "output73/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.25,
+      "net": "net202",
+      "pin": "_15607_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.25,
+      "net": "net41",
+      "pin": "_14361_/A1",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.25,
+      "net": "net41",
+      "pin": "_14436_/A1",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.25,
+      "net": "net755",
+      "pin": "_08567_/S1",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.25,
+      "net": "_06059_",
+      "pin": "fanout709/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.24,
+      "net": "net422",
+      "pin": "_14293_/C1",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.23,
+      "net": "_05872_",
+      "pin": "_14352_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.23,
+      "net": "net281",
+      "pin": "_14176_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.21,
+      "net": "_06069_",
+      "pin": "fanout570/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.21,
+      "net": "net334",
+      "pin": "_13400_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.21,
+      "net": "net509",
+      "pin": "fanout502/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.2,
+      "net": "net519",
+      "pin": "_08365_/B1",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.19,
+      "net": "_05133_",
+      "pin": "_11948_/B",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.19,
+      "net": "_05133_",
+      "pin": "_12181_/B2",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.19,
+      "net": "net82",
+      "pin": "output82/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.18,
+      "net": "net351",
+      "pin": "_13176_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.17,
+      "net": "net342",
+      "pin": "_13296_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.17,
+      "net": "net79",
+      "pin": "output79/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.17,
+      "net": "net285",
+      "pin": "_14238_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.17,
+      "net": "net43",
+      "pin": "_14292_/A0",
+      "layer": "met2"
+     },
+     {
+      "ratio": 1.17,
+      "net": "net325",
+      "pin": "_13548_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.16,
+      "net": "net177",
+      "pin": "_15927_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.16,
+      "net": "net312",
+      "pin": "_13782_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.15,
+      "net": "net708",
+      "pin": "_14284_/A1",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.14,
+      "net": "_06065_",
+      "pin": "fanout673/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.14,
+      "net": "_05838_",
+      "pin": "_14302_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.13,
+      "net": "net283",
+      "pin": "_14198_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.13,
+      "net": "net59",
+      "pin": "_10299_/C_N",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.13,
+      "net": "net59",
+      "pin": "_10300_/B1",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.12,
+      "net": "net233",
+      "pin": "_15141_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.12,
+      "net": "_07400_",
+      "pin": "_10623_/B",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.12,
+      "net": "net74",
+      "pin": "_10689_/B",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.11,
+      "net": "net219",
+      "pin": "_15379_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.11,
+      "net": "net1083",
+      "pin": "_12422_/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.1,
+      "net": "net242",
+      "pin": "_15058_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.09,
+      "net": "net154",
+      "pin": "_16458_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.09,
+      "net": "net1090",
+      "pin": "_12422_/B",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.07,
+      "net": "net38",
+      "pin": "_14377_/A0",
+      "layer": "met2"
+     },
+     {
+      "ratio": 1.07,
+      "net": "net38",
+      "pin": "_14451_/A1",
+      "layer": "met2"
+     },
+     {
+      "ratio": 1.07,
+      "net": "net38",
+      "pin": "_14302_/A0",
+      "layer": "met2"
+     },
+     {
+      "ratio": 1.07,
+      "net": "net38",
+      "pin": "_14352_/A1",
+      "layer": "met2"
+     },
+     {
+      "ratio": 1.06,
+      "net": "net1024",
+      "pin": "_18369_/RESET_B",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.06,
+      "net": "net1024",
+      "pin": "_20188_/RESET_B",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.06,
+      "net": "net62",
+      "pin": "output62/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.05,
+      "net": "align_crc[18\\]",
+      "pin": "fanout794/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.05,
+      "net": "_05855_",
+      "pin": "_14345_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.05,
+      "net": "net108",
+      "pin": "output108/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.05,
+      "net": "net186",
+      "pin": "_15805_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.03,
+      "net": "align_data[56\\]",
+      "pin": "fanout867/A",
+      "layer": "met2"
+     },
+     {
+      "ratio": 1.03,
+      "net": "net1003",
+      "pin": "fanout1001/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.02,
+      "net": "net174",
+      "pin": "_16050_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.02,
+      "net": "net37",
+      "pin": "_14324_/A0",
+      "layer": "met2"
+     },
+     {
+      "ratio": 1.02,
+      "net": "net37",
+      "pin": "_14349_/A1",
+      "layer": "met2"
+     },
+     {
+      "ratio": 1.02,
+      "net": "_07374_",
+      "pin": "_10277_/B",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.01,
+      "net": "net194",
+      "pin": "_15710_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.01,
+      "net": "_04629_",
+      "pin": "_11444_/B",
+      "layer": "met3"
+     },
+     {
+      "ratio": 1.01,
+      "net": "net50",
+      "pin": "_10338_/B",
+      "layer": "met1"
+     }
+    ],
+    "post_route": false
+   },
+   "state": "running"
+  },
+  {
+   "run": "reshape_full_500x1280",
+   "shape": "500x1280",
+   "variant": "base",
+   "scope": "full",
+   "knobs": {
+    "axi_period": 52,
+    "ant_margin": 10,
+    "ant_iters": 3,
+    "heuristic_um": 90
+   },
+   "last_step": "75-misc-reportmanufacturability",
+   "started": "2026-10-02T23:53:22",
+   "finished_ok": true,
+   "metrics_source": "final/metrics.json",
+   "updated": "2026-10-03T01:00",
+   "metrics": {
+    "setup_ws": -2.6898839472737306,
+    "hold_ws": 0.1375675168273733,
+    "setup_vio": 4,
+    "route_drc": 0,
+    "magic_drc": 0,
+    "klayout_drc": 0,
+    "lvs": 0,
+    "antenna_nets": 2,
+    "wirelength": 824297,
+    "power": 6.223659992218018
+   },
+   "antenna": {
+    "step": "46-openroad-checkantennas-1",
+    "nets": 2,
+    "violations": [
+     {
+      "ratio": 1.09,
+      "net": "net732",
+      "pin": "_11561_/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.03,
+      "net": "net386",
+      "pin": "_12754_/S",
+      "layer": "met1"
+     }
+    ],
+    "post_route": true
+   },
+   "state": "finished"
+  },
+  {
+   "run": "reshape_full_590x1085",
+   "shape": "590x1085",
+   "variant": "base",
+   "scope": "full",
+   "knobs": {
+    "axi_period": 52,
+    "ant_margin": 10,
+    "ant_iters": 3,
+    "heuristic_um": 90
+   },
+   "last_step": "75-misc-reportmanufacturability",
+   "started": "2026-10-02T23:51:33",
+   "finished_ok": true,
+   "metrics_source": "final/metrics.json",
+   "updated": "2026-10-03T00:59",
+   "metrics": {
+    "setup_ws": -0.17942980942244088,
+    "hold_ws": 0.14341517268575946,
+    "setup_vio": 1,
+    "route_drc": 0,
+    "magic_drc": 0,
+    "klayout_drc": 0,
+    "lvs": 0,
+    "antenna_nets": 3,
+    "wirelength": 857715,
+    "power": 6.800291538238525
+   },
+   "antenna": {
+    "step": "46-openroad-checkantennas-1",
+    "nets": 3,
+    "violations": [
+     {
+      "ratio": 2.45,
+      "net": "net37",
+      "pin": "_14448_/A1",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.55,
+      "net": "net456",
+      "pin": "fanout441/A",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.07,
+      "net": "net1009",
+      "pin": "_18369_/RESET_B",
+      "layer": "met1"
+     }
+    ],
+    "post_route": true
+   },
+   "state": "finished"
+  },
+  {
+   "run": "reshape_try_590x1085_axi54",
+   "shape": "590x1085",
+   "variant": "axi54",
+   "scope": "partial",
+   "knobs": {
+    "axi_period": 54,
+    "ant_margin": 10,
+    "ant_iters": 3,
+    "heuristic_um": 90
+   },
+   "last_step": "22-openroad-stapostpnr",
+   "started": "2026-10-04T20:59:13",
+   "finished_ok": true,
+   "metrics_source": "final/metrics.json",
+   "updated": "2026-10-04T21:45",
+   "metrics": {
+    "setup_ws": 1.3574173280728004,
+    "hold_ws": 0.14331447545457807,
+    "setup_vio": 0,
+    "route_drc": 0,
+    "magic_drc": null,
+    "klayout_drc": null,
+    "lvs": null,
+    "antenna_nets": 1,
+    "wirelength": 859174,
+    "power": 6.814469814300537
+   },
+   "antenna": {
+    "step": "13-openroad-checkantennas-1",
+    "nets": 1,
+    "violations": [
+     {
+      "ratio": 2.2,
+      "net": "net37",
+      "pin": "_14448_/A1",
+      "layer": "met1"
+     }
+    ],
+    "post_route": true
+   },
+   "state": "finished"
+  },
+  {
+   "run": "reshape_try_590x1085_axi54ant",
+   "shape": "590x1085",
+   "variant": "axi54ant",
+   "scope": "partial",
+   "knobs": {
+    "axi_period": 54,
+    "ant_margin": 30,
+    "ant_iters": 6,
+    "heuristic_um": 90
+   },
+   "last_step": "18-openroad-stapostpnr",
+   "started": "2026-10-04T22:15:37",
+   "finished_ok": true,
+   "metrics_source": "final/metrics.json",
+   "updated": "2026-10-04T22:46",
+   "metrics": {
+    "setup_ws": 1.3954064965146213,
+    "hold_ws": 0.1427382696885014,
+    "setup_vio": 0,
+    "route_drc": 0,
+    "magic_drc": null,
+    "klayout_drc": null,
+    "lvs": null,
+    "antenna_nets": 1,
+    "wirelength": 858526,
+    "power": 6.822445869445801
+   },
+   "antenna": {
+    "step": "09-openroad-checkantennas-1",
+    "nets": 1,
+    "violations": [
+     {
+      "ratio": 1.58,
+      "net": "net456",
+      "pin": "fanout441/A",
+      "layer": "met1"
+     }
+    ],
+    "post_route": true
+   },
+   "state": "finished"
+  },
+  {
+   "run": "reshape_try_590x1085_axi54ant2",
+   "shape": "590x1085",
+   "variant": "axi54ant2",
+   "scope": "partial",
+   "knobs": {
+    "axi_period": 54,
+    "ant_margin": 60,
+    "ant_iters": 10,
+    "heuristic_um": 90
+   },
+   "last_step": "19-openroad-irdropreport",
+   "started": "2026-10-05T13:25:38",
+   "finished_ok": false,
+   "metrics_source": "antenna check only",
+   "updated": "2026-10-05T13:42",
+   "metrics": {
+    "antenna_nets": 0
+   },
+   "antenna": {
+    "step": "09-openroad-checkantennas-1",
+    "nets": 0,
+    "violations": [],
+    "post_route": true
+   },
+   "state": "running"
+  },
+  {
+   "run": "reshape_full_650x985",
+   "shape": "650x985",
+   "variant": "base",
+   "scope": "full",
+   "knobs": {
+    "axi_period": 52,
+    "ant_margin": 10,
+    "ant_iters": 3,
+    "heuristic_um": 90
+   },
+   "last_step": "75-misc-reportmanufacturability",
+   "started": "2026-10-03T02:53:01",
+   "finished_ok": true,
+   "metrics_source": "final/metrics.json",
+   "updated": "2026-10-03T02:59",
+   "metrics": {
+    "setup_ws": -0.13874057850836868,
+    "hold_ws": 0.12470647090177535,
+    "setup_vio": 2,
+    "route_drc": 0,
+    "magic_drc": 0,
+    "klayout_drc": 0,
+    "lvs": 0,
+    "antenna_nets": 5,
+    "wirelength": 830680,
+    "power": 6.402245044708252
+   },
+   "antenna": {
+    "step": "46-openroad-checkantennas-1",
+    "nets": 5,
+    "violations": [
+     {
+      "ratio": 1.17,
+      "net": "net233",
+      "pin": "_15135_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.1,
+      "net": "net281",
+      "pin": "_14212_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.08,
+      "net": "net23",
+      "pin": "_16384_/A0",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.06,
+      "net": "net22",
+      "pin": "_14546_/A0",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.06,
+      "net": "net425",
+      "pin": "_14503_/S",
+      "layer": "met1"
+     }
+    ],
+    "post_route": true
+   },
+   "state": "finished"
+  },
+  {
+   "run": "reshape_try_650x985_hold0",
+   "shape": "650x985",
+   "variant": "hold0",
+   "scope": "partial",
+   "knobs": {
+    "axi_period": 52,
+    "ant_margin": 10,
+    "ant_iters": 3,
+    "heuristic_um": 90
+   },
+   "last_step": "22-openroad-stapostpnr",
+   "started": "2026-10-03T14:32:05",
+   "finished_ok": true,
+   "metrics_source": "final/metrics.json",
+   "updated": "2026-10-03T15:39",
+   "metrics": {
+    "setup_ws": -0.09649170624519343,
+    "hold_ws": -0.002862377083042131,
+    "setup_vio": 1,
+    "route_drc": 0,
+    "magic_drc": null,
+    "klayout_drc": null,
+    "lvs": null,
+    "antenna_nets": 3,
+    "wirelength": 825816,
+    "power": 6.407907962799072
+   },
+   "antenna": {
+    "step": "13-openroad-checkantennas-1",
+    "nets": 3,
+    "violations": [
+     {
+      "ratio": 1.25,
+      "net": "net425",
+      "pin": "_14533_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.08,
+      "net": "net23",
+      "pin": "_16384_/A0",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.06,
+      "net": "net22",
+      "pin": "_14546_/A0",
+      "layer": "met1"
+     }
+    ],
+    "post_route": true
+   },
+   "state": "finished"
+  },
+  {
+   "run": "reshape_try_650x985_hold0_setup",
+   "shape": "650x985",
+   "variant": "hold0_setup",
+   "scope": "partial",
+   "knobs": {
+    "axi_period": 52,
+    "ant_margin": 10,
+    "ant_iters": 3,
+    "heuristic_um": 90
+   },
+   "last_step": "22-openroad-stapostpnr",
+   "started": "2026-10-03T14:32:30",
+   "finished_ok": true,
+   "metrics_source": "final/metrics.json",
+   "updated": "2026-10-03T15:39",
+   "metrics": {
+    "setup_ws": -0.09649170624519343,
+    "hold_ws": -0.002862377083042131,
+    "setup_vio": 1,
+    "route_drc": 0,
+    "magic_drc": null,
+    "klayout_drc": null,
+    "lvs": null,
+    "antenna_nets": 3,
+    "wirelength": 825816,
+    "power": 6.407907962799072
+   },
+   "antenna": {
+    "step": "13-openroad-checkantennas-1",
+    "nets": 3,
+    "violations": [
+     {
+      "ratio": 1.25,
+      "net": "net425",
+      "pin": "_14533_/S",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.08,
+      "net": "net23",
+      "pin": "_16384_/A0",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.06,
+      "net": "net22",
+      "pin": "_14546_/A0",
+      "layer": "met1"
+     }
+    ],
+    "post_route": true
+   },
+   "state": "finished"
+  },
+  {
+   "run": "reshape_try_650x985_axi54",
+   "shape": "650x985",
+   "variant": "axi54",
+   "scope": "full",
+   "knobs": {
+    "axi_period": 54,
+    "ant_margin": 10,
+    "ant_iters": 3,
+    "heuristic_um": 90
+   },
+   "last_step": "42-misc-reportmanufacturability",
+   "started": "2026-10-04T20:58:53",
+   "finished_ok": true,
+   "metrics_source": "final/metrics.json",
+   "updated": "2026-10-04T22:06",
+   "metrics": {
+    "setup_ws": 0.43641536064652287,
+    "hold_ws": 0.12533285874998432,
+    "setup_vio": 0,
+    "route_drc": 0,
+    "magic_drc": 0,
+    "klayout_drc": 0,
+    "lvs": 0,
+    "antenna_nets": 2,
+    "wirelength": 831176,
+    "power": 6.404874324798584
+   },
+   "antenna": {
+    "step": "13-openroad-checkantennas-1",
+    "nets": 2,
+    "violations": [
+     {
+      "ratio": 1.06,
+      "net": "net22",
+      "pin": "_14546_/A0",
+      "layer": "met1"
+     },
+     {
+      "ratio": 1.06,
+      "net": "net281",
+      "pin": "_14212_/S",
+      "layer": "met1"
+     }
+    ],
+    "post_route": true
+   },
+   "state": "finished"
+  }
+ ]
+}
