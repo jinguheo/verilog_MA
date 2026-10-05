@@ -142,12 +142,13 @@ function ExperimentCard({ id, title, badge, badgeKind, purpose, diagram, caption
 // PPA3 실제 run 결과 (python tools/collect_ppa3_results.py 가 run 폴더의 state_out.json / final/metrics.json 에서 읽음)
 interface Ppa3Run {
   run: string; label: string; state: 'finished' | 'running' | 'stopped' | 'unknown'; exit_code: number | null
-  last_step: string | null; updated: string
+  last_step: string | null; updated: string; magic_drc_mode?: 'GDS' | 'DEF' | null
   metrics: { setup_ws?: number | null; hold_ws?: number | null; antenna_nets?: number | null; route_drc?: number | null; magic_drc?: number | null; klayout_drc?: number | null; lvs?: number | null; xor?: number | null; utilization?: number | null; power?: number | null }
 }
 const PPA3_RUNS = ppa3Runs.runs as unknown as Ppa3Run[]
 const notRun = <span style={{ color: 'var(--text-muted)' }}>미실행</span>
-const cnt = (v?: number | null) => v == null ? notRun : <b style={{ color: v === 0 ? 'var(--success)' : 'var(--danger)' }}>{v}</b>
+const superseded = <span style={{ color: 'var(--text-muted)' }} title="더 나중 run이 이 구간을 이어받아 다시 돌므로 따로 돌릴 필요가 없습니다">대체됨</span>
+const cnt = (v?: number | null, old = false) => v == null ? (old ? superseded : notRun) : <b style={{ color: v === 0 ? 'var(--success)' : 'var(--danger)' }}>{v}</b>
 const ns = (v?: number | null) => v == null ? '-' : `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(2)}`
 const stepName = (s: string | null) => s ? s.replace(/^\d+-/, '') : '-'
 const ppa3State = (r: Ppa3Run) => r.state === 'running' ? <span className="connection">실행 중</span> : r.state === 'finished' ? <span className="ok-badge">완주</span>
@@ -253,13 +254,13 @@ export default function PpaOverview() {
     <section className="card">
       <div className="card-title"><div><small className="kicker">PPA 3 · REAL RUNS</small><h3>PPA 3 실제 실행 결과 (run 폴더에서 자동 수집)</h3></div><span className="connection">{(ppa3Runs.generated as string).replace('T', ' ')} 기준</span></div>
       <div className="data-table"><table><thead><tr><th>실행</th><th>상태</th><th>마지막 완료 단계</th><th>setup / hold WNS (ns)</th><th>antenna</th><th>route DRC</th><th>Magic DRC</th><th>KLayout DRC</th><th>LVS</th><th>XOR</th></tr></thead><tbody>
-        {PPA3_RUNS.map(r => <tr key={r.run}>
+        {PPA3_RUNS.map(r => { const old = ['ppa3_antenna_fix', 'ppa3_antfix2'].includes(r.run) || r.run.startsWith('RUN_'); return <tr key={r.run}>
           <td><b>{r.run.startsWith('RUN_') ? 'baseline' : r.run}</b><small style={{ display: 'block', color: 'var(--text-muted)' }}>{r.label}</small></td>
           <td>{ppa3State(r)}</td><td>{stepName(r.last_step)}<small style={{ display: 'block', color: 'var(--text-muted)' }}>{r.updated.replace('T', ' ')}</small></td>
-          <td>{ns(r.metrics.setup_ws)} / {ns(r.metrics.hold_ws)}</td><td>{cnt(r.metrics.antenna_nets)}</td><td>{cnt(r.metrics.route_drc)}</td><td>{cnt(r.metrics.magic_drc)}</td><td>{cnt(r.metrics.klayout_drc)}</td><td>{cnt(r.metrics.lvs)}</td><td>{cnt(r.metrics.xor)}</td>
-        </tr>)}
+          <td>{ns(r.metrics.setup_ws)} / {ns(r.metrics.hold_ws)}</td><td>{cnt(r.metrics.antenna_nets, old)}</td><td>{cnt(r.metrics.route_drc, old)}</td><td>{cnt(r.metrics.magic_drc, old)}{r.metrics.magic_drc != null || r.run.includes('antfix3') || r.run.includes('antfix5') ? <small style={{ display: 'block', color: 'var(--text-muted)' }}>{r.magic_drc_mode === 'DEF' ? 'DEF 기준 · macro 내부 제외' : r.magic_drc_mode === 'GDS' ? 'GDS 전체 기준' : ''}</small> : null}</td><td>{cnt(r.metrics.klayout_drc, old)}</td><td>{cnt(r.metrics.lvs, old)}</td><td>{cnt(r.metrics.xor, old)}</td>
+        </tr> })}
       </tbody></table></div>
-      <p className="ppaov-note">&quot;미실행&quot;은 통과가 아니라 <b>그 단계까지 아직 안 갔다</b>는 뜻입니다. 이어받은 run(<code>ppa3_antfix3_signoff</code>, <code>ppa3_fin*</code>)은 앞 단계 값을 이전 run의 상태에서 물려받습니다. 위반이 있어도 flow를 끝까지 돌리는 설정(<code>config_antfix4</code>)에서도 개수는 숨기지 않고 그대로 기록됩니다.</p>
+      <p className="ppaov-note">&quot;미실행&quot;은 통과가 아니라 <b>그 단계까지 아직 안 갔다</b>는 뜻이고 최종 run에서는 반드시 채워져야 합니다. &quot;대체됨&quot;은 이전 run이라 따로 돌릴 필요가 없다는 뜻입니다. 이어받은 run(<code>ppa3_antfix3_signoff</code>, <code>ppa3_fin*</code>)은 앞 단계 값을 이전 run의 상태에서 물려받습니다. 위반이 있어도 flow를 끝까지 돌리는 설정(<code>config_antfix4</code>)에서도 개수는 숨기지 않고 그대로 기록됩니다.</p>
     </section>
     <section className="card">
       <div className="card-title"><div><small className="kicker">GLOSSARY</small><h3>antenna 위반이란? (PPA 3 baseline 2건 → 재실행 0건)</h3></div><span className="connection">용어 설명</span></div>

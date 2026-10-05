@@ -22,7 +22,9 @@ LABELS = {
     "RUN_2026-09-24_14-07-59": "baseline (09-24)",
     "ppa3_antenna_fix": "antenna 반복 10 · margin 20",
     "ppa3_antfix2": "긴 배선 300µm 분할 repair + heuristic diode",
-    "ppa3_antfix3_signoff": "antfix2 + Magic 읽기 오류 무시 (signoff부터)",
+    "ppa3_antfix3_signoff": "antfix2 + Magic 읽기 오류 무시 (signoff부터) · GDS 기준 DRC",
+    "ppa3_antfix4_signoff": "antfix3 + 검사 단계 non-fatal · GDS 전체 기준 Magic DRC (재시작 후 다시 실행)",
+    "ppa3_antfix5_signoff": "antfix3 + 검사 단계 non-fatal + Magic DRC를 DEF 기준으로 (macro 내부 미검사)",
 }
 KEYS = {
     "setup_ws": "timing__setup__ws", "hold_ws": "timing__hold__ws",
@@ -47,7 +49,7 @@ def live_tags():
 def collect():
     alive = live_tags()
     rows = []
-    names = ["RUN_2026-09-24_14-07-59", "ppa3_antenna_fix", "ppa3_antfix2", "ppa3_antfix3_signoff"]
+    names = ["RUN_2026-09-24_14-07-59", "ppa3_antenna_fix", "ppa3_antfix2", "ppa3_antfix3_signoff", "ppa3_antfix4_signoff", "ppa3_antfix5_signoff"]
     names += sorted(p.name for p in RUNS.glob("ppa3_fin*") if p.is_dir())
     for name in names:
         run = RUNS / name
@@ -61,6 +63,12 @@ def collect():
             m = st.get("metrics", {})
             metrics = {k: m.get(v) for k, v in KEYS.items()}
         final = (run / "final" / "metrics.json").exists()
+        drc_mode = None
+        try:
+            rc = json.loads((run / "resolved.json").read_text(encoding="utf8"))
+            drc_mode = "GDS" if rc.get("MAGIC_DRC_USE_GDS", True) else "DEF"
+        except (OSError, json.JSONDecodeError):
+            pass
         summary = LOGS / f"{name}.summary"
         exit_code = None
         if summary.exists():
@@ -80,7 +88,7 @@ def collect():
             "run": name, "label": LABELS.get(name, name), "state": state, "exit_code": exit_code,
             "steps_done": len(done), "last_step": done[-1] if done else None,
             "next_step": (steps[-1] if steps and steps[-1] != (done[-1] if done else None) else None),
-            "resumed": name != "RUN_2026-09-24_14-07-59" and name != "ppa3_antenna_fix" and name != "ppa3_antfix2",
+            "magic_drc_mode": drc_mode,
             "updated": datetime.fromtimestamp(newest).isoformat(timespec="minutes"),
             "metrics": metrics,
         })
