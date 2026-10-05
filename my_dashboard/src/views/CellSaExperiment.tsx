@@ -5,6 +5,8 @@
 // met1 트랙 하나로 배선(핀 → 트랙이 핀 도형을 벗어날 때만 수직 이동 → 트랙 → 핀), 넷끼리는 독립(같은 트랙 공유
 // 충돌은 검사하지 않음). 셀과 핀 이름은 전부 실제 sky130_fd_sc_hd이고, 클록·전원·외부 입력은 넷에 넣지 않았다.
 import { useEffect, useMemo, useRef, useState } from 'react'
+import PlacementMethodsExplainer from './PlacementMethodsExplainer'
+import SubsetDpExplainer from './SubsetDpExplainer'
 
 type Rect = [string, number, number, number, number]
 type Pin = { n: string; use: string; rects: Rect[] }
@@ -226,6 +228,161 @@ function neighbour(s: State, rnd: () => number): State {
   return t
 }
 
+// ---- SA가 아닌 방식: 스펙트럴 정렬 + 결정적 국소 개선 (무작위·온도·seed 없음) ----
+export const ALT_WINDOW = 4 // 슬라이딩 윈도우 길이(윈도우 안 모든 순열을 시험)
+export const ALT_MAX_PASSES = 40
+export const ALT_POWER_ITERS = 20000
+type AltResult = { state: State; ms: number; evals: number; passes: number }
+
+// Fiedler 벡터(라플라시안 L = D − A 의 두 번째로 작은 고유벡터)를 거듭제곱법으로 구해 그 값 순서를 셀 순서로 쓴다.
+function spectralOrder(ctx: Ctx): number[] {
+  const n = ctx.n
+  const adj: number[][] = Array.from({ length: n }, () => [])
+  for (const e of ctx.nets) if (e.s !== e.d) { adj[e.s].push(e.d); adj[e.d].push(e.s) }
+  const c = 2 * Math.max(1, ...adj.map(a => a.length)) + 1 // c·I − L 이 양의 준정부호가 되도록
+  let v = Array.from({ length: n }, (_, i) => Math.sin(1.7 * i + 0.3)) // 고정 시작 벡터 → 항상 같은 결과
+  for (let it = 0; it < ALT_POWER_ITERS; it++) {
+    const mean = v.reduce((a, b) => a + b, 0) / n // 상수 벡터(고유값 0) 성분을 제거해 두 번째 고유벡터로 수렴
+    const u = v.map(x => x - mean)
+    const w = u.map((x, i) => (c - adj[i].length) * x + adj[i].reduce((a, j) => a + u[j], 0))
+    const norm = Math.hypot(...w) || 1
+    v = w.map(x => x / norm)
+  }
+  return Array.from({ length: n }, (_, i) => i).sort((a, b) => v[a] - v[b] || a - b)
+}
+
+async function spectralRefine(ctx: Ctx, cancel: Cancel): Promise<AltResult | null> {
+  const n = ctx.n, X = new Array(n).fill(0), EPS = 1e-9
+  let evals = 0, busy = 0
+  const cost = (st: State) => { evals++; return evaluate(ctx, st, X) }
+  const winPerms = permutations(Math.min(ALT_WINDOW, n))
+  let t0 = performance.now()
+  const cur: State = { order: spectralOrder(ctx), flip: new Array(n).fill(false), gaps: new Array(Math.max(0, n - 1)).fill(0) }
+  let curC = cost(cur), passes = 0
+  for (; passes < ALT_MAX_PASSES; passes++) {
+    const before = curC
+    // (a) 셀마다 N ↔ FN
+    for (let i = 0; i < n; i++) { cur.flip[i] = !cur.flip[i]; const c = cost(cur); if (c < curC - EPS) curC = c; else cur.flip[i] = !cur.flip[i] }
+    // (b) 셀 하나를 빼서 모든 위치에 넣어 보고 가장 좋은 위치로
+    for (let v = 0; v < n; v++) {
+      const rest = cur.order.filter(x => x !== v)
+      let bestP = -1, bestC = curC
+      for (let p = 0; p < n; p++) {
+        const order = [...rest.slice(0, p), v, ...rest.slice(p)]
+        const c = cost({ order, flip: cur.flip, gaps: cur.gaps })
+        if (c < bestC - EPS) { bestC = c; bestP = p }
+      }
+      if (bestP >= 0) { cur.order = [...rest.slice(0, bestP), v, ...rest.slice(bestP)]; curC = bestC }
+    }
+    // (c) 길이 ALT_WINDOW 윈도우를 밀며 윈도우 안 모든 순열 시험
+    const k = Math.min(ALT_WINDOW, n)
+    for (let a = 0; a + k <= n; a++) {
+      const seg = cur.order.slice(a, a + k)
+      let bestPerm: number[] | null = null, bestC = curC
+      for (const perm of winPerms) {
+        const order = [...cur.order.slice(0, a), ...perm.map(i => seg[i]), ...cur.order.slice(a + k)]
+        const c = cost({ order, flip: cur.flip, gaps: cur.gaps })
+        if (c < bestC - EPS) { bestC = c; bestPerm = order }
+      }
+      if (bestPerm) { cur.order = bestPerm; curC = bestC }
+    }
+    busy += performance.now() - t0
+    if (curC >= before - EPS) { passes++; break }
+    await new Promise(r => setTimeout(r, 0)) // 화면이 멈추지 않게 양보. 양보한 시간은 계산 시간에 넣지 않는다.
+    if (cancel.current) return null
+    t0 = performance.now()
+  }
+  return { state: cur, ms: busy, evals, passes }
+}
+
+// ---- 부분집합 DP: 순서·방향을 "왼쪽에 놓인 셀의 집합"만으로 정확히 푼다 (n! → 2ⁿ·n) ----
+// 정확한 것은 '프록시 모델'에서다: 핀마다 x 위치 하나(넷이 쓸 핀 도형의 중심), 간격 0, 넷 비용 = |x 차이| + K.
+// K = 위치와 무관한 수직 이동·굴곡 항(핀 도형·트랙만으로 정해짐). 실제 모델은 거리에 따라 핀 도형을 바꿔 고를 수 있어
+// DP 해를 실제 모델로 다시 평가하면 프록시 값보다 같거나 작다. 그래서 DP는 "프록시 모델의 정확한 최적"이고 실제 최적의 근사다.
+export const MAX_DP_N = 23 // 2ⁿ 상태 × (비용 8B + 부모 1B + 컷 1B) — 23셀에서 약 80MB
+type ProxyNet = { s: number; d: number; ka: number; kb: number; K: number }
+type DpResult = { state: State; summary: Summary; proxy: number; ms: number; states: number }
+const dpCache = new Map<string, DpResult>() // 규칙·가중치가 같으면 DP는 항상 같은 답이라 탭을 오가도 다시 계산하지 않는다
+const proxyCache = new WeakMap<Ctx, ProxyNet[]>()
+function proxyNets(ctx: Ctx): ProxyNet[] {
+  const hit = proxyCache.get(ctx); if (hit) return hit
+  const { rules, w, tracks } = ctx
+  const out = ctx.nets.map(net => {
+    let bestK = Infinity, bestOff = Infinity, ka = 0.5, kb = 0.5
+    for (const a of net.sr) for (const b of net.dr) for (const t of tracks) {
+      const ay1 = a.y1 * rules.row, ay2 = a.y2 * rules.row, by1 = b.y1 * rules.row, by2 = b.y2 * rules.row
+      const va = t < ay1 ? ay1 - t : t > ay2 ? t - ay2 : 0, vb = t < by1 ? by1 - t : t > by2 ? t - by2 : 0
+      const segs = (va > 1e-6 ? 1 : 0) + 1 + (vb > 1e-6 ? 1 : 0)
+      const K = va + vb + w.bend * Math.max(0, segs - 1) + w.vertical * (va + vb)
+      const off = Math.abs(a.cx - 0.5) + Math.abs(b.cx - 0.5) // 같은 K면 셀 가운데에 가까운 핀 도형
+      if (K < bestK - 1e-9 || (Math.abs(K - bestK) <= 1e-9 && off < bestOff)) { bestK = K; bestOff = off; ka = a.cx; kb = b.cx }
+    }
+    return { s: net.s, d: net.d, ka, kb, K: bestK }
+  })
+  proxyCache.set(ctx, out)
+  return out
+}
+// 프록시 모델에서의 비용 — DP의 최적값과 같은 잣대로 SA·스펙트럴 해를 잴 때 쓴다(DP 값 이하일 수 없다).
+function proxyOf(ctx: Ctx, st: State): number {
+  const X = new Array(ctx.n).fill(0)
+  let x = 0
+  for (let k = 0; k < ctx.n; k++) { const i = st.order[k]; X[i] = x; x += ctx.W[i] + (k < ctx.n - 1 ? st.gaps[k] * ctx.rules.site : 0) }
+  let c = ctx.w.area * x * ctx.rules.row
+  for (const e of proxyNets(ctx)) {
+    const pa = X[e.s] + (st.flip[e.s] ? 1 - e.ka : e.ka) * ctx.W[e.s], pb = X[e.d] + (st.flip[e.d] ? 1 - e.kb : e.kb) * ctx.W[e.d]
+    c += Math.abs(pa - pb) + e.K
+  }
+  return c
+}
+
+async function subsetDp(ctx: Ctx, cancel: Cancel, onProgress?: (done: number, total: number) => void): Promise<DpResult | null> {
+  const n = ctx.n
+  if (n > MAX_DP_N || n < 1) return null
+  const nets = proxyNets(ctx)
+  // 셀마다 붙은 넷: 상대 셀과, 이 셀 쪽 핀의 정규화된 x(0..1, N 방향 기준)
+  const inc: { u: number; cx: number }[][] = Array.from({ length: n }, () => [])
+  for (const e of nets) { inc[e.s].push({ u: e.d, cx: e.ka }); inc[e.d].push({ u: e.s, cx: e.kb }) }
+  const size = 2 ** n, full = size - 1
+  const dp = new Float64Array(size).fill(Infinity), par = new Uint8Array(size), cut = new Uint8Array(size)
+  dp[0] = 0
+  const t0 = performance.now()
+  let busy = 0, mark = performance.now()
+  for (let S = 0; S < full; S++) {
+    const base = dp[S], cS = cut[S]
+    for (let v = 0; v < n; v++) {
+      const bit = 1 << v
+      if (S & bit) continue
+      const Wv = ctx.W[v], list = inc[v]
+      let c0 = 0, c1 = 0, degS = 0
+      for (let k = 0; k < list.length; k++) {
+        const { u, cx } = list[k], o0 = cx * Wv, o1 = Wv - o0 // 이 셀의 왼쪽 가장자리에서 핀까지: N = o0, FN = o1
+        if (S & (1 << u)) { degS++; c0 += o0; c1 += o1 } // 상대가 이미 왼쪽 → 이 셀이 오른쪽 끝점: 왼쪽 가장자리~핀
+        else { c0 += Wv - o0; c1 += Wv - o1 } // 상대가 아직 안 놓임 → 이 셀이 왼쪽 끝점: 핀~오른쪽 가장자리
+      }
+      const f = c1 < c0 ? 1 : 0 // 방향은 셀마다 독립적으로 최선을 고른다
+      const total = base + (f ? c1 : c0) + Wv * (cS - degS) // cS − degS = 이 셀 위를 지나가는 넷 수
+      const T = S | bit
+      if (total < dp[T]) { dp[T] = total; par[T] = v | (f << 5) }
+      cut[T] = cS + list.length - 2 * degS
+    }
+    if ((S & 0xFFFF) === 0xFFFF) {
+      busy += performance.now() - mark
+      onProgress?.(S, full)
+      await new Promise(r => setTimeout(r, 0))
+      if (cancel.current) return null
+      mark = performance.now()
+    }
+  }
+  busy += performance.now() - mark
+  void t0
+  const order: number[] = [], flip = new Array(n).fill(false)
+  for (let T = full; T; ) { const p = par[T], v = p & 31; order.unshift(v); flip[v] = (p >> 5) === 1; T ^= 1 << v }
+  const state: State = { order, flip, gaps: new Array(Math.max(0, n - 1)).fill(0) }
+  const width = ctx.W.reduce((a, b) => a + b, 0)
+  const proxy = dp[full] + ctx.w.area * width * ctx.rules.row + nets.reduce((a, e) => a + e.K, 0)
+  return { state, summary: summarize(ctx, state), proxy, ms: busy, states: size }
+}
+
 export const SA_ALPHA = 0.93
 export const SA_FINAL_RATIO = 1e-4
 const SA_T0_ACCEPT = 0.8 // 시작 온도: 평균적인 '나빠지는 이동'을 이 확률로 받아들이도록 정한다
@@ -265,6 +422,7 @@ type SaResult = { seed: number; moves: number; accepted: number; ms: number; bes
 type ExResult = { key: string; total: number; ms: number; best: number; bestState: State; optimaCount: number }
 type Live = { seed: number; stage: number; stages: number; T: number; cur: number; best: number; moves: number; trace: SaTrace[]; bestState: State }
 type Cancel = { current: boolean }
+type AltRow = { state: State; summary: Summary; ms: number; evals: number; passes: number }
 type Summary = { cost: number; width: number; area: number; wl: number }
 type BatchRow = { id: string; label: string; n: number; nets: number; method: string; summary: Summary | null; init: Summary | null; ms: number; extra: string }
 type SavedRow = { id: string; sa: State; summary: Summary }
@@ -282,17 +440,17 @@ function summarize(ctx: Ctx, st: State): Summary {
 }
 
 // 한 번의 SA(무작위 출발). onStage는 화면 갱신용이고 UI가 멈추지 않게 가끔 양보한다.
-async function annealOnce(ctx: Ctx, seed: number, cancel: Cancel, onStage?: (p: Live) => void): Promise<SaResult | null> {
+async function annealOnce(ctx: Ctx, seed: number, cancel: Cancel, onStage?: (p: Live) => void, opts?: { start?: State; t0Scale?: number }): Promise<SaResult | null> {
   const X = new Array(ctx.n).fill(0)
   const rnd = mulberry32(seed * 7919)
   const order = Array.from({ length: ctx.n }, (_, i) => i)
   for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [order[i], order[j]] = [order[j], order[i]] }
-  let cur: State = { order, flip: order.map(() => rnd() < 0.5), gaps: new Array(Math.max(0, ctx.n - 1)).fill(0) }
+  let cur: State = opts?.start ? clone(opts.start) : { order, flip: order.map(() => rnd() < 0.5), gaps: new Array(Math.max(0, ctx.n - 1)).fill(0) }
   let curC = evaluate(ctx, cur, X), best = clone(cur), bestC = curC
   // T0: an average uphill move is accepted with probability 0.8 at the start
   let up = 0, ups = 0
   for (let i = 0; i < 200; i++) { const d = evaluate(ctx, neighbour(cur, rnd), X) - curC; if (d > 0 && Number.isFinite(d)) { up += d; ups++ } }
-  const T0 = ups ? (up / ups) / Math.log(1 / SA_T0_ACCEPT) : 1
+  const T0 = (ups ? (up / ups) / Math.log(1 / SA_T0_ACCEPT) : 1) * (opts?.t0Scale ?? 1)
   const stages = saStages(), perStage = saMovesPerStage(ctx.n)
   let T = T0, moves = 0, accepted = 0, ms = 0
   const trace: SaTrace[] = []
@@ -361,6 +519,10 @@ export default function CellSaExperiment({ data, rules, weights, tier }: { data:
   const [batch, setBatch] = useState<{ tier: 1 | 2 | 3; rows: BatchRow[]; running: boolean; label: string } | null>(null)
   const [cmp, setCmp] = useState<{ tier: number; rows: CmpRow[]; running: boolean; label: string; previous: SavedRun | null } | null>(null)
   const [improve, setImprove] = useState<{ id: string; attempts: number; running: boolean } | null>(null)
+  const [dp, setDp] = useState<Record<string, DpRow>>({})
+  const [dpLive, setDpLive] = useState<{ label: string; done: number; total: number; idx: number; count: number } | null>(null)
+  const [extra, setExtra] = useState<ExtraMap>({})
+  const [extraLive, setExtraLive] = useState<{ id: string; label: string } | null>(null)
   const cancel = useRef<Cancel>({ current: false })
   const tierList = useMemo(() => CANDIDATES.filter(c => c.tier === tier), [tier])
   const cand = CANDIDATES.find(c => c.id === candId) ?? tierList[0]
@@ -371,7 +533,7 @@ export default function CellSaExperiment({ data, rules, weights, tier }: { data:
   // 후보를 바꾼 직후 한 번은 이전 후보의 결과가 state에 남아 있다 — 그 배치를 새 후보의 셀 목록에 그리면 인덱스가 어긋나 화면이 죽으므로, 실행한 후보·규칙의 결과만 보여 준다.
   const results = runKey === key ? resultsRaw : []
   const live = runKey === key ? liveRaw : null
-  const running = !!live || !!exLive || !!batch?.running || !!cmp?.running || !!improve?.running
+  const running = !!live || !!exLive || !!batch?.running || !!cmp?.running || !!improve?.running || !!dpLive || !!extraLive
   // 후보마다 배치 1개 평가 시간(µs)을 재서 전수 탐색에 걸릴 시간을 추정한다(해당 단계 후보만, 한 번만 측정).
   const usPer = useMemo(() => {
     const m = new Map<string, number>()
@@ -547,6 +709,108 @@ export default function CellSaExperiment({ data, rules, weights, tier }: { data:
     void runCompare()
   }, [tier, data, simpleRows, loadedKey, comparisonKey, matchingSavedRun])
 
+  // SA가 아닌 방식(스펙트럴 정렬 + 결정적 국소 개선)은 무작위가 없고 빨라서 모든 후보를 바로 계산한다. 규칙·가중치가 바뀌면 다시 계산한다.
+  const [alt, setAlt] = useState<Record<string, AltRow>>({})
+  useEffect(() => {
+    if (tier === 1 || !simpleRows.length) return
+    const cc: Cancel = { current: false }
+    setAlt({})
+    void (async () => {
+      const out: Record<string, AltRow> = {}
+      for (const r of simpleRows) {
+        const res = await spectralRefine(r.ctx, cc)
+        if (!res || cc.current) return
+        out[r.id] = { state: res.state, summary: summarize(r.ctx, res.state), ms: res.ms, evals: res.evals, passes: res.passes }
+        setAlt({ ...out })
+      }
+    })()
+    return () => { cc.current = true }
+  }, [tier, simpleRows])
+
+  // ---- 정확해 DP, SA 보완 실험(seed 확대 · 스펙트럴 해에서 시작하는 하이브리드) ----
+  const rwKey = `${JSON.stringify(rules)}|${JSON.stringify(weights)}`
+  const extraKey = `stdcell-sa-extra-v1|${tier}|${rwKey}`
+  const altRef = useRef(alt); altRef.current = alt
+  const savedRef = useRef<SavedRun | null>(null); savedRef.current = matchingSavedRun
+  const extraRef = useRef<ExtraMap>({})
+  useEffect(() => {
+    const next: Record<string, DpRow> = {}
+    for (const r of simpleRows) { const hit = dpCache.get(`${r.id}|${rwKey}`); if (hit) next[r.id] = hit }
+    setDp(next)
+  }, [simpleRows, rwKey])
+  useEffect(() => {
+    let loaded: ExtraMap = {}
+    try { const raw = localStorage.getItem(extraKey); if (raw) loaded = JSON.parse(raw) as ExtraMap } catch { /* storage can be unavailable */ }
+    extraRef.current = loaded; setExtra(loaded)
+  }, [extraKey])
+
+  const runDp = async () => {
+    if (tier === 1 || running) return
+    cancel.current = { current: false }
+    const cc = cancel.current
+    const todo = simpleRows.filter(r => r.n <= MAX_DP_N && !dpCache.has(`${r.id}|${rwKey}`))
+    for (let i = 0; i < todo.length && !cc.current; i++) {
+      const r = todo[i]
+      setDpLive({ label: r.label, done: 0, total: 1, idx: i + 1, count: todo.length })
+      const res = await subsetDp(r.ctx, cc, (done, total) => setDpLive({ label: r.label, done, total, idx: i + 1, count: todo.length }))
+      if (!res) break
+      dpCache.set(`${r.id}|${rwKey}`, res)
+      setDp(prev => ({ ...prev, [r.id]: res }))
+    }
+    setDpLive(null)
+  }
+
+  const putExtra = (id: string, kind: ExtraKind, res: ExtraRes) => {
+    const next: ExtraMap = { ...extraRef.current, [id]: { ...extraRef.current[id], [kind]: res } }
+    extraRef.current = next; setExtra(next)
+    try { localStorage.setItem(extraKey, JSON.stringify(next)) } catch { /* storage can be unavailable */ }
+  }
+  // 보완 실험에서 더 낮은 비용이 나오면 이 후보의 '역대 최선'에 반영한다.
+  const commitBest = (id: string, st: State, summary: Summary) => {
+    const old = savedRef.current
+    if (!old || keyRef.current !== comparisonKey) return
+    const list = old.best ?? old.rows
+    const prev = list.find(i => i.id === id)
+    if (prev && summary.cost >= prev.summary.cost - 1e-9) return
+    const bestList = list.filter(i => i.id !== id); bestList.push({ id, sa: st, summary })
+    const saved: SavedRun = { ...old, best: bestList }
+    try { localStorage.setItem(comparisonKey, JSON.stringify(saved)) } catch { /* storage can be unavailable */ }
+    savedRef.current = saved
+    setSavedRun(saved)
+  }
+  const execExtra = async (id: string, kind: ExtraKind, cc: Cancel) => {
+    const r = simpleRows.find(x => x.id === id), a = altRef.current[id]
+    if (!r || (kind === 'hybrid' && !a)) return
+    const before = (savedRef.current?.best ?? savedRef.current?.rows ?? []).find(i => i.id === id)?.summary.cost ?? null
+    const runs = extraRuns(kind, r.n), seedOffset = Math.floor(Math.random() * 1000000) + 1
+    const costs: number[] = []
+    let best: SaResult | null = null, ms = 0
+    for (let k = 1; k <= runs && !cc.current; k++) {
+      setExtraLive({ id, label: `${r.label} · ${EXTRA_LABEL[kind]} ${k}/${runs}` })
+      const res = await annealOnce(r.ctx, seedOffset + k, cc, undefined, kind === 'hybrid' ? { start: a.state, t0Scale: HYBRID_T0 } : undefined)
+      if (!res) break
+      ms += res.ms; costs.push(res.best)
+      if (!best || res.best < best.best) best = res
+    }
+    if (!best || !costs.length) return
+    const summary = summarize(r.ctx, best.bestState)
+    putExtra(id, kind, { kind, costs, state: best.bestState, summary, ms, before })
+    if (kind === 'seeds') commitBest(id, best.bestState, summary) // 하이브리드는 SA가 아닌 별도 방식이라 'SA 역대 최선'에 합치지 않는다
+  }
+  const runExtra = async (id: string, kind: ExtraKind) => {
+    if (!data || tier === 1 || running) return
+    cancel.current = { current: false }
+    await execExtra(id, kind, cancel.current)
+    setExtraLive(null)
+  }
+  const runExtraBatch = async (kind: ExtraKind, ids: string[]) => {
+    if (!data || tier === 1 || running) return
+    cancel.current = { current: false }
+    const cc = cancel.current
+    for (const id of ids) { if (cc.current) break; await execExtra(id, kind, cc) }
+    setExtraLive(null)
+  }
+
   const exKnown = ex && ex.key === key ? ex : null
   const bestRun = results.length ? results.reduce((a, b) => b.best < a.best ? b : a) : null
   const hits = exKnown ? results.filter(r => Math.abs(r.best - exKnown.best) < 1e-6).length : results.filter(r => bestRun && Math.abs(r.best - bestRun.best) < 1e-6).length
@@ -561,7 +825,7 @@ export default function CellSaExperiment({ data, rules, weights, tier }: { data:
   return <div className="card" style={{ padding: 12, marginBottom: 12 }}>
     <div className="card-title" style={{ marginBottom: 6 }}><div><small className="kicker">CANDIDATE POOL · 실측</small><h3>{tier === 1 ? '복잡한 표준셀 후보군 (5개 이하)' : tier === 2 ? '더 복잡한 표준셀 후보군 (6~10개)' : '매우 복잡한 표준셀 후보군 (20~50개)'} — 배치·배선 탐색</h3></div></div>
     <p className="chip-note" style={{ margin: '0 0 8px' }}><b>{info.title}</b> — 후보 {tierList.length}개. {info.desc} 모든 셀·핀은 실제 sky130 hd이고, 내부 연결(드라이버→싱크)만 넷으로 셉니다. 클록·전원·외부 입력은 넷에 넣지 않았습니다.</p>
-    {tier !== 1 && <CompareSection tier={tier} simpleRows={simpleRows} savedRun={matchingSavedRun} cmp={cmp} running={running || !data} improving={improve} seeds={cmpSeeds} onRun={runCompare} onImprove={runUntilBetter} onStop={() => { cancel.current.current = true }} onOpen={id => { if (!running) { setCandId(id); window.scrollTo?.({ top: 0 }) } }}/>} 
+    {tier !== 1 && <CompareSection tier={tier} simpleRows={simpleRows} savedRun={matchingSavedRun} cmp={cmp} running={running || !data} improving={improve} alt={alt} dp={dp} dpLive={dpLive} extra={extra} extraLive={extraLive} seeds={cmpSeeds} onRun={runCompare} onImprove={runUntilBetter} onDp={runDp} onExtra={runExtra} onExtraBatch={runExtraBatch} onStop={() => { cancel.current.current = true }} onOpen={id => { if (!running) { setCandId(id); window.scrollTo?.({ top: 0 }) } }}/>} 
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: 8, marginBottom: 10 }}>
       {tierList.map(c => { const on = c.id === cand.id, us = usPer.get(c.id)
         return <button key={c.id} type="button" disabled={running} onClick={() => setCandId(c.id)} style={{ textAlign: 'left', padding: 10, borderRadius: 8, cursor: running ? 'default' : 'pointer',
@@ -631,6 +895,8 @@ export default function CellSaExperiment({ data, rules, weights, tier }: { data:
     </>}
 
     {tier !== 1 && <SaExplainer n={n} results={results} usPerEval={usPerEval}/>}
+    {tier !== 1 && <PlacementMethodsExplainer window={ALT_WINDOW} maxPasses={ALT_MAX_PASSES} iterations={ALT_POWER_ITERS}/>}
+    {tier !== 1 && <SubsetDpExplainer maxN={MAX_DP_N}/>}
 
     {batch && batch.rows.length + (batch.running ? 1 : 0) > 0 && <div style={{ marginTop: 14 }}>
       <b style={{ fontSize: 13 }}>{TIER_INFO[batch.tier].title} — 후보 비교 ({TIER_INFO[batch.tier].how}){batch.running ? ` · 진행 중: ${batch.label} (${batch.rows.length}/${CANDIDATES.filter(c => c.tier === batch.tier).length})` : ''}</b>
@@ -669,35 +935,182 @@ function LayoutPair({ ctx, init, sa }: { ctx: Ctx; init: State; sa: State }) {
 type CmpRow = { id: string; label: string; n: number; nets: number; ctx: Ctx; init: State; sa: State; initS: Summary; saS: Summary; ms: number; seeds: number }
 type SimpleRow = Pick<CmpRow, 'id' | 'label' | 'n' | 'nets' | 'ctx' | 'init' | 'initS'>
 
-function CompareSection({ tier, simpleRows, savedRun, cmp, running, improving, seeds, onRun, onImprove, onStop, onOpen }: {
+// ---- 결과 해석: 후보마다의 SA 추천과 보완 실험, 탭 전체 성능 요약 ----
+type ExtraKind = 'hybrid' | 'seeds'
+type ExtraRes = { kind: ExtraKind; costs: number[]; state: State; summary: Summary; ms: number; before: number | null }
+type ExtraMap = Record<string, Partial<Record<ExtraKind, ExtraRes>>>
+type DpRow = DpResult
+const HYBRID_T0 = 0.3 // 하이브리드 SA의 시작 온도 배율(스펙트럴 해의 구조를 한 번에 무너뜨리지 않도록 낮게)
+const extraRuns = (kind: ExtraKind, n: number) => kind === 'hybrid' ? 3 : n >= 36 ? 4 : 6
+const EXTRA_LABEL: Record<ExtraKind, string> = { hybrid: '스펙트럴 해에서 시작하는 SA(하이브리드)', seeds: 'SA seed 확대' }
+const TOL = 0.5 // % — 이 안이면 같은 결과로 본다
+const BIG_N = 36 // 이 셀 수부터 "큰 회로"로 묶는다(실측에서 SA의 seed 편차가 커지는 구간)
+
+type Rec = { id: string; sa: State; summary: Summary }
+type CandEval = {
+  id: string; label: string; n: number; sa: Rec | null; alt: AltRow | null; dp: DpRow | null; spread: number | null
+  seeds?: ExtraRes; hybrid?: ExtraRes; saProxyGap: number | null; altProxyGap: number | null
+}
+
+function adviceFor(e: CandEval): { notes: string[]; recommend: ExtraKind[] } {
+  const notes: string[] = [], recommend: ExtraKind[] = []
+  if (!e.sa) return { notes: ['SA 결과가 아직 없습니다 — 위의 "전체 후보 SA 새로 실행"을 먼저 끝내세요.'], recommend }
+  const sa = e.sa.summary.cost
+  if (e.saProxyGap !== null) {
+    if (e.saProxyGap <= TOL) notes.push(`정확해(DP, 프록시 모델)와 ${round(e.saProxyGap)}% 차이 — SA가 사실상 최적에 도달했습니다.`)
+    else { notes.push(`정확해(DP, 프록시 모델)보다 ${round(e.saProxyGap)}% 나쁩니다 — 더 탐색할 여지가 있습니다.`); recommend.push('seeds', 'hybrid') }
+  }
+  if (e.alt && e.alt.summary.cost < sa * (1 - TOL / 100)) {
+    notes.push(`스펙트럴 + 다듬기가 SA 최선보다 ${round(-dPct(sa, e.alt.summary.cost))}% 낮은 비용입니다 — SA가 좋은 영역을 못 찾았습니다. 스펙트럴 해에서 SA를 시작(하이브리드)하거나 seed를 늘려 보세요.`)
+    recommend.push('hybrid', 'seeds')
+  }
+  if (e.spread !== null && e.spread > 3) { notes.push(`직전·새 SA 실행이 ${round(e.spread)}% 달라 seed 편차가 큽니다 — seed를 늘려 분포를 확인하세요.`); recommend.push('seeds') }
+  if (!notes.length && e.n >= BIG_N) { notes.push('seed 2개만 돌린 큰 회로입니다 — 추가 seed로 확인하는 것을 권장합니다.'); recommend.push('seeds') }
+  if (!notes.length) notes.push('SA와 스펙트럴이 같은 값(0.5% 이내)에 수렴했습니다 — 추가 실험은 필요 없습니다.')
+  // 보완 실험을 이미 돌렸다면 그 결과의 결론도 덧붙인다.
+  if (e.seeds) {
+    const cs = [...e.seeds.costs].sort((a, b) => a - b), spread = dPct(cs[0], cs[cs.length - 1])
+    notes.push(`seed 확대 결과: 최저 ${round(cs[0])} ~ 최고 ${round(cs[cs.length - 1])} (편차 ${round(spread)}%)${e.alt && e.sa && e.sa.summary.cost > e.alt.summary.cost * (1 + TOL / 100) ? ' — seed를 늘려도 스펙트럴에 못 미칩니다' : e.alt ? ' — SA가 스펙트럴 수준에 도달했습니다' : ''}.`)
+  }
+  if (e.hybrid && e.alt && e.sa) {
+    const h = e.hybrid.summary.cost, a = e.alt.summary.cost, s = e.sa.summary.cost
+    notes.push(`하이브리드 결과 ${round(h)}: 스펙트럴 대비 ${dText(dPct(a, h))}, SA 최선 대비 ${dText(dPct(s, h))} — ${h < Math.min(a, s) * (1 - TOL / 100) ? '둘 중 더 좋은 쪽보다도 낮습니다. 이 후보에는 하이브리드를 쓰세요' : h < a * (1 - TOL / 100) ? '스펙트럴 해를 더 개선했습니다' : '스펙트럴 해에서 더 나아지지 않았습니다(이미 좋은 해이거나 국소 최적)'}.`)
+  }
+  return { notes, recommend: [...new Set(recommend)] }
+}
+
+function verdictOf(evals: CandEval[]) {
+  const pairs = evals.filter(e => e.sa && e.alt)
+  const rel = (e: CandEval) => dPct(e.sa!.summary.cost, e.alt!.summary.cost) // + 이면 스펙트럴이 더 나쁨
+  const spWin = pairs.filter(e => rel(e) < -TOL), saWin = pairs.filter(e => rel(e) > TOL)
+  const mean = (a: number[]) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null
+  const sorted = pairs.map(rel).sort((a, b) => a - b)
+  const median = sorted.length ? (sorted.length % 2 ? sorted[(sorted.length - 1) / 2] : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2) : null
+  const small = pairs.filter(e => e.n < BIG_N), large = pairs.filter(e => e.n >= BIG_N)
+  const dpPairs = evals.filter(e => e.saProxyGap !== null && e.altProxyGap !== null)
+  return { pairs, spWin, saWin, tie: pairs.length - spWin.length - saWin.length, mean: mean(sorted), median, meanSmall: mean(small.map(rel)), meanLarge: mean(large.map(rel)), nSmall: small.length, nLarge: large.length,
+    dpN: dpPairs.length, dpSa: mean(dpPairs.map(e => e.saProxyGap!)), dpAlt: mean(dpPairs.map(e => e.altProxyGap!)) }
+}
+
+function PerfSummary({ tier, evals, seeds, running, onBatch }: { tier: 2 | 3; evals: CandEval[]; seeds: number; running: boolean; onBatch: (kind: ExtraKind, ids: string[]) => void }) {
+  const v = verdictOf(evals)
+  if (!v.pairs.length) return null
+  const sgn = (x: number | null) => x === null ? '—' : dText(x)
+  const lost = v.spWin // SA가 스펙트럴에게 진 후보 = seed·하이브리드로 풀어 볼 후보
+  const seedTried = lost.filter(e => e.seeds), seedSolved = seedTried.filter(e => e.sa!.summary.cost <= e.alt!.summary.cost * (1 + TOL / 100))
+  const hybTried = evals.filter(e => e.hybrid && e.alt && e.sa)
+  const hybGain = hybTried.filter(e => e.hybrid!.summary.cost < e.alt!.summary.cost * (1 - TOL / 100))
+  const hybBeatBoth = hybTried.filter(e => e.hybrid!.summary.cost < Math.min(e.alt!.summary.cost, e.sa!.summary.cost) * (1 - TOL / 100))
+  let headline: string, tone = '#7F77DD'
+  if (v.nSmall && v.nLarge && v.meanSmall !== null && v.meanLarge !== null && v.meanSmall > TOL && v.meanLarge < -TOL) { headline = `크기에 따라 갈립니다 — ${BIG_N}셀 미만은 SA, ${BIG_N}셀 이상은 스펙트럴 + 다듬기가 더 좋습니다.`; tone = '#C0A02B' }
+  else if (v.saWin.length > v.spWin.length) { headline = 'SA가 더 좋은 후보가 더 많습니다.'; tone = '#1D9E75' }
+  else if (v.spWin.length > v.saWin.length) { headline = '스펙트럴 + 다듬기가 더 좋은 후보가 더 많습니다.'; tone = '#7F77DD' }
+  else headline = '두 방식의 결과가 비슷합니다.'
+  const spreadOf = (r?: ExtraRes) => r && r.costs.length > 1 ? dPct(Math.min(...r.costs), Math.max(...r.costs)) : null
+  const avgOf = (xs: (number | null)[]) => { const ys = xs.filter((x): x is number => x !== null); return ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : null }
+  const hybSpread = avgOf(hybTried.map(e => spreadOf(e.hybrid))), seedSpread = avgOf(hybTried.map(e => spreadOf(e.seeds)))
+  const lostIds = lost.map(e => e.id)
+  const bigLost = lost.filter(e => e.n >= BIG_N)
+  return <div className="card" style={{ padding: 12, margin: '0 0 10px', borderLeft: `4px solid ${tone}` }}>
+    <small className="kicker">PERFORMANCE SUMMARY · 현재 성능 요약</small>
+    <h3 style={{ margin: '2px 0 6px', fontSize: 15 }}>{tier === 3 ? '20개 이상' : '10개 이하'} 탭: {headline}</h3>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 8, marginBottom: 8 }}>
+      <article className="card" style={{ padding: 8, margin: 0 }}><small>후보별 승패 (비용 기준)</small><div style={{ fontSize: 13 }}><b style={{ color: '#7F77DD' }}>스펙트럴 {v.spWin.length}</b> · 동률 {v.tie} · <b style={{ color: '#1D9E75' }}>SA {v.saWin.length}</b></div><small>{v.pairs.length}개 후보, ±{TOL}% 이내는 동률</small></article>
+      <article className="card" style={{ padding: 8, margin: 0 }}><small>스펙트럴의 SA 대비 비용</small><div style={{ fontSize: 13 }}>평균 <b>{sgn(v.mean)}</b> · 중앙값 <b>{sgn(v.median)}</b></div><small>+ 이면 스펙트럴이 더 나쁨. 큰 승리 몇 건이 평균을 끌어내림</small></article>
+      {v.nSmall > 0 && v.nLarge > 0 && <article className="card" style={{ padding: 8, margin: 0 }}><small>크기별 (스펙트럴 − SA)</small><div style={{ fontSize: 13 }}>{BIG_N}셀 미만 <b>{sgn(v.meanSmall)}</b> ({v.nSmall}개)<br/>{BIG_N}셀 이상 <b>{sgn(v.meanLarge)}</b> ({v.nLarge}개)</div></article>}
+      {v.dpN > 0 && <article className="card" style={{ padding: 8, margin: 0 }}><small>정확해(DP) 대비 격차 · {v.dpN}개 후보</small><div style={{ fontSize: 13 }}>SA <b>{sgn(v.dpSa)}</b> · 스펙트럴 <b>{sgn(v.dpAlt)}</b></div><small>프록시 모델 기준, 0 이상이 정상</small></article>}
+    </div>
+    <p style={{ margin: '0 0 6px', fontSize: 12, lineHeight: 1.7 }}>
+      <b>어느 방식이 나은가:</b> 이 표의 SA 값은 후보당 seed {seeds}개 중 최선(역대 최선 포함)이고 스펙트럴은 단일 결정적 결과입니다.{' '}
+      {v.nLarge > 0 && v.meanLarge !== null && v.meanLarge < -TOL && <>{BIG_N}셀 이상에서는 스펙트럴이 평균 {sgn(v.meanLarge)} 더 낮은 비용이며 계산도 훨씬 빠릅니다(후보당 수백 ms). </>}
+      {v.nSmall > 0 && v.meanSmall !== null && v.meanSmall > TOL && <>{BIG_N}셀 미만에서는 SA가 평균 {sgn(v.meanSmall)} 앞섭니다 — 스펙트럴은 국소 최적에 갇힙니다. </>}
+      {v.nSmall > 0 && v.meanSmall !== null && Math.abs(v.meanSmall) <= TOL && <>{BIG_N}셀 미만에서는 두 방식이 같은 값에 모입니다. </>}
+    </p>
+    <p style={{ margin: '0 0 6px', fontSize: 12, lineHeight: 1.7 }}>
+      <b>seed를 늘리면 해결되나:</b>{' '}
+      {!lost.length ? <>SA가 스펙트럴에게 진 후보가 없어 seed를 늘릴 필요는 없습니다.</>
+        : !seedTried.length ? <>SA가 스펙트럴에게 진 후보가 {lost.length}개({lost.map(e => `${e.n}셀`).join(', ')})입니다. <b>아직 seed 확대 실험을 하지 않았습니다</b> — 아래 버튼으로 확인할 수 있습니다.</>
+          : <>SA가 진 {lost.length}개 중 {seedTried.length}개에서 seed를 늘려 봤고, <b>{seedSolved.length}개에서 SA가 스펙트럴을 따라잡았습니다</b>{seedSolved.length ? ` (${seedSolved.map(e => `${e.n}셀`).join(', ')})` : ''}.{' '}
+            {seedTried.length > seedSolved.length ? <>나머지 {seedTried.length - seedSolved.length}개({seedTried.filter(e => !seedSolved.includes(e)).map(e => `${e.n}셀`).join(', ')})는 seed를 늘린 뒤에도 스펙트럴보다 나쁩니다 — 하이브리드(스펙트럴 해에서 시작)를 권장합니다. </> : <>seed 확대만으로 충분합니다. </>}
+            {seedTried.length < lost.length && <>(미실험 {lost.length - seedTried.length}개)</>}</>}
+    </p>
+    <p style={{ margin: '0 0 6px', fontSize: 12, lineHeight: 1.7 }}>
+      <b>하이브리드(스펙트럴 해에서 시작하는 SA):</b>{' '}
+      {!hybTried.length ? <>아직 실험하지 않았습니다. 스펙트럴의 속도와 SA의 탈출 능력을 합치는 방식이라 가장 먼저 시도해 볼 만합니다.</>
+        : <>실험한 {hybTried.length}개 중 {hybGain.length}개에서 스펙트럴 해보다 더 낮췄고, {hybBeatBoth.length}개에서는 SA·스펙트럴 중 더 좋은 쪽보다도 낮췄습니다.</>}
+    </p>
+    <div style={{ fontSize: 12, lineHeight: 1.7 }}><b>추천 해결 방안</b>
+      <ol style={{ margin: '2px 0 6px 18px', padding: 0 }}>
+        {bigLost.length > 0 || lost.length > 0
+          ? <><li>SA가 진 후보({lost.length}개)에는 <b>seed 확대</b>와 <b>하이브리드</b>를 먼저 실행해 비교합니다{bigLost.length ? ` — 특히 ${BIG_N}셀 이상(${bigLost.length}개)은 seed ${seeds}개로는 부족합니다` : ''}.</li>
+            <li>기본 흐름은 <b>스펙트럴로 먼저 푼 뒤(수백 ms) 그 해에서 SA를 시작</b>하는 것입니다.{hybSpread !== null && <> 실험에서 하이브리드 반복 결과의 편차는 평균 {round(hybSpread)}%{seedSpread !== null ? <>로, 무작위 출발 SA의 seed 편차 평균 {round(seedSpread)}%보다 작았습니다</> : <>였습니다</>}.</>}</li></>
+          : <li>현재는 SA만으로 충분합니다. 스펙트럴은 빠른 초기해·검증용으로 함께 쓰세요.</li>}
+        {v.saWin.length > 0 && <li>SA가 이긴 후보({v.saWin.length}개)는 스펙트럴이 더 나쁜 경우라 <b>SA를 유지</b>합니다. 이 후보들에서도 하이브리드가 이득인지는 후보 카드의 하이브리드 버튼으로 확인할 수 있습니다.</li>}
+        {v.dpN > 0 && v.dpSa !== null && v.dpSa > TOL && <li>정확해(DP)와의 평균 격차가 SA {sgn(v.dpSa)}로 남아 있어 SA만으로는 최적에 닿지 못합니다.</li>}
+      </ol>
+    </div>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      <button type="button" disabled={running || !lostIds.length} onClick={() => onBatch('seeds', lostIds)}>SA가 진 후보 {lostIds.length}개에 seed 확대 실험 일괄 실행</button>
+      <button type="button" disabled={running || !lostIds.length} onClick={() => onBatch('hybrid', lostIds)}>SA가 진 후보 {lostIds.length}개에 하이브리드 일괄 실행</button>
+    </div>
+  </div>
+}
+
+type CompareProps = {
   tier: 2 | 3; simpleRows: SimpleRow[]; savedRun: SavedRun | null
   cmp: { tier: number; rows: CmpRow[]; running: boolean; label: string; previous: SavedRun | null } | null
-  running: boolean; improving: { id: string; attempts: number; running: boolean } | null
+  running: boolean; improving: { id: string; attempts: number; running: boolean } | null; alt: Record<string, AltRow>
+  dp: Record<string, DpRow>; dpLive: { label: string; done: number; total: number; idx: number; count: number } | null
+  extra: ExtraMap; extraLive: { id: string; label: string } | null
   seeds: number; onRun: () => void; onImprove: (id: string) => void; onStop: () => void; onOpen: (id: string) => void
-}) {
+  onDp: () => void; onExtra: (id: string, kind: ExtraKind) => void; onExtraBatch: (kind: ExtraKind, ids: string[]) => void
+}
+
+function CompareSection({ tier, simpleRows, savedRun, cmp, running, improving, alt, dp, dpLive, extra, extraLive, seeds, onRun, onImprove, onStop, onOpen, onDp, onExtra, onExtraBatch }: CompareProps) {
   const rows = [...simpleRows].sort((x, y) => x.n - y.n || x.label.localeCompare(y.label))
   const current = cmp?.tier === tier ? cmp.rows.map(r => ({ id: r.id, sa: r.sa, summary: r.saS })) : savedRun?.rows ?? []
   const previous = cmp?.tier === tier ? cmp.previous?.rows ?? [] : savedRun?.previous ?? []
   const best = savedRun?.best ?? savedRun?.rows ?? []
   const find = (list: { id: string; sa: State; summary: Summary }[], id: string) => list.find(r => r.id === id)
+  const evals: CandEval[] = rows.map(r => {
+    const sa = find(best, r.id) ?? find(current, r.id) ?? null, now = find(current, r.id), old = find(previous, r.id)
+    const a = alt[r.id] ?? null, d = dp[r.id] ?? null, ex = extra[r.id]
+    return { id: r.id, label: r.label, n: r.n, sa, alt: a, dp: d, spread: now && old ? Math.abs(dPct(old.summary.cost, now.summary.cost)) : null, seeds: ex?.seeds, hybrid: ex?.hybrid,
+      saProxyGap: sa && d ? dPct(d.proxy, proxyOf(r.ctx, sa.sa)) : null, altProxyGap: a && d ? dPct(d.proxy, proxyOf(r.ctx, a.state)) : null }
+  })
+  const evalOf = (id: string) => evals.find(e => e.id === id)!
+  const altMs = rows.reduce((sum, r) => sum + (alt[r.id]?.ms ?? 0), 0)
+  const dpCount = rows.filter(r => r.n <= MAX_DP_N).length, dpDone = rows.filter(r => dp[r.id]).length
   return <div className="card" style={{ padding: 12, marginBottom: 12, borderLeft: '4px solid #1D9E75' }}>
     <div className="card-title" style={{ marginBottom: 6 }}><div><small className="kicker">전체 후보 · 기본 배치와 SA 비교</small><h3>{tier === 2 ? '10개 이하' : '20개 이상'} 후보 {rows.length}개 레이아웃</h3></div>
-      <div><button type="button" className="active" disabled={running || rows.length === 0} onClick={onRun}>전체 후보 SA 새로 실행 (후보당 seed {seeds}개)</button>{(cmp?.running || improving?.running) && <button type="button" onClick={onStop}>중지</button>}</div></div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}><button type="button" className="active" disabled={running || rows.length === 0} onClick={onRun}>전체 후보 SA 새로 실행 (후보당 seed {seeds}개)</button>
+        <button type="button" disabled={running || !dpCount || dpDone === dpCount} onClick={onDp}>정확해 DP 실행 ({dpCount}개 후보 · ≤{MAX_DP_N}셀){dpDone ? ` · ${dpDone}/${dpCount} 완료` : ''}</button>
+        {(cmp?.running || improving?.running || dpLive || extraLive) && <button type="button" onClick={onStop}>중지</button>}</div></div>
     <p className="chip-note" style={{ margin: '0 0 8px' }}>기본 방식은 회로에 적힌 셀 순서, N 방향, 간격 0으로 즉시 배치합니다. 저장된 결과가 없으면 전체 후보 SA를 자동 실행합니다. 새 실행 결과는 기본 방식·직전 SA·역대 최선과 비교합니다. 완료한 후보부터 이 브라우저에 저장하고, 중단되면 이어서 실행합니다.</p>
     {cmp?.running && cmp.tier === tier && <p className="chip-note" style={{ margin: '0 0 8px', color: '#C0A02B' }}>SA 진행 중: {cmp.label} ({cmp.rows.length}/{rows.length})</p>}
     {improving?.running && <p className="chip-note" style={{ margin: '0 0 8px', color: '#C0A02B' }}>더 나은 결과 탐색 중: {rows.find(r => r.id === improving.id)?.label} · SA {improving.attempts}회 완료 (위 중지 버튼으로 멈출 수 있습니다)</p>}
+    {dpLive && <p className="chip-note" style={{ margin: '0 0 8px', color: '#C0A02B' }}>정확해 DP 계산 중 ({dpLive.idx}/{dpLive.count}): {dpLive.label} · {Math.round(dpLive.done / dpLive.total * 100)}%</p>}
+    {extraLive && <p className="chip-note" style={{ margin: '0 0 8px', color: '#C0A02B' }}>보완 실험 진행 중: {extraLive.label}</p>}
+    <PerfSummary tier={tier} evals={evals} seeds={seeds} running={running} onBatch={onExtraBatch}/>
     {rows.length > 0 && <>
-      <div className="data-table"><table><thead><tr><th>후보</th><th>셀</th><th>기본 비용</th><th>직전 SA</th><th>새 SA</th><th>역대 최선</th><th>기본 대비</th><th>직전 대비</th><th>역대 최선 대비</th></tr></thead><tbody>
-        {rows.map(r => { const now = find(current, r.id), old = find(previous, r.id), record = find(best, r.id)
+      <div className="data-table"><table><thead><tr><th>후보</th><th>셀</th><th>기본 비용</th><th>직전 SA</th><th>새 SA</th><th>역대 최선</th><th>기본 대비</th><th>직전 대비</th><th>역대 최선 대비</th><th>스펙트럴+다듬기</th><th>SA 최선 대비</th><th>계산 시간</th><th>DP 정확해</th><th>SA의 DP 격차</th><th>스펙트럴의 DP 격차</th></tr></thead><tbody>
+        {rows.map(r => { const now = find(current, r.id), old = find(previous, r.id), record = find(best, r.id), a = alt[r.id], ref = record ?? now, d = dp[r.id], e = evalOf(r.id)
           return <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => onOpen(r.id)}><td><b>{r.label}</b></td><td>{r.n}</td><td>{round(r.initS.cost)}</td>
             <td>{old ? round(old.summary.cost) : '—'}</td><td>{now ? <b>{round(now.summary.cost)}</b> : '실행 전'}</td><td>{record ? round(record.summary.cost) : '—'}</td>
             <td>{now ? <span style={{ color: dTone(dPct(r.initS.cost, now.summary.cost)) }}>{dText(dPct(r.initS.cost, now.summary.cost))}</span> : '—'}</td>
             <td>{now && old ? <span style={{ color: dTone(dPct(old.summary.cost, now.summary.cost)) }}>{dText(dPct(old.summary.cost, now.summary.cost))}</span> : '—'}</td>
-            <td>{now && record ? <span style={{ color: dTone(dPct(record.summary.cost, now.summary.cost)) }}>{dText(dPct(record.summary.cost, now.summary.cost))}</span> : '—'}</td></tr> })}
+            <td>{now && record ? <span style={{ color: dTone(dPct(record.summary.cost, now.summary.cost)) }}>{dText(dPct(record.summary.cost, now.summary.cost))}</span> : '—'}</td>
+            <td>{a ? <b>{round(a.summary.cost)}</b> : '계산 중'}</td>
+            <td>{a && ref ? <span style={{ color: dTone(dPct(ref.summary.cost, a.summary.cost)), fontWeight: 700 }}>{dText(dPct(ref.summary.cost, a.summary.cost))}</span> : '—'}</td>
+            <td>{a ? `${round(a.ms)} ms` : '—'}</td>
+            <td>{d ? <><b>{round(d.summary.cost)}</b><div style={{ fontSize: 10 }}>{d.ms < 1000 ? `${round(d.ms)} ms` : `${round(d.ms / 1000)} 초`}</div></> : r.n > MAX_DP_N ? <span style={{ fontSize: 11 }}>{r.n}셀 &gt; {MAX_DP_N}</span> : '—'}</td>
+            <td>{e.saProxyGap !== null ? dText(e.saProxyGap) : '—'}</td><td>{e.altProxyGap !== null ? dText(e.altProxyGap) : '—'}</td></tr> })}
       </tbody></table></div>
+      <p className="chip-note" style={{ margin: '6px 0 0' }}><b>스펙트럴 + 다듬기</b> 전체 계산 {round(altMs)} ms (무작위 없음 · seed 불필요 · 매번 같은 결과). "SA 최선 대비"가 음수(초록)면 SA보다 좋은 배치입니다. <b>DP 정확해</b>는 "왼쪽에 놓인 셀의 집합"만 상태로 쓰는 동적계획법의 결과로, 핀 위치를 핀 도형 중심 하나로 단순화한 <b>프록시 모델에서 정확한 최적</b>이고 열의 비용은 그 해를 실제 모델로 다시 잰 값입니다. "DP 격차"는 SA·스펙트럴 해를 같은 프록시 모델로 재서 DP 최적과 비교한 값이라 항상 0 이상입니다. 실제 모델은 거리에 따라 핀 도형을 바꿔 고를 수 있어 DP 해보다 SA 해가 실제 비용에서는 조금 낮을 수 있습니다.</p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(360px,1fr))', gap: 12, marginTop: 12 }}>
-        {rows.map(r => { const now = find(current, r.id), old = find(previous, r.id), record = find(best, r.id)
-          const scale = Math.max(6, Math.min(30, 1100 / Math.max(r.initS.width, now?.summary.width ?? 0, old?.summary.width ?? 0, record?.summary.width ?? 0)))
+        {rows.map(r => { const now = find(current, r.id), old = find(previous, r.id), record = find(best, r.id), a = alt[r.id], ref = record ?? now, d = dp[r.id], e = evalOf(r.id), adv = adviceFor(e), ex = extra[r.id]
+          const scale = Math.max(6, Math.min(30, 1100 / Math.max(r.initS.width, now?.summary.width ?? 0, old?.summary.width ?? 0, record?.summary.width ?? 0, a?.summary.width ?? 0, d?.summary.width ?? 0)))
+          const exRows = (['seeds', 'hybrid'] as ExtraKind[]).flatMap(k => ex?.[k] ? [ex[k]!] : [])
           return <article key={r.id} className="card" style={{ padding: 12, margin: 0, minWidth: 0, borderTop: '3px solid #1D9E75' }}>
             <b>{r.n}셀 · {r.label}</b>
             <div style={{ margin: '8px 0 2px', fontSize: 12 }}><b>기본 방식</b> · 비용 {round(r.initS.cost)} · 폭 {round(r.initS.width)} µm · 배선 {round(r.initS.wl)} µm</div>
@@ -707,7 +1120,22 @@ function CompareSection({ tier, simpleRows, savedRun, cmp, running, improving, s
             {now ? <><div style={{ margin: '8px 0 2px', fontSize: 12 }}><b style={{ color: '#1D9E75' }}>새 SA</b> · 비용 {round(now.summary.cost)} · 폭 {round(now.summary.width)} µm · 배선 {round(now.summary.wl)} µm</div><RowView ctx={r.ctx} st={now.sa} S={scale}/>
               <p className="chip-note" style={{ margin: '6px 0 0' }}>기본 대비 비용 {dText(dPct(r.initS.cost, now.summary.cost))}{old ? ` · 직전 SA 대비 ${dText(dPct(old.summary.cost, now.summary.cost))}` : ''}</p></>
               : <p className="chip-note" style={{ margin: '6px 0 0' }}>SA 실행 전 · 기본 레이아웃 표시 중</p>}
-            <button type="button" disabled={running || !record} onClick={() => onImprove(r.id)} style={{ marginTop: 8 }}>이 후보에서 더 나은 배치 찾을 때까지 SA 반복</button>
+            {a ? <><div style={{ margin: '8px 0 2px', fontSize: 12 }}><b style={{ color: '#7F77DD' }}>스펙트럴 + 다듬기 (SA 아님)</b> · 비용 {round(a.summary.cost)} · 폭 {round(a.summary.width)} µm · 배선 {round(a.summary.wl)} µm · {round(a.ms)} ms (평가 {fmtN(a.evals)}회, {a.passes}회 반복)</div><RowView ctx={r.ctx} st={a.state} S={scale}/>{ref && <p className="chip-note" style={{ margin: '6px 0 0' }}>SA 최선 대비 비용 {dText(dPct(ref.summary.cost, a.summary.cost))}</p>}</> : <p className="chip-note" style={{ margin: '6px 0 0' }}>스펙트럴 + 다듬기 계산 중…</p>}
+            {d && <><div style={{ margin: '8px 0 2px', fontSize: 12 }}><b style={{ color: '#C0392B' }}>DP 정확해 (프록시 모델 최적)</b> · 실제 비용 {round(d.summary.cost)} (프록시 {round(d.proxy)}) · 폭 {round(d.summary.width)} µm · 배선 {round(d.summary.wl)} µm · {d.ms < 1000 ? `${round(d.ms)} ms` : `${round(d.ms / 1000)} 초`} (상태 {fmtN(d.states)}개)</div><RowView ctx={r.ctx} st={d.state} S={scale}/></>}
+            <div style={{ marginTop: 10, padding: 8, borderRadius: 6, background: 'var(--surface-muted)', fontSize: 12, lineHeight: 1.6 }}>
+              <b>SA 추천 · 보완 실험</b>
+              <ul style={{ margin: '4px 0 6px 16px', padding: 0 }}>{adv.notes.map(t => <li key={t}>{t}</li>)}</ul>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <button type="button" className={adv.recommend.includes('seeds') ? 'active' : ''} disabled={running || !ref} onClick={() => onExtra(r.id, 'seeds')}>{EXTRA_LABEL.seeds} ({extraRuns('seeds', r.n)}개){adv.recommend.includes('seeds') ? ' · 추천' : ''}</button>
+                <button type="button" className={adv.recommend.includes('hybrid') ? 'active' : ''} disabled={running || !a || !ref} onClick={() => onExtra(r.id, 'hybrid')}>{EXTRA_LABEL.hybrid} ({extraRuns('hybrid', r.n)}회){adv.recommend.includes('hybrid') ? ' · 추천' : ''}</button>
+                <button type="button" disabled={running || !record} onClick={() => onImprove(r.id)}>이 후보에서 더 나은 배치 찾을 때까지 SA 반복</button></div>
+              {exRows.length > 0 && <div className="data-table" style={{ marginTop: 6 }}><table><thead><tr><th>보완 실험</th><th>시도</th><th>최저</th><th>중앙값</th><th>최고</th><th>실험 전 SA 최선 대비</th><th>시간</th></tr></thead><tbody>
+                {exRows.map(x => { const cs = [...x.costs].sort((p, q) => p - q), med = cs.length % 2 ? cs[(cs.length - 1) / 2] : (cs[cs.length / 2 - 1] + cs[cs.length / 2]) / 2
+                  return <tr key={x.kind}><td>{EXTRA_LABEL[x.kind]}</td><td>{x.costs.length}</td><td><b>{round(cs[0])}</b></td><td>{round(med)}</td><td>{round(cs[cs.length - 1])}</td>
+                    <td>{x.before !== null ? <span style={{ color: dTone(dPct(x.before, cs[0])), fontWeight: 700 }}>{dText(dPct(x.before, cs[0]))}</span> : '—'}</td><td>{x.ms < 1000 ? `${round(x.ms)} ms` : `${round(x.ms / 1000)} 초`}</td></tr> })}
+              </tbody></table></div>}
+              {exRows.length > 0 && <p className="chip-note" style={{ margin: '4px 0 0' }}>seed 확대의 최저 비용은 SA 역대 최선에 반영됩니다. 하이브리드는 SA와 다른 방식이라 합치지 않고 따로 비교합니다. 최저~최고 편차가 클수록 seed에 따라 결과가 갈린다는 뜻입니다.</p>}
+            </div>
           </article> })}
       </div>
     </>}
@@ -846,3 +1274,6 @@ function RowView({ ctx, st, S = 36 }: { ctx: Ctx; st: State; S?: number }) {
     <text x={pad} y={row * S + pad * 2 + 8} fontSize={9} fill="currentColor">{round(width)} × {row} µm · 넷 {routes.length}개</text>
   </svg></div>
 }
+
+// 검증 스크립트(번들 후 node에서 DP·전수 탐색 비교)가 쓰는 내부 함수 모음
+export const __lab = { buildCtx, evaluate, summarize, subsetDp, proxyOf, exhaustiveSearch, spectralRefine, annealOnce, initState }
