@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import mimetypes
 import os
 import re
 import shutil
+import socket
 import subprocess
+import sys
+import webbrowser
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 from capabilities import CAPABILITIES
 from toolchain import detect_toolchain
@@ -35,7 +39,7 @@ from macro_area_verification import get_batch as get_macro_area_batch, start_bat
 
 
 MAX_SCAN_FILES = 5_000
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 OPENLANE_IMAGE = 'ghcr.io/efabless/openlane2:2.3.10'
 PARSAC_ROOT = PROJECT_ROOT / '.local-cache' / 'tools' / 'parsac'
 PARSAC_PYTHON = PROJECT_ROOT / '.local-cache' / 'tools' / 'parsac-env' / 'python.exe'
@@ -285,9 +289,36 @@ def overview(root: Path):
 
 
 class Handler(BaseHTTPRequestHandler):
-    def __init__(self, *args, knowledge_root: Path, **kwargs):
+    def __init__(self, *args, knowledge_root: Path, portable: bool = False, **kwargs):
         self.knowledge_root = knowledge_root
+        self.portable = portable
         super().__init__(*args, **kwargs)
+
+    def _serve_frontend(self, route: str) -> bool:
+        if not self.portable or route.startswith('/api/'):
+            return False
+        frontend_root = (PROJECT_ROOT / 'my_dashboard' / 'dist').resolve()
+        if not frontend_root.is_dir():
+            self.send_error(503, 'Dashboard build is missing'); return True
+        requested = unquote(route).lstrip('/')
+        target = (frontend_root / requested).resolve() if requested else frontend_root / 'index.html'
+        if not target.is_relative_to(frontend_root):
+            self.send_error(403, 'Forbidden'); return True
+        if not target.is_file() and not Path(requested).suffix:
+            target = frontend_root / 'index.html'
+        if not target.is_file():
+            self.send_error(404, 'Static file not found'); return True
+        content_type = mimetypes.guess_type(target.name)[0] or 'application/octet-stream'
+        if target.suffix == '.js':
+            content_type = 'text/javascript'
+        payload = target.read_bytes()
+        self.send_response(200)
+        self.send_header('Content-Type', content_type)
+        self.send_header('Content-Length', str(len(payload)))
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.end_headers()
+        self.wfile.write(payload)
+        return True
 
     def do_GET(self):
         route = urlparse(self.path).path
@@ -365,10 +396,14 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_error(404, 'Unknown analog job'); return
             payload = json.dumps(job, ensure_ascii=False).encode('utf-8')
             self.send_response(200); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
+        if self._serve_frontend(route): return
         self.send_error(404, 'Not Found')
 
     def do_POST(self):
         route = urlparse(self.path).path
+        if self.portable:
+            payload = json.dumps({'status': 'unavailable', 'message': 'Portable viewer: server-side EDA runs require the full project, WSL/PDK and toolchain.'}).encode('utf-8')
+            self.send_response(503); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(payload))); self.end_headers(); self.wfile.write(payload); return
         if route.startswith('/api/layout-candidates/optimize/') and route.endswith('/cancel'):
             task = cancel_layout_optimization(route.split('/')[-2])
             if not task:
@@ -424,16 +459,30 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
+class LocalDashboardServer(ThreadingHTTPServer):
+    allow_reuse_address = False
+
+    def server_bind(self):
+        if hasattr(socket, 'SO_EXCLUSIVEADDRUSE'):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
+
+
 def main():
     parser = argparse.ArgumentParser(description='Veriolg_MA knowledge DB dashboard')
     parser.add_argument('--port', type=int, default=8787)
-    parser.add_argument('--knowledge-root', default=r'D:\MyWork\verilog')
+    parser.add_argument('--knowledge-root', default=None)
+    parser.add_argument('--portable', action='store_true', help='Serve the built web app and disable server-side EDA writes.')
+    parser.add_argument('--open-browser', action='store_true', help='Open the dashboard in the default browser after binding.')
     args = parser.parse_args()
-    root = Path(args.knowledge_root)
-    factory = lambda *a, **kw: Handler(*a, knowledge_root=root, **kw)
-    server = ThreadingHTTPServer(('127.0.0.1', args.port), factory)
-    print(f'Veriolg_MA dashboard: http://127.0.0.1:{args.port}/')
+    root = Path(args.knowledge_root) if args.knowledge_root else (PROJECT_ROOT if args.portable else Path(r'D:\MyWork\verilog'))
+    factory = lambda *a, **kw: Handler(*a, knowledge_root=root, portable=args.portable, **kw)
+    server = LocalDashboardServer(('127.0.0.1', args.port), factory)
+    url = f'http://127.0.0.1:{args.port}/'
+    print(f'Veriolg_MA dashboard: {url}')
     print(f'Knowledge root: {root}')
+    if args.open_browser:
+        webbrowser.open(url)
     try: server.serve_forever()
     except KeyboardInterrupt: pass
     finally: server.server_close()

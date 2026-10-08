@@ -150,7 +150,7 @@ def _baseline():
         images.append({
             "name": item.name,
             "label": f"PPA3 {kind}",
-            "url": f"http://127.0.0.1:8788/api/layout-candidates/baseline-assets/{item.name}",
+            "url": f"/api/layout-candidates/baseline-assets/{item.name}",
         })
     return {
         "design": config["DESIGN_NAME"], "source": str(SOURCE_CONFIG),
@@ -616,7 +616,7 @@ def _collect(job, run_dir: Path, image_dir: Path):
         matches = list(final.glob(pattern)) if final.exists() else []
         if matches:
             job["artifacts"][kind] = str(matches[0])
-    job["images"] = [{"name": path.name, "url": f"http://127.0.0.1:8788/api/layout-candidates/assets/{job['id']}/{path.name}"} for path in sorted(image_dir.glob("*.png"))]
+    job["images"] = [{"name": path.name, "url": f"/api/layout-candidates/assets/{job['id']}/{path.name}"} for path in sorted(image_dir.glob("*.png"))]
 
 def _sync_history_verification(job):
     if job.get("status") not in {"complete", "failed"}:

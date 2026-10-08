@@ -587,7 +587,7 @@ export default function ComplexStandardCellExperiment({ level = 'five' }: { leve
         <p className="chip-note" style={{ margin: '0 0 8px' }}>각 칸의 위 그림은 SKY130A 개별 셀 자료(site 0.46 · 행 2.72 · met1 pitch 0.34 µm)로 만든 <b>가상 결합 배치</b>, 아래 그림은 {targetLabel}에서 <b>같은 배치</b>를 그린 것입니다. 같은 축척(µm)으로 크기 차이를 보여주며, 주황색 선은 제한된 핀·트랙 모델에서 고른 경로입니다. 칸을 누르면 해당 목표 후보가 아래 비교·애니메이션에 반영됩니다.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: 10, maxHeight: 900, overflow: 'auto', paddingRight: 4 }}>
           {gallerySorted.map(g => { const isLib = g.k === placementKey(BASELINE_PLACEMENT), sel = cur && placementKey(cur) === g.k
-            const border = g.rank90 === 1 ? '#1D9E75' : g.rank130 === 1 ? '#7F77DD' : sel ? 'var(--text-primary)' : 'var(--border-strong)'
+            const border = g.rank90 === 1 ? '#1D9E75' : g.rank130 === 1 ? '#7F77DD' : sel ? 'var(--text)' : 'var(--border-strong)'
             return <div key={g.k} onClick={() => { if (g.c90) { setPickedId(g.c90.id); setProgress(100) } }} style={{ border: `${g.rank90 === 1 || g.rank130 === 1 || sel ? 2 : 1}px solid ${border}`, borderRadius: 8, padding: 8, cursor: 'pointer', minWidth: 0, background: sel ? 'var(--accent-soft)' : undefined }}>
               <div style={{ fontSize: 11, fontWeight: 700 }}>#{g.idx + 1} · {placementLabel(g.pl)}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, margin: '3px 0' }}>

@@ -1,8 +1,10 @@
+import { physicalEvidence } from './physicalEvidence'
+
 // P&R 연구 탭 — "현재(flat) 방식 vs hierarchical(macro) 방식"을 나란히 비교하고,
 // 후보군을 최대한 병렬로 많이 돌리면서 가능성 없는 것들을 빠르게 버리는 깔때기
 // (funnel) 탐색 구조를 설계한다. 이 탭은 실행 결과가 아니라 설계 문서 — 각 단계가
-// "검증됨"인지 "제안됨"인지를 명시한다. 2026-09-18 작성, 2026-09-29
-// 저장된 OpenLane run과 현재 구현을 기준으로 상태 문구를 재감사했다.
+// "검증됨"인지 "제안됨"인지를 명시한다. 2026-09-18 작성, 실행 상태는
+// Physical Design과 공유하는 2026-10-05 증거로 갱신했다.
 
 const approaches = [
   ['현재 (Flat)', 'daq_subsystem 8채널 전체를 매번 통째로 재합성·재배치·재라우팅', '단순함, 전역 최적화 가능(매크로 경계에 갇히지 않음)', '셀 수 증가에 비선형으로 시간 증가 실측(chan_ctrl→chan_top 약 22배 셀에 22배보다 훨씬 큰 시간) · 4번째 시도까지 한 번도 완주 못 함(세션/호스트 종료로 중단, 실제 flow 에러 아님) · 위반이 있으면 원인 위치를 8채널 전체에서 다시 찾아야 함 · 향후 기능 변경/면적 조정도 매번 전체 재합성(체크포인트 재개 불가)'],
@@ -12,7 +14,7 @@ const approaches = [
 const funnelStages = [
   ['0. 후보 생성', '설계 공간을 명시적으로 나열', 'Flat: SYNTH_STRATEGY×density×clock 후보. Hierarchical: Macro Tetris의 병렬 Re-place→SA와 Macro Area의 축소 사다리·random legal seed 12개로 배치 후보 생성', '구현·검증됨 — 두 게임이 Web Worker에서 후보를 만들고 OpenLane config JSON을 출력', '해당 없음 (생성 단계, EDA 실행 없음)'],
   ['1. 초저가 필터', '어떤 EDA 툴도 완주 없이, 초~분 단위로 전량 실행', 'Flat: SynthesisExploration. Hierarchical: legality·채널·pin access·congestion proxy·wire cost로 후보를 먼저 거름', '부분 검증 — Flat 9개 전략 비교 완료. Hierarchical 모델은 실측 실패 두 건으로 channel/pin-access gate를 보강했지만 실제 GlobalRoute 순위와의 상관 검증은 부족', 'hard constraint 위반 또는 기존 실측 실패 패턴(DPL/GRT 위험) → 즉시 버림'],
-  ['2. 재시간측정 필터', '기존에 이미 라우팅된 참조 넷리스트의 실제 DEF+SPEF를 그대로 읽고, 후보 SDC(주기 등)만 바꿔서 초 단위로 재계산 — 새 P&R 없음', 'chan_top.sdc를 그대로 source하되 src_period/axi_period 두 줄만 sed로 바꿔서 OpenSTA만 재실행 — 이번 세션에 axi 32→48ns/src 10→12ns가 실제로 plateau 없이 선형 개선됨을 이 방법으로 확인함', '검증됨 — 같은 netlist를 다른 목표로 재검사하는 것의 함정(6/10-targeted netlist를 32/10 기준으로 착각)도 이번에 직접 겪고 고침. 반드시 "이 재검사가 어떤 target으로 P&R된 netlist인지" 먼저 확인하고 씀', '같은 계열(같은 구조, 주기/코너만 다름) 후보에서 TNS>0 또는 목표 slack 미달 → 버림. 구조가 다른 새 후보(다른 전략/매크로 배치)는 이 단계를 건너뛰고 3단계에서 최소 1개는 반드시 검증'],
+  ['2. 재시간측정 필터', '기존에 이미 라우팅된 참조 넷리스트의 실제 DEF+SPEF를 그대로 읽고, 후보 SDC(주기 등)만 바꿔서 초 단위로 재계산 — 새 P&R 없음', 'chan_top.sdc를 그대로 source하되 src_period/axi_period 두 줄만 바꿔서 OpenSTA만 재실행 — 과거 주기 스윕의 방향성을 이 방법으로 확인', '검증됨 — 같은 netlist를 다른 목표로 재검사하는 것의 함정(6/10-targeted netlist를 32/10 기준으로 착각)도 경험. 새 제약으로 실제 재합성·재배치한 결과의 대체값은 아님', '같은 구조에서 TNS<0 또는 목표 slack 미달 → 우선순위 하향. 구조가 다른 새 후보(전략/매크로 배치)는 재시간측정만으로 탈락시키지 말고 전체 P&R 최소 1건 검증'],
   ['3. 전체 P&R', '진짜 synthesis+floorplan+placement+CTS+routing+DRC/LVS+signoff STA — 살아남은 후보만, 비용이 가장 큼(블록당 25~40분)', '109_run_full_pnr.sh / 111_run_chan_top_safe.sh 같은 race-safe(블록별 독립 shim) 러너로 실행', '검증됨 — chan_ctrl/cnt_sat SYNTH_STRATEGY 재검증에 이미 사용, 결과가 pre-placement 예측과 실제로 다를 수 있음도 확인(면적 방향 반전 등) → 이 단계 없이 "최종"이라고 부르면 안 됨', '해당 없음 (최종 후보만 여기 도달 — 버리는 단계가 아니라 확정하는 단계)'],
   ['4. Flat vs Hierarchical 맞대결', '3단계를 통과한 두 트랙의 최선 후보를 실제 signoff 수치로 직접 비교', '면적/최악 slack/TNS/power', '미완료 — hierarchical 기준 배치는 post-PNR 수치까지 확보했지만 signoff 실패, flat도 최종 run 없음', '두 트랙 모두 signoff 결과가 생긴 뒤 비교'],
 ] as const
@@ -28,12 +30,10 @@ const races = [
   ['peer 세션과의 리소스 경합', '이 프로젝트는 다른 세션(daq_subsystem 등)과 같은 8코어/WSL을 공유', '큰 배치 실행 전 ListAgents로 활성 세션 확인 + SendMessage로 셰어드 리소스(공유 shim, CPU 부하) 조율 — 이번 세션에서 실제로 이렇게 조율해서 충돌 회피함'],
 ] as const
 
-const status = [
-  ['소블록·chan_top', '검증 완료', 'skid_buffer/cnt_sat/chan_ctrl signoff clean. chan_top은 RUN_2026-09-23_12-48-47에서 setup·hold·DRC·LVS·antenna 5개 gate 모두 clean'],
-  ['daq_subsystem — flat', '중단된 부분 검증', '최신 flat run은 CTS 이후 STA까지만 진행됐고 현재 실행 중인 프로세스는 없음. 최종 signoff 비교값 없음'],
-  ['daq_subsystem — hierarchical 기준', 'post-PNR까지 검증', 'hierarchical_auto_20260924_142552: detailed routing·RCX·post-PNR STA·XOR clean까지 도달. setup WNS −6.44ns, hold WNS −0.15ns, antenna 121 nets; Magic DRC/LVS 완료 전 중단'],
-  ['Macro Tetris 후보', '실패 근거 2건 확보', '100µm-channel 후보는 DPL-0036, scattered 후보는 GRT-0118. 두 실패를 legality 모델에 회귀 테스트로 반영했지만 기준 배치보다 나은 signoff 후보는 없음'],
-  ['Flat vs Hierarchical 맞대결', '미완료', '양쪽 모두 daq_subsystem 최종 signoff 결과가 없어 PPA 우열을 확정할 수 없음'],
+const researchGaps = [
+  ['매크로 배치 탐색', '100µm-channel은 DPL-0036, scattered는 GRT-0118 실패. 두 실패 모드는 legality 모델에 반영했지만 통과 후보의 최종 signoff 예측력은 미검증'],
+  ['top-level closure', 'hierarchical 기준의 setup/hold/antenna 원인을 경계 타이밍·채널 혼잡·전원/IO 제약으로 나눠 분석하고 다시 검증해야 함'],
+  ['Flat vs Hierarchical PPA', 'daq_subsystem 양쪽 모두 최종 signoff 결과가 없어 우열 미확정. 다른 블록의 clean run을 이 비교의 대체값으로 쓰지 않음'],
 ] as const
 
 // RePlAce 대안(GPU 가속 DREAMPlace) 조사 — 실제 설치·빌드·실행까지 해봤으나
@@ -41,7 +41,7 @@ const status = [
 const dreamplaceEval = [
   ['설치·빌드', '완료', 'WSL에 소스 빌드 — 과정에서 CUDA 12.4 환경의 실제 버그 4개를 찾아 수정함: (1) 동봉된 구버전 CUB이 새 CUDA의 CCCL 기반 CUB과 네임스페이스 충돌 (2) 그 구버전 CUB이 CUDA 12에서 제거된 legacy texture reference API 사용 (3) DreamPlace가 하드코딩한 구버전 C++ ABI가 실제 torch 휠의 신버전 ABI와 불일치 (4) NumPy 2.0에서 제거된 np.string_ 사용. 전부 패치 완료, place_io/global_swap 등 컴파일된 CUDA 확장 모듈 전부 정상 로드 확인'],
   ['실제 배치 테스트', '완료 — 결론은 부정적', 'chan_ctrl(116셀) 실제 sky130 LEF/DEF로 end-to-end 테스트: 1차 시도는 IO 핀 배치 전 단계(step 13) DEF를 잘못 써서 가비지 좌표로 실패, 원인 찾아 올바른 단계(step 24, ioplacement 이후)로 수정 후 재시도 — 파이프라인 자체는 정상 작동(LEF/DEF 파싱·GPU 연산 전부 성공)하지만 1000 iteration 안에 수렴 못 함(overflow 0.51, 목표 0.07). RePlAce는 같은 설계를 5.7초에 끝냄'],
-  ['최종 판단', '이 프로젝트엔 부적합', 'DreamPlace는 수만~수백만 셀 규모에서 GPU 병렬성으로 이득을 보는 도구. 이 프로젝트 최대 설계(daq_subsystem)도 ~10만 셀로 경계선이고, 실제 소블록들(chan_ctrl 등)은 수백 셀 — RePlAce가 이미 몇 초 안에 안정적으로 끝내는 규모라 GPU 가속의 이득보다 빌드 취약성(CUDA/ABI/NumPy 버전 의존)과 설계별 hyperparameter 재조정 비용이 더 큼. 이 세션에서 실제로 확인한 진짜 병목(daq_subsystem이 flat 방식으론 완주 자체를 못 함)도 placement 알고리즘 속도가 아니라 구조적 문제라 hierarchical 접근(ParSAC)이 더 맞는 방향'],
+  ['최종 판단', '이 프로젝트엔 부적합', 'DreamPlace는 대규모 설계에서 GPU 병렬성의 이득을 노리는 도구. chan_ctrl 실측은 미수렴이고 RePlAce는 5.7초였음. daq_subsystem flat은 약 25.7만 셀이지만 RePlAce 단계의 9시간 기록은 호스트 절전으로 오염돼 실제 계산시간을 알 수 없음. 따라서 대규모 트랙에서의 속도 우위는 미확인; 현재 채택 근거가 없음'],
 ] as const
 
 // ParSAC 조사 이후 실제 프로젝트는 OpenLane MACROS와 자체 Macro Tetris
@@ -147,7 +147,7 @@ const speedupMethodology = [
 // 닫힌 지금 단계엔 후자가 과함(18개 조합 × ~71분 ≈ 21시간) — 전자로 충분.
 // 2026-09-23 작성.
 const ppaAxes = [
-  ['Area (DIE_AREA)', '입력 — 직접 조절', '기준 800×800(utilization ~52%) → 700×700 / 950×950 후보', 'OpenLane 실측 없음 — 현재 실행 중인 작업도 없으며 후보 run을 별도로 시작해야 함'],
+  ['Area (DIE_AREA)', '입력 — 직접 조절', '800×800 기준점과 590×1085 · 450×1422 등 reshape 후보', '10/5 590×1085/axi54/ant2는 signoff clean. 다이 형상·SDC·안테나 전략이 함께 달라진 실행이라 순수 면적 민감도나 파레토 우위로 해석하면 안 됨'],
   ['Performance (CLOCK_PERIOD)', '입력 — 직접 조절', 'src/axi 주기, 면적·RTL은 고정', '실측 2점 이미 있음 (아래 표) — 새 실행 불필요'],
   ['Power', '출력 — 위 두 축을 바꿀 때마다 관찰', 'OpenROAD 리포트(power__total 등)', 'OpenLane엔 "파워를 이 값으로 맞춰라" 같은 직접 조절 knob이 없음 — 독립 축이 아니라 종속 지표'],
 ] as const
@@ -160,9 +160,10 @@ const performanceAxisData = [
 ] as const
 
 const areaAxisPlan = [
-  ['700×700 (더 빡빡하게)', '미실행', 'utilization 상승, 라우팅 자체가 안 될 가능성도 있음 — 그것도 결과'],
-  ['800×800 (기준)', '완료', 'RUN_2026-09-21_21-20-41 — utilization ~52%, 이미 위 표에 반영됨'],
-  ['950×950 (더 여유있게)', '미실행', 'utilization 하락, 배선 길어질 것으로 예상 — 실측 전까지는 추정일 뿐'],
+  ['800×800 (기존 기준점)', '완료', 'RUN_2026-09-23_12-48-47 — 별도 14/52ns signoff-clean 기준'],
+  ['590×1085 · axi54/ant2', '완료', 'reshape_try_590x1085_axi54ant2 — 10/5 setup +1.267ns, hold +0.144ns, antenna/DRC/LVS 0'],
+  ['450×1422 · axi54/ant3', '위반', '10/5 STA 결과 setup −0.211ns · antenna 4 nets — signoff 후보 아님'],
+  ['450×1422 · axi54/ant4', '중단', '10/5 RepairAntennas 단계 이후 최종 metrics/GDS 없음 — 결과 미확정'],
 ] as const
 
 // "가장 오래 걸리는 게 STA 아니냐"는 질문에 실제 runtime.txt로 답한 것 —
@@ -191,7 +192,7 @@ const repairTimeAcrossRuns = [
 // 과장이었음 — 실제로는 설정 객체 하나 채우는 정도. 2026-09-23.
 const macroMechanism = [
   ['매크로 정의', '`MACROS` config 객체 — 이름별로 gds/lef(필수), nl/spef/lib(계층적 STA용, 있으면 좋음) 목록', 'chan_top의 완주 run이 `final/`에 이미 전부 생성해 둠 — 별도 하드닝 작업 불필요, 경로만 연결하면 됨'],
-  ['매크로 배치', '`MACROS.instances`에 인스턴스별 {location: (x,y), orientation} — 또는 더 간단히 `MACRO_PLACEMENT_CFG`(줄바꿈 구분 텍스트, `인스턴스명 X Y 방향`)', 'ParSAC의 SA 탐색 결과(8개 좌표+방향)를 그대로 이 형식으로 출력하면 끝 — "글루코드"가 아니라 좌표 변환 스크립트 수준'],
+  ['매크로 배치', '`MACROS.instances`에 인스턴스별 {location: (x,y), orientation} — 또는 더 간단히 `MACRO_PLACEMENT_CFG`(줄바꿈 구분 텍스트, `인스턴스명 X Y 방향`)', '실제 후보는 Macro Tetris의 좌표·방향을 이 형식으로 내보냄. ParSAC은 설치했지만 production config에 채택되지 않음'],
   ['배치 고정', 'Odb.ManualMacroPlacement 스텝이 `--fixed`로 배치 — 이후 표준셀 배치·CTS·라우팅이 매크로를 건드리지 않음', '이미 검증된 chan_top 내부가 top 레벨 재실행 중에 다시 바뀔 걱정이 없다는 뜻'],
 ] as const
 
@@ -308,6 +309,10 @@ function PostReplaceTimeline() {
 
 export default function PnrResearch() {
   return <>
+    <section className="card"><div className="card-title"><div><small className="kicker">실행 근거 · Physical Design과 통합 · 2026-10-05</small><h2>현재 결과와 아직 남은 비교</h2></div></div>
+      <div className="data-table"><table><thead><tr><th>설계 / 트랙</th><th>판정</th><th>실행</th><th>핵심 근거</th></tr></thead><tbody>{physicalEvidence.map(([name, verdict, run, evidence]) => <tr key={name}><td><b>{name}</b></td><td>{verdict.includes('signoff clean') ? <span className="ok-badge">{verdict}</span> : <span className="warning-badge">{verdict}</span>}</td><td><code>{run}</code></td><td>{evidence}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note">이 표는 Physical Design 탭과 같은 저장된 실행 증거를 사용합니다. <b>결론:</b> chan_top reshape 매크로 자체는 clean이지만, daq_subsystem의 flat/hierarchical 양쪽 모두 최종 signoff 결과가 없어 두 방식의 PPA 우열은 아직 미확정입니다.</p>
+    </section>
     <section className="card"><div className="card-title"><div><small className="kicker">P&R 연구 · 2026-09-18</small><h2>Flat vs Hierarchical — 두 접근을 나란히</h2></div></div>
       <div className="data-table"><table><thead><tr><th>방식</th><th>정의</th><th>장점</th><th>단점 / 전제조건</th></tr></thead><tbody>{approaches.map(([name, def_, pro, con]) => <tr key={name}><td><b>{name}</b></td><td>{def_}</td><td>{pro}</td><td>{con}</td></tr>)}</tbody></table></div>
       <p className="rtl-guide-note">2026-09-23: daq_subsystem의 기본 구현 방향을 hierarchical로 확정(사용자 결정) — 반복 구조(8채널 동일)가 강한 설계라는 점, 그리고 작은 기능 변경/면적 조정 시에도 이미 굳힌 매크로를 재사용할 수 있다는 점을 근거로 삼음. 다만 4단계(flat vs hierarchical 맞대결) 실측은 아직 안 끝났으므로, 이 결정이 최종 PPA 수치로 증명된 것은 아니다 — flat 트랙(daq_subsystem worst-corner 부분 검증)도 완주까지 지켜보고 비교 기준으로 남겨둔다.</p>
@@ -318,7 +323,7 @@ export default function PnrResearch() {
       <div className="data-table"><table><thead><tr><th>단계</th><th>메커니즘</th><th>이 프로젝트에 의미</th></tr></thead><tbody>{macroMechanism.map(([step, mech, note]) => <tr key={step}><td><b>{step}</b></td><td>{mech}</td><td>{note}</td></tr>)}</tbody></table></div>
       <p><b>ParSAC 제약 종류 — grouping·인접·크기 변경 지원 여부 (소스/README 확인):</b></p>
       <div className="data-table"><table><thead><tr><th>제약 종류</th><th>지원 여부</th><th>근거 / 주의점</th></tr></thead><tbody>{parsacConstraintTypes.map(([kind, support, note]) => <tr key={kind}><td><b>{kind}</b></td><td>{support === '지원됨' ? <span className="ok-badge">{support}</span> : <span className="warning-badge">{support}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
-      <p className="rtl-guide-note">가장 중요한 구분: aspect ratio 탐색은 <b>아직 하드닝 안 된 "말랑한" 블록에만 의미가 있다.</b> 현재 chan_top은 800×800으로 하드닝되어 있으므로 8개 배치 탐색에서는 fixed aspect ratio가 맞습니다. 정말 다른 비율(예: 640×1000, 같은 면적)을 쓰려면 chan_top을 새 DIE_AREA로 다시 하드닝하고 별도 signoff해야 합니다.</p>
+      <p className="rtl-guide-note">가장 중요한 구분: 매크로 배치 중에는 각 매크로의 크기가 <b>고정</b>입니다. 기존 800×800 chan_top 기준 hierarchy에는 그 GDS/LEF를 사용합니다. 10/5에는 590×1085 chan_top을 별도로 하드닝하고 signoff까지 확인했지만, 이를 8채널 top에 바꾸어 넣은 결과는 아직 없습니다. 크기 변경은 새 매크로 산출물·인스턴스 좌표·top-level 검증을 함께 요구합니다.</p>
       <p><b>실행 계획 (순서대로):</b></p>
       <div className="data-table"><table><thead><tr><th>#</th><th>할 일</th><th>내용</th><th>상태</th></tr></thead><tbody>{hierarchicalTodo.map(([num, task, detail, stat]) => <tr key={num}><td><b>{num}</b></td><td>{task}</td><td>{detail}</td><td>{stat === '완료' ? <span className="ok-badge">{stat}</span> : stat.includes('부분') ? <span className="warning-badge">{stat}</span> : stat}</td></tr>)}</tbody></table></div>
       <p><b>시간 단축 기법 적용 가능 여부:</b></p>
@@ -334,7 +339,7 @@ export default function PnrResearch() {
 
     <section className="card"><div className="card-title"><div><small className="kicker">탐색 구조</small><h2>깔때기(funnel) — 비쌀수록 후보 수를 줄인다</h2></div></div>
       <div className="data-table"><table><thead><tr><th>단계</th><th>방법</th><th>구체적 실행</th><th>상태</th><th>버리는 기준</th></tr></thead><tbody>{funnelStages.map(([stage, method, exec_, stat, drop]) => <tr key={stage}><td><b>{stage}</b><br/><small>{method}</small></td><td>{exec_}</td><td>{stat.includes('검증됨') ? <span className="ok-badge">{stat}</span> : <span className="warning-badge">{stat}</span>}</td><td>{drop}</td></tr>)}</tbody></table></div>
-      <p className="rtl-guide-note">핵심 원칙: <b>비용이 100~1000배 뛰는 단계(2→3단계, 재시간측정 초 단위 → 전체 P&R 25~40분)로 넘어가기 전에, 훨씬 싼 단계에서 최대한 많이 걸러낸다.</b> 이번 세션에서 SYNTH_STRATEGY 재검증 때 이미 증명됨 — pre-placement 예측이 방향까지 틀린 적 있지만(chan_ctrl 면적 반전), 그래도 "이 전략을 시도할 가치가 있는가"라는 1차 판단 자체는 맞았다. 즉 싼 필터는 "무엇을 3단계에 보낼지" 정도는 신뢰할 수 있어도, 최종 PPA 숫자로는 못 쓴다.</p>
+      <p className="rtl-guide-note">핵심 원칙: 비용이 큰 전체 P&R에 보내기 전 저가 필터로 후보를 줄이되, <b>필터는 signoff 판정이 아닙니다.</b> chan_ctrl 합성 탐색에서는 pre-placement 면적 예측이 실제 배선 후 방향까지 반전됐고, daq_subsystem 매크로 배치도 DPL/GRT 실패가 있었습니다. 구조가 다른 새 후보를 값싼 지표 하나로 전부 탈락시키지 않고 최소한의 실제 P&R 검증을 남깁니다.</p>
     </section>
 
     <section className="card"><div className="card-title"><div><small className="kicker">동시성 설계</small><h2>단계마다 다른 병렬도</h2></div></div>
@@ -346,9 +351,9 @@ export default function PnrResearch() {
       <div className="check-list">{races.map(([title, risk, fix]) => <p key={title}><b>{title}</b><span><i>위험:</i> {risk}<br/><i>대응:</i> {fix}</span></p>)}</div>
     </section>
 
-    <section className="card"><div className="card-title"><div><small className="kicker">현재 진행 상태</small><h2>뭐가 검증됐고 뭐가 아직 설계만 됐는가</h2></div></div>
-      <div className="data-table"><table><thead><tr><th>항목</th><th>상태</th><th>비고</th></tr></thead><tbody>{status.map(([item, stat, note]) => <tr key={item}><td><b>{item}</b></td><td>{stat === '검증 완료' ? <span className="ok-badge">{stat}</span> : <span className="warning-badge">{stat}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
-      <p className="rtl-guide-note">다음 구체적 실행 단계 — 이 순서로: (1) chan_top 12/48 from-scratch 확인 + daq_subsystem을 같은 48/12로 재타겟해서 2단계 필터(mid-flow 추정)부터 먼저 확인, 둘 다 지금 백그라운드 진행 중 → (2) daq_subsystem 2단계 추정이 나쁘지 않으면 그때 전체 완주(3단계) 커밋, 나쁘면 완주 전에 재튜닝 → (3) chan_top이 worst-corner까지 닫히면 hardening해서 macro LEF/GDS 확보 → (4) ParSAC venv 설치 + chan_top macro를 8개 배치하는 글루코드 작성(1단계 실행) → (5) 살아남은 배치 후보로 daq_subsystem hierarchical 3단계(전체 P&R) 실행 → (6) 같은 시점의 flat 3단계 결과와 4단계 맞대결.</p>
+    <section className="card"><div className="card-title"><div><small className="kicker">남은 판단 · 2026-10-05</small><h2>다음 실험 순서</h2></div></div>
+      <p className="rtl-guide-note">(1) hierarchical 기준의 setup/hold/antenna 위반 경로를 분류하고 매크로 경계·채널·IO 제약을 확인 → (2) 작은 후보 집합을 저가 필터와 중간 체크포인트에서 거른 뒤 top-level P&R/DRC/LVS까지 완주 → (3) 별도의 flat 완주 결과를 확보한 뒤 동일 제약과 동일 지표로 비교합니다.</p>
+      <div className="check-list">{researchGaps.map(([title, detail]) => <p key={title}><b>{title}</b><span>{detail}</span></p>)}</div>
     </section>
 
     <section className="card"><div className="card-title"><div><small className="kicker">RePlAce 대안 조사 · DREAMPlace · 2026-09-21</small><h2>실제로 설치·실행까지 해봤지만 이 프로젝트엔 부적합</h2></div></div>
@@ -430,14 +435,14 @@ export default function PnrResearch() {
       <p className="rtl-guide-note">이 방법론의 전제는 "탐색 구조"(퍼널) 섹션과 같다 — 비쌀수록 후보 수를 줄인다. 다른 점은 이번에 찾은 체크포인트 재개가 <b>퍼널의 3단계(전체 P&R) 자체의 비용을 낮춘다</b>는 것 — 후보 하나당 71분이 아니라, 바뀐 파라미터에 따라 11~68분으로 줄어들 수 있다. RL/BO 같은 학습 기법은 탐색할 조합이 지금보다 훨씬 많아지기 전까지는 투입 근거가 없다.</p>
     </section>
 
-    <section className="card"><div className="card-title"><div><small className="kicker">PPA 민감도 분석 · 2026-09-23</small><h2>Area·Performance 축을 하나씩 — 파레토 스윕은 아직 아님</h2></div></div>
-      <p>"이게 파레토 측정인가?"라는 질문에 답하며 정리한 구분 — 지금 하는 건 축 하나만 바꾸고 나머지를 고정하는 <b>민감도 분석</b>이다. area×period×전략을 조합으로 도는 진짜 <b>파레토 프런티어</b>는 18개 조합 × 후보당 ~71분 ≈ 21시간이 필요해서, chan_top이 거의 닫힌 지금 단계엔 과하다 — 민감도 분석으로 충분하고, 파레토는 설계가 안정화된 뒤(예: daq_subsystem 최종 설정 확정 시점)로 미룬다.</p>
+    <section className="card"><div className="card-title"><div><small className="kicker">PPA 민감도 분석 · 2026-10-05</small><h2>역사적 단일축 분석과 최신 reshape 탐색을 구분</h2></div></div>
+      <p>9/20–9/21 주기 비교는 면적·RTL을 고정한 <b>성능 축 민감도 분석</b>입니다. 10/5 reshape 탐색은 다이 형상뿐 아니라 axi 주기와 안테나 전략도 바뀌었으므로 순수 면적 실험이나 파레토 프런티어가 아닙니다. 동일 조건에서 한 축씩 바꾼 결과가 쌓인 뒤에만 PPA 우열을 판단합니다.</p>
       <div className="data-table"><table><thead><tr><th>축</th><th>종류</th><th>범위</th><th>상태</th></tr></thead><tbody>{ppaAxes.map(([axis, kind, range, stat]) => <tr key={axis}><td><b>{axis}</b></td><td>{kind}</td><td>{range}</td><td>{stat}</td></tr>)}</tbody></table></div>
       <p><b>Performance 축 — 실측 2점 (면적·RTL 고정, 새 실행 불필요):</b></p>
       <div className="data-table"><table><thead><tr><th>조건</th><th>power_total</th><th>성능(WNS)</th><th>위반</th></tr></thead><tbody>{performanceAxisData.map(([cond, power, perf, viol]) => <tr key={cond}><td>{cond}</td><td>{power}</td><td>{perf}</td><td>{viol}</td></tr>)}</tbody></table></div>
-      <p><b>Area 축 — 실행 계획 (호스트 여유 생기면 시작):</b></p>
+      <p><b>다이 형상 탐색 — 보존된 실행 결과:</b></p>
       <div className="data-table"><table><thead><tr><th>후보</th><th>상태</th><th>비고</th></tr></thead><tbody>{areaAxisPlan.map(([cand, stat, note]) => <tr key={cand}><td>{cand}</td><td>{stat === '완료' ? <span className="ok-badge">{stat}</span> : <span className="warning-badge">{stat}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
-      <p className="rtl-guide-note">Performance 축에서 이미 드러난 패턴: 주기를 늦추면(12→14ns) power는 내려가고 타이밍은 좋아졌지만, 안테나 위반은 0→1건으로 늘었다 — <b>세 지표가 한 방향으로만 움직이지 않는다</b>는 걸 실측으로 확인함(안테나 증가는 주기 자체가 아니라 그로 인한 다른 라우팅 솔루션의 부작용). Area 축도 실측 전까지는 같은 가정을 하면 안 된다 — 지난번 "배치 단계 지표 무상관" 교훈과 같은 이유로, 실제로 돌려보기 전엔 방향조차 단정하지 않는다.</p>
+      <p className="rtl-guide-note">주기 비교에서는 power·타이밍이 개선된 반면 안테나 위반이 0→1건으로 늘었습니다. 최신 590×1085 후보는 모든 signoff gate가 clean이지만, 기존 기준점과 입력 제약이 같지 않아 이 표만으로 면적/전력/성능 중 어느 축이 개선 원인인지 단정하지 않습니다.</p>
     </section>
   </>
 }

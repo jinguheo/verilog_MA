@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react'
 
-const API = 'http://127.0.0.1:8788/api/physical-design'
+const API = '/api/physical-design'
 type Cost = { total: number; wirelength: number; edge_violations: number; width_penalty: number; height_penalty: number }
 type Block = { name: string; instance?: string; x: number; y: number; width: number; height: number; width_um?: number; height_um?: number }
 type Result = { source_model: string; best: { seed: number; cost: Cost; blocks: Block[] }; placement_validation?: { passed: boolean } }

@@ -327,7 +327,7 @@ export default function MacroAreaTetris() {
     if (!verificationBatch || !['queued', 'running'].includes(verificationBatch.status)) return
     const id = window.setInterval(async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8788/api/macro-area/verification-batches/${verificationBatch.id}`)
+        const response = await fetch(`/api/macro-area/verification-batches/${verificationBatch.id}`)
         if (!response.ok) throw new Error(`검증 상태 조회 실패 (HTTP ${response.status})`)
         const next = await response.json() as VerificationBatch
         setVerificationBatch({ ...next, scope: verificationBatch.scope })
@@ -553,7 +553,7 @@ export default function MacroAreaTetris() {
     if (list.length < 1 || list.length > 10) return
     setVerificationError(null)
     try {
-      const response = await fetch('http://127.0.0.1:8788/api/macro-area/verify', {
+      const response = await fetch('/api/macro-area/verify', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ shape: opts.shape ?? '800x800', density: opts.density,
           candidates: list.map(k => ({ id: k.id, die: k.die, macros: k.macros.map(m => ({ x: m.x, y: m.y })) })) }),

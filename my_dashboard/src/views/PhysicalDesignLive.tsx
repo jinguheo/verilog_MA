@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react'
 
-const API = 'http://127.0.0.1:8788/api/physical-design'
+const API = '/api/physical-design'
 
 type InstallItem = { installed: boolean; version?: string; name?: string; revision?: string; path?: string; image?: string }
 type Tool = { name: string; status: string; purpose: string }

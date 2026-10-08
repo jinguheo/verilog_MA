@@ -17,6 +17,7 @@
 .deliverable-list { padding: 0; margin: 0; list-style: none; }
 .deliverable-list li { padding: var(--sp-3) 0; border-bottom: 1px solid var(--border); font-size: var(--text-base); color: var(--text-secondary); }
 .deliverable-list li:before { content: '✓'; color: var(--success); font-weight: 800; margin-right: var(--sp-2); }
+.deliverable-list.planned li:before { content: '○'; color: var(--text-secondary); }
 
 .software-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
 .software-list article { border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--sp-4); position: relative; }

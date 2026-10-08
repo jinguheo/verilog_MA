@@ -3,9 +3,8 @@
 // entry describes the workflow in the abstract; this component reports what
 // has actually run, with real numbers, mirroring PhysicalDesignStatus.tsx's
 // pattern for the manufacturing tab.
-// Snapshot as of 2026-08-30 — refresh the numbers by hand after the next
-// phase's gate finishes (see samples/sample_test_4/RESULTS.md for the
-// underlying evidence).
+// Phase 1-5 baseline from 2026-08-30; later analog-interface tests are
+// listed separately rather than silently folded into the original counts.
 
 const lintTops = [
   'skid_buffer', 'cnt_sat', 'prim_reuse_smoke', 'axil_slave', 'daq_csr',
@@ -48,7 +47,8 @@ const realBugsFound = [
 
 export default function VerificationStatus() {
   return <>
-    <section className="card"><div className="card-title"><div><small className="kicker">LIVE STATUS · 2026-08-30</small><h2>Sample Test 4 — 검증 진행 상황</h2></div><span className="ok-badge">Phase 1-5 완료</span></div>
+    <section className="card"><div className="card-title"><div><small className="kicker">EVIDENCE SNAPSHOT · 2026-10-05</small><h2>Sample Test 4 — 검증 진행 상황</h2></div><span className="ok-badge">Phase 1-5 완료</span></div>
+      <p className="rtl-guide-note">아래 102 lint / 16 TB / 40 mutation은 Phase 1-5 기준 집계입니다. 이후 추가된 아날로그 인터페이스 검증은 별도 범위로 기록합니다: <code>tb_sar_adc_ch.sv</code>는 behavioral comparator를 이용한 SAR 수렴·패킷·CRC·backpressure를 7개 seed에서 통과했고, <code>tb_adc_cal_lut.sv</code>는 4채널 읽기 경합·CSR 쓰기 우선권을 7개 seed에서 통과했습니다 (<code>samples/sample_test_4/RESULTS.md</code>).</p>
       <div className="sample-summary" style={{marginBottom: 12}}>
         <span><b>102</b> lint 구성 전부 clean</span>
         <span><b>16</b> block testbench PASS</span>

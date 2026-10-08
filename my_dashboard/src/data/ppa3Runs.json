@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-05T19:33",
+ "generated": "2026-10-08T19:51",
  "total_steps": 74,
  "runs": [
   {
@@ -163,6 +163,45 @@
     "power": 0.0026927918661385775,
     "wirelength": 57273
    }
+  },
+  {
+   "run": "ppa3_pdn2",
+   "label": "사용자 정의 PDN + ADC 전원 rail 연결 조각 (단일 전원 가정, WriteLEF 앞까지)",
+   "state": "stopped",
+   "exit_code": null,
+   "steps_done": 38,
+   "last_step": "39-klayout-streamout",
+   "next_step": "40-magic-writelef",
+   "magic_drc_mode": "GDS",
+   "updated": "2026-10-05T21:56",
+   "metrics": {
+    "setup_ws": 10.379047248761797,
+    "hold_ws": 0.18376706232425863,
+    "setup_vio": 0,
+    "hold_vio": null,
+    "antenna_nets": 0,
+    "route_drc": 0,
+    "magic_drc": null,
+    "klayout_drc": null,
+    "lvs": null,
+    "xor": null,
+    "utilization": 0.653982,
+    "area": 440998,
+    "power": 0.0026937525253742933,
+    "wirelength": 57264
+   }
+  },
+  {
+   "run": "ppa3_pdn_a_signoff",
+   "label": "ppa3_pdn2를 WriteLEF부터 이어받은 signoff (단일 전원 가정)",
+   "state": "running",
+   "exit_code": null,
+   "steps_done": 0,
+   "last_step": null,
+   "next_step": "01-magic-writelef",
+   "magic_drc_mode": "GDS",
+   "updated": "2026-10-08T19:50",
+   "metrics": {}
   }
  ]
 }

@@ -24,6 +24,8 @@ LABELS = {
     "ppa3_antfix2": "긴 배선 300µm 분할 repair + heuristic diode",
     "ppa3_antfix3_signoff": "antfix2 + Magic 읽기 오류 무시 (signoff부터) · GDS 기준 DRC",
     "ppa3_antfix4_signoff": "antfix3 + 검사 단계 non-fatal · GDS 전체 기준 Magic DRC (재시작 후 다시 실행)",
+    "ppa3_pdn2": "사용자 정의 PDN + ADC 전원 rail 연결 조각 (단일 전원 가정, WriteLEF 앞까지)",
+    "ppa3_pdn_a_signoff": "ppa3_pdn2를 WriteLEF부터 이어받은 signoff (단일 전원 가정)",
     "ppa3_antfix5_signoff": "antfix3 + 검사 단계 non-fatal + Magic DRC를 DEF 기준으로 (macro 내부 미검사)",
 }
 KEYS = {
@@ -49,7 +51,7 @@ def live_tags():
 def collect():
     alive = live_tags()
     rows = []
-    names = ["RUN_2026-09-24_14-07-59", "ppa3_antenna_fix", "ppa3_antfix2", "ppa3_antfix3_signoff", "ppa3_antfix4_signoff", "ppa3_antfix5_signoff"]
+    names = ["RUN_2026-09-24_14-07-59", "ppa3_antenna_fix", "ppa3_antfix2", "ppa3_antfix3_signoff", "ppa3_antfix4_signoff", "ppa3_antfix5_signoff", "ppa3_pdn2", "ppa3_pdn_a_signoff"]
     names += sorted(p.name for p in RUNS.glob("ppa3_fin*") if p.is_dir())
     for name in names:
         run = RUNS / name

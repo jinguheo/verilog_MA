@@ -70,6 +70,13 @@ const STD_REGION_TILES: Partial<Record<BlockId, readonly [number, number]>> = {
 }
 const candidateProfiles = ['좌측 압축', '중앙 균형', '하단 압축', '분산 탐색', '좌측 변형', '중앙 변형', '하단 변형', '분산 변형']
 type CandidateResult = { generation: number; index: number; profile: string; score: number; violations: number; congestion: number; replacements: number; savedAt: number; state: GameState }
+function CandidateBoardPreview({ candidate }: { candidate: CandidateResult }) {
+  return <svg className="chip-candidate-preview" viewBox={`0 0 ${BOARD_COLS} ${BOARD_ROWS}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={`G${candidate.generation} 후보 ${candidate.index}의 저장된 테트리스 배치`}>
+    <rect width={BOARD_COLS} height={BOARD_ROWS} fill="#111c2d"/>
+    {candidate.state.board.flatMap((row, y) => row.map((cell, x) => cell && <rect key={`${x}-${y}`} x={x + .04} y={y + .04} width=".92" height=".92" rx=".08" fill={BLOCKS[cell.id].color}/>))}
+    <path d={`M${Math.floor(BOARD_COLS * .32)} 0V${BOARD_ROWS} M${Math.floor(BOARD_COLS * .6)} 0V${BOARD_ROWS}`} stroke="#ffffff" strokeOpacity=".18" strokeWidth=".08" strokeDasharray=".3 .25"/>
+  </svg>
+}
 type SaUiProgress = {
   stage: 'idle' | 'replace' | 'sa' | 'complete'
   iteration: number
@@ -639,6 +646,21 @@ export default function ChipTetris() {
           {game.gameOver && running && <div className="game-over"><b>AUTO RETRY</b><span>이 seed는 legal 배치를 만들지 못했습니다. 저장된 후보는 유지하고 다음 후보를 자동 탐색합니다.</span></div>}
         </div>
         <p className="chip-note" style={{ marginTop: 8 }}>{game.floorplanReady ? <>보라색 점이 안 켜진 sub-cell도 <b>빈 공간이 아닙니다</b> — STD CELL 로직은 이 자리의 7.8%만 차지하고(<code>STD_CELL_LEFTOVER_FILL_RATIO</code>), 나머지 {otherPurposeLivePct.toFixed(1)}%(다이 전체 기준)는 PDN·라우팅·filler·decap·tap 예약입니다.</> : <>초록색만 현재 <b>{BLOCKS[game.active.id].label}</b>의 전체 형상과 구역·필수 인접 규칙을 모두 통과한 실제 배치 가능 영역입니다. 점이 있는 초록 칸은 배치 기준 좌표이며, 회색 칸은 비어 보여도 현재 블록을 놓을 수 없습니다.</>}</p>
+        <section className="chip-candidate-rankings" aria-label="모델 후보 순위 기록">
+          <div className="chip-candidate-rankings-head"><div><small>MODEL CANDIDATES · GAME PROXY</small><h3>모델 후보 순위 기록</h3></div><span>{savedCandidates.length}개 저장{savedCandidates.length > 0 ? ` · 최고 ${savedCandidates[0].score.toLocaleString()}점` : ''}</span></div>
+          {savedCandidates.length > 0 ? <>
+            <div className="data-table chip-candidate-rankings-table">
+              <table><thead><tr><th>순위</th><th>배치 그림</th><th>후보</th><th>점수</th><th>1위 대비</th><th>혼잡</th><th>재배치</th><th>시작 방식</th></tr></thead><tbody>
+                {savedCandidates.slice(0, 16).map((result, rank) => <tr key={`${result.savedAt}-${rank}`}>
+                  <td>{rank + 1}</td><td><CandidateBoardPreview candidate={result}/></td><td>G{result.generation} #{result.index}</td><td>{result.score.toLocaleString()}</td>
+                  <td>{rank === 0 ? '기준' : (result.score - savedCandidates[0].score).toLocaleString()}</td>
+                  <td>{result.congestion}</td><td>{result.replacements}</td><td>{result.profile}</td>
+                </tr>)}
+              </tbody></table>
+            </div>
+            <p>같은 배치 signature는 하나로 합쳐 저장합니다. 점수·혼잡은 게임 모델의 비교값이며 OpenLane 통과 결과는 아닙니다.</p>
+          </> : <p>저장된 legal 후보가 없습니다. AI START를 누르면 후보 순위가 여기에 표시됩니다.</p>}
+        </section>
       </div>
 
       <aside className="chip-control-panel">
@@ -647,17 +669,6 @@ export default function ChipTetris() {
         <div className="full-next-queue"><span className="panel-label">ALL REMAINING PLACEMENT</span><div className="next-row all-items">{remainingRequired.map((id, index) => <div className={`queued-block ${index === 0 ? 'current' : ''}`} key={`${id}-${index}`}><em>{index === 0 ? 'NOW' : `NEXT ${index}`}</em><MiniBlock id={id} physicalSize={BLOCKS[id].physicalKind === 'neighbor-region' ? appliedRegionSizes[id as InitBlockId] : undefined}/></div>)}{futurePlacementStages.map((stage, index) => <div className={`queued-stage ${stage.done ? 'done' : !game.floorplanReady && index === 0 ? 'waiting' : ''}`} key={stage.id}><em>{stage.done ? 'DONE' : `STEP ${remainingRequired.length + index + 1}`}</em><b>{stage.label}</b><small>{stage.detail}</small></div>)}</div><small className="queue-note">현재 블록부터 필수 영역, 표준셀 채우기, Re-place, SA, 후보 평가까지 모두 표시합니다.</small></div>
         <div className="placement-progress">{PLACEMENT_SEQUENCE.map((id, index) => <div key={id} className={index < game.placements ? 'done' : index === game.placements && !game.floorplanReady ? 'current' : ''}><i>{index < game.placements ? '✓' : index + 1}</i><span>{BLOCKS[id].label}</span><small>{index < 2 ? 'MACRO' : 'STD REGION'}</small></div>)}</div>
         <div className={`sa-progress-panel ${saRunning ? 'running' : saProgress.stage === 'complete' ? 'complete' : ''}`}><div className="sa-progress-head"><div><span className="panel-label">SA PROGRESS</span><b>{saStageLabel}</b></div><strong>{Math.round(saPercent)}%</strong></div><div className="sa-progress-track"><i style={{ width: `${saPercent}%` }}/></div><div className="sa-progress-metrics"><span><small>ITERATION</small><b>{saProgress.stage === 'replace' ? `R ${saProgress.iteration}/2` : `${saProgress.iteration}/${saProgress.total}`}</b></span><span><small>경과</small><b>{(saProgress.elapsedMs / 1000).toFixed(1)}s</b></span><span><small>예상 총시간</small><b>~{(saProgress.estimatedMs / 1000).toFixed(1)}s</b></span><span><small>예상 잔여</small><b>~{(saRemainingMs / 1000).toFixed(1)}s</b></span></div><small className="sa-progress-note">{saRunning ? `accepted ${saProgress.accepted}/${saProgress.attempted} · Worker에서 계산 중이라 화면 조작은 유지됩니다.` : saProgress.stage === 'complete' ? `SA 완료 · 실제 ${(saProgress.elapsedMs / 1000).toFixed(1)}초` : `후보당 ${SA_ITERATIONS} iteration · 최근 실측 기준 약 ${(SA_INITIAL_ESTIMATE_MS / 1000).toFixed(1)}초 예상`}</small></div>
-        {(champion || savedCandidates.length > 0) && <div className="candidate-results">{champion && <div className="winner"><b>ELITE</b><span>G{champion.generation} #{champion.index}</span><strong>{champion.score.toLocaleString()}</strong><small>모델상 최고 · 물리 검증 전</small></div>}{savedCandidates.slice(0, 7).map(result => <div key={result.savedAt}><b>G{result.generation}</b><span>#{result.index} · {result.profile}</span><strong>{result.score.toLocaleString()}</strong><small>모델 LEGAL · C{result.congestion}</small></div>)}</div>}
-        {savedCandidates.length > 0 && <div className="data-table" style={{ maxHeight: 300, overflow: 'auto' }}>
-          <table><thead><tr><th>모델 순위</th><th>후보</th><th>점수</th><th>1위 대비</th><th>혼잡</th><th>재배치</th><th>시작 방식</th></tr></thead><tbody>
-            {savedCandidates.slice(0, 16).map((result, rank) => <tr key={`${result.savedAt}-${rank}`}>
-              <td>{rank + 1}</td><td>G{result.generation} #{result.index}</td><td>{result.score.toLocaleString()}</td>
-              <td>{rank === 0 ? '기준' : (result.score - savedCandidates[0].score).toLocaleString()}</td>
-              <td>{result.congestion}</td><td>{result.replacements}</td><td>{result.profile}</td>
-            </tr>)}
-          </tbody></table>
-          <p className="chip-note">같은 배치 signature는 하나로 합쳐 저장합니다. 위 점수·혼잡은 게임 모델의 비교값이며 OpenLane 통과 결과는 아닙니다.</p>
-        </div>}
         <div className="ai-decision"><span className="panel-label">NOW / NEXT</span>{game.gameOver && running ? <><b>illegal 후보 자동 폐기</b><p>저장된 legal 후보는 유지한 채 다음 seed로 즉시 넘어갑니다.</p></> : game.floorplanReady ? !standardCellsDone ? <><b>후보 #{candidateIndex} · 표준셀 자동 배치</b><p>{stdFillCount}/{stdFillTarget} · 목표 이용률 실측 7.8%</p></> : <><b>후보 #{candidateIndex} · 최종 탐색 pass {searchPasses + 1}</b><p>Replace→SA로 탐색하고, legal 후보를 저장한 뒤 다음 후보를 계속 만듭니다.</p></> : plan ? <><b>{running ? '배치 중' : '대기 중'} · {BLOCKS[plan.id].label} → ({plan.x + 1}, {plan.y + 1})</b><p>{game.placements < 2 ? '매크로를 하나씩 완료합니다.' : '매크로 완료 후 표준셀 이웃 영역을 직접 배치합니다.'}</p></> : <b>legal move 없음</b>}<small>{running ? game.lastEvent : 'AI START를 누르면 저장된 후보를 유지하며 탐색을 계속합니다.'}</small></div>
         <div className="chip-switches"><button className={running && aiEnabled ? 'active' : ''} onClick={startAi}>{running && aiEnabled ? 'FAST EVOLUTION' : 'START EVOLUTION'}</button><button className="active replace" disabled>REPLACE → SA</button><button onClick={() => setRunning(false)} disabled={!running}>Pause</button><button className="stop" onClick={stopEvolution} disabled={!running && !saRunning}>STOP</button><button onClick={stepAi} disabled={game.gameOver || saRunning}>AI step</button><button onClick={() => dispatch({ type: 'replace' })} disabled={game.gameOver || game.placements < 2 || saRunning}>Re-place now</button><button onClick={reset}>Reset</button></div>
         <label className="speed-control">빠른 자동 간격 <input type="range" min="10" max="200" step="10" value={speed} onChange={event => setSpeed(Number(event.target.value))}/><b>{speed} ms</b></label>

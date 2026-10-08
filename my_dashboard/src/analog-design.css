@@ -13,6 +13,11 @@
 .ppa-experiment-stats { margin: var(--sp-2) 0; }
 .ppa-result-card { display: grid; gap: var(--sp-3); padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-muted); }
 .ppa-result-card > p { margin: 0; color: var(--text-secondary); line-height: 1.55; }
+.ppa3-final-layout figure { margin: 0; min-width: 0; }
+.ppa3-final-layout figure a { display: block; overflow: hidden; aspect-ratio: 2 / 1; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #fff; }
+.ppa3-final-layout figure img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.ppa3-final-layout figcaption { margin-top: var(--sp-2); color: var(--text-secondary); font-size: var(--text-xs); line-height: 1.55; }
+.ppa3-final-layout figcaption b { color: var(--text); }
 .ppa-result-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: var(--sp-3); }
 .ppa-result-grid article { display: grid; gap: 4px; padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); }
 .ppa-result-grid small,.ppa-result-grid span { color: var(--text-muted); font-size: var(--text-xs); }
@@ -34,30 +39,38 @@
 
 .analog-circuit-overview { display: grid; gap: var(--sp-3); }
 .analog-circuit-intro { margin: 0; color: var(--text-secondary); line-height: 1.6; }
-.analog-schematic-wrap { overflow-x: auto; padding: var(--sp-2); border: 1px solid var(--border); border-radius: var(--radius-md); background: linear-gradient(135deg, var(--surface-muted), var(--surface)); }
-.analog-schematic { display: block; min-width: 920px; width: 100%; color: var(--text-secondary); }
-.schematic-block rect { stroke-width: 2; }
-.schematic-block text { fill: var(--text-secondary); font: 600 16px var(--font-sans); }
-.schematic-block .block-title { fill: var(--text); font-size: 19px; font-weight: 800; }
-.schematic-block .block-status { fill: var(--success); font-size: 14px; font-weight: 800; }
-.schematic-block .block-status.warn { fill: var(--warning); }
-.schematic-block.input rect { fill: var(--accent-soft); stroke: var(--accent); }
-.schematic-block.adc rect { fill: #fff4d8; stroke: #d99312; }
-.schematic-block.digital-block rect,.schematic-block.interface rect { fill: #e9edff; stroke: #5b6fd9; }
-.schematic-block.sensor rect { fill: #e9f7ed; stroke: #3c9d5a; }
-.schematic-block.power-block rect { fill: #f7eafa; stroke: #a35ac4; }
-.schematic-block.memory rect { fill: #e5f6f5; stroke: #168b87; }
-.schematic-wire { fill: none; stroke-width: 4; marker-end: url(#arrow); }
-.schematic-wire.signal { stroke: #d99312; }
-.schematic-wire.power { stroke: #a35ac4; }
-.schematic-wire.digital { stroke: #5b6fd9; }
-.schematic-wire + path { fill: currentColor; }
-.wire-label { fill: var(--text-muted); font: 600 14px var(--font-sans); }
+.analog-schematic-wrap { overflow-x: auto; padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-muted); }
+.analog-schematic { display: block; width: 100%; }
+.schematic-domain { fill: var(--surface); stroke: var(--border); stroke-width: 1.5; }
+.schematic-domain.analog-domain { fill: #fffaf2; }
+.schematic-domain.digital-domain { fill: #f7f9ff; }
+.schematic-section-label { fill: var(--text-secondary); font: 700 14px var(--font-sans); letter-spacing: .07em; }
+.schematic-section-label tspan { fill: var(--text-muted); letter-spacing: 0; }
+.schematic-node rect { fill: var(--surface); stroke: var(--border-strong); stroke-width: 1.5; filter: drop-shadow(0 3px 5px rgba(15,23,42,.06)); }
+.schematic-node.input rect,.schematic-node.adc rect { fill: #fff6e8; stroke: #db9c39; }
+.schematic-node.logic rect,.schematic-node.output rect { fill: #f0f4ff; stroke: #9cb3ef; }
+.schematic-node.memory rect { fill: #e9f7f3; stroke: #67a99d; }
+.schematic-node text { text-anchor: middle; }
+.schematic-node text.start { text-anchor: start; }
+.schematic-node .node-type { fill: var(--text-secondary); font: 700 12px var(--font-sans); letter-spacing: .08em; }
+.schematic-node .node-title { fill: var(--text); font: 700 17px var(--font-sans); }
+.schematic-node .node-detail { fill: var(--text-secondary); font: 500 14px var(--font-sans); }
+.schematic-wire { fill: none; stroke-width: 2; stroke-linecap: round; }
+.schematic-wire.signal { stroke: #c9821f; }
+.schematic-wire.data { stroke: #5978d7; }
+.schematic-flow-label { fill: var(--text-secondary); font: 600 13px var(--font-sans); text-anchor: middle; }
+#analog-map-arrow path { fill: #5978d7; }
+#analog-map-arrow-signal path { fill: #c9821f; }
+.schematic-domain-note { fill: var(--warning); font: 600 14px var(--font-sans); }
+.schematic-separator { fill: none; stroke: var(--border-strong); stroke-width: 1.5; stroke-dasharray: 5 6; }
+.schematic-support rect { fill: var(--surface); stroke: var(--border-strong); stroke-width: 1.5; }
+.schematic-support .support-title { fill: var(--text); font: 700 16px var(--font-sans); }
+.schematic-support .support-detail { fill: var(--text-secondary); font: 500 14px var(--font-sans); }
 .analog-circuit-legend { display: flex; flex-wrap: wrap; gap: var(--sp-4); color: var(--text-secondary); font-size: var(--text-sm); }
 .analog-circuit-legend span { display: inline-flex; align-items: center; gap: 7px; }
-.analog-circuit-legend i { width: 22px; height: 4px; border-radius: 99px; }
-.legend-signal { background: #d99312; }.legend-power { background: #a35ac4; }.legend-digital { background: #5b6fd9; }.legend-warning { background: var(--warning); }
-.analog-circuit-facts { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--sp-3); }
+.analog-circuit-legend i { width: 16px; height: 10px; border-radius: 3px; }
+.legend-signal { background: #c9821f; }.legend-digital { background: #5978d7; }.legend-memory { background: #67a99d; }.legend-separate { background: var(--surface); border: 1px solid var(--border-strong); }
+.analog-circuit-facts { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--sp-3); }
 .analog-circuit-facts article { display: grid; gap: 5px; padding: var(--sp-3); border-radius: var(--radius-sm); background: var(--surface-muted); border: 1px solid var(--border); }
 .analog-circuit-facts span { color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.5; }
 

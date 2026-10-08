@@ -2,16 +2,17 @@
 // "Physical Design" (manufacturing) tab. TaskWorkspace's generic tasks{}
 // entry describes the workflow in the abstract; this component reports what
 // has actually run, with real numbers, so the tab is not just a checklist.
-// Snapshot audited against local run artifacts on 2026-09-29. This is a
+// Snapshot audited against local run artifacts through 2026-10-05. This is a
 // persisted evidence summary, not a claim that an OpenLane job is currently live.
 import PhysicalDesignLive from './PhysicalDesignLive'
 import ParsacFloorplan from './ParsacFloorplan'
+import { physicalEvidence } from './physicalEvidence'
 
 const toolchain = [
   ['flow', 'OpenLane 2 v2.3.10', 'Python 3.12 venv (~/.venvs/openlane312), native — not the ORFS/OpenROAD-from-source track, which was abandoned (see tools/wsl/README.md)'],
   ['PDK', 'sky130A via volare', '~/.volare/volare/sky130/versions/0fe599b2... — the copy the flow actually reads; a second copy at ~/eda/pdk is unused'],
   ['synthesis / P&R / STA', 'yosys (nix, with slang+pyosys) / OpenROAD / OpenSTA 2.6.0', 'the distro apt yosys (0.52) cannot run OpenLane\u2019s pyosys steps (-y) — only the nix-provided build works'],
-  ['DRC / LVS / GDS', 'Magic 8.3.105 / netgen-lvs 1.5.133 / KLayout 0.30.0', 'all three signed off clean on every completed design so far'],
+  ['DRC / LVS / GDS', 'Magic / netgen-lvs / KLayout', 'chan_top의 10/5 reshape run은 모두 clean. PPA3는 실행 완료와 별개로 Magic DRC/LVS 위반이 남음'],
   ['host', 'WSL Ubuntu 26.04 (D:\\WSL\\Ubuntu)', '925 GB free; nothing installed touches C:'],
 ] as const
 
@@ -19,8 +20,7 @@ const blocks = [
   ['skid_buffer', '완료 · signoff clean', 'DRC 0 · LVS 0 · XOR 0 · antenna 0 · SYNTH_STRATEGY 탐색 결과 이미 최적'],
   ['cnt_sat', '완료 · signoff clean', 'DRC 0 · LVS 0 · XOR 0 · antenna 0 · AREA 1 전환 후 전체 P&R 재검증'],
   ['chan_ctrl', '완료 · signoff clean (실제 SDC 적용)', '단일 클럭. AREA 2 전환 후 전체 P&R 재검증. 폴백 SDC 대비 setup 여유 4.25→1.98ns로 낮아짐 — IO 제약이 없어서 좋아 보였던 것'],
-  ['chan_top', '완료 · 5개 게이트 전부 signoff clean', 'DRC Passed · LVS Passed · Antenna Passed · Setup WNS/TNS 0.0/0.0 (worst corner) · Hold WNS 0 — RUN_2026-09-23_12-48-47 (src=14ns/axi=52ns, DIODE_INSERTION_STRATEGY=6), 46,009 cells. ch_cause_o 레지스터화(9/20, b02cb4e)로 axi 도메인 CRC 병목 해결 → src_period 14ns(9/21, 32a7395)로 src_ready_o 마저 해결 → 안테나 신규 1건을 strategy 6으로 해결(9/23, 3d73bbd). 주기 스윕만으로는 안 닫혔고 RTL 파이프라이닝 + 정밀한 주기 조정의 조합으로 완전 클로징'],
-  ['daq_subsystem (8채널 top)', '부분 검증 · 현재 실행 없음', 'Flat 최신 run은 CTS 이후 STA에서 종료. Hierarchical 기준 run(hierarchical_auto_20260924_142552)은 detailed routing·post-PNR STA·XOR clean까지 도달했지만 setup WNS −6.44ns, hold WNS −0.15ns, antenna 121 nets가 남았고 Magic DRC/LVS 완료 전 중단. 100µm-channel 후보는 DPL-0036, scattered 후보는 GRT-0118 실패'],
+  ...physicalEvidence.map(([name, status, run, result]) => [name, status, `${run}: ${result}`] as const),
 ] as const
 
 // 진단(두 병목)은 그대로 유효 — 실패 경로의 시작/끝 신호명이 모든 재실행에서
@@ -40,7 +40,7 @@ const timingHistory = [
   ['12/52 ns 처음부터 재합성 (9/20)', 'RUN_2026-09-20_19-36-35', '❌ 오히려 악화', 'WNS −2.73→−3.38ns, TNS −3.4→−5.3ns (같은 두 신호 ch_cause_o[0]/[2]). 원인: SDC의 clock_uncertainty/transition이 주기의 %로 커져서(axi 48→52ns면 마진도 2.4→2.6ns), 64단 CRC 체인에 누적되며 주기 증가분보다 마진 손해가 더 컸음. 안테나 위반도 새로 발생(핀17·넷16). 주기 스윕으로는 안 닫힘 — RTL 파이프라이닝만 남음'],
   ['ch_cause_o 레지스터화 + antenna strategy 4, 12/52ns 그대로 재실행 (9/20)', 'RUN_2026-09-20_21-14-08', 'WNS −3.38→−0.50ns, antenna 17→0', 'pkt_check.sv 64단 CRC 체인이 ch_cause_o[0]/[2]에 조합으로 물려 있던 것을 레지스터 1단 삽입으로 유효 깊이 절반으로 축소 — 주기 스윕이 아니라 RTL 파이프라이닝으로 실제 개선. 남은 1건은 axi 도메인이 아니라 별개의 src_clk 경로(skid_buffer의 src_ready_o)'],
   ['src_period 12→14ns 재조정 (9/21)', 'RUN_2026-09-21_21-20-41', '셋업 타이밍 전 코너 완전 클로징 (worst corner WNS/TNS 0.0/0.0)', 'src_ready_o 경로 하나만 남아 있었으므로 axi는 그대로 두고 src_period만 소폭 상향 — pkt_align.sv 버퍼링 확장 없이 해결. 대신 새 안테나 위반 1건(net1314, CTS 이후 팬아웃 버퍼 입력, 1.21x 초과) 발생'],
-  ['DIODE_INSERTION_STRATEGY 6 (9/23) — 최종', 'RUN_2026-09-23_12-48-47', '✅ 5개 게이트 전부 clean', 'strategy 5는 OpenLane 2에서 아예 무효값(config.py의 deprecation shim이 {0,3,4,6}만 허용) — 6(=3+4 통합)으로 net1314까지 해결. DRC Passed · LVS Passed · Antenna Passed(0/0) · Setup WNS/TNS 0.0/0.0 · Hold 0. 8/28부터 이어진 chan_top 타이밍 조사 전체의 결말'],
+  ['DIODE_INSERTION_STRATEGY 6 (9/23) — 당시 기준점', 'RUN_2026-09-23_12-48-47', '✅ 5개 게이트 전부 clean', 'strategy 5는 OpenLane 2에서 아예 무효값(config.py의 deprecation shim이 {0,3,4,6}만 허용) — 6(=3+4 통합)으로 net1314까지 해결. DRC Passed · LVS Passed · Antenna Passed(0/0) · Setup WNS/TNS 0.0/0.0 · Hold 0. 이후 다이 reshape/axi 54ns는 별도 탐색'],
 ] as const
 
 // 상용 EDA/파운드리 PDK vs 이 프로젝트가 실제 쓰는 오픈소스 스택.
@@ -94,25 +94,25 @@ export default function PhysicalDesignStatus() {
   return <>
     <PhysicalDesignLive/>
     <ParsacFloorplan/>
-    <section className="card"><div className="card-title"><div><small className="kicker">STATUS SNAPSHOT · AUDITED 2026-09-29</small><h2>Sample Test 4 — ASIC 물리 설계 확인 상태</h2></div><span className="warning-badge">실행 중 작업 없음 · 저장된 결과 기준</span></div>
-      <div className="data-table"><table><thead><tr><th>블록</th><th>상태</th><th>근거</th></tr></thead><tbody>{blocks.map(([name, status, note]) => <tr key={name}><td><code>{name}</code></td><td>{status.includes('완료') ? <span className="ok-badge">{status}</span> : <span className="warning-badge">{status}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
-      <p className="rtl-guide-note">산출물 위치: <code>samples/sample_test_4/asic/&lt;block&gt;/runs/RUN_*/final/</code> (GDS·LEF·netlist·SPEF·5-corner .lib). RTL은 이 작업 중 어느 것도 수정되지 않았습니다.</p>
+    <section className="card"><div className="card-title"><div><small className="kicker">STATUS SNAPSHOT · AUDITED 2026-10-05</small><h2>Sample Test 4 — ASIC 물리 설계 확인 상태</h2></div><span className="warning-badge">저장된 실행 결과 기준 · 실시간 작업 상태 아님</span></div>
+      <div className="data-table"><table><thead><tr><th>블록</th><th>상태</th><th>근거</th></tr></thead><tbody>{blocks.map(([name, status, note]) => <tr key={name}><td><code>{name}</code></td><td>{status.includes('signoff clean') ? <span className="ok-badge">{status}</span> : <span className="warning-badge">{status}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
+      <p className="rtl-guide-note">산출물 위치: <code>samples/sample_test_4/asic/&lt;block&gt;/runs/&lt;run-id&gt;/final/</code>. 상태는 해당 run의 <code>final/metrics.json</code>과 <code>tools/wsl/logs/*.summary</code>로 확인했습니다. 실행 종료 코드 0만으로 DRC/LVS signoff를 판정하지 않습니다.</p>
     </section>
     <section className="card"><div className="card-title"><div><small className="kicker">TOOLCHAIN — 실제 사용 중</small><h2>WSL 기반 오픈소스 RTL-to-GDS</h2></div></div>
       <div className="data-table"><table><thead><tr><th>영역</th><th>도구</th><th>비고</th></tr></thead><tbody>{toolchain.map(([area, tool, note]) => <tr key={area}><td>{area}</td><td><b>{tool}</b></td><td>{note}</td></tr>)}</tbody></table></div>
     </section>
     <section className="card"><div className="card-title"><div><small className="kicker">chan_top — 타이밍 실패 원인 규명</small><h2>두 개의 독립된 조합 로직 병목</h2></div></div>
       <div className="check-list">{rootCauses.map(([title, detail]) => <p key={title}><b>{title}</b><span>{detail}</span></p>)}</div>
-      <p className="rtl-guide-note">둘 다 실측 기반 진단이고 지금도 유효합니다 — 넷리스트에서 실제 시작점 신호명을 확인하고(<code>fifo_rptr_q[2]</code>, <code>u_pkt_align.u_skid.skid_valid_q</code>), 배치·배선 완료된 설계 + 추출된 SPEF로 주기를 스윕했습니다. <b>하지만 "어느 주기에서 닫히는가"는 두 번 틀렸습니다</b> — 아래 표. <b>최종 결론(9/23 확정)</b>: <code>ch_cause_o</code> 레지스터화 + src_period 14ns로 타이밍을 닫고, strategy 6으로 마지막 antenna 1건까지 제거했습니다. RUN_2026-09-23_12-48-47에서 5개 signoff gate가 모두 clean입니다.</p>
+      <p className="rtl-guide-note">둘 다 당시 실측 기반 진단입니다 — 넷리스트에서 실제 시작점 신호명을 확인하고(<code>fifo_rptr_q[2]</code>, <code>u_pkt_align.u_skid.skid_valid_q</code>), 배치·배선 완료된 설계 + 추출된 SPEF로 주기를 스윕했습니다. <b>하지만 "어느 주기에서 닫히는가"는 두 번 틀렸습니다</b> — 아래 표. <b>9/23 기준점의 결론</b>: <code>ch_cause_o</code> 레지스터화 + src_period 14ns로 타이밍을 닫고, strategy 6으로 마지막 antenna 1건까지 제거했습니다. 이후 다이 reshape/axi 54ns 탐색은 위 상태 표의 별도 실행입니다.</p>
     </section>
     <section className="card"><div className="card-title"><div><small className="kicker">chan_top — 타이밍 결론이 세 번 바뀐 기록</small><h2>같은 "실측"이라도 무엇을 재는지가 달랐다</h2></div></div>
       <div className="data-table"><table><thead><tr><th>주장 / 시도</th><th>근거 실행</th><th>결과</th><th>왜 그렇게 나왔나</th></tr></thead><tbody>{timingHistory.map(([claim, run, result, why]) => <tr key={claim}><td><b>{claim}</b></td><td><code>{run}</code></td><td>{result.startsWith('❌') ? <span className="warning-badge">{result}</span> : result}</td><td>{why}</td></tr>)}</tbody></table></div>
       <p className="rtl-guide-note"><b>교훈 두 가지.</b> (1) 이미 배치·배선된 레이아웃을 다른 SDC로 "다시 채점"한 값은 그 레이아웃이 원래 어떤 목표로 최적화됐는지에 종속됩니다 — 툴은 주어진 주기에 맞춰 최적화 노력을 조절하므로, 빡빡한 목표로 만든 레이아웃은 느슨한 요구에 여유가 남아 보이는 게 당연합니다. 처음부터 그 주기로 돌린 실행만이 근거입니다. (2) 주기 스윕 시 수기 Tcl 대신 <b>signoff SDC 원본을 그대로 source</b>해야 합니다 — IO delay 예산, CDC max_delay, driving_cell 같은 예외 하나만 빠져도 결론이 뒤집힙니다. 두 오판 모두 <code>constraints/chan_top.sdc</code>의 CORRECTION 블록 3개와 RESULTS.md에 사후 기록돼 있습니다.</p>
       <p className="rtl-guide-note"><b>비교 기준 실행이 사라진 문제 (원인 미확인)</b>: 12/48 결과의 근거인 <code>RUN_2026-09-18_21-19-11</code> 디렉터리가 디스크에 없습니다. 실행 자체는 실재했고 완주했음이 로그로 확인되지만(<code>tools/wsl/logs/111_chan_top_1248.log</code>에 해당 run 태그와 <code>Flow complete</code>), 8/29 것까지 포함해 다른 run 디렉터리는 모두 남아있는 와중에 이것만 없어졌습니다. <b>러너 스크립트가 지운 것은 아닙니다</b> — <code>111</code>/<code>102</code>의 <code>rm -rf</code>는 shim 경로(<code>~/.cache/openlane-tools-*</code>)에만 적용되고 run 디렉터리는 건드리지 않음을 확인했습니다. 누가/무엇이 지웠는지는 확인되지 않았습니다. 결과적으로 수치는 로그와 RESULTS.md에 남아 신뢰 가능하나 GDS/metrics.json 재검증은 불가 — 기준이 될 실행은 별도 보존(복사 또는 태그)하는 정책이 필요합니다.</p>
     </section>
-    <section className="card"><div className="card-title"><div><small className="kicker">daq_subsystem — 8채널 전체 top</small><h2>실행 기록은 보존됐지만 현재 작업은 중단 상태</h2></div></div>
+    <section className="card"><div className="card-title"><div><small className="kicker">daq_subsystem — 8채널 전체 top</small><h2>마지막 확인된 기준 실행은 signoff 전 단계</h2></div></div>
       <div className="check-list">
-        <p><b>Flat 실행 기록</b><span>여러 시도가 PC/WSL 종료로 중단됐고 최신 run도 CTS 이후 STA에서 멈췄습니다. 현재 OpenLane/OpenROAD 프로세스는 없으며 “라이브 진행 중” 상태가 아닙니다.</span></p>
+        <p><b>Flat 실행 기록</b><span>여러 시도가 PC/WSL 종료로 중단됐고 마지막 확인된 flat run도 CTS 이후 STA에서 멈췄습니다. 이 표는 저장된 결과이며 현재 프로세스 상태를 판정하지 않습니다.</span></p>
         <p><b>Hierarchical 기준 배치</b><span><code>hierarchical_auto_20260924_142552</code>는 top-only flow로 detailed routing·RCX·post-PNR STA·XOR까지 도달했습니다. 다만 setup/hold/antenna 위반이 남고 Magic DRC/LVS 완료 전 중단됐으므로 routed evidence이지 signoff 결과는 아닙니다.</span></p>
         <p><b>이미 잡은 RTL 버그 1건</b><span><code>perf_cnt.sv</code>의 <code>$countones()</code>가 OpenLane 합성 프론트엔드를 크래시 — Verilator/sby에선 멀쩡한 합법 SV. <code>daq_pkg::popcount</code> 패키지 함수로 옮겨 해결, TB/mutation 비회귀 확인 (<code>a4dbd21</code>).</span></p>
         <p><b>현재 기준 floorplan</b><span>8개 800×800µm chan_top과 300µm 행간 채널을 둔 3700×2100µm 격자가 가장 멀리 진행된 기준입니다. 100µm 채널과 scattered 후보는 각각 DPL/GRT에서 실패했습니다.</span></p>
@@ -150,7 +150,7 @@ export default function PhysicalDesignStatus() {
         <p><b>대시보드에서</b><span>Sample Test 4 → Layout 탭 — 렌더링된 이미지 (전체 다이 / 60µm / 20µm 배율), sky130A 레이어 색상 적용.</span></p>
         <p><b>KLayout GUI로 직접</b><span><code>tools\open_layout.bat &lt;design&gt;</code> — WSL의 KLayout이 WSLg를 통해 Windows 화면에 바로 뜹니다. 추가 설치 불필요.</span></p>
       </div>
-      <p className="rtl-guide-note">이 페이지의 표들은 스냅샷입니다 — 맨 위 <b>Physical Design Live</b> 패널만 API로 자동 갱신됩니다. 두 실행이 끝나면 상단 상태 표와 타이밍 기록 표를 다시 반영해야 합니다. 실행 중 로그: chan_top <code>tools/wsl/logs/111b_chan_top_1252.log</code>, daq_subsystem <code>tools/wsl/logs/102_daq_subsystem_estimate.log</code>. 살아있는지 확인: <code>wsl -d Ubuntu -- bash -lc "ps aux | grep openroad | grep -v grep"</code>.</p>
+      <p className="rtl-guide-note">이 페이지의 결과 표는 2026-10-05 스냅샷입니다. 맨 위 <b>Physical Design Live</b> 패널은 설치·입력 연결 상태를 API에서 가져오며, 실행별 signoff 결과는 자동 갱신하지 않습니다. 새 run을 비교할 때는 해당 run의 <code>final/metrics.json</code>과 실행 summary를 확인해야 합니다.</p>
     </section>
   </>
 }

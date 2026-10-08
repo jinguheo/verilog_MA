@@ -2,9 +2,10 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import AnalogVsDigital from './AnalogVsDigital'
 import MemoryDesign from './MemoryDesign'
 import AdcDacComparison from './AdcDacComparison'
+import SarAdcExplainer from './SarAdcExplainer'
 import PpaOverview from './PpaOverview'
 
-const API = 'http://127.0.0.1:8788'
+const API = ''
 
 type Tool = { name:string; status:string; purpose:string; path:string }
 type CatalogItem = { id:string; name:string; function:string; pdk:string[]; kind:string; maturity:string; installed:boolean; path:string; evidence:string[]; artifacts:Record<string,number> }
@@ -191,7 +192,7 @@ export default function AnalogDesign() {
       <button role="tab" aria-selected={tab === 'memory_design'} className={tab === 'memory_design' ? 'active' : ''} onClick={() => setTab('memory_design')}>메모리 셀 설계</button>
       <button role="tab" aria-selected={tab === 'adc_dac'} className={tab === 'adc_dac' ? 'active' : ''} onClick={() => setTab('adc_dac')}>ADC vs DAC 상세</button>
     </div>
-    {tab === 'circuit' && <AnalogCircuitOverview catalog={installation.catalog}/>} 
+    {tab === 'circuit' && <><AnalogCircuitOverview catalog={installation.catalog}/><SarAdcExplainer/></>}
     <div hidden={tab !== 'requirements'}>
     <div className="analog-two-column">
       <section className="card">
@@ -451,21 +452,28 @@ function PpaExperimentThree({ onApply }: { onApply: () => void }) {
         <article><small>우측</small><b>4 KB capture SRAM</b><span>PPA2 1024 × 32 macro · readout pin이 외곽을 향하도록 배치</span></article>
       </div>
     </section>
+    <section className="ppa-result-card ppa3-final-layout">
+      <div className="card-title"><div><small className="kicker">PPA3 · LATEST COMPLETED GDS</small><h3>최신 실행의 전체 레이아웃</h3></div><span className="analog-badge blocked">GDS 생성 · signoff 미통과</span></div>
+      <figure>
+        <a href="/analog/ppa3_antfix5_signoff_full.png" target="_blank" rel="noreferrer" aria-label="PPA 실험 3 최신 GDS 레이아웃 원본 크기로 열기">
+          <img src="/analog/ppa3_antfix5_signoff_full.png" alt="KLayout으로 렌더링한 PPA3 최신 GDS 전체 레이아웃. 왼쪽에 ADC, 오른쪽에 디지털 로직과 SRAM 매크로가 배치된 1250 × 600 마이크로미터 die" loading="lazy" />
+        </a>
+        <figcaption><b>ppa3_antfix5_signoff</b> · 2026-10-05 완료 · 1250 × 600 µm · KLayout GDS 렌더링. 이미지를 누르면 원본 크기로 볼 수 있습니다.</figcaption>
+      </figure>
+      <p>이 그림은 최종 단계에서 생성된 <b>실제 GDS 레이아웃</b>입니다. 제조 가능한 최종 signoff를 뜻하지는 않습니다. Route DRC·antenna·XOR는 0건이지만 Magic DRC 559건, KLayout DRC 1건, LVS 불일치 363건이 남아 있습니다.</p>
+    </section>
     <section className="ppa-result-card">
-      <div className="card-title"><div><small className="kicker">PPA3 CHECKPOINT · UPDATED 2026-10-05</small><h3>Offline route 확보 · 최종 signoff 재개 지점</h3></div><span className="analog-badge blocked">routed candidate · signoff blocked</span></div>
-      <p>1250×600µm PPA3 wrapper의 ADC/SRAM 고정 배치와 detailed-routing 이미지는 확보했습니다. 다만 <b>OpenLane 실행이 74단계 중 59단계(Magic.WriteLEF)에서 중단</b>돼 OpenLane 자체의 DRC/LVS/XOR 검사는 한 번도 돌지 않았고, <b>antenna 위반 2건이 남아 있으며</b>, CDAC Magic DRC 잔여 6건도 닫히지 않아 이 결과를 최종 물리 PPA로 부르지는 않습니다.</p>
+      <div className="card-title"><div><small className="kicker">PPA3 CHECKPOINT · UPDATED 2026-10-05</small><h3>최신 GDS 생성 · 물리 signoff 보완 중</h3></div><span className="analog-badge blocked">signoff blocked</span></div>
+      <p><code>ppa3_antfix5_signoff</code>가 전 단계를 완료해 GDS와 측정치를 생성했습니다. 이전 baseline의 Magic.WriteLEF 중단과 antenna 2건은 더 이상 최신 상태가 아닙니다. 현재 병목은 <b>Magic/KLayout DRC 및 LVS 불일치</b>입니다.</p>
       <div className="ppa-result-grid">
-        <article><small>구현 완료</small><b>RTL + OpenLane routed baseline</b><span className="ok-text">통합 top lint pass · 1250 × 600 µm · ADC/SRAM 고정 배치 · routing 이미지</span></article>
-        <article><small>baseline 실행 중단 지점</small><b>59 / 74단계 · Magic.WriteLEF</b><span className="warn-text"><code>RUN_2026-09-24_14-07-59</code> · 09-24 14:54 중단(에러 종료 아님) · <code>final/</code>·<code>metrics.json</code> 없음</span></article>
-        <article><small>baseline 실측 (중단 시점까지)</small><b>route DRC 0 · setup/hold 위반 0</b><span className="ok-text">9개 코너 · 최악 setup +11.2 ns(max_ss) · hold +0.18 ns(min_ff) · util 64.9%</span></article>
-        <article><small>antenna (baseline)</small><b>2건 (2 nets / 2 pins)</b><span className="warn-text">위 baseline run 기준 · repairantennas 이후에도 남음 · max-slew 29 · max-cap 1</span></article>
-        <article><small>antenna 수리 재실행 (2026-10-04)</small><b>7건 → 0건</b><span className="ok-text"><code>ppa3_antfix2</code> · 긴 배선을 300µm로 끊는 post-GRT repair + heuristic diode 삽입 (antenna 반복 횟수 증가는 효과 없었음) · route DRC 0 · 최악 setup +10.39 ns(max_ss) · hold +0.18 ns(min_ff) · util 65.4%</span></article>
-        <article><small>재실행이 다시 막힌 곳</small><b>Magic.WriteLEF (23단계) fatal</b><span className="warn-text">LEF는 생성됐지만 SRAM macro GDS의 알 수 없는 layer 읽기 오류 97건을 OpenLane이 fatal로 처리(exit 2) · 이를 무시하는 <code>ppa3_antfix3_signoff</code>(MAGIC_CAPTURE_ERRORS=false)로 이어받았으나 SRAM GDS를 읽는 중 종료 기록 없이 멈춤 · 현재 실행 중인 PPA3 run 없음</span></article>
-        <article><small>아직 안 돈 단계</small><b>antenna 속성·XOR·Magic/KLayout DRC·LVS</b><span>WriteLEF 이후 남은 단계 — top-level signoff 수치 없음</span></article>
-        <article><small>정합 결과</small><b>CDAC DRC 84 → 6</b><span className="warn-text">Magic 원본에서 job별 GDS 재생성 · CDAC LVS / KLayout DRC는 미실행(09-24 14:18 작업)</span></article>
+        <article><small>최신 완료 실행</small><b>ppa3_antfix5_signoff</b><span className="ok-text">OpenLane 종료 코드 0 · final GDS와 metrics 생성 · 1250 × 600 µm</span></article>
+        <article><small>라우팅·안테나·XOR</small><b>0 · 0 · 0건</b><span className="ok-text">상세 라우팅 DRC, antenna violating nets, GDS XOR 차이</span></article>
+        <article><small>타이밍</small><b>setup +10.39 ns · hold +0.18 ns</b><span className="ok-text">최신 final metrics의 worst slack</span></article>
+        <article><small>남은 물리 검증</small><b>Magic DRC 559 · KLayout DRC 1</b><span className="warn-text">위반이 있어 signoff 통과 아님 · Magic은 최신 DEF 기준</span></article>
+        <article><small>회로 정합</small><b>LVS 불일치 363건</b><span className="warn-text">원인 분석 및 수정 후 재검증 필요</span></article>
+        <article><small>아날로그 macro</small><b>ADC 전체 DRC 19건 잔여</b><span className="warn-text">CDAC 검증 복사본은 0건이나 PPA3 macro GDS 반영·LVS/PEX는 별도 필요</span></article>
         <article><small>원본 보호</small><b>vendor GDS unchanged</b><span className="ok-text">SHA-256 전후 동일 · 검증 복사본만 변경</span></article>
-        <article><small>다음 재개 지점</small><b>Magic.WriteLEF fatal + ADC 전체 DRC 19건</b><span>CDAC 6건은 복사본에서 0건으로 해결 · 남은 19건도 같은 <code>diff/tap.18,20</code> 규칙(CDAC 밖) · antenna는 재실행에서 0건 확인</span></article>
-        <article><small>최종 승격 조건</small><b>CDAC DRC/LVS 통과 · top signoff 완주</b><span>대칭축·dummy·guard ring·핀 접근성 보존 후 재실행</span></article>
+        <article><small>최종 승격 조건</small><b>macro·top DRC/LVS 통과</b><span>잔여 위반과 정합 불일치를 해결한 뒤 PEX 재측정</span></article>
         <article><small>최종 산출물</small><b>PEX 기반 PPA3</b><span>기생 RC 포함 성능·전력·면적과 Pareto 비교</span></article>
       </div>
     </section>
@@ -474,39 +482,54 @@ function PpaExperimentThree({ onApply }: { onApply: () => void }) {
       <tr><td>전력 / 면적</td><td>≤ 15 mW · ≤ 100,000 µm²</td><td>ADC 실측 65,628.68 µm² + CDAC 수리 여유</td></tr>
       <tr><td>아날로그 macro</td><td>좌측 고정 · CDAC 대칭축과 dummy/guard ring 보존</td><td>배치 변경으로 INL/DNL·기생 RC를 악화시키지 않음</td></tr>
       <tr><td>디지털 / SRAM</td><td>우측 분리 · CDC는 두 영역 사이</td><td>PPA2 capture path와 SRAM pin 접근성 재사용</td></tr>
-      <tr><td>실행 게이트</td><td>antenna 수리(재실행 0건 확인) → Magic.WriteLEF fatal 해소 → ADC 전체 DRC 19건 수정 + 수정한 CDAC를 macro GDS에 반영 → CDAC LVS → 이후 단계 완주(top DRC/LVS) → PEX</td><td>job별 격리 검증 · 물리 통과 전 PPA 측정 금지</td></tr>
+      <tr><td>실행 게이트</td><td>GDS 생성·antenna/XOR 0건 확인 → ADC·top DRC와 LVS 잔여 위반 해결 → PEX 기반 PPA</td><td>job별 격리 검증 · 물리 통과 전 최종 PPA 승격 금지</td></tr>
     </tbody></table></div>
     <button className="ppa-preset-button" type="button" onClick={onApply}>이 PPA 실험 3 설정을 현재 설계에 적용</button>
   </section>
 }
 function AnalogCircuitOverview({ catalog }: { catalog: CatalogItem[] }) {
-  const installed = (id:string) => catalog.find(item => item.id === id)?.installed ? 'installed' : 'missing'
+  const adcInstalled = catalog.find(item => item.id === 'sky130_ef_adc3v_12bit')?.installed
   return <section className="card analog-circuit-overview">
     <div className="card-title"><div><small className="kicker">IMPLEMENTED ANALOG & MEMORY MAP</small><h2>전체 설계 회로도</h2></div><span className="connection">SKY130A · evidence-based</span></div>
-    <p className="analog-circuit-intro">현재까지 도입·검증한 공개 IP와 통합 경로입니다. 초록 표시는 로컬 설치, 주황 표시는 물리 signoff가 아직 남은 경로입니다.</p>
+    <p className="analog-circuit-intro">ADC에서 캡처 SRAM까지의 주 경로와, 아직 그 경로에 연결되지 않은 보조 IP를 분리했습니다. 블록의 기능 검증과 칩 전체 물리 signoff는 별도 상태입니다.</p>
     <div className="analog-schematic-wrap">
-      <svg className="analog-schematic" viewBox="0 0 1200 650" role="img" aria-label="ADC, 온도센서, LDO, SRAM 및 PSRAM의 아날로그 메모리 설계 회로도">
-        <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z"/></marker></defs>
-        <path className="schematic-wire signal" d="M185 190 H255" markerEnd="url(#arrow)"/><path className="schematic-wire signal" d="M415 190 H485" markerEnd="url(#arrow)"/><path className="schematic-wire signal" d="M645 190 H715" markerEnd="url(#arrow)"/><path className="schematic-wire digital" d="M875 190 H1005" markerEnd="url(#arrow)"/>
-        <path className="schematic-wire power" d="M340 455 V305 H560 V255" markerEnd="url(#arrow)"/><path className="schematic-wire digital" d="M595 455 V335 H1050 V255" markerEnd="url(#arrow)"/><path className="schematic-wire digital" d="M870 455 V365 H1050 V255" markerEnd="url(#arrow)"/>
-        <g className="schematic-block input"><rect x="35" y="130" width="150" height="120" rx="14"/><text x="110" y="165" textAnchor="middle" className="block-title">아날로그 입력</text><text x="110" y="193" textAnchor="middle">VINP / VINM</text><text x="110" y="216" textAnchor="middle">3.3 V domain</text></g>
-        <g className="schematic-block adc"><rect x="255" y="115" width="160" height="150" rx="14"/><text x="335" y="150" textAnchor="middle" className="block-title">Sample &amp; Hold</text><text x="335" y="180" textAnchor="middle">12-bit CDAC</text><text x="335" y="208" textAnchor="middle">공개 SKY130 IP</text><text x="335" y="235" textAnchor="middle" className="block-status">{installed('sky130_ef_adc3v_12bit')}</text></g>
-        <g className="schematic-block adc"><rect x="485" y="115" width="160" height="150" rx="14"/><text x="565" y="150" textAnchor="middle" className="block-title">Comparator</text><text x="565" y="180" textAnchor="middle">clocked 3.3 V</text><text x="565" y="208" textAnchor="middle">SAR decision</text><text x="565" y="235" textAnchor="middle" className="block-status">KLayout DRC 0</text></g>
-        <g className="schematic-block digital-block"><rect x="715" y="115" width="160" height="150" rx="14"/><text x="795" y="150" textAnchor="middle" className="block-title">SAR Control</text><text x="795" y="180" textAnchor="middle">12-bit code</text><text x="795" y="208" textAnchor="middle">level shifting</text><text x="795" y="235" textAnchor="middle" className="block-status warn">Magic DRC 103 · LVS match</text></g>
-        <g className="schematic-block interface"><rect x="1005" y="115" width="155" height="150" rx="14"/><text x="1082" y="150" textAnchor="middle" className="block-title">Digital SoC</text><text x="1082" y="180" textAnchor="middle">ADC data bus</text><text x="1082" y="208" textAnchor="middle">control / status</text></g>
-        <g className="schematic-block sensor"><rect x="105" y="430" width="180" height="125" rx="14"/><text x="195" y="467" textAnchor="middle" className="block-title">Temperature Sensor</text><text x="195" y="495" textAnchor="middle">OpenFASoC</text><text x="195" y="522" textAnchor="middle" className="block-status">Verilog generated</text></g>
-        <g className="schematic-block power-block"><rect x="430" y="430" width="165" height="125" rx="14"/><text x="512" y="467" textAnchor="middle" className="block-title">Digital LDO</text><text x="512" y="495" textAnchor="middle">regulated rails</text><text x="512" y="522" textAnchor="middle" className="block-status warn">macro queued</text></g>
-        <g className="schematic-block memory"><rect x="700" y="430" width="170" height="125" rx="14"/><text x="785" y="467" textAnchor="middle" className="block-title">SRAM22 Macro</text><text x="785" y="495" textAnchor="middle">1024 × 32 bit</text><text x="785" y="522" textAnchor="middle" className="block-status">4 KB · 7 views</text></g>
-        <g className="schematic-block interface"><rect x="960" y="430" width="185" height="125" rx="14"/><text x="1052" y="467" textAnchor="middle" className="block-title">PSRAM / QSPI</text><text x="1052" y="495" textAnchor="middle">external controller</text><text x="1052" y="522" textAnchor="middle" className="block-status">verified RTL</text></g>
-        <text x="215" y="405" className="wire-label">thermal telemetry</text><text x="455" y="335" className="wire-label">regulated analog supply</text><text x="720" y="405" className="wire-label">memory mapped data path</text>
+      <svg className="analog-schematic" viewBox="0 0 1000 590" role="img" aria-labelledby="analog-map-title analog-map-desc">
+        <title id="analog-map-title">아날로그 입력부터 SRAM 캡처와 디지털 읽기까지의 설계 흐름</title>
+        <desc id="analog-map-desc">상단은 VIN, SAR ADC, byte adapter와 비동기 FIFO 및 트리거 캡처, SRAM22와 디지털 읽기 순서의 데이터 경로입니다. 하단 온도센서, LDO, 보정 LUT, 외부 PSRAM은 별도 IP이며 주 경로와 직접 연결된 것으로 표시하지 않습니다.</desc>
+        <defs>
+          <marker id="analog-map-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 Z"/></marker>
+          <marker id="analog-map-arrow-signal" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 Z"/></marker>
+        </defs>
+        <rect className="schematic-domain analog-domain" x="20" y="70" width="455" height="328" rx="18"/>
+        <rect className="schematic-domain digital-domain" x="485" y="70" width="495" height="328" rx="18"/>
+        <text x="40" y="110" className="schematic-section-label">01  ANALOG FRONT END <tspan>· 3.3 V</tspan></text>
+        <text x="505" y="110" className="schematic-section-label">02  DIGITAL CAPTURE <tspan>· 1.8 V</tspan></text>
+        <path className="schematic-wire signal" d="M170 245 H198" markerEnd="url(#analog-map-arrow-signal)"/>
+        <path className="schematic-wire data" d="M450 245 H503" markerEnd="url(#analog-map-arrow)"/>
+        <path className="schematic-wire data" d="M770 245 H798" markerEnd="url(#analog-map-arrow)"/>
+        <text x="184" y="225" className="schematic-flow-label">VIN</text>
+        <text x="476" y="225" className="schematic-flow-label">sample</text>
+        <text x="784" y="225" className="schematic-flow-label">word</text>
+        <g className="schematic-node input"><rect x="40" y="182" width="125" height="126" rx="14"/><text x="102" y="214" className="node-type">INPUT</text><text x="102" y="250" className="node-title">VINP / VINM</text><text x="102" y="279" className="node-detail">아날로그 입력</text></g>
+        <g className="schematic-node adc"><rect x="205" y="155" width="240" height="180" rx="16"/><text x="228" y="191" className="node-type start">PUBLIC SKY130 IP</text><text x="228" y="230" className="node-title start">12-bit SAR ADC</text><text x="228" y="269" className="node-detail start">S/H · CDAC · Comparator</text><text x="228" y="301" className="node-detail start">SAR control · 1 MS/s</text></g>
+        <g className="schematic-node logic"><rect x="510" y="155" width="255" height="180" rx="16"/><text x="533" y="191" className="node-type start">RTL DATA PATH</text><text x="533" y="230" className="node-title start">CDC + Capture</text><text x="533" y="269" className="node-detail start">Byte adapter → Async FIFO</text><text x="533" y="301" className="node-detail start">Trigger / ring · pre/post</text></g>
+        <g className="schematic-node memory"><rect x="805" y="155" width="150" height="180" rx="16"/><text x="880" y="191" className="node-type">MACRO + READOUT</text><text x="880" y="230" className="node-title">SRAM22</text><text x="880" y="269" className="node-detail">4 KB · 32-bit</text><text x="880" y="301" className="node-detail">valid / ready</text></g>
+        <text x="40" y="371" className="schematic-domain-note">{adcInstalled ? '공개 ADC IP 준비' : '공개 ADC IP 확인 필요'} · 전체 signoff 대기</text>
+        <text x="505" y="371" className="schematic-domain-note">RTL 검증 · routed 후보, top DRC/LVS 대기</text>
+        <path className="schematic-separator" d="M20 425 H980"/>
+        <text x="20" y="458" className="schematic-section-label">별도 IP · 주 캡처 경로와 직접 연결로 표시하지 않음</text>
+        <g className="schematic-support"><rect x="20" y="482" width="225" height="82" rx="12"/><text x="38" y="513" className="support-title">Temperature sensor</text><text x="38" y="542" className="support-detail">OpenFASoC · Verilog 생성</text></g>
+        <g className="schematic-support"><rect x="265" y="482" width="225" height="82" rx="12"/><text x="283" y="513" className="support-title">Digital LDO</text><text x="283" y="542" className="support-detail">generator 출력 · macro 대기</text></g>
+        <g className="schematic-support"><rect x="510" y="482" width="225" height="82" rx="12"/><text x="528" y="513" className="support-title">ADC calibration LUT</text><text x="528" y="542" className="support-detail">별도 SRAM 용도 · RTL 검증</text></g>
+        <g className="schematic-support"><rect x="755" y="482" width="225" height="82" rx="12"/><text x="773" y="513" className="support-title">External PSRAM / QSPI</text><text x="773" y="542" className="support-detail">컨트롤러 RTL · 외부 메모리</text></g>
       </svg>
     </div>
-    <div className="analog-circuit-legend"><span><i className="legend-signal"/> analog signal</span><span><i className="legend-power"/> regulated power</span><span><i className="legend-digital"/> digital / memory bus</span><span><i className="legend-warning"/> signoff pending</span></div>
+    <div className="analog-circuit-legend"><span><i className="legend-signal"/> 아날로그 입력</span><span><i className="legend-digital"/> 샘플·제어 데이터</span><span><i className="legend-memory"/> SRAM 매크로</span><span><i className="legend-separate"/> 별도 IP</span></div>
     <div className="analog-circuit-facts">
-      <article><b>ADC evidence</b><span>면적 65,628.68 µm² · KLayout DRC 0 · Netgen LVS match · Magic DRC 103 (CDAC 84 / 비교기 4 / 상위 통합 15)</span></article>
-      <article><b>Magic DRC 진단</b><span><code>diff/tap.18,20</code> 단일 규칙군: MV nwell과 N-diff/P-tap 간격 0.43 µm. 반복 CDAC 배열 경계에 집중되어 PDK·레이아웃 검토가 필요합니다.</span></article>
+      <article><b>ADC 물리 검증</b><span>기준 ADC 면적 65,628.68 µm². CDAC 수리 복사본은 Magic DRC 0이지만 ADC 전체에는 19건이 남아 있고 새 GDS 기준 LVS/PEX가 필요합니다.</span></article>
+      <article><b>CDAC DRC 진단</b><span><code>diff/tap.18,20</code> 규칙군의 MV nwell–tap 간격을 보정했습니다. 검증용 복사본 결과이며 원본/PPA3 macro GDS에 아직 반영되지 않았습니다.</span></article>
       <article><b>SRAM integration</b><span>SRAM22 4KB·32bit·1-port · LEF/GDS/Liberty/SPICE/Verilog 준비</span></article>
-      <article><b>Generator status</b><span>온도센서·LDO Verilog 생성 완료 · 물리 매크로 생성은 OpenLane 작업 종료 후 실행</span></article>
+      <article><b>보조 IP 상태</b><span>온도센서·LDO는 Verilog 생성, PSRAM/QSPI 컨트롤러는 RTL 검증. 주 캡처 경로에 연결된 물리 통합을 뜻하지 않습니다.</span></article>
     </div>
   </section>
 }

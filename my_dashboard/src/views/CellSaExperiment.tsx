@@ -829,7 +829,7 @@ export default function CellSaExperiment({ data, rules, weights, tier }: { data:
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: 8, marginBottom: 10 }}>
       {tierList.map(c => { const on = c.id === cand.id, us = usPer.get(c.id)
         return <button key={c.id} type="button" disabled={running} onClick={() => setCandId(c.id)} style={{ textAlign: 'left', padding: 10, borderRadius: 8, cursor: running ? 'default' : 'pointer',
-          border: `1.5px solid ${on ? '#7F77DD' : 'var(--border-strong)'}`, background: on ? 'var(--accent-soft)' : 'var(--surface-1)', color: 'var(--text-primary)' }}>
+          border: `1.5px solid ${on ? '#7F77DD' : 'var(--border-strong)'}`, background: on ? 'var(--accent-soft)' : 'var(--surface)', color: 'var(--text)' }}>
           <b style={{ fontSize: 13 }}>{c.label}</b>
           <div style={{ fontSize: 11, margin: '3px 0', color: 'var(--text-secondary)' }}>{c.fn}</div>
           <div style={{ fontSize: 11 }}><b>{c.insts.length}셀 · 넷 {c.nets.length}</b> · 배치 {fmtBig(placementsOf(c.insts.length))}가지{us ? ` · 전수 약 ${fmtTime(placementsOf(c.insts.length) * us / 1e6)}` : ''}</div>
@@ -1186,7 +1186,7 @@ function SaExplainer({ n, results, usPerEval }: { n: number; results: SaResult[]
 
     <b style={{ fontSize: 13 }}>3. 온도와 수용 확률 — 왜 앞쪽에서 이미 거의 결정되나</b>
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 12, margin: '6px 0' }}>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="단계별 온도와 평균 나쁜 이동의 수용 확률" style={{ width: '100%', color: 'var(--text-primary)' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="단계별 온도와 평균 나쁜 이동의 수용 확률" style={{ width: '100%', color: 'var(--text)' }}>
         <line x1={padL} y1={H - padB} x2={W - padR} y2={H - padB} stroke="currentColor" opacity={0.3}/><line x1={padL} y1={padT} x2={padL} y2={H - padB} stroke="currentColor" opacity={0.3}/>
         <rect x={X(freeze)} y={padT} width={X(stages - 1) - X(freeze)} height={H - padT - padB} fill="#C0392B" opacity={0.07}/>
         <line x1={X(freeze)} y1={padT} x2={X(freeze)} y2={H - padB} stroke="#C0392B" strokeDasharray="4 3"/>
@@ -1263,7 +1263,7 @@ function RowView({ ctx, st, S = 36 }: { ctx: Ctx; st: State; S?: number }) {
   const pad = 10, row = ctx.rules.row // fixed px/µm keeps the true aspect ratio; wide rows scroll
   const px = (x: number) => pad + x * S, py = (y: number) => pad + (row - y) * S
   const VW = width * S + pad * 2, VH = row * S + pad * 2 + 12
-  return <div style={{ overflowX: 'auto' }}><svg viewBox={`0 0 ${VW} ${VH}`} width={VW} height={VH} style={{ display: 'block', color: 'var(--text-primary)' }} role="img" aria-label="배치된 셀과 넷 경로">
+  return <div style={{ overflowX: 'auto' }}><svg viewBox={`0 0 ${VW} ${VH}`} width={VW} height={VH} style={{ display: 'block', color: 'var(--text)' }} role="img" aria-label="배치된 셀과 넷 경로">
     {ctx.tracks.map(t => <line key={t} x1={px(0)} x2={px(width)} y1={py(t)} y2={py(t)} stroke="#378ADD" opacity={0.2}/>)}
     {st.order.map(i => <g key={i}>
       <rect x={px(X[i])} y={py(row)} width={ctx.W[i] * S} height={row * S} fill="#378ADD" fillOpacity={0.08} stroke="currentColor" strokeOpacity={0.5}/>

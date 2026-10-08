@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
-const API = 'http://127.0.0.1:8788'
+const API = ''
 
 interface Macro {
   module: string
