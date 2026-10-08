@@ -189,11 +189,11 @@ export default function PpaOverview() {
         ['done', 'Netgen LVS match (adapter 수정)'],
         ['done', 'switch dependency 교정(34a2361) · EF_SW_RST 경계 보정 (CDAC Magic DRC 84 → 6)'],
         ['done', 'CDAC 잔여 DRC 6건(diff/tap.18,20) → 0건 — 검증용 복사본에서 수정 (LVS/KLayout 결과는 수정 전과 동일, 2026-10-05)'],
-        ['partial', 'ADC 전체 Magic DRC는 같은 규칙 19건이 CDAC 밖(비교기·상위)에 남음'],
+        ['partial', 'ADC 단독(mag 기준) Magic DRC에는 같은 규칙 19건이 CDAC 밖(비교기)에 남음 — 단, PPA3 top-level GDS DRC 결과에는 이 규칙이 나타나지 않음(2026-10-08 확인)'],
         ['todo', '새 GDS 기준 KLayout DRC · CDAC LVS 재실행'],
         ['todo', 'PEX 후 성능·전력 실측 · Pareto 비교'],
       ]}
-      note="CDAC 단독의 6건은 닫혔지만, ADC 전체에는 같은 규칙 위반 19건이 남아 있어 PPA 3의 최종 signoff 승격은 아직 가능하지 않습니다."
+      note="CDAC 단독의 6건은 닫혔습니다. PPA 3 top-level GDS DRC에서는 CDAC/비교기의 diff/tap.18,20 규칙이 나타나지 않았으므로(2026-10-08), 이 수정이 PPA3 DRC 통과에 필요한지는 따로 확인해야 합니다."
     />
 
     <ExperimentCard
@@ -246,11 +246,11 @@ export default function PpaOverview() {
         ['done', 'antenna 수리 재실행 — 7건 → 0건 (ppa3_antfix2, 2026-10-04: 긴 배선 300µm 분할 repair + heuristic diode) · route DRC 0 · 최악 setup +10.39 ns'],
         ['done', 'Magic.WriteLEF 통과 — SRAM macro GDS의 읽기 오류 97건을 무시하는 설정으로 (MAGIC_CAPTURE_ERRORS=false)'],
         ['done', 'OpenLane 전 단계 완주 (ppa3_antfix4_signoff, 2026-10-05) — 위반이 있어도 끝까지 돌리는 설정, 개수는 그대로 기록'],
-        ['partial', 'signoff 결과: Magic DRC 15,861,362건(GDS 전체 기준, 그중 15,859,501건이 SRAM macro 내부 — 공급자 IP 내부라 제외 범위를 명시해서 따로 보고하며, 제조 쪽이 알아서 처리해 주는 것이 아님 · 나머지 1,861건은 ADC macro와 top-level로 이 설계의 실제 확인 대상) · KLayout DRC 1건(npc.2) · LVS 363건 불일치 · 겹침 84건'],
-        ['partial', 'CDAC 6건은 복사본에서 해결(0건) — ADC 전체 19건 + PPA 3용 macro GDS 반영이 남음'],
+        ['partial', 'signoff 결과: Magic DRC 15,861,362건(GDS 전체 기준, 그중 15,859,501건이 SRAM macro 내부 — 공급자 IP 내부라 제외 범위를 명시해서 따로 보고하며, 제조 쪽이 알아서 처리해 주는 것이 아님 · 나머지 1,861건은 macro 밖 top-level 위반: 래치업 규칙 LU.2/LU.3 1,804건(diffusion이 tap에서 15 µm 이상 멀리 있음)과 nwell.4 57건(nwell 안 N+ tap 없음)이며 전부 ADC 왼쪽 띠(x 20~30 µm, y 141~452 µm)에 몰려 있음 — 이 설계의 실제 확인 대상) · KLayout DRC 1건(npc.2) · LVS 363건 불일치 · 겹침 84건'],
+        ['partial', 'CDAC 6건은 복사본에서 해결(0건). 단, PPA3 top-level GDS DRC에는 이 규칙이 나타나지 않아 반영 필요 여부는 확인 전'],
         ['partial', 'LVS 불일치 원인 확인됨(2026-10-05): 레이아웃에서 SRAM·ADC macro의 전원 핀이 어느 net에도 안 연결돼 있고(추출 netlist에 u_sram22/vdd, u_adc/vccd 같은 단독 net), 표준셀 전원은 VPWR/VGND인데 설계 netlist는 macro를 vccd/vssd/vdda/vssa에 묶음. PDN 설정(PDN_MACRO_CONNECTIONS = vccd vssd)이 실제 grid 전원 이름과 달라서 macro가 PDN에 안 붙은 것으로 보임 — 전원 구조(1.8 V 디지털 / 3.3 V 아날로그) 결정이 필요'],
         ['partial', '전원 단순화(단일 전원) 시도 2026-10-05: macro 전원 핀을 표준셀 grid(VPWR/VGND)에 묶었지만 PDN이 연결하지 못함 — 전원 grid 검사에서 위반 17만 건. SRAM 전원 핀은 macro 내부 met2 mesh(1,100여 개 도형)이고 ADC 전원 rail(met5)은 grid strap과 위치가 맞지 않음. strap 간격을 60 µm로 줄여도 u_adc/vccd, vssa 등이 계속 미연결 → 사용자 정의 PDN 설정이 필요'],
-        ['todo', 'KLayout npc.2 1건 · top-level과 ADC의 나머지 DRC 1,861건 분류'],
+        ['todo', 'KLayout npc.2 1건 · ADC 왼쪽 띠의 LU.2/LU.3/nwell.4 1,861건 원인 확인(표준셀·decap이 tap에서 먼 것으로 보이나 미확인) · 단일 전원 PDN 실행에서 ADC 안 16건("겹치면 안 되는 layer", x 228~238 µm, PDN via 때문으로 추정, 미확인)'],
         ['todo', 'PEX 기반 최종 PPA · Pareto 비교'],
       ]}
       note="지금까지의 라우팅 결과는 '후보 기준선'이며 signoff 결과가 아닙니다. vendor GDS는 SHA-256 전후 동일하게 보호되고 검증 복사본만 변경됩니다."
@@ -264,7 +264,7 @@ export default function PpaOverview() {
           <td>{ns(r.metrics.setup_ws)} / {ns(r.metrics.hold_ws)}</td><td>{cnt(r.metrics.antenna_nets, old)}</td><td>{cnt(r.metrics.route_drc, old)}</td><td>{cnt(r.metrics.magic_drc, old)}{r.metrics.magic_drc != null || r.run.includes('antfix3') || r.run.includes('antfix5') ? <small style={{ display: 'block', color: 'var(--text-muted)' }}>{r.magic_drc_mode === 'DEF' ? 'DEF 기준 · macro 내부 제외' : r.magic_drc_mode === 'GDS' ? 'GDS 전체 기준' : ''}</small> : null}</td><td>{cnt(r.metrics.klayout_drc, old)}</td><td>{cnt(r.metrics.lvs, old)}</td><td>{cnt(r.metrics.xor, old)}</td>
         </tr> })}
       </tbody></table></div>
-      <p className="ppaov-note"><b>macro 내부 DRC 위반의 취급:</b> SRAM22 내부 위반(15,859,501건, 일반 로직용 규칙인 local interconnect·diffusion 폭 등)은 hard macro IP 내부라 배치·라우팅으로 줄일 수 없습니다. bitcell이 별도 규칙으로 만들어졌을 가능성이 있지만 공급자에게 확인한 것은 아니며, <b>제조 쪽이 알아서 처리해 주는 것이 아니므로</b> 실제 제조 제출 때는 대상 foundry/MPW의 규칙 파일과 waiver, 공급자 검증서를 확인해야 합니다. 이 실험에서는 macro 내부를 제외한 top-level 위반(약 1,861건, ADC 비교기 19건 포함)을 실제 확인 대상으로 보고, 제외한 범위를 이렇게 명시합니다. DEF 기준 DRC는 macro 내부를 보지 않으므로 통과로 세지 않습니다.</p>
+      <p className="ppaov-note"><b>macro 내부 DRC 위반의 취급:</b> SRAM22 내부 위반(15,859,501건, 일반 로직용 규칙인 local interconnect·diffusion 폭 등)은 hard macro IP 내부라 배치·라우팅으로 줄일 수 없습니다. bitcell이 별도 규칙으로 만들어졌을 가능성이 있지만 공급자에게 확인한 것은 아니며, <b>제조 쪽이 알아서 처리해 주는 것이 아니므로</b> 실제 제조 제출 때는 대상 foundry/MPW의 규칙 파일과 waiver, 공급자 검증서를 확인해야 합니다. 이 실험에서는 macro 내부를 제외한 top-level 위반(1,861건: LU.2/LU.3 래치업 1,804 + nwell.4 57)을 실제 확인 대상으로 보고, 제외한 범위를 이렇게 명시합니다. DEF 기준 DRC는 macro 내부를 보지 않으므로 통과로 세지 않습니다.</p>
       <p className="ppaov-note">&quot;미실행&quot;은 통과가 아니라 <b>그 단계까지 아직 안 갔다</b>는 뜻이고 최종 run에서는 반드시 채워져야 합니다. &quot;대체됨&quot;은 이전 run이라 따로 돌릴 필요가 없다는 뜻입니다. 이어받은 run(<code>ppa3_antfix3_signoff</code>, <code>ppa3_fin*</code>)은 앞 단계 값을 이전 run의 상태에서 물려받습니다. 위반이 있어도 flow를 끝까지 돌리는 설정(<code>config_antfix4</code>)에서도 개수는 숨기지 않고 그대로 기록됩니다.</p>
     </section>
     <section className="card">
