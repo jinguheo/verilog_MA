@@ -29,6 +29,8 @@ export const PAGES: PageMeta[] = [
     subtitle: 'daq_subsystem의 chan_top macro 8개를 쌓아 보며 floorplan 후보와 표준셀 공간을 확인합니다.' },
   { id: 'macroarea', label: 'Macro Area Tetris', icon: '⤡', section: 'experiments', title: 'Macro Area Tetris',
     subtitle: 'macro 위치와 모양을 바꿔 die 면적을 줄일 수 있는지, 실제 OpenLane 결과와 함께 탐색합니다.' },
+  { id: 'evolutionsa', label: 'Evolution SA', icon: '↗', section: 'experiments', title: 'Evolution SA',
+    subtitle: '기존 배치 후보를 부모로 삼아 진화 탐색하고 SA로 개선하는 구현 계획을 정리합니다.' },
   { id: 'stdcells', label: 'Standard Cells', icon: '▤', section: 'experiments', title: 'Standard Cells — sky130A PDK',
     subtitle: 'sky130A 표준셀 라이브러리와 PDK 변경·복잡한 표준셀 실험을 정리합니다.' },
   { id: 'knowledge', label: 'Knowledge DB', icon: 'K', section: 'knowledge', title: 'Knowledge DB Overview',
