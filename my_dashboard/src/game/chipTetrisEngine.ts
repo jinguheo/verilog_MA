@@ -171,7 +171,8 @@ const normalize = (points: Point[]): Point[] => {
 
 const rotate = (points: Point[]): Point[] => normalize(points.map(([x, y]) => [-y, x] as Point))
 
-const neighborRegionShapes = (base: Point[]): Point[][] => {
+// baseCount = how many of the returned shapes come from the original (compact) seeds; the extended footprints follow them.
+const neighborRegionShapes = (base: Point[]): { shapes: Point[][]; baseCount: number } => {
   const normalized = normalize(base)
   const width = Math.max(...normalized.map(([x]) => x)) + 1
   const height = Math.max(...normalized.map(([, y]) => y)) + 1
@@ -187,6 +188,7 @@ const neighborRegionShapes = (base: Point[]): Point[][] => {
   }
   seeds.push(normalized.map(([x, y]) => [x + (y % 2), y] as Point))
   seeds.push(normalized.map(([x, y]) => [x * 2, y * 2] as Point))
+  const baseSeedCount = seeds.length
 
   // Extended footprints. They are appended after the original seeds so every earlier shape keeps its
   // rotation index (saved candidates stay valid). Every footprint stays within NEIGHBOR_MAX_SPAN cells
@@ -202,7 +204,9 @@ const neighborRegionShapes = (base: Point[]): Point[][] => {
   }
 
   const shapes: Point[][] = []
-  for (const seed of seeds) {
+  let baseCount = -1
+  seeds.forEach((seed, seedIndex) => {
+    if (seedIndex === baseSeedCount) baseCount = shapes.length
     let current = normalize(seed)
     for (let turn = 0; turn < 4; turn += 1) {
       const shapeWidth = Math.max(...current.map(([x]) => x)) + 1
@@ -211,19 +215,23 @@ const neighborRegionShapes = (base: Point[]): Point[][] => {
       if (shapeWidth <= NEIGHBOR_MAX_SPAN && shapeHeight <= NEIGHBOR_MAX_SPAN && shapeWidth <= BOARD_COLS && shapeHeight <= BOARD_ROWS && !shapes.some(shape => JSON.stringify(shape) === key)) shapes.push(current)
       current = rotate(current)
     }
-  }
-  return shapes
+  })
+  return { shapes, baseCount: baseCount < 0 ? shapes.length : baseCount }
 }
 
 // The shape list of a block never changes (BLOCKS is constant), but building it for the neighbor regions
 // costs hundreds of microseconds and the searches call it for every candidate, so it is computed once.
 // Callers must treat the returned arrays as read-only.
 const rotationsCache = new Map<BlockId, Point[][]>()
+const playRotationCounts = new Map<BlockId, number>()
 export const rotationsFor = (id: BlockId): Point[][] => {
   let shapes = rotationsCache.get(id)
   if (!shapes) { shapes = buildRotations(id); rotationsCache.set(id, shapes) }
   return shapes
 }
+// How many shapes the R key cycles through when playing by hand: the original compact shapes only. The searches
+// (beam, SA, AI plan) use every shape from rotationsFor; the extended footprints follow the compact ones.
+export const playRotationCount = (id: BlockId): number => { const all = rotationsFor(id).length; return Math.min(all, playRotationCounts.get(id) ?? all) }
 
 const buildRotations = (id: BlockId): Point[][] => {
   if (BLOCKS[id].areaFlexible) {
@@ -243,7 +251,11 @@ const buildRotations = (id: BlockId): Point[][] => {
     if (!shapes.length) shapes.push(rectangle(baseWidth, baseHeight))
     return shapes
   }
-  if (BLOCKS[id].physicalKind === 'neighbor-region') return neighborRegionShapes(BLOCKS[id].base)
+  if (BLOCKS[id].physicalKind === 'neighbor-region') {
+    const built = neighborRegionShapes(BLOCKS[id].base)
+    playRotationCounts.set(id, built.baseCount)
+    return built.shapes
+  }
   if (!BLOCKS[id].rotatable) return [normalize(BLOCKS[id].base)]
   const rotations: Point[][] = []
   let current = normalize(BLOCKS[id].base)
@@ -374,7 +386,7 @@ export const movePlacedInstances = (state: GameState, instances: number[], dx: n
 
 export const rotateActive = (state: GameState): GameState => {
   if (state.gameOver || state.floorplanReady) return state
-  const count = rotationsFor(state.active.id).length
+  const count = playRotationCount(state.active.id)
   const rotation = (state.active.rotation + 1) % count
   for (const kick of [0, -1, 1, -2, 2]) {
     const candidate = { ...state.active, rotation, x: state.active.x + kick }

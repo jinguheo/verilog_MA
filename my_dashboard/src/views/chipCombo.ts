@@ -25,7 +25,7 @@ function randomValidOrder(set: Id[], rnd: () => number): Id[] {
 export type LnsResult = { best: Found; moves: number; accepted: number; trace: Array<[number, number]>; ms: number }
 // start: beam이 만든 완성 배치(SEQ 순서). S = 부모 하나당 뽑는 후보 수(절반은 현재 위치 ±2칸 근처), kb = 작은 beam 폭
 export async function lnsSaTimed(seed: number, budgetMs: number, T0: number, T1: number, start: Found, S = 40, kb = 3,
-  onProgress?: (elapsed: number, best: number) => void): Promise<LnsResult> {
+  onProgress?: (elapsed: number, best: number) => void, cancel?: () => boolean): Promise<LnsResult> {
   const rnd = rngOf(seed), cache = new Map<string, P[]>()
   const legalList = (s: E.GameState, id: Id): P[] => {
     const key = id + '|' + E.placementSignature(s.board)
@@ -44,7 +44,7 @@ export async function lnsSaTimed(seed: number, budgetMs: number, T0: number, T1:
   const t0 = performance.now(); let slice = t0
   const trace: Array<[number, number]> = [[0, curV]]
   while (true) {
-    const el = performance.now() - t0; if (el >= budgetMs) break
+    const el = performance.now() - t0; if (el >= budgetMs || cancel?.()) break
     const T = T0 * Math.pow(T1 / T0, el / budgetMs)
     moves++
     const R = new Set<Id>(closure(SEQ[Math.floor(rnd() * SEQ.length)]))
@@ -82,18 +82,24 @@ export async function lnsSaTimed(seed: number, budgetMs: number, T0: number, T1:
 
 // ---- 간격 DP (정확): 단위 u µm 칸, 규칙 = 간격은 0 또는 ≥ T µm ----
 export const GAP_G = { coreLeft: 20.24, coreRight: 1229.6, halo: 10, macros: [{ n: 'ADC', w: 223.71 }, { n: 'SRAM', w: 764.24 }], strapPitch: 40, strapOffset: 22.66 }
+// 간격 DP의 비용식(예시 모델): 매크로 사이 여유가 300 µm보다 좁으면 벌점, 매크로 왼쪽 가장자리가 PDN strap 격자에서 벗어난 만큼 벌점
+export function gapCostFns(u: number) {
+  const G = GAP_G, k = G.macros.length
+  const gapCost = (i: number, gum: number) => (i > 0 && i < k) ? Math.max(0, 300 - (gum + 2 * G.halo)) * 0.01 : 0
+  const leftEdge = (i: number, s: number) => G.coreLeft + s * u + G.macros.slice(0, i).reduce((a, m) => a + m.w + 2 * G.halo, 0) + G.halo
+  const macroCost = (x: number) => { const d = (((x - G.strapOffset) % G.strapPitch) + G.strapPitch) % G.strapPitch; return Math.min(d, G.strapPitch - d) * 0.05 }
+  return { gapCost, leftEdge, macroCost }
+}
 export function gapCostOf(gaps: number[]): number {
-  const G = GAP_G, strap = (x: number) => { const d = (((x - G.strapOffset) % G.strapPitch) + G.strapPitch) % G.strapPitch; return Math.min(d, G.strapPitch - d) * 0.05 }
+  const G = GAP_G, { gapCost, macroCost } = gapCostFns(1)
   const x0 = G.coreLeft + gaps[0] + G.halo, x1 = G.coreLeft + gaps[0] + G.macros[0].w + 2 * G.halo + gaps[1] + G.halo
-  return Math.max(0, 300 - (gaps[1] + 2 * G.halo)) * 0.01 + strap(x0) + strap(x1)
+  return gapCost(1, gaps[1]) + macroCost(x0) + macroCost(x1)
 }
 export function gapDpFine(u: number, T: number): { best: number; gaps: number[]; L: number; ms: number } {
   const t0 = performance.now(), G = GAP_G, k = G.macros.length, INF = Infinity
   const L = (G.coreRight - G.coreLeft) - G.macros.reduce((a, m) => a + m.w, 0) - 2 * G.halo * k
   const LU = Math.round(L / u), Tu = Math.ceil(T / u), allowed = (g: number) => g === 0 || g >= Tu
-  const gapCost = (i: number, gum: number) => (i > 0 && i < k) ? Math.max(0, 300 - (gum + 2 * G.halo)) * 0.01 : 0
-  const leftEdge = (i: number, s: number) => G.coreLeft + s * u + G.macros.slice(0, i).reduce((a, m) => a + m.w + 2 * G.halo, 0) + G.halo
-  const macroCost = (x: number) => { const d = (((x - G.strapOffset) % G.strapPitch) + G.strapPitch) % G.strapPitch; return Math.min(d, G.strapPitch - d) * 0.05 }
+  const { gapCost, leftEdge, macroCost } = gapCostFns(u)
   const f = Array.from({ length: k + 1 }, () => Array<number>(LU + 1).fill(INF)), from = Array.from({ length: k + 1 }, () => Array<number>(LU + 1).fill(-1))
   f[0][0] = 0
   for (let i = 0; i < k; i++) for (let s = 0; s <= LU; s++) { if (f[i][s] === INF) continue

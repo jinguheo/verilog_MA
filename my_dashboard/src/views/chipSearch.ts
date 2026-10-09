@@ -52,12 +52,13 @@ export function buildFrom(ps: P[], upto: number): E.GameState | null {
 // ---- beam search (상태 키 = 블록별 (모양, x/bucket, y/bucket)) ----
 type Node = { s: E.GameState; v: number; ps: P[] }
 // order = 블록을 놓는 순서(기본 SEQ). 반환 ps[i]는 order[i] 블록의 위치다. 어떤 단계에서 합법 위치가 하나도 없으면 top이 비고 stoppedAt에 그 블록이 들어간다.
-export async function beamAsync(K: number, bucket: number, onProgress?: (msg: string) => void, order: readonly E.BlockId[] = SEQ): Promise<{ top: Found[]; ms: number; legalChecks: number; stoppedAt?: E.BlockId }> {
+export async function beamAsync(K: number, bucket: number, onProgress?: (msg: string) => void, order: readonly E.BlockId[] = SEQ, cancel?: () => boolean): Promise<{ top: Found[]; ms: number; legalChecks: number; stoppedAt?: E.BlockId }> {
   const t0 = performance.now(); let legalChecks = 0
   let layer: Node[] = [{ s: E.createGame(0), v: 0, ps: [] }]
   for (let li = 0; li < order.length; li++) {
     const id = order[li]; const seen = new Map<string, Node>()
     for (let pi = 0; pi < layer.length; pi++) {
+      if (cancel?.()) return { top: [], ms: performance.now() - t0, legalChecks }
       const n = layer[pi]
       for (const [r, x, y] of ringList(n.s.board, id) ?? allCells(id)) {
         legalChecks++
@@ -78,7 +79,7 @@ export async function beamAsync(K: number, bucket: number, onProgress?: (msg: st
 }
 
 // ---- SA: 무작위 합법 시작, 블록 하나(50%는 뒤 블록 전부)를 합법 위치로 다시 뽑는 이동, 지수 냉각 ----
-export async function saTimed(seed: number, budgetMs: number, T0: number, T1: number, onProgress?: (elapsed: number, best: number) => void): Promise<{ start: Found; best: Found; moves: number; acc: number; illegal: number; trace: Array<[number, number]>; ms: number } | null> {
+export async function saTimed(seed: number, budgetMs: number, T0: number, T1: number, onProgress?: (elapsed: number, best: number) => void, cancel?: () => boolean): Promise<{ start: Found; best: Found; moves: number; acc: number; illegal: number; trace: Array<[number, number]>; ms: number } | null> {
   const rnd = rngOf(seed), t0 = performance.now()
   // 막다른 길(다음 블록의 합법 위치 없음)이면 같은 난수열로 처음부터 다시 뽑는다
   let s = E.createGame(0); let ps0: P[] = []
@@ -94,7 +95,7 @@ export async function saTimed(seed: number, budgetMs: number, T0: number, T1: nu
   const trace: Array<[number, number]> = [[performance.now() - t0, curV]]
   let slice = performance.now()
   while (true) {
-    const el = performance.now() - t0; if (el >= budgetMs) break
+    const el = performance.now() - t0; if (el >= budgetMs || cancel?.()) break
     const T = T0 * Math.pow(T1 / T0, el / budgetMs)
     const i = Math.floor(rnd() * SEQ.length), suffix = rnd() < 0.5
     let st = buildFrom(cur, i); moves++
@@ -128,6 +129,7 @@ export async function saGuidedTimed(
   seed: number, budgetMs: number, T0: number, T1: number,
   onProgress?: (elapsed: number, best: number) => void,
   initialPool: Found[] = [],
+  cancel?: () => boolean,
 ): Promise<GuidedResult | null> {
   const rnd = rngOf(seed), t0 = performance.now()
   let legalChecks = 0, duplicates = 0, deadEnds = 0
@@ -223,7 +225,7 @@ export async function saGuidedTimed(
   let best = current
   const trace: Array<[number, number]> = [[performance.now() - t0, best.value]]
   let lastYield = performance.now(), stagnant = 0
-  while (performance.now() - t0 < budgetMs) {
+  while (performance.now() - t0 < budgetMs && !cancel?.()) {
     moves++
     const i = Math.floor(rnd() * SEQ.length), local = rnd() < 0.7, reuseTail = rnd() < 0.7
     let next: ReturnType<typeof construct> = null
