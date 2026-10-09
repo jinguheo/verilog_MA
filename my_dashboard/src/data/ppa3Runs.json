@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-09T14:33",
+ "generated": "2026-10-09T22:59",
  "total_steps": 74,
  "runs": [
   {
@@ -221,7 +221,7 @@
   {
    "run": "ppa3_adcshift_signoff",
    "label": "ADC를 x 40→30.24로 이동(왼쪽 행 조각 제거), antfix4 설정 · signoff부터 이어받음",
-   "state": "running",
+   "state": "stopped",
    "exit_code": null,
    "steps_done": 0,
    "last_step": null,
@@ -233,14 +233,41 @@
   {
    "run": "ppa3_adcslew_signoff",
    "label": "ADC 이동 + slew/cap 여유 50% · CTS slew 0.2 ns · signoff부터 이어받음",
-   "state": "running",
+   "state": "stopped",
    "exit_code": null,
    "steps_done": 0,
    "last_step": null,
    "next_step": "01-magic-drc",
    "magic_drc_mode": "GDS",
-   "updated": "2026-10-09T14:31",
+   "updated": "2026-10-09T22:03",
    "metrics": {}
+  },
+  {
+   "run": "ppa3_adcslew2_signoff",
+   "label": "ADC 이동 + slew 여유 · KLayout DRC부터 이어받아 완주 (Magic DRC 리포트는 ppa3_adcslew_signoff/01-magic-drc, SRAM 밖 0건)",
+   "state": "finished",
+   "exit_code": 0,
+   "steps_done": 12,
+   "last_step": "12-misc-reportmanufacturability",
+   "next_step": null,
+   "magic_drc_mode": "GDS",
+   "updated": "2026-10-09T22:54",
+   "metrics": {
+    "setup_ws": 9.053312133994153,
+    "hold_ws": 0.13495088761778218,
+    "setup_vio": 0,
+    "hold_vio": null,
+    "antenna_nets": 0,
+    "route_drc": 0,
+    "magic_drc": null,
+    "klayout_drc": 0,
+    "lvs": 7,
+    "xor": 0,
+    "utilization": 0.655405,
+    "area": 441958,
+    "power": 0.0026485451962798834,
+    "wirelength": 58573
+   }
   }
  ]
 }

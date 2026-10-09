@@ -250,8 +250,9 @@ export default function PpaOverview() {
         ['partial', 'CDAC 6건은 복사본에서 해결(0건). 단, PPA3 top-level GDS DRC에는 이 규칙이 나타나지 않아 반영 필요 여부는 확인 전'],
         ['done', 'LVS·DRC 원인 확정(2026-10-09, 두 분석이 일치): ADC 왼쪽에 폭 9.7 µm의 행 조각이 남는데(ADC x=40, 코어 끝 20.24, halo 10) 여기에 tap이 0개이고 decap 497개만 있어 떠 있는 nwell 섬 57개가 생김 → Magic LU.2/LU.3/nwell.4 1,861건 + LVS device 차이 116(decap_12 +57, decap_3 +57, fill_1 +2). 이 LVS는 ADC/SRAM을 빈 placeholder로 비교하므로 macro 전원 연결은 LVS 원인이 아니었음(10-05에 쓴 "macro 전원 미연결" 설명은 정정)'],
         ['partial', '전원 단순화(단일 전원) + 사용자 정의 PDN 완주 결과(ppa3_pdn_a_signoff, 2026-10-08): SRAM 전원 핀은 met2→met4 via 스택으로 grid에 연결됐지만 LVS는 363 → 387건으로 오히려 늘었고(미연결 pin 36 → 59), KLayout DRC가 1 → 185건(via4.1/via4.2 규칙 184건, ADC 전원 핀 위치 x 188~240 µm)으로 늘었으며 Magic 겹침 검사가 84 → 23,768건이 됨. ADC 전원 rail에 직접 붙인 연결 조각이 LVS를 해결하지 못했고, 자동 생성된 via가 규칙을 위반한 것으로 보임(원인 미확인). 이 방식은 개선이 아니었고, LVS 원인과도 무관했음 — 폐기'],
-        ['partial', '수정 진행: ADC를 x 40 → 30.24로 옮겨 조각 제거(config_adcslew: slew 여유 포함) · signoff(GDS Magic DRC → KLayout → LVS) 재실행 중 · 결과 대기'],
-        ['todo', 'KLayout npc.2 1건(SRAM 아래 두 셀 npc 간격 0.255 < 0.27 µm, 1 site 띄우기로 해결 가능)'],
+        ['done', 'ADC를 x 40 → 30.24로 옮겨 tap 없는 행 조각 제거(ppa3_adcslew, 2026-10-09): GDS Magic DRC에서 macro 밖 위반 1,861 → 0건(남은 15,859,501건은 전부 SRAM22 내부) · KLayout DRC 1 → 0건 · antenna 0 · XOR 0 · route DRC 0 · setup +9.05 / hold +0.13 ns · LVS 363 → 7건'],
+        ['partial', '남은 LVS 7건: ADC 전원 net(u_adc/vccd·vssd·vdda·vssa)이 레이아웃에는 단독 net, 설계 netlist에는 top 전원 포트로 연결된 이름 차이(top pin vccd/vdda/vssa/vssd 불일치 4 + net 1). 실제로 ADC 전원이 grid에 연결되지 않은 것이므로 이 부분이 이번엔 실제 전원 연결 문제 · max-slew 15건 남음'],
+        ['done', 'KLayout npc.2 1건은 ADC 이동 후 재배치로 사라짐(0건)'],
         ['todo', 'PEX 기반 최종 PPA · Pareto 비교'],
       ]}
       note="지금까지의 라우팅 결과는 '후보 기준선'이며 signoff 결과가 아닙니다. vendor GDS는 SHA-256 전후 동일하게 보호되고 검증 복사본만 변경됩니다."
