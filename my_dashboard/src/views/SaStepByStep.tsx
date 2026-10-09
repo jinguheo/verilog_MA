@@ -4,47 +4,19 @@
 // 그림의 배치·점수·확률·난수는 모두 렌더링할 때 계산한 실제 값이다(손으로 쓴 숫자 없음).
 import { useEffect, useState } from 'react'
 import * as E from '../game/chipTetrisEngine'
+import { SEQ, COLS, ROWS, rngOf, drawLegal, buildFrom, type P } from './chipSearch'
 
 const p = { margin: '4px 0 8px', fontSize: 13, lineHeight: 1.8 } as const
 const ul = { margin: '0 0 8px 18px', padding: 0, fontSize: 13, lineHeight: 1.8 } as const
 const box = { padding: 10, borderRadius: 8, border: '1px solid var(--border-strong)', background: 'var(--surface)' } as const
-const SEQ = E.PLACEMENT_SEQUENCE, COLS = E.BOARD_COLS, ROWS = E.BOARD_ROWS
 const NAME: Record<string, string> = { adc: 'ADC MACRO', sram: 'SRAM MACRO', opamp: 'SAR NEAR', fifo: 'CDC EDGE', control: 'CAPTURE NEAR' }
 const f1 = (x: number) => x.toFixed(1)
 const f3 = (x: number) => x.toFixed(3)
 
-type P = { r: number; x: number; y: number }
 type Result = 'accept' | 'accept-worse' | 'reject' | 'illegal'
 type Step = {
   t: number; block: number; suffix: boolean; T: number; curV: number; propV: number | null; delta: number | null; prob: number | null; u: number | null
   result: Result; bestV: number; before: E.Board; after: E.Board | null; moved: E.BlockId[]; curAfter: number
-}
-
-function rngOf(seed: number) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296 } }
-
-function ringList(board: E.Board, id: E.BlockId): Array<[number, number, number]> | null {
-  const req = E.BLOCKS[id].requiredNeighbor; if (!req) return null
-  const occ = new Set<string>(), rg = new Set<string>()
-  board.forEach((row, y) => row.forEach((c, x) => { if (c?.id === req) occ.add(`${x},${y}`) }))
-  for (const k of occ) { const [x, y] = k.split(',').map(Number); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (!occ.has(`${nx},${ny}`) && nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) rg.add(`${nx},${ny}`) } }
-  const out: Array<[number, number, number]> = [], seen = new Set<string>()
-  E.rotationsFor(id).forEach((shape, r) => { for (const k of rg) { const [nx, ny] = k.split(',').map(Number); for (const [sx, sy] of shape) { const x = nx - sx, y = ny - sy, kk = `${r}:${x}:${y}`; if (!seen.has(kk) && x >= 0 && y >= 0) { seen.add(kk); out.push([r, x, y]) } } } })
-  return out
-}
-function drawLegal(s: E.GameState, id: E.BlockId, rnd: () => number): { p: P; s2: E.GameState } | null {
-  const ring = ringList(s.board, id), nrot = E.rotationsFor(id).length
-  for (let t = 0; t < 400; t++) {
-    let r: number, x: number, y: number
-    if (ring) { if (!ring.length) return null; [r, x, y] = ring[Math.floor(rnd() * ring.length)] } else { r = Math.floor(rnd() * nrot); x = Math.floor(rnd() * COLS); y = Math.floor(rnd() * ROWS) }
-    const ac = { id, rotation: r, x, y } as E.ActiveBlock
-    if (E.isLegalPlacement(s.board, ac)) return { p: { r, x, y }, s2: E.lockActive(s, ac, s.queue, s.hold) }
-  }
-  return null
-}
-function buildFrom(ps: P[], upto: number): E.GameState | null {
-  let s = E.createGame(0)
-  for (let i = 0; i < upto; i++) { const ac = { id: SEQ[i], rotation: ps[i].r, x: ps[i].x, y: ps[i].y } as E.ActiveBlock; if (!E.isLegalPlacement(s.board, ac)) return null; s = E.lockActive(s, ac, s.queue, s.hold) }
-  return s
 }
 
 function runSa(seed: number, N: number, T0: number): { startBoard: E.Board; startV: number; steps: Step[] } | null {
@@ -199,7 +171,7 @@ export default function SaStepByStep() {
 
       <ul style={{ ...ul, marginTop: 10 }}>
         <li><b>beam search와 다른 점이 그림에서 보입니다:</b> beam search는 열마다 후보를 <b>전부</b> 만들어 상위 K개를 고르지만, SA는 <b>이동 하나를 무작위로 제안</b>하고 점수 변화로 받아들일지 정합니다. 나빠지는 이동도 확률로 받아들여 지역 최소를 빠져나오려 하지만, 그 결과는 <b>seed마다 다릅니다</b>(seed를 바꿔 보세요).</li>
-        <li>이 그림은 <b>처음 {steps.length}번의 이동</b>입니다. 같은 측정에서 60초(약 7,000번 이동)를 돌려야 최고 −140.8까지 갔고, 같은 문제에서 beam search는 13초에 −133.1이었습니다(배경 지식 4절).</li>
+        <li>이 그림은 <b>처음 {steps.length}번의 이동</b>입니다. 같은 SA를 15초(약 17,600번 이동) 돌리면 중앙값 −136.4(seed 4개, 최악 −165.8)였고, 같은 문제에서 beam search는 5초에 −132.70이었습니다(배경 지식 4절).</li>
       </ul>
     </>}
   </div>

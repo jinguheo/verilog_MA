@@ -2,7 +2,7 @@
 //  ① seed → 난수 → 블록별 후보 영역 → 시작 배치   ② 이동 하나의 전 과정(어느 블록, 어떤 후보 영역, 수락/거절)
 //  ③ 온도(temperature)의 역할   ④ 설정값 역할 표   ⑤ 탐색 공간과 성능 차이 분석
 // 배치·후보 수·난수·확률·점수는 모두 렌더링할 때 실제 엔진으로 계산한 값이다. 정적 표는 '측정'이라고 날짜와 조건을 적었다.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as E from '../game/chipTetrisEngine'
 import { SEQ, COLS, ROWS, rngOf, ringList, allCells, beamAsync, type P } from './chipSearch'
 
@@ -379,13 +379,15 @@ function SpaceProbe() {
   const [hist, setHist] = useState<{ scores: number[]; beam: number | null } | null>(null)
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
+  const alive = useRef(true)
+  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])   // 탭을 떠나면 계산을 멈춘다
   const run = async () => {
     setBusy(true); setRows(null); setHist(null)
     const tick = () => new Promise<void>(r => setTimeout(r, 0))
     // (a) 무작위 합법 접두 6개에서 블록마다 뽑기 공간과 합법 위치 수의 평균
     const acc: Record<string, { space: number[]; legal: number[] }> = {}; SEQ.forEach(id => { acc[id] = { space: [], legal: [] } })
     for (let s = 1; s <= 6; s++) {
-      setMsg(`후보 영역 측정 ${s}/6`); await tick()
+      setMsg(`후보 영역 측정 ${s}/6`); await tick(); if (!alive.current) return
       const { rnd, log } = tracedRng(300 + s); let st = E.createGame(0)
       for (const id of SEQ) { const inf = legalInfo(st.board, id); acc[id].space.push(inf.space); acc[id].legal.push(inf.legal); const d = drawTraced(st, id, rnd, log); if (!d.ok) break; st = d.s2! }
     }
@@ -397,10 +399,11 @@ function SpaceProbe() {
       let st = E.createGame(0), ok = true
       for (const id of SEQ) { const d = drawTraced(st, id, rnd, log); if (!d.ok) { ok = false; break } st = d.s2! }
       if (ok) scores.push(E.evaluatePlacement(st.board))
-      if (k % 15 === 0) { setMsg(`무작위 합법 배치 점수 ${k}/300`); await tick() }
+      if (k % 15 === 0) { setMsg(`무작위 합법 배치 점수 ${k}/300`); await tick(); if (!alive.current) return }
     }
     setHist({ scores, beam: null })
-    setMsg('beam search K=8 계산 중…'); const b = await beamAsync(8, 4)
+    setMsg('beam search K=8 계산 중…'); const b = await beamAsync(8, 4, undefined, undefined, () => !alive.current)
+    if (!alive.current) return
     setHist({ scores, beam: b.top[0]?.value ?? null }); setMsg(''); setBusy(false)
   }
   const est = rows ? rows.reduce((a, r) => a * Math.max(1, r.legal), 1) : 0
@@ -459,7 +462,13 @@ function AnalysisPart() {
         <tr><td>60 (기존 기본값)</td><td>−144.53</td><td>−150.8 (17.8)</td><td>−135.06</td><td>10.6%</td><td>−151 −179 −135 −137 −164 −138</td></tr>
         <tr><td>200</td><td>−171.50</td><td>−171.4 (34.0)</td><td>−134.79</td><td>15.6%</td><td>−215 −150 −139 −193 −196 −135</td></tr>
       </tbody></table></div>
-      <p style={p}><b>T0=5의 SA는 8초에 중앙값 −136.19로 beam search K=8(−136.51, 1.5초)과 같은 수준이고, 가장 좋은 seed는 −133.12로 K=32의 −133.14와 같았습니다.</b> 이전에 대시보드가 보여 준 "SA가 훨씬 나쁘다"는 결과는 상당 부분 <b>기본 온도 T0=60이 이 문제의 Δ 크기(②탭의 표)에 비해 너무 뜨거웠기 때문</b>입니다. 다만 seed 6개이고 표준편차가 17~19라서, T0=5와 15의 차이(−136.2 대 −138.0)는 잡음 범위입니다. 확실한 것은 "T0가 200이나 60이면 나쁘다"는 쪽입니다. 같은 seed로 직접 확인해 볼 수 있는 비교는 아래 "SA 직접 돌려 보기"에 있습니다.</p>
+      <p style={p}>8초·seed 6개의 빠른 SA(접두 상태 재사용)에서는 T0=5가 중앙값 −136.19로 beam search K=8(−134.77)과 비슷했고 T0=60(−144.53)보다 나았습니다. 그러나 <b>대시보드의 SA(<code>saTimed</code>)로 15초·seed 4개를 다시 재면 순서가 뒤집힙니다</b>: T0=60은 중앙값 −136.4, T0=5는 −140.2(60초에서는 −140.1 대 −134.1). 즉 <b>T0 5~60은 seed 4~6개(표준편차 17~19)로는 구별되지 않고, 확실한 것은 T0=200이 나쁘다는 것뿐입니다.</b> 이 문서의 이전 판은 "기본 T0=60이 너무 뜨거워서 SA가 나빠 보였다"고 적었지만 그 주장은 철회합니다. 이전에 SA가 −150 ~ −190으로 보였던 것은 온도보다 <b>구현 속도</b>가 큰 몫이었던 것으로 보입니다: 같은 T0=60 SA의 15초 중앙값이 캐시 전 −173.6 → 캐시 후 −136.4이고 이동 수가 약 5배가 되었습니다(모양 수도 달랐으므로 원인을 단정하지는 않습니다).</p>
+      <b style={{ fontSize: 13 }}>2-1. 대시보드 SA(saTimed) 재측정 (2026-10-09, seed 1~4, T1=1.5, 현재 엔진)</b>
+      <div className="data-table"><table><thead><tr><th>T0</th><th>15초 중앙값 (최고 ~ 최악)</th><th>60초 중앙값 (최고 ~ 최악)</th></tr></thead><tbody>
+        <tr><td>60</td><td>−136.4 (−132.9 ~ −165.8)</td><td>−140.1 (−133.2 ~ −147.6)</td></tr>
+        <tr><td>5</td><td>−140.2 (−133.1 ~ −163.4)</td><td>−134.1 (−132.7 ~ −143.0)</td></tr>
+      </tbody></table></div>
+      <p style={p}>이동의 약 1/3이 합법 완성 배치를 만들지 못해 버려집니다(15초에 17,641회 중 5,758회, T0=5에서는 28,094회 중 9,266회).</p>
     </div>
 
     <div style={{ ...box, marginTop: 10 }}>
@@ -467,9 +476,9 @@ function AnalysisPart() {
       <div className="data-table"><table><thead><tr><th>예산</th><th>최선 점수 중앙값</th><th>가장 좋은 seed</th><th>seed별 최선</th></tr></thead><tbody>
         <tr><td>8초</td><td>−156.63</td><td>−133.03</td><td>−133 −136 −178 −178</td></tr>
         <tr><td>40초</td><td><b>−134.23</b></td><td>−133.22</td><td>−157 −133 −135 −134</td></tr>
-        <tr><td>비교: beam search</td><td colSpan={3}>K=32가 3.7~5.8초에 −133.14 / −132.74 (모양 8개 / 23개)</td></tr>
+        <tr><td>비교: beam search</td><td colSpan={3}>K=32가 모양 8개 엔진에서 3.7초 −133.14(4칸 키), 모양 23개·현재 엔진에서 4.6~5.3초 −132.74(4칸 키) / −132.70(정확한 키)</td></tr>
       </tbody></table></div>
-      <p style={p}>기본 온도에서도 <b>시간을 5배(40초) 주면 중앙값이 beam search K=32 수준(−134.2)</b>까지 옵니다. 같은 점수에 닿는 데 SA는 약 40초, beam search는 약 4~6초가 걸려 <b>시간 기준으로는 약 7~10배 차이</b>입니다. 같은 seed 1이라도 8초 실행 결과가 위 표(−133)와 2번 표의 T0=60 줄(−151)에서 다릅니다 — <b>시간 기준 실행은 이동 수가 그때그때 달라서 같은 seed여도 재현되지 않습니다.</b> 이동 횟수를 고정하면 재현됩니다(화면 ⑤ 아래 "직접 돌려 보기").</p>
+      <p style={p}>기본 온도에서도 <b>시간을 5배(40초) 주면 중앙값이 −134.2</b>까지 옵니다. 같은 문제에서 beam search K=32는 정확한 키로 5.3초에 −132.70(4칸 키 4.6초에 −132.74)이므로 <b>SA가 이 점수대에 닿는 시간은 beam search의 약 8배</b>입니다. 같은 seed 1이라도 8초 실행 결과가 위 표(−133)와 2번 표의 T0=60 줄(−151)에서 다릅니다 — <b>시간 기준 실행은 이동 수가 그때그때 달라서 같은 seed여도 재현되지 않습니다.</b> 이동 횟수를 고정하면 재현됩니다(화면 ⑤ 아래 "직접 돌려 보기").</p>
     </div>
 
     <div style={{ ...box, marginTop: 10 }}>
@@ -496,13 +505,13 @@ function AnalysisPart() {
       <b style={{ fontSize: 13 }}>5. 결론 — 탐색 영역이 넓은데 왜 결과가 나쁜가</b>
       <ol style={ul}>
         <li><b>(측정)</b> 합법 배치는 많지만 좋은 배치는 극히 드뭅니다(위 분포). 넓은 영역은 <b>찾아야 할 곳이 넓다</b>는 뜻이지 좋은 해가 더 많다는 뜻이 아닙니다.</li>
-        <li><b>(측정)</b> 좋은 배치 근처에서 SA가 제안하는 이동은 거의 전부 점수를 깎아서, <b>온도가 이 Δ 크기에 맞지 않으면 사실상 무작위 재시작</b>이 됩니다. 기본 온도(T0=60)는 이 Δ 크기에 비해 높아서 8초에는 부족했고(중앙값 −144.5 ~ −156.6), T0=5로 낮추면 같은 8초에 beam search 수준(−136.2)에 닿았으며, 기본 온도라도 40초를 주면 −134.2에 닿았습니다.</li>
-        <li><b>(측정)</b> 구현이 느렸습니다. 모양 목록을 매번 만들고 앞 블록 상태를 매번 다시 만들어 8초에 이동이 700번 안팎이었고, 캐시 후 약 5배가 되었습니다.</li>
+        <li><b>(측정)</b> 좋은 배치 근처에서 SA가 제안하는 이동은 거의 전부 점수를 깎아서, <b>온도가 이 Δ 크기에 맞지 않으면 사실상 무작위 재시작</b>이 될 수 있습니다. 다만 측정에서는 T0 5~60이 seed 4~6개로 구별되지 않았고(위 2-1표), T0=200만 확실히 나빴습니다. 시간을 더 주면 기본 온도에서도 40초에 중앙값 −134.2에 닿았습니다.</li>
+        <li><b>(측정)</b> 구현이 느렸습니다. 모양 목록을 매번 만들고 앞 블록 상태를 매번 다시 만들어 8초에 이동이 700번 안팎이었고, 캐시 후 약 5배가 되었습니다. 같은 SA의 15초 중앙값도 −173.6 → −136.4로 바뀌었습니다(모양 수도 달랐음). <b>이전 "SA가 훨씬 나쁘다"의 큰 몫은 이것이었던 것으로 보입니다.</b></li>
         <li><b>(측정)</b> beam search는 이웃 블록을 <b>이웃 띠의 모든 후보</b>에서 고릅니다. SA는 같은 띠에서 <b>무작위로 하나</b> 고릅니다. beam search가 한 단계에서 후보 수백 개를 전부 보는 일을 SA는 이동 수백 번에 걸쳐 확률적으로 합니다.</li>
         <li><b>(약한 증거)</b> 후보 모양이 늘면 SA는 더 어려워집니다.</li>
         <li><b>(해석)</b> SA에게 유리한 쪽은 beam search의 약점인 <b>부분 점수와 순서 의존</b>이 없다는 점입니다. 같은 문제에서 beam search는 순서에 따라 −133에서 −553까지 갈렸습니다(beam search 화면의 순서 실험).</li>
       </ol>
-      <p style={p}><b>개선 제안(미구현):</b> ① 기본 T0를 5로 낮춰 다시 재기 ② 좋은 배치 근처의 작은 이동(위치 ±k칸, 모양 바꾸기)을 이동 집합에 추가 ③ 뒤 블록을 무작위가 아니라 이웃 띠에서 점수가 가장 좋은 곳으로 다시 놓기(대규모 이웃 탐색) ④ beam search로 상위 K개를 만든 뒤 그중에서 SA 시작 ⑤ 여러 seed를 짧게 돌리고 가장 좋은 것만 이어서 돌리기. 효과는 각각 재 봐야 압니다.</p>
+      <p style={p}><b>개선 제안(미구현):</b> ① T0와 냉각 스케줄을 seed 10개 이상으로 다시 재기(지금은 구별 안 됨) ② 좋은 배치 근처의 작은 이동(위치 ±k칸, 모양 바꾸기)을 이동 집합에 추가 ③ 뒤 블록을 무작위가 아니라 이웃 띠에서 점수가 가장 좋은 곳으로 다시 놓기(대규모 이웃 탐색) ④ beam search로 상위 K개를 만든 뒤 그중에서 SA 시작 ⑤ 여러 seed를 짧게 돌리고 가장 좋은 것만 이어서 돌리기. 효과는 각각 재 봐야 압니다.</p>
     </div>
   </div>
 }
@@ -538,10 +547,13 @@ function LiveSa() {
   const [rows, setRows] = useState<LiveRow[]>([])
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  const alive = useRef(true)
+  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])   // 탭을 떠나면 계산을 멈춘다
   const run = async () => {
     setBusy(true); setRows([]); const out: LiveRow[] = []
     for (const T0 of [5, 15, 60, 200]) for (const seed of [1, 2]) {
       setMsg(`T0=${T0}, seed ${seed} 계산 중… (${out.length + 1}/8)`); await new Promise(r => setTimeout(r, 20))
+      if (!alive.current) return
       const r = saN(seed, 3000, T0); if (r) { out.push(r); setRows([...out]) }
     }
     setMsg(''); setBusy(false)

@@ -6,6 +6,7 @@ import DpStepByStep from './DpStepByStep'
 import SaStepByStep from './SaStepByStep'
 import SaMechanics from './SaMechanics'
 import { SetupHoldConceptFigure, SetupBudgetFigure, HoldBudgetFigure, TimingChainFigure, CornerDelayFigure, ThermalControlFigure } from './TimingFigures'
+import { LaunchCaptureFigure, ClockSkewSlewExplorer } from './ClockFigures'
 import CombinedSearch from './CombinedSearch'
 import ResultCompare from './ResultCompare'
 
@@ -52,12 +53,12 @@ function Candidate1() {
         <tr><td>같은 유형의 반대 사례</td><td>SRAM 오른쪽 25.3 µm 조각 88개, 위반 없음</td><td>{badge('확정')}</td><td>antfix4 DRC·LVS</td></tr>
         <tr><td>SRAM 신호 핀 위치</td><td>82개 전부 아래쪽 변, 그 아래 띠 높이 약 44 µm</td><td>{badge('확정')}</td><td>SRAM LEF·DEF</td></tr>
         <tr><td>SRAM 입력 핀 max slew</td><td>21핀 위반, 한계 0.351 ns, 최대 0.849 ns (<code>din[26]</code>, ss 코너)</td><td>{badge('확정')}</td><td>antfix2 STA <code>checks.rpt</code></td></tr>
-        <tr><td>매크로 전원 핀이 PDN에 미연결</td><td>PDN이 <code>vccd/vssd</code>를 보고 VPWR/VGND 격자와 이어지지 않음 → LVS 363의 주원인</td><td>{badge('확정')}</td><td>다른 창의 추출 SPICE 검증</td></tr>
+        <tr><td>매크로 전원 핀이 PDN에 미연결</td><td>PDN이 <code>vccd/vssd</code>를 보고 VPWR/VGND 격자와 이어지지 않음 → LVS 363의 주원인</td><td>{badge('확정')}</td><td>추출 SPICE 검증 (signoff 실행의 LVS 보고서)</td></tr>
         <tr><td>매크로 간격</td><td>100 µm는 DPL-0036 실패, 300 µm는 통과</td><td>{badge('확정')}</td><td>엔진 주석(daq_subsystem 실측)</td></tr>
         <tr><td>최종 DEF의 fill/decap 점유</td><td>fill 3,307개 · decap 15,586개 (셀 개수, 사이트 면적 아님). 기존 83,347 사이트·86.7% 집계는 산정 범위와 단위 재검증 필요</td><td>개수 {badge('확정')} · 가용률 {badge('미측정')}</td><td><code>ppa3_antfix5_signoff</code> 최종 DEF의 component 분류</td></tr>
         <tr><td><b>ADC를 x=30.24로 옮기면 위 위반이 사라진다</b></td><td>tap 단계까지는 조각 0개 확인. LVS·DRC 결과 없음</td><td>{badge('가설')}</td><td><code>adcshift</code> 실행이 64번(Magic DRC)에서 중단</td></tr>
         <tr><td>조각 폭의 위반 임계값 T</td><td>9.66 위반 · 25.3 무위반 → 그 사이는 모름 (tap 격자 위상에도 의존할 수 있음)</td><td>{badge('미측정')}</td><td>—</td></tr>
-        <tr><td>L0(게임 점수)와 실제 결과의 상관</td><td>비교할 실제 결과가 PPA3 몇 건뿐</td><td>{badge('미측정')}</td><td>—</td></tr>
+        <tr><td>L0(게임 점수)와 실제 결과의 상관</td><td>비교할 실제 결과가 PPA3 몇 건뿐. 다만 실제 PPA3 기준 위상은 L0에서 333개 중 87위(−239.1, 최선 −133.9)이고 그 차이의 대부분이 테트리스식 "구멍" 항(11-2절 5번)</td><td>{badge('미측정')}</td><td>—</td></tr>
       </tbody></table></div>
       <p style={p}><b>공간 해석 주의:</b> 최종 DEF에서 fill/decap이 차지한 면적은 곧바로 배치 가능한 여유가 아닙니다. fill은 잘라낸 뒤 적법하게 재삽입해야 하고, decap은 전원 무결성 목표에 필요한 최소량을 보호해야 합니다. tap·diode·endcap, 매크로 halo, timing ECO와 배선 용량도 별도 제약입니다. 따라서 실제 가용률은 후보 2의 동일 실행·동일 단위 기반 계측을 거쳐 확정합니다.</p>
     </Section>
@@ -123,10 +124,10 @@ function Candidate1() {
 
     <Section title="6. 구현 단계">
       <div className="data-table"><table><thead><tr><th>단계</th><th>내용</th><th>산출물(제안)</th><th>통과 기준</th><th>상태</th></tr></thead><tbody>
-        <tr><td><b>P-1</b></td><td>선행: x=30.24 가설 검증(<code>adcshift</code>를 Magic DRC부터 이어서), PDN 연결 결과 확인</td><td>실측 위반 수</td><td>위반 0 또는 남은 원인 확정</td><td>미착수</td></tr>
-        <tr><td><b>P0</b></td><td>위반 기억 스키마·시드 7건·수집 스크립트</td><td><code>violation_memory.json</code>, <code>tools/collect_violations.py</code></td><td>antfix4·5에서 수동 분석과 같은 숫자(조각 116, 섬 57, DRC 1,853)</td><td>미착수</td></tr>
+        <tr><td><b>P-1</b></td><td>선행: x=30.24 가설 검증(<code>adcshift</code>를 Magic DRC부터 이어서), PDN 연결 결과 확인</td><td>실측 위반 수</td><td>위반 0 또는 남은 원인 확정</td><td>실행은 있으나 <b>결과 없음</b> — <code>ppa3_adcshift_signoff</code>·<code>ppa3_adcslew_signoff</code>가 Magic DRC 단계에서 멈춤(보고서 0바이트)</td></tr>
+        <tr><td><b>P0</b></td><td>위반 기억 스키마·시드 7건·수집 스크립트</td><td><code>violation_memory.json</code>, <code>tools/collect_violations.py</code></td><td>antfix4·5에서 수동 분석과 같은 숫자(조각 116, 섬 57, DRC 1,853)</td><td><b>부분</b> — 관측 3건·회피 패턴을 담은 <code>drc_knowledge.json</code>과 <code>tools/build_ppa3_constraint_db.py</code>가 있음(위 이름·스키마와는 다름, 수집 스크립트는 미구현)</td></tr>
         <tr><td><b>P1</b></td><td>규칙 계측기 + 규칙에 맞는 후보 생성기(L0)</td><td><code>game/evolutionSa.ts</code></td><td>무작위 vs 생성의 규칙 통과율이 5절 모델과 일치</td><td>미착수</td></tr>
-        <tr><td><b>P2</b></td><td>L1 판정기, 조각 폭 스윕으로 T 실측</td><td><code>tools/wsl/*</code> 스크립트</td><td>T 곡선 확보</td><td>미착수</td></tr>
+        <tr><td><b>P2</b></td><td>L1 판정기, 조각 폭 스윕으로 T 실측</td><td><code>tools/wsl/*</code> 스크립트</td><td>T 곡선 확보</td><td>미착수 — L1에 보낼 후보 선정 방법(기준 위상 + ADC x 오프셋 스윕)은 배경 지식 11-2절 5번 참고</td></tr>
         <tr><td><b>P3</b></td><td>진화 루프(규칙 유도 변이, 부모 선택, 정체 시 확장), 계보와 비용 항목 분해 표시</td><td><code>views/EvolutionSa.tsx</code></td><td>동일 평가 횟수에서 기존 방식보다 규칙 통과 후보가 많음</td><td>미착수</td></tr>
         <tr><td><b>P4</b></td><td>L2·L3 승격, 실제 결과로 L0 가중치 보정</td><td>기존 <code>/api/layout-candidates</code> 연동</td><td>L0 점수와 실제 결과의 상관 확인</td><td>미착수</td></tr>
       </tbody></table></div>
@@ -136,11 +137,11 @@ function Candidate1() {
     <Section title="7. 이 설계로 풀 수 없는 것 · 위험 · 결정 필요">
       <ul style={ul}>
         <li><b>위치로 풀리지 않는 위반:</b> SRAM 내부 DRC 15,861,362건(99.99%가 SRAM 내부), 비교기 19건, 셀 npc.2, PDN 설정. 목표는 "signoff 전체 통과"가 아니라 <b>"위치로 풀 수 있는 위반 0"</b>입니다.</li>
-        <li><b>LVS 원인이 둘:</b> 행 조각이 만드는 floating n-well(device 차이와 정확히 일치)과 매크로 전원 미연결(다른 창 검증). 어느 쪽이 363건의 주원인인지는 PDN 실행 결과가 나와야 알 수 있습니다. 전원 연결이 안 되면 배치를 아무리 잘 해도 LVS는 그대로입니다.</li>
+        <li><b>LVS 원인이 둘:</b> 행 조각이 만드는 floating n-well(device 차이와 정확히 일치)과 매크로 전원 미연결(추출 SPICE 검증). 어느 쪽이 363건의 주원인인지는 PDN 실행 결과가 나와야 알 수 있습니다. 전원 연결이 안 되면 배치를 아무리 잘 해도 LVS는 그대로입니다.</li>
         <li><b>L0 점수가 실제와 어긋날 수 있음:</b> 상관 측정 전이라, 점수 최적화가 헛돌 위험이 있습니다(P4에서 보정).</li>
         <li><b>실행 안정성:</b> 이번에 <code>adcshift</code>·<code>adcslew</code>가 결과 없이 끊겼습니다. 수 시간짜리 실행을 반복하려면 이어서 돌리는 장치가 필수입니다.</li>
         <li><b>후보 풀 분포 미확인:</b> 후보 저장소(<code>chip-tetris-legal-candidates-v2</code>)는 사용자 브라우저에만 있어 분포를 보지 못했습니다.</li>
-        <li><b>결정 필요:</b> ① P-1 실험(자원이 다른 창의 PDN 실행과 겹침) 일정 ② 기존 Continuous evolution과의 역할 분담 ③ 성공 기준(예: L3 몇 번 안에 위치 위반 0 후보 확보).</li>
+        <li><b>결정 필요:</b> ① P-1 실험(WSL·OpenLane 자원이 진행 중인 PDN 실행과 겹침) 일정 ② 기존 Continuous evolution과의 역할 분담 ③ 성공 기준(예: L3 몇 번 안에 위치 위반 0 후보 확보).</li>
       </ul>
     </Section>
   </div>
@@ -219,7 +220,7 @@ function Candidate2() {
       <p style={p}>PPA3는 hard macro가 ADC·SRAM 두 개여서 거친 위치 조합은 이미 전수 열거가 가능합니다. beam search의 이득은 이웃 영역 shape와 세밀한 좌표·규칙 상태까지 확장할 때 실측으로 판단합니다. 전역 DRC와 최종 STA는 beam search 점수로 대체하지 않습니다.</p>
     </Section>
 
-    <Section title="5. 유사 코드와 시제품 검증 (beam search + 간격 DP)">
+    <Section title="6. 유사 코드와 시제품 검증 (beam search + 간격 DP)">
       <p style={p}>위 2절의 상태·전이·값을 그대로 따르는 유사 코드입니다. 탐색을 <b>두 단계</b>로 나눕니다. ① <b>beam search</b>는 블록 순서대로 위치·방향·shape를 고르고, ② <b>간격 DP(정확)</b>는 ①이 정한 위상에서 µm 단위 간격을 규칙에 맞게 최적으로 나눕니다. 두 알고리즘 모두 실제 코드로 만들어 돌렸습니다.</p>
 
       <p style={{ ...p, marginBottom: 2 }}><b>① beam search — 상위 K개만 남기는 제한된 탐색 (정확한 DP 아님)</b></p>
@@ -249,7 +250,8 @@ return layer                                               # 서로 다른 상�
         <tr><td>단계별 후보 수 (adc · sram · opamp · fifo · control)</td><td>135 · 36 · 639 · 240 · 1,096</td><td>135 · 117 · 2,877 · 897 · 3,857</td><td>—</td></tr>
       </tbody></table></div>
       <ul style={ul}>
-        <li><b>K를 키우면 좋아집니다</b>: 후보를 이웃 띠로 제한한 뒤 K=8은 4.4초에 −185.1, K=32는 17.9초에 −136.5, <b>K=128은 71.7초에 −135.0</b>입니다(제한 전에는 K=128이 시간 초과). 32 이후에는 개선 폭이 작아졌습니다. K=512는 확인하지 못했습니다.</li>
+        <li><b>측정 조건:</b> 이 표와 아래 수치는 2026-10-08, <b>모양 8개·<code>rotationsFor</code> 캐시 전</b> 엔진에서 잰 시제품 값입니다. 같은 beam을 현재 엔진(모양 23개·캐시·이웃 띠 제한)에서 다시 재면 <b>K=8은 1.5초에 −134.77, K=32는 5.3초에 −132.70, K=128은 23.2초에 −132.70</b>(정확한 키)이며, 그 표는 8절에 있습니다.</li>
+        <li><b>K를 키우면 좋아집니다</b>(당시 값): 후보를 이웃 띠로 제한한 뒤 K=8은 4.4초에 −185.1, K=32는 17.9초에 −136.5, <b>K=128은 71.7초에 −135.0</b>입니다(제한 전에는 K=128이 시간 초과). 32 이후에는 개선 폭이 작아졌습니다. K=512는 확인하지 못했습니다.</li>
         <li><b>속도 개선(측정):</b> 엔진의 필수 이웃 규칙은 "이웃 블록의 한 칸과 맨해튼 거리 정확히 1"이므로, 후보를 <b>이웃 블록 바로 바깥 칸을 모양이 덮는 위치</b>로만 만들어도 합법 위치를 놓치지 않습니다. 실제로 25개 상태에서 합법 위치 집합이 전체 스캔과 <b>1,640 = 1,640으로 일치(불일치 0)</b>했습니다. 합법성 검사가 K=8에서 55,800 → 8,796회, K=32에서 221,400 → 35,100회로 줄고, 시간은 <b>15.0 → 4.4초, 58.9 → 17.9초</b>(약 3.3배)가 됐습니다. 위 표의 시간은 제한 전(전체 스캔) 값입니다.</li>
         <li>시제품에는 위반 기억의 금지·risk, PDN 위상, 다양성 제한을 <b>넣지 않았습니다.</b> 점수는 기존 게임 점수(proxy)이며 실제 DRC·LVS 결과가 아닙니다.</li>
         <li>시제품 코드는 저장소에 넣지 않았습니다(스크래치). 구현 단계 D2에서 정식 파일로 만듭니다.</li>
@@ -282,32 +284,42 @@ r ← LU − s : 마지막 간격 = 나머지이며 이것도 규칙을 통과�
       <p style={p}><b>두 알고리즘의 연결:</b> ①이 거친 위상(블록 집합·방향·shape)을 상위 K개 고르면, ②가 각 위상의 µm 좌표를 규칙에 맞게 정합니다. 그 결과가 L1(floorplan·tap·PDN) 판정 입력이 됩니다.</p>
     </Section>
 
-    <Section title="6. beam search · 간격 DP 단계별 그림 설명 (한 단계씩 따라가기)" open>
+    <Section title="7. beam search · 간격 DP 단계별 그림 설명 (한 단계씩 따라가기)" open>
       <DpStepByStep/>
     </Section>
 
-    <Section title="7. 상태 키 요약 실험 — 비슷한 상태를 합치면 빔이 좋아진다 (측정)" open>
-      <p style={p}>6절 그림에서 보듯 <b>상태 키가 보드 전체</b>이면 서로 다른 부모에서 같은 보드가 나오지 않아 <b>병합이 한 번도 일어나지 않습니다.</b> 키를 "블록마다 (모양, x÷N, y÷N)"으로 뭉친 <b>요약 키</b>로 바꾸면 비슷한 상태가 합쳐집니다(같은 키에서는 점수가 높은 것 하나만 유지). 같은 엔진·같은 beam에서 키만 바꿔 쟀습니다.</p>
-      <div className="data-table"><table><thead><tr><th>빔 폭 K</th><th>상태 키</th><th>시간</th><th>최고 게임 점수 (높을수록 좋음)</th><th>서로 다른 opamp 위치 (최종 K개 중)</th></tr></thead><tbody>
-        <tr><td rowSpan={4}>8</td><td>정확(보드 전체)</td><td>4.6초</td><td>−185.1</td><td>3</td></tr>
-        <tr><td>2칸 버킷</td><td>5.5초</td><td>−138.1</td><td>1</td></tr>
-        <tr><td>3칸 버킷</td><td>4.9초</td><td>−138.1</td><td>2</td></tr>
-        <tr><td>4칸 버킷</td><td>5.0초</td><td><b>−136.5</b></td><td>2</td></tr>
-        <tr><td rowSpan={4}>32</td><td>정확(보드 전체)</td><td>21.0초</td><td>−136.5</td><td>5</td></tr>
-        <tr><td>2칸 버킷</td><td>21.2초</td><td>−137.5</td><td>9</td></tr>
-        <tr><td>3칸 버킷</td><td>15.6초</td><td>−135.0</td><td>10</td></tr>
-        <tr><td>4칸 버킷</td><td><b>13.2초</b></td><td><b>−133.1</b></td><td>12</td></tr>
-        <tr><td>128 (참고)</td><td>정확(보드 전체)</td><td>71.7초</td><td>−135.0</td><td>측정 안 함</td></tr>
+    <Section title="8. 상태 키 요약 실험 — 비슷한 상태를 합치면 빔이 좋아지는가 (측정, 엔진에 따라 결과가 달라짐)" open>
+      <p style={p}>7절 그림에서 보듯 <b>상태 키가 보드 전체</b>이면 서로 다른 부모에서 같은 보드가 나오지 않아 <b>병합이 한 번도 일어나지 않습니다.</b> 키를 "블록마다 (모양, x÷N, y÷N)"으로 뭉친 <b>요약 키</b>로 바꾸면 비슷한 상태가 합쳐집니다(같은 키에서는 점수가 높은 것 하나만 유지). 같은 beam에서 키만 바꿔 쟀습니다. <b>아래 표는 2026-10-09, 현재 엔진(모양 23개·캐시·이웃 띠 제한)의 값입니다.</b></p>
+      <div className="data-table"><table><thead><tr><th>빔 폭 K</th><th>상태 키</th><th>시간</th><th>최고 게임 점수 (높을수록 좋음)</th><th>서로 다른 SAR 위치 (최종 K개 중)</th></tr></thead><tbody>
+        <tr><td rowSpan={4}>8</td><td>정확(보드 전체)</td><td>1.5초</td><td>−134.77</td><td>2</td></tr>
+        <tr><td>2칸 버킷</td><td>1.2초</td><td>−134.77</td><td>2</td></tr>
+        <tr><td>3칸 버킷</td><td>1.3초</td><td>−134.77</td><td>1</td></tr>
+        <tr><td>4칸 버킷</td><td>1.2초</td><td>−134.77</td><td>2</td></tr>
+        <tr><td rowSpan={4}>32</td><td>정확(보드 전체)</td><td>5.3초</td><td><b>−132.70</b></td><td>4</td></tr>
+        <tr><td>2칸 버킷</td><td>5.0초</td><td>−132.70</td><td>7</td></tr>
+        <tr><td>3칸 버킷</td><td>4.0초</td><td>−132.70</td><td>7</td></tr>
+        <tr><td>4칸 버킷</td><td>4.6초</td><td>−132.74</td><td>9</td></tr>
+        <tr><td rowSpan={2}>128</td><td>정확(보드 전체)</td><td>23.2초</td><td>−132.70</td><td>17</td></tr>
+        <tr><td>4칸 버킷</td><td>13.3초</td><td>−132.74</td><td>31</td></tr>
+        <tr><td>256 (참고)</td><td>4칸 버킷</td><td>24.2초</td><td>−132.74</td><td>34</td></tr>
       </tbody></table></div>
       <div className="data-table"><table><thead><tr><th>단계별 후보 수 (K=32), 생성 → 병합 후</th><th>ADC</th><th>SRAM</th><th>SAR NEAR</th><th>CDC EDGE</th><th>CAPTURE NEAR</th></tr></thead><tbody>
-        <tr><td>정확한 키</td><td>135 → 135</td><td>117 → 117</td><td>2,877 → 2,877</td><td>897 → 897</td><td>3,857 → 3,857</td></tr>
-        <tr><td>4칸 버킷 키</td><td>135 → 12</td><td>36 → 8</td><td>718 → 226</td><td>887 → 379</td><td>3,806 → 1,146</td></tr>
+        <tr><td>정확한 키</td><td>135 → 135</td><td>117 → 117</td><td>7,875 → 7,875</td><td>1,057 → 1,057</td><td>10,470 → 10,470</td></tr>
+        <tr><td>4칸 버킷 키</td><td>135 → 12</td><td>36 → 8</td><td>1,915 → 603</td><td>1,011 → 426</td><td>10,178 → 3,055</td></tr>
+      </tbody></table></div>
+      <p style={{ ...p, marginBottom: 2 }}><b>같은 실험을 이전 엔진(2026-10-08, 모양 8개·캐시 전)에서 했을 때</b></p>
+      <div className="data-table"><table><thead><tr><th>빔 폭 K</th><th>상태 키</th><th>시간</th><th>최고 점수</th></tr></thead><tbody>
+        <tr><td rowSpan={2}>8</td><td>정확(보드 전체)</td><td>4.6초</td><td>−185.1</td></tr>
+        <tr><td>4칸 버킷</td><td>5.0초</td><td>−136.5</td></tr>
+        <tr><td rowSpan={2}>32</td><td>정확(보드 전체)</td><td>21.0초</td><td>−136.5</td></tr>
+        <tr><td>4칸 버킷</td><td>13.2초</td><td>−133.1</td></tr>
+        <tr><td>128 (참고)</td><td>정확(보드 전체)</td><td>71.7초</td><td>−135.0</td></tr>
       </tbody></table></div>
       <ul style={ul}>
-        <li><b>결과:</b> K=8에서 4칸 버킷(−136.5)이 K=32 정확한 키(−136.5)와 같은 점수를 4분의 1 시간으로 냅니다. K=32 + 4칸 버킷(−133.1, 13.2초)은 <b>K=128 정확한 키(−135.0, 71.7초)보다 점수도 좋고 약 5배 빠릅니다.</b> 최고 상태의 위반은 모두 0건이었습니다.</li>
-        <li><b>해석(추정):</b> 정확한 키의 빔은 "한 칸 옮긴 거의 같은 상태"가 자리를 채우는 것으로 보이고(최종 K개 중 opamp 위치가 5가지뿐), 요약 키가 그 중복을 합쳐 <b>빔 자리를 서로 다른 상태에 쓰게 합니다</b>(12가지). 중복이 실제로 빔을 채우는지는 직접 확인하지 않았습니다.</li>
-        <li><b>한계:</b> 점수는 게임 proxy이고, 문제 인스턴스는 하나, 시간은 단일 실행입니다. 합치는 것은 <b>근사</b>라서 좋은 상태를 잃을 수 있고, 버킷 크기에 민감합니다(K=32에서 2칸이 3·4칸보다 나쁨). 4칸보다 큰 버킷은 측정하지 않았습니다.</li>
-        <li><b>설계로의 연결(제안):</b> 위치 버킷은 가장 단순한 요약입니다. 설계 후보 2의 "상태"(점유·경계 여유·net 요약·PDN 위상)를 <b>규칙에 민감한 특징</b>(행 조각 폭, strap 위상 등)으로 요약해 키로 쓰면, "규칙 기준으로 같은 상태"를 합칠 수 있습니다. 6절 그림의 "상태 키" 선택에서 같은 효과를 직접 볼 수 있습니다.</li>
+        <li><b>결과(현재 엔진):</b> 키를 바꿔도 <b>점수가 거의 같습니다</b>(K=8은 모두 −134.77, K=32는 −132.70 ~ −132.74). 정확한 키 K=32가 이미 −132.70(5.3초)에 닿습니다. 4칸 키는 <b>시간을 줄이지만</b>(K=128에서 23.2 → 13.3초) 점수는 0.04 낮아 근사 손실이 보이고, <b>서로 다른 SAR 위치는 더 많이 남깁니다</b>(K=128에서 17 → 31). 최고 상태의 위반은 모두 0건이었습니다.</li>
+        <li><b>이전 결과와 달라진 점:</b> 이전 엔진에서는 4칸 키가 같은 시간에 훨씬 좋은 점수를 냈지만(K=32 −136.5 → −133.1) 현재 엔진에서는 그 이득이 없습니다. 왜 사라졌는지는 <b>측정하지 않았습니다.</b> 가설: 모양이 늘고 이웃 띠 제한이 적용되면서 정확한 키의 빔에도 좋은 후보가 충분히 남게 되었을 수 있습니다.</li>
+        <li><b>한계:</b> 점수는 게임 proxy이고, 문제 인스턴스는 하나이며, 시간은 단일 실행입니다. 합치는 것은 <b>근사</b>라서 좋은 상태를 잃을 수 있고 버킷 크기에 민감합니다. 4칸보다 큰 버킷은 측정하지 않았습니다.</li>
+        <li><b>설계로의 연결(제안):</b> 요약 키의 값은 <b>점수가 아니라 시간 절감과 후보의 다양성</b>일 수 있습니다. 설계 후보 2의 "상태"(점유·경계 여유·net 요약·PDN 위상)를 규칙에 민감한 특징으로 요약해 키로 쓸 때는, 이전 엔진의 큰 이득을 기대하지 말고 <b>현재 설정에서 다시 재서</b> 판단해야 합니다. 7절 그림의 "상태 키" 선택에서 병합 효과를 직접 볼 수 있습니다.</li>
       </ul>
     </Section>
   </div>
@@ -352,7 +364,7 @@ function Background() {
       <ul style={ul}>
         <li><b>이 프로젝트에서 쓴 탐색 세 가지:</b> ① <b>표준셀 부분집합 DP</b>(상태 = 왼쪽에 놓인 셀의 집합, 2<sup>n</sup>개 → 23셀까지 정확), ② <b>간격 DP</b>(규칙 아래 µm 간격 나누기, 전수 탐색과 일치), ③ <b>위상 beam search</b>(블록을 순서대로 놓고 상위 K개만 유지 — DP의 단계 구조를 쓰지만 <b>정확한 DP가 아님</b>).</li>
         <li><b>정확한 DP와 beam의 차이:</b> 정확한 DP는 모든 상태를 유지해 최적을 보장하고, beam은 상위 K개만 남겨 <b>빠른 대신 보장이 없습니다.</b></li>
-        <li>단계별 그림은 <b>설계 후보 2의 6절</b>에서 실제 엔진으로 따라갈 수 있습니다.</li>
+        <li>단계별 그림은 <b>설계 후보 2의 7절</b>에서 실제 엔진으로 따라갈 수 있습니다.</li>
       </ul>
     </Section>
 
@@ -376,11 +388,11 @@ function Background() {
         <tr><td>표준셀 10셀 이하 (후보 9개)</td><td>정확해보다 평균 <b>+1.1%</b> 나쁨(프록시 기준)</td><td>정확해 DP, 스펙트럴은 평균 +2.6%</td></tr>
         <tr><td>표준셀 40셀 (12비트 카운터)</td><td>seed 4개가 <b>200.5 ~ 298.6</b>로 크게 흔들림</td><td>DP 불가(24셀 이상). 스펙트럴 188.6, <b>스펙트럴 해에서 시작한 SA 185.3</b></td></tr>
         <tr><td>ADC–SRAM 간격 나누기</td><td>불필요</td><td>간격 DP가 <b>전수 탐색과 일치</b>(비용 1.7435, 5 µm 칸)</td></tr>
-        <tr><td>칩 배치 (5블록) — <b>처음부터</b> SA (무작위 합법 시작, 직접 구현, seed 4개)</td><td><b>15초:</b> 최고 −153.9 · 중앙값 −173.6 · 최악 −180.0<br/><b>60초:</b> 최고 −140.8 · 중앙값 −150.8 · 최악 −190.1<br/>이동의 약 1/3이 불법(예: 1,872회 중 600회)</td><td><b>beam search(4칸 버킷, K=32): −133.1 (13.2초)</b><br/>무작위 합법 완성 −258.9 (같은 시간)</td></tr>
-        <tr><td>칩 배치 — 게임에 있는 기존 SA (6~60회, 짧음)</td><td>6회 중앙값 −589.7 · 60회 중앙값 −362.5 (300회는 시간 초과)</td><td>위와 같음</td></tr>
+        <tr><td>칩 배치 (5블록) — <b>처음부터</b> SA (무작위 합법 시작, 직접 구현, seed 4개)</td><td><b>15초:</b> 최고 −132.9 · 중앙값 −136.4 · 최악 −165.8<br/><b>60초:</b> 최고 −133.2 · 중앙값 −140.1 · 최악 −147.6<br/>(T0=60→1.5, seed 4개, 2026-10-09 현재 엔진) 같은 설정에서 T0=5로 시작하면 15초 중앙값 −140.2(최악 −163.4), 60초 중앙값 −134.1(최악 −143.0)로 <b>T0 5와 60의 우열은 구별되지 않습니다.</b><br/>이동의 약 1/3이 불법(예: 17,641회 중 5,758회)</td><td><b>beam search K=32: 정확한 키 −132.70 (5.3초), 4칸 버킷 −132.74 (4.6초)</b><br/>무작위 합법 배치는 300번 시도 중 109개가 완성되고 최고 −307.4, 중앙값 −767.5 (11절 ⑤)</td></tr>
+        <tr><td>칩 배치 — 게임에 있는 기존 SA (6~60회, 짧음)</td><td>6회 중앙값 −589.7 · 60회 중앙값 −362.5 (300회는 시간 초과; 2026-10-08, 모양 8개 엔진, 재측정 안 함)</td><td>위와 같음</td></tr>
       </tbody></table></div>
       <ul style={ul}>
-        <li><b>SA도 기존 배치 없이 처음부터 잘 동작합니다.</b> 이번에 직접 구현한 단순 SA(블록 하나를 골라 그 뒤 블록들을 무작위 합법 위치로 다시 뽑는 이동, 온도 60→1.5 지수 냉각, 튜닝 없음)는 60초에 최고 −140.8까지 갔습니다. <b>같은 시간(약 15초)에서는 beam이 앞서고(−133.1 대 −153.9~−180.0), 시간을 4배 주면 SA가 따라오지만 seed 편차가 큽니다</b>(60초에서 −140.8 ~ −190.1). 더 오래·잘 조정한 SA가 beam을 넘는지는 측정하지 못했습니다.</li>
+        <li><b>SA도 기존 배치 없이 처음부터 잘 동작합니다.</b> 직접 구현한 단순 SA(블록 하나를 골라 그 뒤 블록들을 무작위 합법 위치로 다시 뽑는 이동, 온도 60→1.5 지수 냉각, 튜닝 없음)는 15초에 중앙값 −136.4, 최고 −132.9까지 갔습니다. <b>점수만 보면 SA도 seed에 따라 beam이 5초에 닿는 −132.70 근처에 닿지만, 편차가 큽니다</b>(15초 최악 −165.8, 60초에도 최악 −147.6). 이 문서의 이전 판에 있던 −153.9 ~ −180.0(15초)은 모양 8개·캐시 전 엔진의 값이며, 같은 SA의 이동 수가 캐시로 약 5배가 되었으므로 <b>엔진 속도가 큰 몫이었던 것으로 보입니다</b>(모양 수도 달라 원인을 단정하지는 않습니다). 더 오래·잘 조정한 SA가 beam을 넘는지는 측정하지 못했고, −132.70을 넘은 방법은 없었습니다.</li>
         <li>점수는 게임 proxy이며, 두 문제 모두 단일 인스턴스입니다. 게임의 기존 SA 행(−362.5)은 짧은 반복이라 SA 자체의 한계로 읽으면 안 됩니다.</li>
       </ul>
     </Section>
@@ -393,7 +405,7 @@ function Background() {
         <tr><td>비용이 배치 전체에 얽혀 분해되지 않음 (라우팅·타이밍이 포함된 실제 평가)</td><td><b>SA</b></td><td>완성 배치의 비용만 알면 됨</td></tr>
         <tr><td>상태가 너무 커서 DP 불가 (표준셀 24셀 이상)</td><td><b>SA</b> 또는 스펙트럴</td><td>상태 폭발 회피</td></tr>
         <tr><td>이미 있는 해를 다듬는 후처리</td><td><b>SA</b></td><td>어떤 시작 해에서도 개선 가능</td></tr>
-        <tr><td>기존 배치가 없는 처음부터의 배치</td><td><b>둘 다 가능</b></td><td>SA는 무작위 합법 시작에서 15~60초에 −154~−141, beam은 13초에 −133(4칸 버킷). 빠른 결과·다양한 후보는 beam, 시간 여유와 유연한 비용은 SA</td></tr>
+        <tr><td>기존 배치가 없는 처음부터의 배치</td><td><b>둘 다 가능</b></td><td>SA는 무작위 합법 시작에서 15~60초에 중앙값 −134 ~ −140(최악 −143 ~ −166), beam은 5초에 −132.7. 빠른 결과·다양한 후보는 beam, 시간 여유와 유연한 비용은 SA</td></tr>
       </tbody></table></div>
       <p style={p}><b>함께 쓰기는 문제에 따라 다릅니다.</b> 표준셀 40셀에서는 스펙트럴 해로 시작한 SA(185.3)가 스펙트럴(188.6)과 SA 단독(200.5)보다 좋았습니다. 반면 <b>칩 배치에서는 beam search 뒤에 SA로 국소 이동해도 개선이 없었습니다</b>(9절 측정). "beam search 뒤에 SA"가 항상 좋은 것은 아니며, 앞 단계의 결과가 국소 최적이 아닐 때만 효과가 있습니다.</p>
     </Section>
@@ -448,6 +460,7 @@ function Background() {
     </Section>
 
     <Section title="9. beam search 뒤에 SA로 국소 이동하면 좋은가 — 측정 결과" open>
+      <p style={{ ...p, color: 'var(--text-secondary)' }}><b>이 절의 숫자는 2026-10-08, 모양 8개·캐시 전 엔진의 값입니다.</b> 현재 엔진에서 beam은 K=8 −134.77, K=32 이상 −132.70이라 "시작점"이 달라졌고, 아래 국소 SA 실험은 다시 재지 않았습니다.</p>
       <p style={p}>beam search의 결과를 시작점으로 낮은 온도(T 8 → 0.3)의 SA로 <b>블록 하나를 ±2칸(모양 변경 포함) 옮기는 국소 이동</b>을 10초 돌렸습니다. 먼저 beam search 결과가 단일 블록 변경으로 더 좋아질 수 있는지 <b>전수</b>로 확인했습니다.</p>
       <div className="data-table"><table><thead><tr><th>시작점 (beam search, 4칸 버킷 키)</th><th>beam search 점수</th><th>단일 블록 변경 전수 확인</th><th>beam search 뒤 국소 SA 10초</th><th>블록+의존 블록 묶음 이동 (±4칸)</th></tr></thead><tbody>
         <tr><td>K=8 (4.7초)</td><td><b>−136.51</b></td><td>대안 7,495개 중 합법 149개, <b>개선 0</b></td><td>seed 4개 모두 <b>−136.51</b> (이동 약 4,100회, 수락 123~168회, 불법 약 91%)</td><td>400개 중 합법 6개, 상위 8개 상태에서 <b>개선 0</b></td></tr>
@@ -463,7 +476,7 @@ function Background() {
       </tbody></table></div>
       <ul style={ul}>
         <li><b>국소 이동(±2칸 단일 블록, ±4칸 묶음)의 SA는 개선하지 못했습니다.</b> beam search 결과는 이미 이런 이동에 대해 <b>국소 최적</b>입니다.</li>
-        <li><b>큰 이동의 SA는 가끔만 개선합니다.</b> 9번의 30초 실행 중 <b>1번</b>(T0=20)만 −136.51에서 −133.14로 올랐고, 그 값은 beam K=32가 13초에 결정적으로 얻는 값과 같습니다. <b>SA는 어떤 실행에서도 −133.14를 넘지 못했고</b>(처음부터 60초 SA의 최고도 −140.8), K=32~256의 beam도 −133.14에서 멈췄습니다. 이 게임 점수에서는 −133.14가 도달 상한으로 보이지만 <b>전역 최적이라는 증명은 아닙니다.</b></li>
+        <li><b>큰 이동의 SA는 가끔만 개선합니다.</b> 9번의 30초 실행 중 <b>1번</b>(T0=20)만 −136.51에서 −133.14로 올랐고, 그 값은 beam K=32가 13초에 결정적으로 얻는 값과 같습니다. <b>SA는 어떤 실행에서도 −133.14를 넘지 못했고</b>(처음부터 60초 SA의 최고도 −140.8), K=32~256의 beam도 −133.14에서 멈췄습니다. 이전 엔진에서는 −133.14가 도달 상한으로 보였고 현재 엔진에서는 −132.70입니다. 어느 쪽도 <b>전역 최적이라는 증명은 아닙니다.</b></li>
         <li><b>점수를 올린 것은 국소 이동이 아니라 빔 폭입니다.</b> K=8(−136.51) → K=32(−133.14)로 키우면 좋아졌는데, 국소 SA가 K=8 결과에서 −133.14에 도달하지 못했습니다. 두 해는 여러 블록의 위치가 함께 달라서 <b>국소 이동으로는 건널 수 없는 거리</b>에 있습니다.</li>
         <li><b>이동이 경직된 탓도 있습니다.</b> 필수 이웃 규칙(맞닿아야 함) 때문에 블록 하나만 옮기면 91%가 불법이고, 묶음 이동도 합법인 것이 400개 중 6~18개뿐입니다.</li>
         <li><b>한계:</b> 점수는 게임 proxy이고 한 문제 인스턴스입니다. 큰 이동 SA는 온도 3가지 × seed 3개(총 9회)뿐이라 "가끔 개선"의 빈도(1/9)는 거친 추정이며, 냉각 스케줄·이동 비율은 튜닝하지 않았습니다.</li>
@@ -518,8 +531,8 @@ function Background() {
       <p style={p}><b>이 프로젝트와의 관계:</b></p>
       <ul style={ul}>
         <li>{badge('확정')} <b>검증된 격자 baseline은 slicing입니다.</b> <code>config_hierarchical.json</code>의 좌표(윗줄 y=100, 아랫줄 y=1200, 행 사이 300µm)는 영역 전체를 가로지르는 H 자르기 선 하나가 채널이 되는 구조입니다.</li>
-        <li>{badge('가설')} <b>다른 세션의 <code>CHANNEL_SAFE_MARGIN=300</code> 제약("다이를 가로지르는 빈 띠")은 slicing의 H/V 자르기 채널과 같은 개념입니다.</b> 영역 끝에서 끝까지 이어진 빈 띠가 일정 폭 이상 있어야 한다는 조건이기 때문입니다. 그 제약이 slicing을 염두에 두고 만든 것은 아니며, 이건 비교하는 해석입니다.</li>
-        <li>{badge('확정')} 실패한 macrotetris 후보의 <b>실패 사실은 실측으로 확인됐습니다.</b> v1은 <code>DPL-0036</code>(합법 자리를 못 찾은 hold 수리 버퍼 약 300개 — 다른 세션이 로그로 진단했고, 행 사이 채널을 300→100µm로 좁힌 것이 원인), v2는 <code>GRT-0118</code>(라우팅 혼잡 과다)로 실패했습니다. v2가 왜 혼잡했는지는 로그만으로는 확정하지 못했습니다.</li>
+        <li>{badge('가설')} <b>macro tetris 모델의 <code>CHANNEL_SAFE_MARGIN=300</code> 제약("다이를 가로지르는 빈 띠")은 slicing의 H/V 자르기 채널과 같은 개념입니다.</b> 영역 끝에서 끝까지 이어진 빈 띠가 일정 폭 이상 있어야 한다는 조건이기 때문입니다. 그 제약이 slicing을 염두에 두고 만든 것은 아니며, 이건 비교하는 해석입니다.</li>
+        <li>{badge('확정')} 실패한 macrotetris 후보의 <b>실패 사실은 실측으로 확인됐습니다.</b> v1은 <code>DPL-0036</code>(합법 자리를 못 찾은 hold 수리 버퍼 약 300개 — 실행 로그로 진단됐고, 행 사이 채널을 300→100µm로 좁힌 것이 원인), v2는 <code>GRT-0118</code>(라우팅 혼잡 과다)로 실패했습니다. v2가 왜 혼잡했는지는 로그만으로는 확정하지 못했습니다.</li>
         <li>{badge('가설')} 두 후보 모두 <b>영역 전체를 가로지르는 가로 방향의 넓은 빈 띠가 사라졌거나 좁아진 배치</b>입니다. v1은 그 띠가 100µm로 좁아졌고, v2는 저장된 좌표로 확인해 보면 가로 방향 전체를 가로지르는 빈 띠가 아예 없고 세로 방향 틈(약 90µm)만 있습니다. 그래서 "slicing 구조를 유지하면 이런 실패를 구조적으로 피할 수 있다"는 가설이 서지만, <b>slicing 구조 자체가 원인이라는 인과는 검증하지 않았습니다</b>(실패 2건 대 성공 baseline 1건뿐).</li>
         <li><b>ParSAC은 non-slicing 쪽입니다.</b> B*-tree로 매크로를 왼쪽·아래로 압축해 배치하므로 면적에는 유리하지만, 채널 폭을 따로 보장해 주지는 않습니다(8절의 "의도적 간격과 충돌" 항목과 같은 이야기).</li>
       </ul>
@@ -592,11 +605,22 @@ cut[S ∪ {v}] = cut[S] + (v의 넷 수) − 2 × (v의 S쪽 넷 수)
       <ul style={ul}>
         <li>{badge('확정')} <b>말할 수 있는 것:</b> 한 행에 들어가는 20~23셀 복합 셀의 순서·반전 문제에서, SA가 정확해에서 얼마나 떨어지는지 재는 <b>기준선(ground truth)</b>이 됩니다. 이 대시보드의 기록으로 SA는 평균 +1.3% 나빴습니다(프록시 기준).</li>
         <li>{badge('확정')} <b>말할 수 없는 것:</b> 칩 전체 배치의 최적성, 타이밍·혼잡·sign-off 통과 여부, 간격을 쓴 배치와의 우열.</li>
-        <li>{badge('가설')} <b>넓히는 방향(미구현):</b> 일반적으로는 행 배정을 분할이나 전역 배치로 먼저 정하고, 각 행 안의 순서를 따로 최적화하는 2단계로 풉니다. 이때 이 DP는 두 번째 단계(행 안 순서)의 부품이 될 수 있습니다. 간격은 간격 DP(5절 후보 2)와 결합하는 쪽이 자연스럽습니다. 슬라이싱 구조로 제한하는 방법은 12절을 보세요. 이 프로젝트에서 시도한 것은 아닙니다.</li>
+        <li>{badge('가설')} <b>넓히는 방향(미구현):</b> 일반적으로는 행 배정을 분할이나 전역 배치로 먼저 정하고, 각 행 안의 순서를 따로 최적화하는 2단계로 풉니다. 이때 이 DP는 두 번째 단계(행 안 순서)의 부품이 될 수 있습니다. 간격은 간격 DP(6절 후보 2)와 결합하는 쪽이 자연스럽습니다. 슬라이싱 구조로 제한하는 방법은 12절을 보세요. 이 프로젝트에서 시도한 것은 아닙니다.</li>
       </ul>
     </Section>
     <Section title="15. STA 이후 — setup · hold · slack · WNS, 위반을 고치는 법, 그리고 왜 오래 걸리나 (chan_top 실측)" open>
       <p style={p}>타이밍 위반이 "배선이 길어서"가 아니라는 것을 chan_top 재성형 4개 풀 실행(<code>runs/reshape_full_*</code>)의 STA 리포트와 단계별 실행 시간(<code>runtime.txt</code>)으로 확인했습니다. 수치는 <code>55-openroad-stapostpnr</code>(RCX 이후 sign-off STA)와 <code>35-openroad-stamidpnr-1</code>(CTS 이후)의 <code>max.rpt</code>·<code>min.rpt</code>에서 읽었습니다.</p>
+
+      <p style={{ ...p, marginBottom: 2 }}><b>0) 먼저 용어 — launch 클럭 · capture 클럭 · skew · slew</b></p>
+      <LaunchCaptureFigure/>
+      <div className="data-table"><table><thead><tr><th style={{ width: '18%' }}>용어</th><th>뜻</th><th>이 프로젝트에서</th></tr></thead><tbody>
+        <tr><td><b>launch 클럭</b></td><td>데이터를 <b>내보내는</b> 플롭(A)에 들어가는 클럭. 이 엣지에서 A의 출력이 바뀌며 데이터가 출발</td><td>같은 클럭 신호가 경로마다 역할만 다르게 불림</td></tr>
+        <tr><td><b>capture 클럭</b></td><td>데이터를 <b>받는</b> 플롭(B)에 들어가는 클럭. 이 엣지에서 B가 입력을 읽어 저장</td><td>한 플롭이 앞 경로에서는 capture, 뒤 경로에서는 launch</td></tr>
+        <tr><td><b>skew</b></td><td>같은 클럭이 두 플롭에 <b>도착하는 시간 차이</b> (capture − launch). 클럭 트리의 배선·버퍼 차이에서 생김</td><td>chan_top setup 분해에서 launch 0.7466 ns, capture 0.7478 ns → <b>약 +0.001 ns</b> (3절 표)</td></tr>
+        <tr><td><b>slew</b></td><td>엣지가 0에서 1로 바뀌는 데 걸리는 시간(보통 10~90 %). 느릴수록 파형이 기울어지고 플롭이 값을 확정하는 시간이 더 필요</td><td>cell 라이브러리가 slew에 따라 setup/hold 시간을 다르게 줌 (이 그림의 계수는 예시)</td></tr>
+        <tr><td><b>clock uncertainty</b></td><td>skew가 아니라, 지터·스큐 등 클럭 불확실성에 대비해 SDC에서 <b>마진으로 지정한 값</b></td><td>chan_top.sdc: 주기의 5 % (axi_clk 52 ns → 2.6 ns)</td></tr>
+      </tbody></table></div>
+      <ClockSkewSlewExplorer/>
 
       <p style={{ ...p, marginBottom: 2 }}><b>1) Setup과 Hold — 두 조건</b></p>
       <SetupHoldConceptFigure/>

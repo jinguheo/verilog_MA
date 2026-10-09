@@ -2,9 +2,10 @@
 //  A. beam search(위상): 실제 Chip Tetris 엔진(chipTetrisEngine)을 이 화면에서 돌려, 블록을 하나씩 놓는 과정을 단계별로 그린다.
 //  B. 간격 DP(정확): ADC·SRAM 사이 간격을 규칙 아래 나누는 표 채우기를 단계별로 그린다.
 // 그림의 배치·후보 수·점수·표 값은 모두 렌더링할 때 계산한 실제 값이다(손으로 쓴 숫자 없음).
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as E from '../game/chipTetrisEngine'
 import { TERMS, beamAsync } from './chipSearch'
+import { GAP_G, gapCostFns } from './chipCombo'
 
 const p ={ margin: '4px 0 8px', fontSize: 13, lineHeight: 1.8 } as const
 const ul = { margin: '0 0 8px 18px', padding: 0, fontSize: 13, lineHeight: 1.8 } as const
@@ -215,7 +216,7 @@ function ShapeGallery() {
         </div>
       </div>
     })}
-    <p style={{ ...p, fontSize: 12 }}>주황 테두리가 이번에 추가한 모양입니다: 3칸 이상 띄움, 가로·세로를 다르게 띄움, 일자형 1×4, L자·T자(4셀 블록), CDC의 3~4칸 띄움. <b>필수 이웃 규칙은 "한 셀이라도 맞닿으면 통과"라서</b> 퍼진 모양의 나머지 조각이 멀어지지 않도록 한 변을 5칸으로 제한했습니다. 모양이 늘면 후보 수가 거의 비례해 늘지만(측정: beam K=8 합법 검사 8,891 → 19,393번), 점수가 좋아지는 폭은 작았습니다(−136.51 → −134.77). 점수식에 "영역을 나눠 놓으면 이득"이라는 항이 없기 때문입니다(측정: 배경 지식 탭 11절 ⑤ "모양을 8개에서 23개로" 표).</p>
+    <p style={{ ...p, fontSize: 12 }}>주황 테두리가 이번에 추가한 모양입니다: 3칸 이상 띄움, 가로·세로를 다르게 띄움, 일자형 1×4, L자·T자(4셀 블록), CDC의 3~4칸 띄움. <b>필수 이웃 규칙은 "한 셀이라도 맞닿으면 통과"라서</b> 퍼진 모양의 나머지 조각이 멀어지지 않도록 한 변을 5칸으로 제한했습니다. 모양이 늘면 후보 수가 거의 비례해 늘지만(측정: beam K=8 합법 검사 8,891 → 19,393번), 점수가 좋아지는 폭은 작았습니다(−136.51 → −134.77). 게임 화면의 회전 키는 기존 모양(SAR 8·CDC 6·CAP 8개)만 돌고, 새 모양은 탐색(beam·SA·AI 계획)에서만 쓰입니다. 점수식에 "영역을 나눠 놓으면 이득"이라는 항이 없기 때문으로 보입니다(추정, 측정: 배경 지식 탭 11절 ⑤ "모양을 8개에서 23개로" 표).</p>
   </div>
 }
 
@@ -234,12 +235,15 @@ function OrderBox() {
   const [rows, setRows] = useState<OrderRow[]>([])
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  const alive = useRef(true)
+  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])   // 탭을 떠나면 계산을 멈춘다
   const run = async () => {
     setBusy(true); setRows([])
     const out: OrderRow[] = []
     for (const order of [...BAD_EXAMPLES, ...VALID_ORDERS]) {
       setMsg(`${orderLabel(order)} 계산 중… (${out.length + 1}/${BAD_EXAMPLES.length + VALID_ORDERS.length})`)
-      const r = await beamAsync(8, 4, undefined, order)
+      const r = await beamAsync(8, 4, undefined, order, () => !alive.current)
+      if (!alive.current) return
       out.push({ order, best: r.top[0]?.value, ms: r.ms, stoppedAt: r.stoppedAt }); setRows([...out])
     }
     setMsg(''); setBusy(false)
@@ -372,7 +376,7 @@ function BeamPart() {
           {step === 2 && <div style={p}>
             <b>이 단계에서 beam search의 두 장치를 구분해서 봅니다.</b>
             <ul style={ul}>
-              <li><b>병합("같은 부분 문제를 다시 합친다"):</b> 지금 상태 키는 <b>{bucket === 0 ? '보드 전체(정확)' : `${bucket}칸 버킷 요약`}</b>입니다. {cur.merged < cur.legalTotal ? <>{cur.legalTotal.toLocaleString()}개가 <b>{cur.merged.toLocaleString()}개로 줄었습니다.</b> 같은 버킷의 비슷한 상태끼리 합치고 점수가 높은 하나만 남긴 것입니다(<b>근사</b>이므로 좋은 상태를 잃을 수 있습니다).</> : <><b>{cur.legalTotal.toLocaleString()}개 → {cur.merged.toLocaleString()}개로 줄지 않았습니다.</b> 놓는 순서가 정해져 있고 키가 보드 전체라서 같은 보드가 만들어지지 않기 때문입니다. 위의 "상태 키"를 <b>4칸 버킷 요약</b>으로 바꿔 보세요.</>} 측정(K=32): 정확한 키는 병합이 없었고, 4칸 버킷은 ADC 135→12개 등으로 줄여 같은 K에서 <b>점수 −136.5 → −133.1, 시간 21.0초 → 13.2초</b>였습니다(설계 후보 2의 7절).</li>
+              <li><b>병합("같은 부분 문제를 다시 합친다"):</b> 지금 상태 키는 <b>{bucket === 0 ? '보드 전체(정확)' : `${bucket}칸 버킷 요약`}</b>입니다. {cur.merged < cur.legalTotal ? <>{cur.legalTotal.toLocaleString()}개가 <b>{cur.merged.toLocaleString()}개로 줄었습니다.</b> 같은 버킷의 비슷한 상태끼리 합치고 점수가 높은 하나만 남긴 것입니다(<b>근사</b>이므로 좋은 상태를 잃을 수 있습니다).</> : <><b>{cur.legalTotal.toLocaleString()}개 → {cur.merged.toLocaleString()}개로 줄지 않았습니다.</b> 놓는 순서가 정해져 있고 키가 보드 전체라서 같은 보드가 만들어지지 않기 때문입니다. 위의 "상태 키"를 <b>4칸 버킷 요약</b>으로 바꿔 보세요.</>} 측정(K=32, 현재 엔진): 정확한 키는 병합이 없었고, 4칸 버킷은 ADC 135→12개 등으로 줄여 <b>시간은 5.3초 → 4.6초</b>로 줄었지만 <b>점수는 −132.70 → −132.74</b>로 차이가 거의 없었습니다. 이전 엔진(모양 8개·캐시 전)에서는 −136.5 → −133.1로 도움이 됐지만 지금은 재현되지 않았습니다(설계 후보 2의 8절).</li>
               <li><b>상위 K 자르기(beam):</b> {cur.merged.toLocaleString()}개 중 값이 높은 {cur.kept.length}개만 남깁니다. {cur.merged < cur.legalTotal ? '병합과 함께 탐색량을 줄이는 장치이며' : '정확한 키에서는 탐색량을 줄이는 것이 이 장치뿐이며'} 최적을 보장하지 못합니다.</li>
             </ul>
           </div>}
@@ -395,7 +399,7 @@ function BeamPart() {
         </div>)}
       </div>
       <ul style={ul}>
-        <li><b>최적을 보장하지 않습니다.</b> 상위 K개만 남기므로, 지금 점수가 낮아 버려진 상태가 나중에 더 좋았을 수 있습니다. K를 키우면 좋아지지만 시간이 늘어납니다(실측: K=8 4.4초 → K=32 17.9초 → K=128 71.7초, 점수 −185.1 → −136.5 → −135.0).</li>
+        <li><b>최적을 보장하지 않습니다.</b> 상위 K개만 남기므로, 지금 점수가 낮아 버려진 상태가 나중에 더 좋았을 수 있습니다. K를 키우면 시간이 늘어나고, 이 문제에서는 K=32 이후 점수가 더 오르지 않았습니다(현재 엔진·정확한 키 실측: K=8 1.5초 −134.77 → K=32 5.3초 −132.70 → K=128 23.2초 −132.70. 이전 엔진에서는 4.4초 −185.1 → 17.9초 −136.5 → 71.7초 −135.0).</li>
         <li>점수는 <b>게임 proxy</b>이며 실제 DRC·LVS 결과가 아닙니다. 위반 기억의 금지·risk는 이 그림에 아직 반영되지 않았습니다.</li>
       </ul>
     </div>}
@@ -412,7 +416,7 @@ function BeamPart() {
 }
 
 // ================= B. 간격 DP (정확) =================
-const G = { coreLeft: 20.24, coreRight: 1229.6, halo: 10, macros: [{ n: 'ADC', w: 223.71 }, { n: 'SRAM', w: 764.24 }], strapPitch: 40, strapOffset: 22.66 }
+const G = GAP_G
 const INF = Infinity
 type GCell = { cost: number; gap: number; macro: number; from: number }
 function gapDp(u: number, T: number) {
@@ -420,9 +424,7 @@ function gapDp(u: number, T: number) {
   const L = coreW - G.macros.reduce((a, m) => a + m.w, 0) - 2 * G.halo * k
   const LU = Math.round(L / u), Tu = Math.ceil(T / u)
   const allowed = (g: number) => g === 0 || g >= Tu
-  const gapCost = (i: number, gum: number) => (i > 0 && i < k) ? Math.max(0, 300 - (gum + 2 * G.halo)) * 0.01 : 0
-  const leftEdge = (i: number, s: number) => G.coreLeft + s * u + G.macros.slice(0, i).reduce((a, m) => a + m.w + 2 * G.halo, 0) + G.halo
-  const macroCost = (x: number) => { const d = (((x - G.strapOffset) % G.strapPitch) + G.strapPitch) % G.strapPitch; return Math.min(d, G.strapPitch - d) * 0.05 }
+  const { gapCost, leftEdge, macroCost } = gapCostFns(u)
   const f: number[][] = Array.from({ length: k + 1 }, () => Array<number>(LU + 1).fill(INF))
   const cell: (GCell | null)[][] = Array.from({ length: k + 1 }, () => Array<GCell | null>(LU + 1).fill(null))
   f[0][0] = 0

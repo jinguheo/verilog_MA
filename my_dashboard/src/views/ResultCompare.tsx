@@ -33,6 +33,7 @@ function FinalBoard({ board, width, overlay }: { board: E.Board; width: number; 
 
 type Result = { dp: { top: Found[]; ms: number; legalChecks: number; K: number }; sa: NonNullable<Awaited<ReturnType<typeof saTimed>>>; guided: NonNullable<Awaited<ReturnType<typeof saGuidedTimed>>>; saSec: number; seed: number }
 const cache = new Map<string, Result>()
+const SA_T0 = 60   // T0 5와 60은 seed 4~6개로는 구별되지 않았다(배경 지식 11절 ⑤). 기존 값을 유지한다
 
 function SaTrace({ sa, guided, dpV, dpMs }: { sa: Result['sa']; guided: Result['guided']; dpV: number; dpMs: number }) {
   const W = 640, H = 130, L = 44, R = 10, Tp = 8, B = 22
@@ -61,22 +62,25 @@ function LiveCompare() {
     const key = `${k}|${sec}|${sd}`
     if (cache.has(key)) { setRes(cache.get(key)!); setMsg(''); return }
     const my = ++token.current; setBusy(true); setRes(null)
+    const cancelled = () => token.current !== my   // 탭을 떠나거나 새로 실행하면 진행 중이던 계산을 바로 멈춘다
     setMsg('beam search 계산 중…')
-    const dp = await beamAsync(k, 4, m => { if (token.current === my) setMsg(`beam search: ${m}`) })
-    if (token.current !== my) return
+    const dp = await beamAsync(k, 4, m => { if (!cancelled()) setMsg(`beam search: ${m}`) }, undefined, cancelled)
+    if (cancelled()) return
     setMsg(`SA 실행 중 (${sec}초)…`)
-    const sa = await saTimed(sd, sec * 1000, 60, 1.5, (el, b) => { if (token.current === my) setMsg(`SA ${(el / 1000).toFixed(1)}/${sec}초 · 지금까지 최선 ${f1(b)}`) })
-    if (token.current !== my) return
+    const sa = await saTimed(sd, sec * 1000, SA_T0, 1.5, (el, b) => { if (!cancelled()) setMsg(`SA ${(el / 1000).toFixed(1)}/${sec}초 · 지금까지 최선 ${f1(b)}`) }, cancelled)
+    if (cancelled()) return
     if (!sa) { setMsg('SA의 합법 시작 배치를 만들지 못했습니다. seed를 바꿔 보세요.'); setBusy(false); return }
     setMsg(`beam 후보 기반 SA 실행 중 (${sec}초)…`)
-    const guided = await saGuidedTimed(sd, sec * 1000, 60, 1.5,
-      (el, b) => { if (token.current === my) setMsg(`beam→SA ${(el / 1000).toFixed(1)}/${sec}초 · 최선 ${f1(b)}`) }, dp.top)
-    if (token.current !== my) return
+    const guided = await saGuidedTimed(sd, sec * 1000, SA_T0, 1.5,
+      (el, b) => { if (!cancelled()) setMsg(`beam→SA ${(el / 1000).toFixed(1)}/${sec}초 · 최선 ${f1(b)}`) }, dp.top, cancelled)
+    if (cancelled()) return
     if (!guided) { setMsg('개선 SA의 합법 시작 배치를 만들지 못했습니다.'); setBusy(false); return }
     const r: Result = { dp: { ...dp, K: k }, sa, guided, saSec: sec, seed: sd }
     cache.set(key, r); setRes(r); setMsg(''); setBusy(false)
   }
-  useEffect(() => { void run(K, saSec, seed); return () => { token.current++ } }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // 탭을 열 때 자동으로 계산하지 않는다(beam + SA 두 번으로 20초 안팎이 걸려 화면이 멈춤). 실행 버튼을 눌러 시작하고, 탭을 떠나면 중단한다.
+  useEffect(() => () => { token.current++ }, [])
+  const estimate = Math.round((K === 8 ? 3 : 8) + 2 * saSec + 5)   // beam + SA 두 번 + 화면 갱신(브라우저 실측: 기본 설정 27초)
 
   const dpBest = res?.dp.top[0], saBest = res?.sa.best
   const dpC = dpBest ? contrib(dpBest.board) : null, saC = saBest ? contrib(saBest.board) : null
@@ -89,12 +93,13 @@ function LiveCompare() {
       <label style={{ fontSize: 12 }}>빔 폭 K <select value={K} disabled={busy} onChange={e => setK(Number(e.target.value))}>{[8, 32].map(v => <option key={v} value={v}>{v}</option>)}</select></label>
       <label style={{ fontSize: 12 }}>SA 시간 <select value={saSec} disabled={busy} onChange={e => setSaSec(Number(e.target.value))}>{[8, 15, 30, 60].map(v => <option key={v} value={v}>{v}초</option>)}</select></label>
       <label style={{ fontSize: 12 }}>SA seed <select value={seed} disabled={busy} onChange={e => setSeed(Number(e.target.value))}>{[1, 2, 3, 4].map(v => <option key={v} value={v}>{v}</option>)}</select></label>
-      <button type="button" className="active" disabled={busy} onClick={() => void run(K, saSec, seed)}>이 설정으로 실행</button>
-      <button type="button" disabled={busy} onClick={() => { setSaSec(60); void run(K, 60, seed) }}>60초 심화 탐색</button>
+      <button type="button" className="active" disabled={busy} onClick={() => void run(K, saSec, seed)}>이 설정으로 실행 (약 {estimate}초)</button>
+      <button type="button" disabled={busy} onClick={() => { setSaSec(60); void run(K, 60, seed) }}>60초 심화 탐색 (약 {Math.round((K === 8 ? 3 : 8) + 120 + 5)}초)</button>
       {busy && <span style={{ fontSize: 12, color: 'var(--warning)' }}>{msg}</span>}
       {!busy && msg && <span style={{ fontSize: 12, color: 'var(--danger)' }}>{msg}</span>}
+      {!busy && !msg && !res && <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>실행 버튼을 누르면 이 브라우저에서 계산합니다.</span>}
     </div>
-    {K === 32 && <p style={{ ...p, fontSize: 12, color: 'var(--text-secondary)' }}>K=32는 브라우저에서 20~40초 걸릴 수 있습니다(측정: node에서 13초).</p>}
+    <p style={{ ...p, fontSize: 12, color: 'var(--text-secondary)' }}>SA 시작 온도는 T0 = {SA_T0}입니다. T0 5~60은 seed 4~6개로는 구별되지 않았고 200은 나빴습니다(배경 지식 11절 ⑤). SA 결과는 seed에 따라 크게 달라지므로(15초 중앙값 −136, 최악 −166) 한 번의 실행으로 beam search와 우열을 판단하면 안 됩니다. 표시된 시간은 beam search(K=8 약 2~3초, K=32 약 5~8초)와 SA 두 번의 합계 추정입니다(브라우저 실측: 기본 설정 27초). 탭을 떠나면 계산이 중단됩니다.</p>
 
     {res && dpBest && saBest && dpC && saC && <>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18 }}>
@@ -163,7 +168,7 @@ function LiveCompare() {
       </div>
 
       <ul style={{ ...ul, marginTop: 10 }}>
-        <li><b>읽는 법:</b> beam search는 <b>한 번에</b> 정해진 결과를 내고, SA는 시간이 가면서 점수가 올라가는 곡선을 그립니다. 같은 시간에서 beam search가 앞서는 것이 보통이지만, SA에 시간과 운이 주어지면 같은 값에 닿기도 합니다(배경 지식 4·9절의 측정).</li>
+        <li><b>읽는 법:</b> beam search는 <b>한 번에</b> 정해진 결과를 내고, SA는 시간이 가면서 점수가 올라가는 곡선을 그립니다. beam search는 같은 점수에 더 짧은 시간에 닿는 편이지만, SA도 seed에 따라 같은 값 근처에 닿기도 하고 seed마다 편차가 큽니다(배경 지식 4절, 11절 ⑤의 측정).</li>
         <li><b>한계:</b> 점수는 게임 proxy이며 실제 DRC·LVS가 아닙니다. 여기서 보이는 것은 한 번의 실행(SA는 seed 하나)이라 일반화하려면 seed를 바꿔 반복해야 합니다.</li>
       </ul>
     </>}
@@ -177,7 +182,7 @@ function CandidateCompare() {
     ['규칙·실패 활용', '확정된 위반은 평가 전에 차단, 가설은 벌점, 검증된 해결법은 재사용. 위반 임계값은 L1 스윕으로 이분 탐색', '확정 규칙은 전이에서 즉시 가지치기, 불확실한 규칙은 soft risk. 실행 결과를 규칙 기억에 반영'],
     ['중복 실행 방지', '(설계에 명시 없음)', '배치 signature + 설정 fingerprint로 같은 실험을 다시 돌리지 않음'],
     ['평가 단계', 'L0 게임 proxy → L1 floorplan·tap·PDN → L2 → L3', '같은 L0 ~ L3 funnel'],
-    ['지금까지 측정된 것', '간격 DP가 전수 탐색과 일치(1.7435), 무작위 위치의 규칙 통과율 33~70%(균등 가정 모델), 조각 규칙 실측(9.66 µm 위반, 25.3 µm 무위반)', 'beam K=32 −133.1(13초, 4칸 버킷), K=32~256에서 −133.14로 수렴, 정확한 키 K=128(−135.0, 72초)보다 5배 빠르고 점수도 좋음. SA 처음부터 60초 최고 −140.8'],
+    ['지금까지 측정된 것', '간격 DP가 전수 탐색과 일치(1.7435), 무작위 위치의 규칙 통과율 33~70%(균등 가정 모델), 조각 규칙 실측(9.66 µm 위반, 25.3 µm 무위반)', 'beam K=32 정확한 키 −132.70(5.3초), 4칸 키 −132.74(4.6초). K=128에서도 −132.70(정확한 키 23.2초)이라 더 오르지 않음. SA 처음부터 15초 중앙값 −136.4(최고 −132.9, 최악 −165.8, T0=60·seed 4개)'],
     ['구현 상태', '미착수 (시제품만: 간격 DP, 규칙 통과율 계산)', '미착수 (시제품만: beam search, 상태 키 요약)'],
     ['위험·한계', '조각 임계값 T 미측정, "ADC 이동으로 위반 해소"는 가설(실행이 중간에 끊김), 규칙이 불완전하면 후보를 잘라낼 수 있음', 'beam은 최적 비보장, 점수는 proxy, 상태 요약(병합)은 근사'],
     ['잘 맞는 상황', '규칙·위반 이력이 풍부하고 후보를 규칙에 맞게 직접 만들 수 있을 때', '블록을 순서대로 놓는 단계 구조이고 서로 다른 상위 후보를 빠르게 얻고 싶을 때'],

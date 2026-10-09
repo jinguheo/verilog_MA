@@ -1,7 +1,7 @@
 // beam search + SA + 간격 DP 결합 설계, 측정 결과, 그리고 GA(유전 알고리즘) 가능성 분석.
 // 표의 숫자는 2026-10-09에 Node에서 같은 엔진(모양 23개, rotationsFor 캐시)으로 잰 값이며 날짜·조건을 적었다.
 // 아래 '결합 실행' 버튼은 이 브라우저에서 같은 파이프라인을 실제로 돌린다(점수·시간·간격은 모두 그때 계산한 값).
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as E from '../game/chipTetrisEngine'
 import { COLS, ROWS, beamAsync, type Found } from './chipSearch'
 import { lnsSaTimed, gapDpFine, gapCostOf, rowKind } from './chipCombo'
@@ -43,13 +43,19 @@ function Pipeline() {
 type Live = { rows: Array<{ name: string; v: number; sec: number; note: string }>; beamTop: Found[]; lns: Found; gap: ReturnType<typeof gapDpFine>; kind: ReturnType<typeof rowKind>; kindCount: Map<string, number>; coarseCost: number }
 function LiveCombo() {
   const [busy, setBusy] = useState(false), [msg, setMsg] = useState(''), [sec, setSec] = useState(8), [res, setRes] = useState<Live | null>(null)
+  const alive = useRef(true)
+  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])   // 탭을 떠나면 계산을 멈춘다
+  const stop = () => !alive.current
   const run = async () => {
     setBusy(true); setRes(null)
-    setMsg('① beam search K=8 …'); const b8 = await beamAsync(8, 4)
+    setMsg('① beam search K=8 …'); const b8 = await beamAsync(8, 4, undefined, undefined, stop)
+    if (stop()) return
     const start = b8.top[0]
     setMsg(`② LNS-SA ${sec}초 …`)
-    const lns = await lnsSaTimed(1, sec * 1000, 5, 1, start, 40, 3, (el, best) => setMsg(`② LNS-SA ${(el / 1000).toFixed(1)}/${sec}초 · 최선 ${f2(best)}`))
-    setMsg('비교용 beam search K=32 …'); const b32 = await beamAsync(32, 4)
+    const lns = await lnsSaTimed(1, sec * 1000, 5, 1, start, 40, 3, (el, best) => { if (!stop()) setMsg(`② LNS-SA ${(el / 1000).toFixed(1)}/${sec}초 · 최선 ${f2(best)}`) }, stop)
+    if (stop()) return
+    setMsg('비교용 beam search K=32 …'); const b32 = await beamAsync(32, 4, undefined, undefined, stop)
+    if (stop()) return
     setMsg('③ 간격 DP …')
     const kind = rowKind(lns.best.board), gap = gapDpFine(0.5, 15)
     const kc = new Map<string, number>(); b32.top.forEach(f => { const k = rowKind(f.board); const key = `${k.sameRow ? '같은 행' : '다른 행'}·${k.adcLeft ? 'ADC 왼쪽' : 'ADC 오른쪽'}`; kc.set(key, (kc.get(key) ?? 0) + 1) })
@@ -109,14 +115,14 @@ export default function CombinedSearch() {
     <div style={{ ...box, marginTop: 10 }}>
       <b style={{ fontSize: 13 }}>2. 같은 일을 되풀이하지 않는 방법과 근거</b>
       <div className="data-table"><table><thead><tr><th>중복되는 일</th><th>줄이는 방법</th><th>근거</th></tr></thead><tbody>
-        <tr><td>같은 접두 보드에서 합법 위치를 매번 다시 찾기</td><td>(보드 서명, 블록) → 합법 위치 목록 캐시를 단계들이 공유</td><td>측정: LNS-SA는 이 캐시로 8초에 이동 약 250회. 지금 다른 창의 guided SA도 같은 캐시를 씀</td></tr>
+        <tr><td>같은 접두 보드에서 합법 위치를 매번 다시 찾기</td><td>(보드 서명, 블록) → 합법 위치 목록 캐시를 단계들이 공유</td><td>측정: LNS-SA는 이 캐시로 8초에 이동 약 250회. <code>saGuidedTimed</code>(chipSearch.ts)도 같은 방식의 캐시를 씀</td></tr>
         <tr><td>모양 목록 재생성</td><td><code>rotationsFor</code> 캐시</td><td>측정: beam K=8 6.5초 → 1.5초(모양 8개), 42.6초 → 2.2초(모양 23개)</td></tr>
         <tr><td>SA가 앞 블록 상태를 매번 처음부터 다시 만듦</td><td>현재 배치의 접두 상태를 저장해 재사용</td><td>측정: SA 이동 수 약 1.4배</td></tr>
         <tr><td>간격 DP를 후보마다</td><td>행 종류당 1번, 결과를 캐시</td><td>측정: beam K=32의 서로 다른 후보 32개가 모두 같은 행 종류(같은 행·ADC 왼쪽) → 32번이 아니라 1번(10 ms)</td></tr>
         <tr><td>같은 배치를 다시 평가·검증</td><td>배치 서명으로 중복 제거, L1~L3로는 위상 키로 중복 제거한 것만</td><td>설계 (L1~L3 연결은 미구현)</td></tr>
         <tr><td>beam 결과에 ±2칸 국소 SA</td><td><b>하지 않는다</b></td><td>측정: 개선 0 (배경 지식 9절)</td></tr>
         <tr><td>SA를 무작위 시작 seed 여러 개로</td><td>무작위 대신 beam 결과에서 시작</td><td>측정: 무작위 시작 SA는 seed 5개 중 값이 −133.7 ~ −177.8로 크게 흔들림. 무작위 합법 배치 최고는 −307</td></tr>
-        <tr><td>SA 온도 탐색</td><td>T0를 이동의 Δ 크기에 맞춰 약 5로 고정</td><td>측정: 11절 ⑤. T0=60은 8초에 중앙값 −151.9</td></tr>
+        <tr><td>SA 온도 탐색</td><td>LNS-SA는 T0=5로 고정(임의 선택)</td><td>측정: 11절 ⑤. T0 5~60은 seed 4~6개로 구별되지 않았고 T0=200만 나빴음</td></tr>
       </tbody></table></div>
     </div>
 
@@ -124,12 +130,12 @@ export default function CombinedSearch() {
       <b style={{ fontSize: 13 }}>3. 같은 시간 예산으로 비교한 측정 (seed 5개, beam 시작 방법은 beam K=8 단계의 약 2초를 예산에 포함)</b>
       <div className="data-table"><table><thead><tr><th>방법</th><th>예산 8초: 중앙값 (최저 ~ 최고)</th><th>예산 20초: 중앙값 (최저 ~ 최고)</th></tr></thead><tbody>
         <tr><td><b>참고: beam K=8 단독</b></td><td colSpan={2}>−134.77 (1.8초, 결정적)</td></tr>
-        <tr><td><b>참고: beam K=32 단독</b></td><td colSpan={2}>−132.74 (4.7초, 결정적) &nbsp;|&nbsp; K=64도 −132.74 (8.2초), K=128 4칸 키 −132.74 (15.6초), <b>K=128 2칸 키 −132.70 (18.0초)</b></td></tr>
+        <tr><td><b>참고: beam K=32 단독</b></td><td colSpan={2}>−132.74 (4칸 키, 4.7초, 결정적) &nbsp;|&nbsp; <b>정확한 키 −132.70 (5.3초)</b> &nbsp;|&nbsp; K=64 4칸 키 −132.74 (8.2초), K=128 4칸 키 −132.74 (15.6초), K=128 정확한 키 −132.70 (23.2초), K=128 2칸 키 −132.70 (18.0초)</td></tr>
         <tr><td>SA 무작위 시작, T0=5</td><td>−134.76 (−177.8 ~ −133.7)</td><td>−134.76 (−177.0 ~ −133.2)</td></tr>
         <tr><td>SA 무작위 시작, T0=60</td><td>−151.90 (−179.1 ~ −134.4)</td><td>−137.11 (−166.1 ~ −134.3)</td></tr>
         <tr><td>beam → SA (무작위 재뽑기 이동, T0=5)</td><td>−133.24 (−134.77 ~ −132.74)</td><td>−132.90 (−134.77 ~ −132.70)</td></tr>
-        <tr><td>beam → 다른 창의 guided SA (T0=60)</td><td>−134.77 (−134.77 ~ −133.97)</td><td>−134.77 (모두 같음)</td></tr>
-        <tr><td>beam → 다른 창의 guided SA (T0=5)</td><td>−134.77 (모두 같음)</td><td>−134.77 (−134.77 ~ −132.70, 1/5만 개선)</td></tr>
+        <tr><td>beam → guided SA (<code>saGuidedTimed</code>, T0=60)</td><td>−134.77 (−134.77 ~ −133.97)</td><td>−134.77 (모두 같음)</td></tr>
+        <tr><td>beam → guided SA (<code>saGuidedTimed</code>, T0=5)</td><td>−134.77 (모두 같음)</td><td>−134.77 (−134.77 ~ −132.70, 1/5만 개선)</td></tr>
         <tr><td><b>beam → LNS-SA</b> (후보 20, 작은 beam 폭 2, T0=5)</td><td>−132.74 (−134.32 ~ −132.70)</td><td>−132.74 (−132.90 ~ −132.70)</td></tr>
         <tr><td><b>beam → LNS-SA</b> (후보 40, 작은 beam 폭 3, T0=5)</td><td><b>−132.70</b> (−133.22 ~ −132.70)</td><td><b>−132.70 (5개 모두)</b></td></tr>
         <tr><td><b>beam → LNS-SA</b> (후보 20, 폭 2, T0=15)</td><td>−132.90 (−133.72 ~ −132.70)</td><td><b>−132.70 (5개 모두)</b></td></tr>
@@ -140,8 +146,8 @@ export default function CombinedSearch() {
       </tbody></table></div>
       <ul style={ul}>
         <li><b>이 점수식의 천장은 −132.70 근처입니다(측정).</b> beam의 K를 키우고 키(상태 병합) 정밀도를 올려도 −132.70에서 더 오르지 않았고, 결합도 같은 값에서 멈췄습니다. 값 −132.70 이상을 만든 방법은 없었습니다(천장이라는 <b>증명은 없습니다</b>).</li>
-        <li><b>결합은 beam K=8(−134.77) 대비 +2.07(1.5%) 개선했고, 20초에는 5개 seed가 모두 천장에 닿았습니다.</b> 다만 <b>beam K=32 단독(−132.74, 4.7초) 대비로는 점수 차이가 0.04</b>이고 시간도 더 걸립니다. <b>"결합이 beam을 이긴다"고 말할 수 있는 증거는 이 문제(블록 5개)에서 없습니다.</b> 같은 천장에 도달하는 길이 두 가지(K를 키우기 / 결합)라는 것이 측정된 사실입니다.</li>
-        <li><b>다른 창의 guided SA는 beam 풀을 받아도 개선이 거의 없었습니다</b>(−134.77 유지). 무작위 위치 뽑기·±2칸 이동으로는 beam의 좋은 배치를 넘지 못하는 것과 같은 이유입니다(11절 ⑤: 좋은 배치 근처의 이동은 개선 0건). LNS는 이동 단위가 "블록 하나가 아니라 일부를 beam으로 재구성"이라 달랐습니다.</li>
+        <li><b>결합은 beam K=8(−134.77) 대비 +2.07(1.5%) 개선했고, 20초에는 5개 seed가 모두 천장에 닿았습니다.</b> 다만 <b>beam K=32 단독(정확한 키 −132.70, 5.3초; 4칸 키 −132.74, 4.7초)은 같은 점수에 더 짧은 시간</b>에 닿습니다. <b>"결합이 beam을 이긴다"고 말할 수 있는 증거는 이 문제(블록 5개)에서 없습니다.</b> 같은 천장에 도달하는 길이 두 가지(K를 키우기 / 결합)이고, 이 문제에서는 K를 키우는 쪽이 더 빠르다는 것이 측정된 사실입니다.</li>
+        <li><b>guided SA(<code>saGuidedTimed</code>)는 beam 풀을 받아도 개선이 거의 없었습니다</b>(−134.77 유지). 무작위 위치 뽑기·±2칸 이동으로는 beam의 좋은 배치를 넘지 못하는 것과 같은 이유입니다(11절 ⑤: 좋은 배치 근처의 이동은 개선 0건). LNS는 이동 단위가 "블록 하나가 아니라 일부를 beam으로 재구성"이라 달랐습니다.</li>
         <li><b>가설(미검증):</b> 블록·제약이 훨씬 많은 문제(매크로 수십 개)에서는 beam의 K를 키우는 비용이 가파르게 늘어, 그때 LNS 결합이 더 유리할 수 있습니다. 이 프로젝트의 5블록에서는 보이지 않습니다.</li>
       </ul>
     </div>
@@ -169,7 +175,7 @@ export default function CombinedSearch() {
       <p style={p}>"L1을 연결해서 재 보기"를 목표로 했지만 <b>실제 OpenLane L1은 돌리지 않았습니다.</b> 이유는 아래 ①②이고, 대신 L0 점수가 L1에 보낼 후보를 제대로 고르는지부터 쟀습니다(2026-10-09, Node, 같은 엔진).</p>
       <ol style={ul}>
         <li><b>L1은 매크로 위치만 봅니다.</b> OpenLane의 floorplan·tap·PDN 단계에는 SAR·CDC·CAP 같은 이웃 영역이 배치되지 않고 ADC와 SRAM의 위치만 입력됩니다. beam·LNS가 만든 상위 후보 35개(beam K=32 상위 32 + LNS 최선 3)를 매크로 위상(모양·위치)으로 묶으면 <b>2개뿐</b>입니다: ADC (모양 0, 칸 0,6)과 (모양 1, 0,7), SRAM은 모두 (9,2). 점수가 −140 이상인 35개가 전부 이 둘로 모입니다. 즉 L1을 돌려도 <b>구별되는 것은 2개</b>이고, 간격 DP가 µm 간격을 확정하면 둘의 간격은 이미 정해집니다.</li>
-        <li><b>실제 L1 근거는 한 위상뿐입니다.</b> 지식 DB(<code>drc_knowledge.json</code>)의 실측 3건은 모두 ADC (40,150) µm, SRAM (430,65) µm입니다. ADC를 x=30.24로 옮기는 <code>adcshift</code> 실행은 Magic DRC 단계에서 멈춰 있어 아직 결과가 없습니다(<b>미측정</b>). 면적 후보 8개(<code>area_candidate_*</code>)의 L1은 다른 창이 <code>physical_runs_started: 0</code>으로 관리하고 있어 제가 따로 돌리면 충돌합니다.</li>
+        <li><b>실제 L1 근거는 한 위상뿐입니다.</b> 지식 DB(<code>drc_knowledge.json</code>)의 실측 3건은 모두 ADC (40,150) µm, SRAM (430,65) µm입니다. ADC를 x=30.24로 옮기는 <code>adcshift</code> 실행은 Magic DRC 단계에서 멈춰 있어 아직 결과가 없습니다(<b>미측정</b>). 면적 후보 8개(<code>area_candidate_*</code>)의 L1 실행은 <code>area_candidates_manifest.json</code>이 관리하며 <code>physical_runs_started</code>가 0입니다. 같은 후보를 따로 돌리면 실행이 중복되고 WSL 자원도 겹칩니다.</li>
       </ol>
       <p style={p}><b>L0 점수로 매크로 위상 333개를 모두 훑어 보았습니다.</b> ADC×SRAM 합법 조합이 333개이고, 위상마다 나머지 3블록을 beam(K=4)으로 놓았을 때의 최고 점수를 비교했습니다(위상 하나 약 0.35초, 전체 115초). K=4라서 위상별 점수는 K=32보다 약간 낮은 값입니다(예: 같은 위상이 K=4에서 −134.77, K=32에서 −132.74).</p>
       <div className="data-table"><table><thead><tr><th>점수 계산</th><th>최고 점수</th><th>최고에서 5 / 10 / 20 / 50점 이내 위상 수</th><th>실제 PPA3 위치에 가장 가까운 위상</th></tr></thead><tbody>
@@ -182,7 +188,7 @@ export default function CombinedSearch() {
         <li><b>(해석) 이 항들은 테트리스의 "아래가 비면 감점"이라서 물리적 근거가 없습니다.</b> 매크로 아래가 비어 있는 것은 그냥 여유 면적입니다. 그런데도 L0의 위상 순위는 이 항이 거의 정하고 있고, ADC가 보드 아래쪽에 붙는 배치가 최선으로 나옵니다. 설계 후보 1의 "L0와 실제 결과의 상관은 미측정"이 이 지점에서 실제로 문제가 됩니다(실제로 통과 근처까지 간 위치가 L0에서는 87위).</li>
         <li><b>(측정) 그 항을 빼면 L0는 위상을 거의 구별하지 못합니다.</b> 최고에서 10점 이내가 49개로 늘고, 5점 이내 21개 중 18개가 ADC 칸 x=0입니다. 즉 L0는 "어느 위상을 L1에 보낼지"를 정해 주지 못하고, <b>실제 L1이 필요한 후보가 수십 개</b>입니다. 단, 항을 뺀 점수가 옳다는 검증도 없습니다(이 표는 민감도 분석).</li>
       </ul>
-      <p style={p}><b>제안(미구현, 효과 미측정):</b> ① L1 후보는 L0 상위만 뽑지 않고 <b>실제로 통과 근처까지 간 기준 위상(antfix5)을 항상 포함</b>하고, 나머지는 <b>ADC x 오프셋 스윕(30.24 + 0·5·…·30 µm, 약 7회)</b>처럼 조각 규칙을 직접 시험하는 위상으로 채웁니다. ② 위상 순위에는 구멍·높이·울퉁불퉁함 항을 쓰지 않거나 가중치를 크게 낮춘 점수를 따로 쓰고, <b>L1 결과가 쌓이면 가중치를 보정</b>합니다. ③ 매크로 위상이 정해지면 이웃 영역 배치(beam → LNS-SA)와 µm 간격(간격 DP)은 L1 이후에 해도 되므로, <b>L1 입력은 "매크로 위상 + 간격 DP의 µm 좌표"</b>로 충분합니다. 다른 창의 면적 후보(compact-balanced 등)와 합쳐 하나의 L1 후보 목록으로 관리해야 중복 실행이 없습니다.</p>
+      <p style={p}><b>제안(미구현, 효과 미측정):</b> ① L1 후보는 L0 상위만 뽑지 않고 <b>실제로 통과 근처까지 간 기준 위상(antfix5)을 항상 포함</b>하고, 나머지는 <b>ADC x 오프셋 스윕(30.24 + 0·5·…·30 µm, 약 7회)</b>처럼 조각 규칙을 직접 시험하는 위상으로 채웁니다. ② 위상 순위에는 구멍·높이·울퉁불퉁함 항을 쓰지 않거나 가중치를 크게 낮춘 점수를 따로 쓰고, <b>L1 결과가 쌓이면 가중치를 보정</b>합니다. ③ 매크로 위상이 정해지면 이웃 영역 배치(beam → LNS-SA)와 µm 간격(간격 DP)은 L1 이후에 해도 되므로, <b>L1 입력은 "매크로 위상 + 간격 DP의 µm 좌표"</b>로 충분합니다. 면적 후보(compact-balanced 등)와 합쳐 하나의 L1 후보 목록으로 관리해야 중복 실행이 없습니다.</p>
     </div>
 
     <LiveCombo/>
