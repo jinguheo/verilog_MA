@@ -258,7 +258,7 @@ function Detail({ tab }: { tab: Tab }) {
       <div className="pipeline-step pass"><span>04</span><b>DMA 엔진</b><small>dma_sched, desc_fetch, axi_rd_master, axi_wr_master, wr_track 전부 완료</small><em>DONE</em></div>
       <div className="pipeline-step pass"><span>05</span><b>top</b><small>irq_ctrl, perf_cnt, daq_subsystem — smoke 통합 테스트로 end-to-end 확인</small><em>DONE</em></div>
       <div className="pipeline-step blocked"><span>06</span><b>Formal / 통합</b><small>블록별 formal 3개 완료 · 나머지 미실행 · 통합 UVM 보류</small><em>부분 완료</em></div>
-      <div className="pipeline-step blocked"><span>ASIC</span><b>sky130 물리 설계</b><small>소블록·chan_top signoff 완료 · daq_subsystem hierarchical 기준 배치 post-PNR까지 검증, timing/antenna·최종 DRC/LVS 미완료</small><em>부분 검증</em></div>
+      <div className="pipeline-step blocked"><span>ASIC</span><b>sky130 물리 설계</b><small>소블록·chan_top signoff 완료 · daq_subsystem hierarchical 기준 배치는 완주(DRC/LVS/XOR 0), setup/hold timing·antenna 위반 미해결</small><em>부분 검증</em></div>
     </div><p className="rtl-guide-note">각 phase는 parameter sweep 전체에서 lint clean이 나와야 다음 phase로 넘어갑니다 — 지금까지 어긴 적 없습니다. ASIC 트랙은 RTL 검증이 끝난 블록부터 별도로 진행합니다. 전체 근거: <code>samples/sample_test_4/RESULTS.md</code>. 검증은 위 Verification 탭, formal은 Architecture 탭의 STATUS 카드와 <b>General RTL Pipeline → Verification/Formal</b> 탭, ASIC 스냅샷은 <b>General RTL Pipeline → Physical Design</b> 탭에 있습니다.</p></Card>
   </>
 }

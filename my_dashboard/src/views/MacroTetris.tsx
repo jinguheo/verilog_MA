@@ -118,9 +118,9 @@ const problemFacts = [
 
 // Sample Test 4의 실제 signoff 현황 — 2026-09-29 저장된 run 재감사 기준.
 const signoffStatus = [
-  ['chan_top', '완료 · 5개 게이트 전부 clean', 'DRC 0 · LVS 0 · Antenna 0/0 · Setup ws +0.99ns(TNS 0) · Hold ws +0.125ns(TNS 0, 전 코너 위반 0건) — RUN_2026-09-23_12-48-47(final/metrics.json 직접 확인). 이 탭의 8개 매크로가 바로 이 완료된 블록', true],
+  ['chan_top', '완료 · 5개 게이트 전부 clean', 'DRC 0 · LVS 0 · Antenna 0/0 · Setup ws +0.99ns(TNS 0) · Hold ws +0.125ns(TNS 0, 이 흐름의 9개 코너 전부 위반 0건 — 실제 상용 sign-off보다 좁은 범위) — RUN_2026-09-23_12-48-47(final/metrics.json 직접 확인). 이 탭의 8개 매크로가 바로 이 완료된 블록', true],
   ['daq_subsystem (flat)', '중단 · CTS 이후 STA까지만', 'RUN_2026-09-24_13-44-52는 35-openroad-stamidpnr-1까지 진행됐고 현재 실행 중인 프로세스가 없습니다. 전체 signoff 결과는 없습니다.', false],
-  ['daq_subsystem (hierarchical, 이 탭의 실제 실행)', '부분 검증 · signoff 실패', 'hierarchical_auto_20260924_142552는 detailed routing·post-PNR STA·XOR까지 도달했습니다. setup WNS −6.44ns, hold WNS −0.15ns, antenna 121 nets가 남았고 Magic DRC/LVS 완료 전 중단됐습니다.', false],
+  ['daq_subsystem (hierarchical, 이 탭의 실제 실행)', '완주 · 물리 검증 clean, 타이밍/antenna 미통과', 'hierarchical_auto_20260924_142552는 Flow complete에 도달했고 route DRC·Magic DRC·KLayout DRC·LVS·XOR가 모두 0입니다. 다만 setup WNS −6.44ns(ss 코너), hold WNS −0.15ns(ff 코너), antenna 121 nets가 남아 signoff는 통과하지 못했습니다.', false],
 ] as const
 
 function draw(ctx: CanvasRenderingContext2D, w: number, h: number, state: State, c: Cost, highlightIdx: number | null, glue: GlueTile[] = []) {

@@ -75,10 +75,14 @@ const ABBREVIATIONS: ReadonlyArray<readonly [(typeof ABBR_GROUPS)[number], strin
   ['검증 (signoff)', 'IR drop', 'I × R drop', '전원망 저항 때문에 셀에 도달하는 전압이 떨어지는 현상', '55번 IRDropReport'],
 
   ['타이밍', 'STA', 'Static Timing Analysis', '시뮬레이션 없이 모든 경로의 지연을 계산해 클럭 주기를 만족하는지 검사', '12·30·35·37·42·54번에서 단계별로 수행'],
-  ['타이밍', 'PVT', 'Process, Voltage, Temperature', '공정 편차·전압·온도 조합 = 코너. 코너마다 지연이 달라 전부 검사', '9개 코너 (min/nom/max × tt/ss/ff)'],
-  ['타이밍', 'TT / SS / FF', 'Typical-Typical / Slow-Slow / Fast-Fast', 'NMOS·PMOS 속도 코너. SS는 가장 느려 setup에, FF는 가장 빨라 hold에 불리', '코너 이름 예: nom_ss_100C_1v60 = nom RC, SS, 100°C, 1.60V'],
+  ['타이밍', 'PVT', 'Process, Voltage, Temperature', '공정 편차·전압·온도 조합 = 코너. 코너마다 지연이 달라 전부 검사', '9개 코너 (min/nom/max 배선 RC × tt/ss/ff 트랜지스터). 셀 지연에는 전압 영향이 가장 크고 온도 영향은 작음 (Evolution SA 배경 지식 16절)'],
+  ['타이밍', 'TT / SS / FF', 'Typical-Typical / Slow-Slow / Fast-Fast', 'NMOS·PMOS 속도 코너. SS는 가장 느려 setup에, FF는 가장 빨라 hold에 불리', '코너 이름 예: nom_ss_100C_1v60 = nom RC, SS, 100°C, 1.60V. 공정 편차는 파운드리가 정하고, 온도·전압은 그 공정과 짝지어진 동작 조건. 지연 셀 dlygate4sd3_1은 ss 1.11ns로 ff 0.38ns의 약 2.9배'],
+  ['타이밍', 'OCV / Derating', 'On-Chip Variation / Derating', '같은 칩 안에서 셀마다 속도가 다른 것. 지연에 비율을 곱해 비관적으로 계산해 덮음', 'TIME_DERATING_CONSTRAINT = 5(%). 공정 코너·clock uncertainty와 별개 마진'],
   ['타이밍', 'WNS / TNS / WS', 'Worst Negative Slack / Total Negative Slack / Worst Slack', 'slack = 여유 시간. WNS는 가장 나쁜 위반, TNS는 위반의 합, WS는 부호 포함 최악 여유', 'chan_top signoff: setup WS +0.99 ns, TNS 0'],
   ['타이밍', 'Setup / Hold', '(약어 아님)', 'setup은 데이터가 클럭 전에 충분히 일찍 도착해야 하는 조건(주기가 길수록 유리), hold는 클럭 후에 너무 일찍 바뀌지 말아야 하는 조건(주기와 무관)', '30분~1시간 걸린 36번 리페어가 이 둘을 수리'],
+  ['타이밍', 'Clock uncertainty', '(약어 아님)', '지터·스큐 등 클럭 불확실성에 대비한 마진. setup 허용 시간에서 빼고 hold 필요 시간에 더함', 'chan_top.sdc에서 주기의 5% (axi_clk 52ns → 2.6ns). hold 위반 약 4,170개와 hold 버퍼 약 8,080개의 직접 원인 (Evolution SA 배경 지식 15절)'],
+  ['타이밍', 'Removal / Recovery', '(약어 아님)', '비동기 리셋 핀에 대한 hold·setup 대응 검사. removal은 리셋 해제가 클럭 엣지 직후 너무 일찍 오지 않아야 하는 조건', '리셋 동기화 플롭 → RESET_B 경로의 removal 0.358ns'],
+  ['타이밍', 'Hold 버퍼 / 지연 셀', '(약어 아님)', 'hold 위반을 고치려고 resizer가 데이터 경로에 넣는 지연용 셀(holdNNN, dlygate4sd3). 같은 경로의 setup 지연도 늘림', '36번에서 8,075~8,085개 삽입. worst 경로에 11~18개가 직렬로 붙음'],
   ['타이밍', 'CDC', 'Clock Domain Crossing', '서로 다른 클럭 영역 사이 신호 전달. 동기화 회로·비동기 FIFO 필요', 'chan_top의 src_clk ↔ axi_clk (prim_fifo_async)'],
   ['타이밍', 'CTS skew', '(약어 아님)', '클럭이 플립플롭마다 도착하는 시간 차이', 'STA 리포트의 skew.max/min.rpt'],
 

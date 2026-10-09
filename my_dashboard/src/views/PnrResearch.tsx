@@ -16,7 +16,7 @@ const funnelStages = [
   ['1. 초저가 필터', '어떤 EDA 툴도 완주 없이, 초~분 단위로 전량 실행', 'Flat: SynthesisExploration. Hierarchical: legality·채널·pin access·congestion proxy·wire cost로 후보를 먼저 거름', '부분 검증 — Flat 9개 전략 비교 완료. Hierarchical 모델은 실측 실패 두 건으로 channel/pin-access gate를 보강했지만 실제 GlobalRoute 순위와의 상관 검증은 부족', 'hard constraint 위반 또는 기존 실측 실패 패턴(DPL/GRT 위험) → 즉시 버림'],
   ['2. 재시간측정 필터', '기존에 이미 라우팅된 참조 넷리스트의 실제 DEF+SPEF를 그대로 읽고, 후보 SDC(주기 등)만 바꿔서 초 단위로 재계산 — 새 P&R 없음', 'chan_top.sdc를 그대로 source하되 src_period/axi_period 두 줄만 바꿔서 OpenSTA만 재실행 — 과거 주기 스윕의 방향성을 이 방법으로 확인', '검증됨 — 같은 netlist를 다른 목표로 재검사하는 것의 함정(6/10-targeted netlist를 32/10 기준으로 착각)도 경험. 새 제약으로 실제 재합성·재배치한 결과의 대체값은 아님', '같은 구조에서 TNS<0 또는 목표 slack 미달 → 우선순위 하향. 구조가 다른 새 후보(전략/매크로 배치)는 재시간측정만으로 탈락시키지 말고 전체 P&R 최소 1건 검증'],
   ['3. 전체 P&R', '진짜 synthesis+floorplan+placement+CTS+routing+DRC/LVS+signoff STA — 살아남은 후보만, 비용이 가장 큼(블록당 25~40분)', '109_run_full_pnr.sh / 111_run_chan_top_safe.sh 같은 race-safe(블록별 독립 shim) 러너로 실행', '검증됨 — chan_ctrl/cnt_sat SYNTH_STRATEGY 재검증에 이미 사용, 결과가 pre-placement 예측과 실제로 다를 수 있음도 확인(면적 방향 반전 등) → 이 단계 없이 "최종"이라고 부르면 안 됨', '해당 없음 (최종 후보만 여기 도달 — 버리는 단계가 아니라 확정하는 단계)'],
-  ['4. Flat vs Hierarchical 맞대결', '3단계를 통과한 두 트랙의 최선 후보를 실제 signoff 수치로 직접 비교', '면적/최악 slack/TNS/power', '미완료 — hierarchical 기준 배치는 post-PNR 수치까지 확보했지만 signoff 실패, flat도 최종 run 없음', '두 트랙 모두 signoff 결과가 생긴 뒤 비교'],
+  ['4. Flat vs Hierarchical 맞대결', '3단계를 통과한 두 트랙의 최선 후보를 실제 signoff 수치로 직접 비교', '면적/최악 slack/TNS/power', '미완료 — hierarchical 기준 배치는 완주해 DRC/LVS/XOR 0이지만 setup·hold·antenna 위반으로 signoff 실패, flat은 최종 run 없음', '두 트랙 모두 signoff 결과가 생긴 뒤 비교'],
 ] as const
 
 const concurrency = [
@@ -311,7 +311,7 @@ export default function PnrResearch() {
   return <>
     <section className="card"><div className="card-title"><div><small className="kicker">실행 근거 · Physical Design과 통합 · 2026-10-05</small><h2>현재 결과와 아직 남은 비교</h2></div></div>
       <div className="data-table"><table><thead><tr><th>설계 / 트랙</th><th>판정</th><th>실행</th><th>핵심 근거</th></tr></thead><tbody>{physicalEvidence.map(([name, verdict, run, evidence]) => <tr key={name}><td><b>{name}</b></td><td>{verdict.includes('signoff clean') ? <span className="ok-badge">{verdict}</span> : <span className="warning-badge">{verdict}</span>}</td><td><code>{run}</code></td><td>{evidence}</td></tr>)}</tbody></table></div>
-      <p className="rtl-guide-note">이 표는 Physical Design 탭과 같은 저장된 실행 증거를 사용합니다. <b>결론:</b> chan_top reshape 매크로 자체는 clean이지만, daq_subsystem의 flat/hierarchical 양쪽 모두 최종 signoff 결과가 없어 두 방식의 PPA 우열은 아직 미확정입니다.</p>
+      <p className="rtl-guide-note">이 표는 Physical Design 탭과 같은 저장된 실행 증거를 사용합니다. 여기서 "signoff clean"은 이 OpenLane 흐름의 9개 코너 전부에서 setup·hold 위반 0, DRC·LVS·antenna 0이라는 뜻이고, 실제 상용 sign-off보다 좁은 범위입니다(Evolution SA 배경 지식 16절). <b>결론:</b> chan_top reshape 매크로 자체는 clean이지만, daq_subsystem의 flat/hierarchical 양쪽 모두 최종 signoff 결과가 없어 두 방식의 PPA 우열은 아직 미확정입니다.</p>
     </section>
     <section className="card"><div className="card-title"><div><small className="kicker">P&R 연구 · 2026-09-18</small><h2>Flat vs Hierarchical — 두 접근을 나란히</h2></div></div>
       <div className="data-table"><table><thead><tr><th>방식</th><th>정의</th><th>장점</th><th>단점 / 전제조건</th></tr></thead><tbody>{approaches.map(([name, def_, pro, con]) => <tr key={name}><td><b>{name}</b></td><td>{def_}</td><td>{pro}</td><td>{con}</td></tr>)}</tbody></table></div>

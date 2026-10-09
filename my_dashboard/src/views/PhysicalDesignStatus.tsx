@@ -96,7 +96,7 @@ export default function PhysicalDesignStatus() {
     <ParsacFloorplan/>
     <section className="card"><div className="card-title"><div><small className="kicker">STATUS SNAPSHOT · AUDITED 2026-10-05</small><h2>Sample Test 4 — ASIC 물리 설계 확인 상태</h2></div><span className="warning-badge">저장된 실행 결과 기준 · 실시간 작업 상태 아님</span></div>
       <div className="data-table"><table><thead><tr><th>블록</th><th>상태</th><th>근거</th></tr></thead><tbody>{blocks.map(([name, status, note]) => <tr key={name}><td><code>{name}</code></td><td>{status.includes('signoff clean') ? <span className="ok-badge">{status}</span> : <span className="warning-badge">{status}</span>}</td><td>{note}</td></tr>)}</tbody></table></div>
-      <p className="rtl-guide-note">산출물 위치: <code>samples/sample_test_4/asic/&lt;block&gt;/runs/&lt;run-id&gt;/final/</code>. 상태는 해당 run의 <code>final/metrics.json</code>과 <code>tools/wsl/logs/*.summary</code>로 확인했습니다. 실행 종료 코드 0만으로 DRC/LVS signoff를 판정하지 않습니다.</p>
+      <p className="rtl-guide-note">산출물 위치: <code>samples/sample_test_4/asic/&lt;block&gt;/runs/&lt;run-id&gt;/final/</code>. 상태는 해당 run의 <code>final/metrics.json</code>과 <code>tools/wsl/logs/*.summary</code>로 확인했습니다. 실행 종료 코드 0만으로 DRC/LVS signoff를 판정하지 않습니다. <b>"signoff clean"의 범위:</b> 이 OpenLane 흐름의 9개 코너(배선 RC 3 × ss/tt/ff) <b>전부</b> setup·hold 위반 0이고 DRC·LVS·antenna가 0이라는 뜻입니다. OpenLane은 기본적으로 tt 위반에서만 멈추므로(<code>TIMING_VIOLATION_CORNERS: ['*tt*']</code>) "Flow complete"를 통과로 보지 않습니다. sf/fs 공정, 저온 setup, 모드별 검사, 크로스토크(SI)까지 보는 실제 상용 sign-off보다는 좁은 범위입니다(Evolution SA 배경 지식 16절).</p>
     </section>
     <section className="card"><div className="card-title"><div><small className="kicker">TOOLCHAIN — 실제 사용 중</small><h2>WSL 기반 오픈소스 RTL-to-GDS</h2></div></div>
       <div className="data-table"><table><thead><tr><th>영역</th><th>도구</th><th>비고</th></tr></thead><tbody>{toolchain.map(([area, tool, note]) => <tr key={area}><td>{area}</td><td><b>{tool}</b></td><td>{note}</td></tr>)}</tbody></table></div>
@@ -113,7 +113,7 @@ export default function PhysicalDesignStatus() {
     <section className="card"><div className="card-title"><div><small className="kicker">daq_subsystem — 8채널 전체 top</small><h2>마지막 확인된 기준 실행은 signoff 전 단계</h2></div></div>
       <div className="check-list">
         <p><b>Flat 실행 기록</b><span>여러 시도가 PC/WSL 종료로 중단됐고 마지막 확인된 flat run도 CTS 이후 STA에서 멈췄습니다. 이 표는 저장된 결과이며 현재 프로세스 상태를 판정하지 않습니다.</span></p>
-        <p><b>Hierarchical 기준 배치</b><span><code>hierarchical_auto_20260924_142552</code>는 top-only flow로 detailed routing·RCX·post-PNR STA·XOR까지 도달했습니다. 다만 setup/hold/antenna 위반이 남고 Magic DRC/LVS 완료 전 중단됐으므로 routed evidence이지 signoff 결과는 아닙니다.</span></p>
+        <p><b>Hierarchical 기준 배치</b><span><code>hierarchical_auto_20260924_142552</code>는 top-only flow로 Flow complete까지 완주했습니다(2026-10-05). route DRC·Magic DRC·KLayout DRC·LVS·XOR는 모두 0이지만 setup WNS −6.44ns(ss 코너)·hold WNS −0.15ns(ff 코너)·antenna 121 nets가 남아 signoff 통과는 아닙니다.</span></p>
         <p><b>이미 잡은 RTL 버그 1건</b><span><code>perf_cnt.sv</code>의 <code>$countones()</code>가 OpenLane 합성 프론트엔드를 크래시 — Verilator/sby에선 멀쩡한 합법 SV. <code>daq_pkg::popcount</code> 패키지 함수로 옮겨 해결, TB/mutation 비회귀 확인 (<code>a4dbd21</code>).</span></p>
         <p><b>현재 기준 floorplan</b><span>8개 800×800µm chan_top과 300µm 행간 채널을 둔 3700×2100µm 격자가 가장 멀리 진행된 기준입니다. 100µm 채널과 scattered 후보는 각각 DPL/GRT에서 실패했습니다.</span></p>
       </div>
