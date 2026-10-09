@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "design": "ppa3_adc_capture_top",
+  "observations": [
+    {
+      "run": "ppa3_antfix4_signoff",
+      "status": "completed_measured_not_waived",
+      "drc_scope": "gds_default",
+      "die_area_um2": 750000,
+      "die_um": [
+        1250,
+        600
+      ],
+      "macro_xy_um": {
+        "u_adc": [
+          40.0,
+          150.0
+        ],
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": [
+          430.0,
+          65.0
+        ]
+      },
+      "magic_drc_count": 15861362,
+      "magic_rule_counts": null,
+      "magic_rule_detail_status": "unavailable_or_report_too_large",
+      "route_drc_count": 0,
+      "lvs_error_count": 363,
+      "max_slew_count": 42,
+      "max_cap_count": 1,
+      "full_pass": false,
+      "sources": {
+        "metrics": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix4_signoff/final/metrics.json",
+        "magic_xml": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix4_signoff/01-magic-drc/reports/drc_violations.magic.xml",
+        "config": "samples/sample_test_4/asic/ppa3_adc_capture/config_antfix4.json"
+      }
+    },
+    {
+      "run": "ppa3_antfix5_signoff",
+      "status": "completed_measured_not_waived",
+      "drc_scope": "macro_abstracted",
+      "die_area_um2": 750000,
+      "die_um": [
+        1250,
+        600
+      ],
+      "macro_xy_um": {
+        "u_adc": [
+          40.0,
+          150.0
+        ],
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": [
+          430.0,
+          65.0
+        ]
+      },
+      "magic_drc_count": 559,
+      "magic_rule_counts": {
+        "UNKNOWN.UNKNOWN0": 88,
+        "met1.7": 82,
+        "nwell.4": 389
+      },
+      "magic_rule_detail_status": "parsed",
+      "route_drc_count": 0,
+      "lvs_error_count": 363,
+      "max_slew_count": 42,
+      "max_cap_count": 1,
+      "full_pass": false,
+      "sources": {
+        "metrics": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix5_signoff/final/metrics.json",
+        "magic_xml": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix5_signoff/01-magic-drc/reports/drc_violations.magic.xml",
+        "config": "samples/sample_test_4/asic/ppa3_adc_capture/config_antfix5.json"
+      }
+    },
+    {
+      "run": "ppa3_pdn_a_signoff",
+      "status": "completed_measured_not_waived",
+      "drc_scope": "gds_default",
+      "die_area_um2": 750000,
+      "die_um": [
+        1250,
+        600
+      ],
+      "macro_xy_um": {
+        "u_adc": [
+          40,
+          150
+        ],
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": [
+          430,
+          65
+        ]
+      },
+      "magic_drc_count": 15861378,
+      "magic_rule_counts": null,
+      "magic_rule_detail_status": "unavailable_or_report_too_large",
+      "route_drc_count": 0,
+      "lvs_error_count": 387,
+      "max_slew_count": 43,
+      "max_cap_count": 1,
+      "full_pass": false,
+      "sources": {
+        "metrics": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_pdn_a_signoff/final/metrics.json",
+        "magic_xml": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_pdn_a_signoff/05-magic-drc/reports/drc_violations.magic.xml",
+        "config": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_pdn_a_signoff/05-magic-drc/config.json"
+      }
+    }
+  ],
+  "resolutions": [],
+  "avoid_patterns": [
+    {
+      "id": "adc-left-fragment-antfix5",
+      "rule": "nwell.4",
+      "feature": "adc_left_row_fragment_um",
+      "lower_exclusive": 9.5,
+      "upper_inclusive": 10.0,
+      "source_run": "ppa3_antfix5_signoff",
+      "confidence": "observed_failure_not_proven_causal",
+      "note": "The baseline ADC x=40 leaves a 9.76 um left row segment; do not repeat this exact geometry."
+    }
+  ],
+  "proposed_fixes": [
+    {
+      "id": "adc-left-to-core",
+      "addresses": "adc-left-fragment-antfix5",
+      "change": "Set ADC x=30.24 um so the left row fragment disappears.",
+      "status": "unverified_until_same_scope_drc_and_lvs_pass"
+    }
+  ]
+}

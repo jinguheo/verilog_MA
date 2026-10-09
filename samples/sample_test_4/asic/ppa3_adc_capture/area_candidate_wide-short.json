@@ -1,0 +1,131 @@
+{
+  "DESIGN_NAME": "ppa3_adc_capture_top",
+  "VERILOG_FILES": [
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_util_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_mubi_pkg.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_flop.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_flop_2sync.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_clock_mux2.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl/prim_rst_sync.sv",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl/prim_fifo_async.sv",
+    "dir::../../rtl/analog_if/sar_adc_ch.sv",
+    "dir::../../rtl/analog_if/adc_byte_to_sample.sv",
+    "dir::../../rtl/analog_if/adc_capture_sram.sv",
+    "dir::../../rtl/analog_if/adc_capture_buffer.sv",
+    "dir::../../rtl/analog_if/adc_stream_capture.sv",
+    "dir::../../rtl/analog_if/ppa3_adc_capture_top.sv"
+  ],
+  "EXTRA_VERILOG_MODELS": [
+    "dir::../../../../analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.blackbox.v",
+    "dir::sram22_1024x32m8w8.blackbox.v"
+  ],
+  "VERILOG_INCLUDE_DIRS": [
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim/rtl",
+    "dir::../../../../../verilog/dbs/opentitan/hw/ip/prim_generic/rtl"
+  ],
+  "USE_SYNLIG": true,
+  "VERILOG_DEFINES": [
+    "ADC_CAPTURE_USE_SRAM22"
+  ],
+  "CLOCK_PORT": "sys_clk_i",
+  "CLOCK_PERIOD": 20.0,
+  "PNR_SDC_FILE": "dir::../constraints/ppa3_adc_capture_top.sdc",
+  "SIGNOFF_SDC_FILE": "dir::../constraints/ppa3_adc_capture_top.sdc",
+  "FP_SIZING": "absolute",
+  "DIE_AREA": [
+    0,
+    0,
+    1250,
+    571
+  ],
+  "CORE_AREA": [
+    20,
+    20,
+    1230,
+    551
+  ],
+  "PL_TARGET_DENSITY_PCT": 35,
+  "PDN_MACRO_CONNECTIONS": [
+    "u_capture_path.u_capture.u_capture_sram.u_sram22 vccd vssd vdd vss"
+  ],
+  "MACRO_PLACEMENT_CFG": "dir::area_candidate_wide-short.cfg",
+  "MACROS": {
+    "sky130_ef_ip__adc3v_12bit": {
+      "gds": [
+        "dir::../../../../analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit_prboundary.gds"
+      ],
+      "lef": [
+        "dir::../../../../analog/build/sky130_ef_ip__adc3v_12bit/sky130_ef_ip__adc3v_12bit.lef"
+      ],
+      "instances": {
+        "u_adc": {
+          "location": [
+            30.24,
+            150
+          ],
+          "orientation": "N"
+        }
+      }
+    },
+    "sram22_1024x32m8w8": {
+      "gds": [
+        "dir::../../../../analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8_prboundary.gds"
+      ],
+      "lef": [
+        "dir::../../../../analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8.lef"
+      ],
+      "lib": {
+        "*tt_025C_1v80": [
+          "dir::../../../../analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8_tt_025C_1v80.lib"
+        ],
+        "*ss_100C_1v60": [
+          "dir::../../../../analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8_ss_100C_1v60.lib"
+        ],
+        "*ff_n40C_1v95": [
+          "dir::../../../../analog/third_party/sram22_sky130_macros/sram22_1024x32m8w8/sram22_1024x32m8w8_ff_n40C_1v95.lib"
+        ]
+      },
+      "instances": {
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": {
+          "location": [
+            430,
+            65
+          ],
+          "orientation": "N"
+        }
+      }
+    }
+  },
+  "//ANTENNA_FIX": [
+    "PPA3 antenna closure, variant 2: raising GRT_ANTENNA_ITERS 3->10 did not help (run ppa3_antenna_fix: the same 2 nets stayed violated",
+    "while ~35 diodes were inserted per iteration, and the post-detail-route check ended with 6 nets). Break the long/high-fanout nets instead:",
+    "post-GRT design repair with a 300 um max wire length (buffers split the net -> smaller metal area per gate) + heuristic diode insertion.",
+    "Run with tools/wsl/122_run_ppa3_variant.sh antfix2. Not the signed-off config.",
+    "Variant 3 = variant 2 + MAGIC_CAPTURE_ERRORS=false: Magic prints 'Error while reading cell ... Unknown layer/datatype in boundary' for",
+    "label/marker datatypes (64:44, 33:43, 92:44) inside the third-party sram22 GDS; OpenLane treats any such line as fatal (it killed the baseline at WriteLEF too).",
+    "Drawing layers are known to Magic, so only marker shapes are skipped; KLayout DRC reads the same GDS as a cross-check."
+  ],
+  "RUN_POST_GRT_DESIGN_REPAIR": true,
+  "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH": 300,
+  "RUN_HEURISTIC_DIODE_INSERTION": true,
+  "MAGIC_CAPTURE_ERRORS": false,
+  "ERROR_ON_MAGIC_DRC": false,
+  "ERROR_ON_KLAYOUT_DRC": false,
+  "ERROR_ON_LVS_ERROR": false,
+  "ERROR_ON_XOR_ERROR": false,
+  "ERROR_ON_ILLEGAL_OVERLAPS": false,
+  "ERROR_ON_LONG_WIRE": false,
+  "//COMPLETE_FLOW": [
+    "antfix3 + signoff checkers non-fatal (ERROR_ON_MAGIC_DRC/KLAYOUT_DRC/LVS/XOR/ILLEGAL_OVERLAPS = false) so the flow runs to the end",
+    "and records the true violation counts in final/metrics.json instead of stopping at the first checker. The counts are NOT waived: they stay in the metrics and in the dashboard.",
+    "Use: bash 123_resume_ppa3.sh antfix4 <first step id> <source run> <source step dir>. Not the signed-off config."
+  ],
+  "MAGIC_DRC_USE_GDS": false,
+  "//MACRO_ABSTRACT_DRC": [
+    "antfix4 + MAGIC_DRC_USE_GDS=false: Magic DRC runs on the DEF/LEF view, so the inside of the hard macros (ADC, SRAM) is NOT checked by this step.",
+    "Purpose: finish the top-level signoff chain quickly (the GDS-based Magic DRC of the same design takes hours). The macro-internal diff/tap.18,20 findings",
+    "(CDAC 6 repaired in a copy, comparator 19 open) stay documented separately; this variant must be reported as 'top-level DRC with macros abstracted', never as full-GDS DRC clean.",
+    "Run: bash 123_resume_ppa3.sh antfix5 Magic.DRC ppa3_antfix3_signoff 06-checker-xor"
+  ]
+}

@@ -1,0 +1,375 @@
+{
+  "schema_version": 1,
+  "screening_source_config": "samples/sample_test_4/asic/ppa3_adc_capture/config_antfix5.json",
+  "full_gds_source_config": "samples/sample_test_4/asic/ppa3_adc_capture/config_antfix4.json",
+  "baseline_die_um": [
+    1250,
+    600
+  ],
+  "baseline_area_um2": 750000,
+  "baseline_def_row_sites": 175564,
+  "physical_runs_started": 0,
+  "note": "Geometry-only candidates. ADC x-shift is a proposed fix, not a verified DRC resolution.",
+  "constraint_db": "physical_design/layout_candidates/ppa3_constraint_knowledge.json",
+  "pdk_version": "0fe599b2afb6708d281543108caf8310912f54af",
+  "first_round_shortlist": [
+    "compact-balanced",
+    "wide-low",
+    "vertical-relaxed"
+  ],
+  "shortlist_policy": "Three distinct hypotheses first; promote more candidates only when results change the constraint model.",
+  "candidates": [
+    {
+      "id": "compact-balanced",
+      "status": "geometry_only_not_physically_verified",
+      "die_um": [
+        1230,
+        580
+      ],
+      "area_um2": 713400,
+      "area_reduction_pct": 4.88,
+      "macro_xy_um": {
+        "u_adc": [
+          30.24,
+          150
+        ],
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": [
+          430,
+          65
+        ]
+      },
+      "row_sites_estimate": 145980,
+      "halo_to_core_margin_um": {
+        "u_adc": {
+          "left": 0.0,
+          "bottom": 118.24,
+          "right": 945.63,
+          "top": 105.995
+        },
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": {
+          "left": 399.76,
+          "bottom": 33.24,
+          "right": 5.34,
+          "top": 24.08
+        }
+      },
+      "features": {
+        "adc_left_row_fragment_um": 0.0
+      },
+      "knowledge_avoid_hits": [],
+      "hypothesis": "Moderate shrink + remove the observed ADC left fragment; first tap/PDN check.",
+      "first_round_shortlist": true,
+      "screening_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_compact-balanced.json",
+      "full_gds_drc_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_compact-balanced_full.json",
+      "macro_placement": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_compact-balanced.cfg"
+    },
+    {
+      "id": "compact-limit",
+      "status": "geometry_only_not_physically_verified",
+      "die_um": [
+        1225,
+        556
+      ],
+      "area_um2": 681100,
+      "area_reduction_pct": 9.187,
+      "macro_xy_um": {
+        "u_adc": [
+          30.24,
+          150
+        ],
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": [
+          430,
+          65
+        ]
+      },
+      "row_sites_estimate": 122352,
+      "halo_to_core_margin_um": {
+        "u_adc": {
+          "left": 0.0,
+          "bottom": 118.24,
+          "right": 940.63,
+          "top": 81.995
+        },
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": {
+          "left": 399.76,
+          "bottom": 33.24,
+          "right": 0.34,
+          "top": 0.08
+        }
+      },
+      "features": {
+        "adc_left_row_fragment_um": 0.0
+      },
+      "knowledge_avoid_hits": [],
+      "hypothesis": "Probe the fixed-placement halo boundary; high edge-access risk, not a first full-flow run.",
+      "first_round_shortlist": false,
+      "screening_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_compact-limit.json",
+      "full_gds_drc_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_compact-limit_full.json",
+      "macro_placement": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_compact-limit.cfg"
+    },
+    {
+      "id": "wide-short",
+      "status": "geometry_only_not_physically_verified",
+      "die_um": [
+        1250,
+        571
+      ],
+      "area_um2": 713750,
+      "area_reduction_pct": 4.833,
+      "macro_xy_um": {
+        "u_adc": [
+          30.24,
+          150
+        ],
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": [
+          430,
+          65
+        ]
+      },
+      "row_sites_estimate": 146761,
+      "halo_to_core_margin_um": {
+        "u_adc": {
+          "left": 0.0,
+          "bottom": 118.24,
+          "right": 965.63,
+          "top": 96.995
+        },
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": {
+          "left": 399.76,
+          "bottom": 33.24,
+          "right": 25.34,
+          "top": 15.08
+        }
+      },
+      "features": {
+        "adc_left_row_fragment_um": 0.0
+      },
+      "knowledge_avoid_hits": [],
+      "hypothesis": "Near-equal-area aspect-ratio alternative to compact-balanced; test vertical row capacity.",
+      "first_round_shortlist": false,
+      "screening_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_wide-short.json",
+      "full_gds_drc_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_wide-short_full.json",
+      "macro_placement": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_wide-short.cfg"
+    },
+    {
+      "id": "narrow-tall",
+      "status": "geometry_only_not_physically_verified",
+      "die_um": [
+        1210,
+        590
+      ],
+      "area_um2": 713900,
+      "area_reduction_pct": 4.813,
+      "macro_xy_um": {
+        "u_adc": [
+          30.24,
+          150
+        ],
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": [
+          405,
+          65
+        ]
+      },
+      "row_sites_estimate": 147500,
+      "halo_to_core_margin_um": {
+        "u_adc": {
+          "left": 0.0,
+          "bottom": 118.24,
+          "right": 925.63,
+          "top": 115.995
+        },
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": {
+          "left": 374.76,
+          "bottom": 33.24,
+          "right": 10.34,
+          "top": 34.08
+        }
+      },
+      "features": {
+        "adc_left_row_fragment_um": 0.0
+      },
+      "knowledge_avoid_hits": [],
+      "hypothesis": "Near-equal-area narrow alternative with SRAM shifted left; test macro channel and pins.",
+      "first_round_shortlist": false,
+      "screening_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_narrow-tall.json",
+      "full_gds_drc_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_narrow-tall_full.json",
+      "macro_placement": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_narrow-tall.cfg"
+    },
+    {
+      "id": "left-shift-compact",
+      "status": "geometry_only_not_physically_verified",
+      "die_um": [
+        1180,
+        585
+      ],
+      "area_um2": 690300,
+      "area_reduction_pct": 7.96,
+      "macro_xy_um": {
+        "u_adc": [
+          30.24,
+          150
+        ],
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": [
+          375,
+          65
+        ]
+      },
+      "row_sites_estimate": 129282,
+      "halo_to_core_margin_um": {
+        "u_adc": {
+          "left": 0.0,
+          "bottom": 118.24,
+          "right": 895.63,
+          "top": 110.995
+        },
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": {
+          "left": 344.76,
+          "bottom": 33.24,
+          "right": 10.34,
+          "top": 29.08
+        }
+      },
+      "features": {
+        "adc_left_row_fragment_um": 0.0
+      },
+      "knowledge_avoid_hits": [],
+      "hypothesis": "More x compaction; test SRAM pin access and inter-macro routing.",
+      "first_round_shortlist": false,
+      "screening_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_left-shift-compact.json",
+      "full_gds_drc_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_left-shift-compact_full.json",
+      "macro_placement": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_left-shift-compact.cfg"
+    },
+    {
+      "id": "wide-low",
+      "status": "geometry_only_not_physically_verified",
+      "die_um": [
+        1260,
+        550
+      ],
+      "area_um2": 693000,
+      "area_reduction_pct": 7.6,
+      "macro_xy_um": {
+        "u_adc": [
+          30.24,
+          140
+        ],
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": [
+          430,
+          50
+        ]
+      },
+      "row_sites_estimate": 127400,
+      "halo_to_core_margin_um": {
+        "u_adc": {
+          "left": 0.0,
+          "bottom": 108.24,
+          "right": 975.63,
+          "top": 85.995
+        },
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": {
+          "left": 399.76,
+          "bottom": 18.24,
+          "right": 35.34,
+          "top": 9.08
+        }
+      },
+      "features": {
+        "adc_left_row_fragment_um": 0.0
+      },
+      "knowledge_avoid_hits": [],
+      "hypothesis": "More y compaction with SRAM moved down; test bottom pin escape and PDN.",
+      "first_round_shortlist": true,
+      "screening_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_wide-low.json",
+      "full_gds_drc_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_wide-low_full.json",
+      "macro_placement": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_wide-low.cfg"
+    },
+    {
+      "id": "vertical-stack",
+      "status": "geometry_only_not_physically_verified",
+      "die_um": [
+        830,
+        850
+      ],
+      "area_um2": 705500,
+      "area_reduction_pct": 5.933,
+      "macro_xy_um": {
+        "u_adc": [
+          30.24,
+          525
+        ],
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": [
+          30.24,
+          32
+        ]
+      },
+      "row_sites_estimate": 144905,
+      "halo_to_core_margin_um": {
+        "u_adc": {
+          "left": 0.0,
+          "bottom": 493.24,
+          "right": 545.63,
+          "top": 0.995
+        },
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": {
+          "left": 0.0,
+          "bottom": 0.24,
+          "right": 5.1,
+          "top": 327.08
+        }
+      },
+      "features": {
+        "adc_left_row_fragment_um": 0.0
+      },
+      "knowledge_avoid_hits": [],
+      "hypothesis": "Alternative topology with narrow vertical channel; high information, high risk.",
+      "first_round_shortlist": false,
+      "screening_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_vertical-stack.json",
+      "full_gds_drc_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_vertical-stack_full.json",
+      "macro_placement": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_vertical-stack.cfg"
+    },
+    {
+      "id": "vertical-relaxed",
+      "status": "geometry_only_not_physically_verified",
+      "die_um": [
+        840,
+        860
+      ],
+      "area_um2": 722400,
+      "area_reduction_pct": 3.68,
+      "macro_xy_um": {
+        "u_adc": [
+          30.24,
+          535
+        ],
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": [
+          30.24,
+          32
+        ]
+      },
+      "row_sites_estimate": 158365,
+      "halo_to_core_margin_um": {
+        "u_adc": {
+          "left": 0.0,
+          "bottom": 503.24,
+          "right": 555.63,
+          "top": 0.995
+        },
+        "u_capture_path.u_capture.u_capture_sram.u_sram22": {
+          "left": 0.0,
+          "bottom": 0.24,
+          "right": 15.1,
+          "top": 337.08
+        }
+      },
+      "features": {
+        "adc_left_row_fragment_um": 0.0
+      },
+      "knowledge_avoid_hits": [],
+      "hypothesis": "Vertical topology with larger channel; test whether reorientation beats horizontal packing.",
+      "first_round_shortlist": true,
+      "screening_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_vertical-relaxed.json",
+      "full_gds_drc_config": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_vertical-relaxed_full.json",
+      "macro_placement": "samples/sample_test_4/asic/ppa3_adc_capture/area_candidate_vertical-relaxed.cfg"
+    }
+  ]
+}

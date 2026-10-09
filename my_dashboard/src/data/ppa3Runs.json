@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-08T21:57",
+ "generated": "2026-10-09T14:33",
  "total_steps": 74,
  "runs": [
   {
@@ -217,6 +217,30 @@
     "power": 0.0026937525253742933,
     "wirelength": 57264
    }
+  },
+  {
+   "run": "ppa3_adcshift_signoff",
+   "label": "ADC를 x 40→30.24로 이동(왼쪽 행 조각 제거), antfix4 설정 · signoff부터 이어받음",
+   "state": "running",
+   "exit_code": null,
+   "steps_done": 0,
+   "last_step": null,
+   "next_step": "01-magic-drc",
+   "magic_drc_mode": "GDS",
+   "updated": "2026-10-09T14:32",
+   "metrics": {}
+  },
+  {
+   "run": "ppa3_adcslew_signoff",
+   "label": "ADC 이동 + slew/cap 여유 50% · CTS slew 0.2 ns · signoff부터 이어받음",
+   "state": "running",
+   "exit_code": null,
+   "steps_done": 0,
+   "last_step": null,
+   "next_step": "01-magic-drc",
+   "magic_drc_mode": "GDS",
+   "updated": "2026-10-09T14:31",
+   "metrics": {}
   }
  ]
 }
