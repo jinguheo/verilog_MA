@@ -3,6 +3,11 @@
 // 화면의 계산값(통과율, 격자 후보 수, 면적 비율)은 아래 상수에서 렌더링할 때 계산한다. 실측값은 출처와 확인 상태를 함께 적었다.
 import { useState } from 'react'
 import DpStepByStep from './DpStepByStep'
+import SaStepByStep from './SaStepByStep'
+import SaMechanics from './SaMechanics'
+import { SetupHoldConceptFigure, SetupBudgetFigure, HoldBudgetFigure, TimingChainFigure, CornerDelayFigure, ThermalControlFigure } from './TimingFigures'
+import CombinedSearch from './CombinedSearch'
+import ResultCompare from './ResultCompare'
 
 type Status = '확정' | '가설' | '미측정'
 const STATUS_COLOR: Record<Status, string> = { '확정': 'var(--success)', '가설': 'var(--warning)', '미측정': 'var(--text-muted)' }
@@ -144,9 +149,9 @@ function Candidate1() {
 
 function Candidate2() {
   return <div>
-    <p style={p}><b>목표:</b> DRC·LVS·STA·전원·배선 제약을 만족하는 <b>최소 칩 면적</b>을 찾습니다. 배치가 끝난 뒤 남는 틈에만 필요한 filler를 넣고, decap은 검증된 최소 전원 용량·위치만 확보합니다. 소수 실험의 지식을 DP 탐색에 재사용하고 동일한 배치·설정은 다시 실행하지 않습니다.</p>
+    <p style={p}><b>목표:</b> DRC·LVS·STA·전원·배선 제약을 만족하는 <b>최소 칩 면적</b>을 찾습니다. 배치가 끝난 뒤 남는 틈에만 필요한 filler를 넣고, decap은 검증된 최소 전원 용량·위치만 확보합니다. 소수 실험의 지식을 beam search 탐색에 재사용하고 동일한 배치·설정은 다시 실행하지 않습니다.</p>
     <div className="data-table"><table><thead><tr><th>설계</th><th>구현</th><th>검증</th><th>적용 범위</th></tr></thead><tbody>
-      <tr><td><b>설계 후보 2 · DP 보조 탐색</b></td><td>{badge('미측정')} 미착수</td><td>{badge('미측정')} 성능 비교 전</td><td>매크로 위치와 주변 영역 shape</td></tr>
+      <tr><td><b>설계 후보 2 · beam search 보조 탐색</b></td><td>{badge('미측정')} 미착수</td><td>{badge('미측정')} 성능 비교 전</td><td>매크로 위치와 주변 영역 shape</td></tr>
     </tbody></table></div>
 
     <Section title="1. 초기 실험으로 규칙과 timing을 보정" open>
@@ -159,7 +164,7 @@ function Candidate2() {
       <p style={p}>초기 실행 횟수는 고정하지 않습니다. 서로 다른 실패 원인을 구분할 만큼만 실행하고, 새 결과가 예측 규칙을 바꿀 때 추가 실험을 선택합니다.</p>
     </Section>
 
-    <Section title="2. DP 상태와 전이" open>
+    <Section title="2. beam search 상태와 전이" open>
       <div className="data-table"><table><thead><tr><th>요소</th><th>저장·계산할 값</th><th>이유</th></tr></thead><tbody>
         <tr><td>상태</td><td>가변 칩 폭·높이와 core 경계, 배치된 블록 집합, 점유 영역, 행/경계 여유, net별 위치 요약, PDN 위상</td><td>면적과 뒤에 놓을 블록의 합법성·추가 비용 결정</td></tr>
         <tr><td>전이</td><td>다음 블록의 위치·방향·이웃 영역 shape 선택; 칩 폭·높이를 각각 조절하거나 같은 면적에서 종횡비 변경</td><td>면적과 모양이 모두 탐색 변수이며 hard rule 위반이면 즉시 가지치기</td></tr>
@@ -167,7 +172,7 @@ function Candidate2() {
         <tr><td>출력</td><td>서로 다른 상위 K개 완성 배치와 부모·변이 계보</td><td>다단계 물리 검증 입력</td></tr>
       </tbody></table></div>
       <div style={mono}>최선값(다음 상태) = max[ 최선값(현재 상태) + 새 배치의 점수 변화 ]</div>
-      <p style={p}>서로 다른 배치를 같은 상태로 합치면 최적해를 잃습니다. 미래 비용에 필요한 점유·경계·net 정보와 <b>행별 예약 용량</b>을 상태에 유지하고, 상태가 너무 많아지면 상위 K개를 남기는 제한된 DP(beam 방식)로 실행합니다. 이 경우 전역 최적 보장은 없습니다.</p>
+      <p style={p}>서로 다른 배치를 같은 상태로 합치면 최적해를 잃습니다. 미래 비용에 필요한 점유·경계·net 정보와 <b>행별 예약 용량</b>을 상태에 유지하고, 상태가 너무 많아지면 상위 K개를 남기는 beam search(DP의 틀을 쓰되 상태를 제한)로 실행합니다. 이 경우 전역 최적 보장은 없습니다.</p>
     </Section>
 
     <Section title="3. fill·decap 보호와 최소 여유·밀도 규칙" open>
@@ -197,7 +202,7 @@ function Candidate2() {
 
     <Section title="4. 빠른 판정에서 실제 검증까지">
       <ol style={ul}>
-        <li><b>L0:</b> DP 전이 때 겹침·확정 DRC 간격·halo·tap/PDN 접근 규칙을 즉시 검사합니다. 불확실한 규칙은 soft risk로 둡니다.</li>
+        <li><b>L0:</b> beam search 전이 때 겹침·확정 DRC 간격·halo·tap/PDN 접근 규칙을 즉시 검사합니다. 불확실한 규칙은 soft risk로 둡니다.</li>
         <li><b>L1:</b> 서로 다른 상위 배치만 floorplan·tap·PDN 단계로 보내고, 실패 결과를 규칙 기억에 반영합니다.</li>
         <li><b>L2:</b> placement/global route의 경로·혼잡·STA 추정으로 순위를 다시 매깁니다. 초기 timing 예측과 최종 STA를 구분해 표시합니다.</li>
         <li><b>L3:</b> 최종 소수 후보에 전체 DRC/LVS와 signoff STA를 실행합니다. 같은 fingerprint의 결과는 재사용합니다.</li>
@@ -208,16 +213,16 @@ function Candidate2() {
       <div className="data-table"><table><thead><tr><th>단계</th><th>산출물</th><th>확인할 것</th></tr></thead><tbody>
         <tr><td>D0</td><td>run fingerprint·초기 calibration·ROW/LEF 기반 공간 회계</td><td>같은 배치·설정의 재실행 0건; fill/decap·고정 셀·예약량의 사이트 단위 합계 검증</td></tr>
         <tr><td>D1</td><td>규칙 기반 legal 위치·쌍별 호환성 표</td><td>기존 엔진 hard rule과 일치</td></tr>
-        <tr><td>D2</td><td>부분 상태 DP와 상위 K개 고유 후보</td><td>동일 계산 예산에서 후보 1과 품질·다양성 비교</td></tr>
+        <tr><td>D2</td><td>부분 상태 beam search와 상위 K개 고유 후보</td><td>동일 계산 예산에서 후보 1과 품질·다양성 비교</td></tr>
         <tr><td>D3</td><td>DRC/STA 결과 피드백과 L1~L3 승격</td><td>실제 위반 수·slack·실행 시간 비교</td></tr>
       </tbody></table></div>
-      <p style={p}>PPA3는 hard macro가 ADC·SRAM 두 개여서 거친 위치 조합은 이미 전수 열거가 가능합니다. DP의 이득은 이웃 영역 shape와 세밀한 좌표·규칙 상태까지 확장할 때 실측으로 판단합니다. 전역 DRC와 최종 STA는 DP 점수로 대체하지 않습니다.</p>
+      <p style={p}>PPA3는 hard macro가 ADC·SRAM 두 개여서 거친 위치 조합은 이미 전수 열거가 가능합니다. beam search의 이득은 이웃 영역 shape와 세밀한 좌표·규칙 상태까지 확장할 때 실측으로 판단합니다. 전역 DRC와 최종 STA는 beam search 점수로 대체하지 않습니다.</p>
     </Section>
 
-    <Section title="5. 유사 코드와 시제품 검증 (위상 DP + 간격 DP)">
-      <p style={p}>위 2절의 상태·전이·값을 그대로 따르는 유사 코드입니다. DP를 <b>두 단계</b>로 나눕니다. ① <b>위상 DP(beam)</b>는 블록 순서대로 위치·방향·shape를 고르고, ② <b>간격 DP(정확)</b>는 ①이 정한 위상에서 µm 단위 간격을 규칙에 맞게 최적으로 나눕니다. 두 알고리즘 모두 실제 코드로 만들어 돌렸습니다.</p>
+    <Section title="5. 유사 코드와 시제품 검증 (beam search + 간격 DP)">
+      <p style={p}>위 2절의 상태·전이·값을 그대로 따르는 유사 코드입니다. 탐색을 <b>두 단계</b>로 나눕니다. ① <b>beam search</b>는 블록 순서대로 위치·방향·shape를 고르고, ② <b>간격 DP(정확)</b>는 ①이 정한 위상에서 µm 단위 간격을 규칙에 맞게 최적으로 나눕니다. 두 알고리즘 모두 실제 코드로 만들어 돌렸습니다.</p>
 
-      <p style={{ ...p, marginBottom: 2 }}><b>① 위상 DP — 상위 K개를 남기는 제한된 DP (beam)</b></p>
+      <p style={{ ...p, marginBottom: 2 }}><b>① beam search — 상위 K개만 남기는 제한된 탐색 (정확한 DP 아님)</b></p>
       <div style={mono}>{`입력: 블록 순서 SEQ = [adc, sram, opamp, fifo, control], 빔 폭 K, 위반 기억 M
 layer ← [ 빈 보드 ]
 for id in SEQ:
@@ -272,12 +277,12 @@ r ← LU − s : 마지막 간격 = 나머지이며 이것도 규칙을 통과�
       <ul style={ul}>
         <li><b>복잡도:</b> O(k · LU²) — 매크로 2개, 격자 0.5 µm에서 약 0.1초라 위상마다 돌려도 부담이 없습니다.</li>
         <li><b>주의:</b> 비용식의 PDN strap 격자(피치 40 µm, 오프셋 22.66 µm)와 300 µm 채널 벌점은 <b>알고리즘 확인용 예시 값</b>입니다. 실제 PDN 정렬 규칙과 임계값 T는 아직 측정되지 않았습니다(1절 규칙 보정).</li>
-        <li><b>이 DP가 정확한 범위:</b> 한 행 띠에서 매크로 순서가 정해져 있고 비용이 간격·매크로 x에만 의존할 때입니다. 세로 겹침 여부에 따라 행 종류가 달라지므로 위상 DP가 고른 위상마다 행 종류별로 따로 적용합니다.</li>
+        <li><b>이 간격 DP가 정확한 범위:</b> 한 행 띠에서 매크로 순서가 정해져 있고 비용이 간격·매크로 x에만 의존할 때입니다. 세로 겹침 여부에 따라 행 종류가 달라지므로 beam search가 고른 위상마다 행 종류별로 따로 적용합니다.</li>
       </ul>
-      <p style={p}><b>두 DP의 연결:</b> ①이 거친 위상(블록 집합·방향·shape)을 상위 K개 고르면, ②가 각 위상의 µm 좌표를 규칙에 맞게 정합니다. 그 결과가 L1(floorplan·tap·PDN) 판정 입력이 됩니다.</p>
+      <p style={p}><b>두 알고리즘의 연결:</b> ①이 거친 위상(블록 집합·방향·shape)을 상위 K개 고르면, ②가 각 위상의 µm 좌표를 규칙에 맞게 정합니다. 그 결과가 L1(floorplan·tap·PDN) 판정 입력이 됩니다.</p>
     </Section>
 
-    <Section title="6. DP 단계별 그림 설명 (한 단계씩 따라가기)" open>
+    <Section title="6. beam search · 간격 DP 단계별 그림 설명 (한 단계씩 따라가기)" open>
       <DpStepByStep/>
     </Section>
 
@@ -327,6 +332,7 @@ function Background() {
         <li><b>이 프로젝트의 표준셀 SA:</b> 온도를 ×0.93씩 낮추는 127단계, 단계당 이동 max(100, 40n)번, 이동 종류는 교환 35% · 삽입 20% · 뒤집기 30% · 간격 15%입니다.</li>
         <li><b>칩 배치의 기존 SA</b>(<code>runReplaceThenAnnealing</code>): 블록 하나를 무작위로 골라 합법 위치로 옮기고 점수 변화로 수락 여부를 정합니다. 기본 반복은 6회로 짧습니다.</li>
         <li><b>장점:</b> 완성 배치의 비용만 계산할 수 있으면 어떤 비용이든 쓸 수 있고 구현이 단순합니다. <b>단점:</b> 최적 보장이 없고 seed마다 결과가 다릅니다.</li>
+        <li>이동 하나씩 따라가는 <b>단계별 그림은 10절</b>에서 실제 엔진으로 볼 수 있습니다.</li>
       </ul>
     </Section>
 
@@ -344,14 +350,14 @@ function Background() {
         <text x={392} y={12} textAnchor="end" fontSize={10} fill="currentColor">파랑 = 유지(상위 K), 점선 = 버림</text>
       </svg>
       <ul style={ul}>
-        <li><b>이 프로젝트의 DP 세 가지:</b> ① <b>표준셀 부분집합 DP</b>(상태 = 왼쪽에 놓인 셀의 집합, 2<sup>n</sup>개 → 23셀까지 정확), ② <b>간격 DP</b>(규칙 아래 µm 간격 나누기, 전수 탐색과 일치), ③ <b>위상 beam DP</b>(블록을 순서대로 놓고 상위 K개만 유지).</li>
+        <li><b>이 프로젝트에서 쓴 탐색 세 가지:</b> ① <b>표준셀 부분집합 DP</b>(상태 = 왼쪽에 놓인 셀의 집합, 2<sup>n</sup>개 → 23셀까지 정확), ② <b>간격 DP</b>(규칙 아래 µm 간격 나누기, 전수 탐색과 일치), ③ <b>위상 beam search</b>(블록을 순서대로 놓고 상위 K개만 유지 — DP의 단계 구조를 쓰지만 <b>정확한 DP가 아님</b>).</li>
         <li><b>정확한 DP와 beam의 차이:</b> 정확한 DP는 모든 상태를 유지해 최적을 보장하고, beam은 상위 K개만 남겨 <b>빠른 대신 보장이 없습니다.</b></li>
         <li>단계별 그림은 <b>설계 후보 2의 6절</b>에서 실제 엔진으로 따라갈 수 있습니다.</li>
       </ul>
     </Section>
 
-    <Section title="3. SA와 DP의 차이" open>
-      <div className="data-table"><table><thead><tr><th></th><th>SA</th><th>DP</th></tr></thead><tbody>
+    <Section title="3. SA와 DP · beam search의 차이" open>
+      <div className="data-table"><table><thead><tr><th></th><th>SA</th><th>DP / beam search</th></tr></thead><tbody>
         <tr><td><b>만드는 방식</b></td><td><b>완성된 배치</b>에서 시작해 무작위로 조금씩 바꿈. 시작 배치는 <b>무작위로 만든 것이어도 되고, 기존 배치가 필요하지 않음</b></td><td><b>부분 배치</b>를 단계별로 키우며 앞 결과를 표에 저장·재사용</td></tr>
         <tr><td><b>기존 배치가 없을 때</b></td><td><b>가능.</b> 무작위 합법 배치에서 시작(아래 4절 실측). 단, 규칙이 많으면 합법 시작 배치를 만드는 것부터 일</td><td><b>가능.</b> 빈 보드에서 시작해 단계별로 구성</td></tr>
         <tr><td><b>해 표현</b></td><td>좌표를 직접 쓰거나, 겹침 없는 해만 만드는 표현(B*-tree·sequence pair, 8절)</td><td>상태 키(보드 전체 또는 요약)</td></tr>
@@ -370,7 +376,7 @@ function Background() {
         <tr><td>표준셀 10셀 이하 (후보 9개)</td><td>정확해보다 평균 <b>+1.1%</b> 나쁨(프록시 기준)</td><td>정확해 DP, 스펙트럴은 평균 +2.6%</td></tr>
         <tr><td>표준셀 40셀 (12비트 카운터)</td><td>seed 4개가 <b>200.5 ~ 298.6</b>로 크게 흔들림</td><td>DP 불가(24셀 이상). 스펙트럴 188.6, <b>스펙트럴 해에서 시작한 SA 185.3</b></td></tr>
         <tr><td>ADC–SRAM 간격 나누기</td><td>불필요</td><td>간격 DP가 <b>전수 탐색과 일치</b>(비용 1.7435, 5 µm 칸)</td></tr>
-        <tr><td>칩 배치 (5블록) — <b>처음부터</b> SA (무작위 합법 시작, 직접 구현, seed 4개)</td><td><b>15초:</b> 최고 −153.9 · 중앙값 −173.6 · 최악 −180.0<br/><b>60초:</b> 최고 −140.8 · 중앙값 −150.8 · 최악 −190.1<br/>이동의 약 1/3이 불법(예: 1,872회 중 600회)</td><td><b>beam DP(4칸 버킷, K=32): −133.1 (13.2초)</b><br/>무작위 합법 완성 −258.9 (같은 시간)</td></tr>
+        <tr><td>칩 배치 (5블록) — <b>처음부터</b> SA (무작위 합법 시작, 직접 구현, seed 4개)</td><td><b>15초:</b> 최고 −153.9 · 중앙값 −173.6 · 최악 −180.0<br/><b>60초:</b> 최고 −140.8 · 중앙값 −150.8 · 최악 −190.1<br/>이동의 약 1/3이 불법(예: 1,872회 중 600회)</td><td><b>beam search(4칸 버킷, K=32): −133.1 (13.2초)</b><br/>무작위 합법 완성 −258.9 (같은 시간)</td></tr>
         <tr><td>칩 배치 — 게임에 있는 기존 SA (6~60회, 짧음)</td><td>6회 중앙값 −589.7 · 60회 중앙값 −362.5 (300회는 시간 초과)</td><td>위와 같음</td></tr>
       </tbody></table></div>
       <ul style={ul}>
@@ -381,22 +387,22 @@ function Background() {
 
     <Section title="5. 어떤 경우에 무엇을 돌리나" open>
       <div className="data-table"><table><thead><tr><th>상황</th><th>유리한 쪽</th><th>이유</th></tr></thead><tbody>
-        <tr><td>블록을 순서대로 놓는 단계 구조, 합법 후보 비율이 낮음 (칩 배치: 40,500쌍 중 333개)</td><td><b>DP(beam)</b></td><td>규칙으로 먼저 거르는 편이 빠르고 합법 후보만 만듦</td></tr>
+        <tr><td>블록을 순서대로 놓는 단계 구조, 합법 후보 비율이 낮음 (칩 배치: 40,500쌍 중 333개)</td><td><b>beam search</b></td><td>규칙으로 먼저 거르는 편이 빠르고 합법 후보만 만듦</td></tr>
         <tr><td>정확해나 재현성이 필요하고 문제가 작음 (간격, 표준셀 23셀 이하)</td><td><b>DP</b></td><td>모델 안에서 최적 보장, 결과가 항상 같음</td></tr>
-        <tr><td>서로 다른 상위 후보가 필요 (비싼 L1~L3 검증에 3개만 보냄)</td><td><b>DP(beam)</b></td><td>상위 K개와 계보를 함께 얻음</td></tr>
+        <tr><td>서로 다른 상위 후보가 필요 (비싼 L1~L3 검증에 3개만 보냄)</td><td><b>beam search</b></td><td>상위 K개와 계보를 함께 얻음</td></tr>
         <tr><td>비용이 배치 전체에 얽혀 분해되지 않음 (라우팅·타이밍이 포함된 실제 평가)</td><td><b>SA</b></td><td>완성 배치의 비용만 알면 됨</td></tr>
         <tr><td>상태가 너무 커서 DP 불가 (표준셀 24셀 이상)</td><td><b>SA</b> 또는 스펙트럴</td><td>상태 폭발 회피</td></tr>
         <tr><td>이미 있는 해를 다듬는 후처리</td><td><b>SA</b></td><td>어떤 시작 해에서도 개선 가능</td></tr>
         <tr><td>기존 배치가 없는 처음부터의 배치</td><td><b>둘 다 가능</b></td><td>SA는 무작위 합법 시작에서 15~60초에 −154~−141, beam은 13초에 −133(4칸 버킷). 빠른 결과·다양한 후보는 beam, 시간 여유와 유연한 비용은 SA</td></tr>
       </tbody></table></div>
-      <p style={p}><b>함께 쓰기는 문제에 따라 다릅니다.</b> 표준셀 40셀에서는 스펙트럴 해로 시작한 SA(185.3)가 스펙트럴(188.6)과 SA 단독(200.5)보다 좋았습니다. 반면 <b>칩 배치에서는 DP(beam) 뒤에 SA로 국소 이동해도 개선이 없었습니다</b>(9절 측정). "DP 뒤에 SA"가 항상 좋은 것은 아니며, 앞 단계의 결과가 국소 최적이 아닐 때만 효과가 있습니다.</p>
+      <p style={p}><b>함께 쓰기는 문제에 따라 다릅니다.</b> 표준셀 40셀에서는 스펙트럴 해로 시작한 SA(185.3)가 스펙트럴(188.6)과 SA 단독(200.5)보다 좋았습니다. 반면 <b>칩 배치에서는 beam search 뒤에 SA로 국소 이동해도 개선이 없었습니다</b>(9절 측정). "beam search 뒤에 SA"가 항상 좋은 것은 아니며, 앞 단계의 결과가 국소 최적이 아닐 때만 효과가 있습니다.</p>
     </Section>
 
     <Section title="6. 용어">
       <div className="data-table"><table><thead><tr><th>용어</th><th>뜻</th></tr></thead><tbody>
         <tr><td><b>상태 / 전이 / 값</b></td><td>지금까지 정한 것의 요약 / 다음 선택 하나 / 그 상태의 점수(게임 점수에서 risk를 뺀 값)</td></tr>
         <tr><td><b>최적 부분 구조</b></td><td>앞 부분의 최적 결과가 전체 최적의 일부가 되는 성질. DP가 정확하려면 필요</td></tr>
-        <tr><td><b>beam(빔)</b></td><td>각 단계에서 값이 높은 상위 K개 상태만 남기는 제한된 DP</td></tr>
+        <tr><td><b>beam search</b></td><td>각 단계에서 값이 높은 상위 K개 상태만 남기는 탐색. DP의 단계 구조를 쓰지만 나머지를 버려 정확하지 않음</td></tr>
         <tr><td><b>상태 병합 / 상태 키</b></td><td>같은 키의 상태 중 값이 높은 하나만 유지. 키를 요약할수록 많이 합쳐지지만 근사</td></tr>
         <tr><td><b>가지치기</b></td><td>하드 규칙을 어기는 전이를 만들지 않고 버리는 것</td></tr>
         <tr><td><b>온도 T · 수락 확률</b></td><td>SA가 나빠지는 변경을 받아들이는 정도. 확률 e<sup>−Δ/T</sup>, T가 클수록 자주 수락</td></tr>
@@ -406,15 +412,15 @@ function Background() {
       </tbody></table></div>
     </Section>
 
-    <Section title="7. DP의 차원 — 1D인가 2D인가, NP-hard는 어떻게 다뤘나" open>
-      <p style={p}>이 프로젝트의 DP 세 가지는 <b>차원도, 정확성도 서로 다릅니다.</b> "2D에서 정확한 DP"는 시도하지 않았고, 2D 문제(칩 배치)는 <b>일부러 정확성을 포기한 beam</b>으로 다뤘습니다.</p>
-      <div className="data-table"><table><thead><tr><th>DP</th><th>차원</th><th>상태</th><th>시간</th><th>정확성</th><th>어려움을 다룬 방법</th></tr></thead><tbody>
+    <Section title="7. 탐색의 차원 — 1D인가 2D인가, NP-hard는 어떻게 다뤘나" open>
+      <p style={p}>이 프로젝트의 탐색 세 가지는 <b>차원도, 정확성도 서로 다릅니다.</b> "2D에서 정확한 DP"는 시도하지 않았고, 2D 문제(칩 배치)는 <b>일부러 정확성을 포기한 beam search</b>로 다뤘습니다.</p>
+      <div className="data-table"><table><thead><tr><th>알고리즘</th><th>차원</th><th>상태</th><th>시간</th><th>정확성</th><th>어려움을 다룬 방법</th></tr></thead><tbody>
         <tr><td><b>표준셀 부분집합 DP</b></td><td><b>1D</b> (한 줄 안의 셀 순서)</td><td>왼쪽에 놓인 셀의 집합 (2<sup>n</sup>개)</td><td>지수: O(2<sup>n</sup>·(n+넷 수))</td><td>프록시 모델에서 정확</td><td>선형 배치는 일반적으로 NP-hard 계열이라 <b>지수 시간을 감수하고 n ≤ 23으로 제한</b>(메모리 84MB). 24셀 이상은 SA·스펙트럴로</td></tr>
         <tr><td><b>간격 DP</b></td><td><b>1D</b> (한 행 띠의 x 방향)</td><td>(간격 번호, 사용한 길이)</td><td>다항: O(k·LU²)</td><td>정확</td><td>1D 분할 문제라 NP-hard가 아님. 매크로 순서는 고정</td></tr>
-        <tr><td><b>위상 beam DP</b></td><td><b>2D</b> (25×12 격자)</td><td>지금까지 놓은 블록의 배치(보드)</td><td>다항: 단계당 K × 후보 × 합법 검사</td><td><b>보장 없음</b></td><td>아래 6가지로 <b>정확한 2D DP를 포기</b></td></tr>
+        <tr><td><b>위상 beam search</b></td><td><b>2D</b> (25×12 격자)</td><td>지금까지 놓은 블록의 배치(보드)</td><td>다항: 단계당 K × 후보 × 합법 검사</td><td><b>보장 없음</b></td><td>아래 6가지로 <b>정확한 2D DP를 포기</b></td></tr>
       </tbody></table></div>
       <p style={p}><b>왜 정확한 2D DP가 어려운가:</b> 2D에서는 상태가 "보드의 점유 패턴"이 되어야 하는데, 25×12 = 300칸이면 가능한 패턴이 2<sup>300</sup>가지입니다. 폭이 좁은 보드에서 같은 크기의 타일을 채우는 문제(profile DP)는 가능하지만, 크기가 다른 큰 블록을 임의 위치에 놓는 배치/플로어플랜은 일반적으로 NP-hard입니다.</p>
-      <p style={p}><b>위상 beam DP가 2D를 다룬 방법 (6가지):</b></p>
+      <p style={p}><b>위상 beam search가 2D를 다룬 방법 (6가지):</b></p>
       <ol style={ul}>
         <li><b>놓는 순서를 고정</b>했습니다(ADC → SRAM → SAR NEAR → CDC EDGE → CAPTURE NEAR). 순서를 찾는 탐색이 사라집니다.</li>
         <li><b>블록 5개, 50 µm 격자</b>로 문제 크기가 작습니다. 하드 매크로 쌍은 40,500개 중 규칙을 통과하는 333개뿐이고 전수 열거에 2.8초입니다.</li>
@@ -423,7 +429,7 @@ function Background() {
         <li><b>상위 K개만 유지</b>(beam)합니다. 지금 점수가 낮아 버려진 상태가 나중에 더 좋았을 수 있어 <b>최적을 보장하지 않습니다.</b></li>
         <li><b>상태 키를 요약해 병합</b>합니다(4칸 버킷). 이것도 근사입니다.</li>
       </ol>
-      <p style={p}><b>다른 길(미구현):</b> 슬라이싱 플로어플랜(블록을 가로·세로로 반복 분할한 구조)으로 제한하면 DP가 다항 시간에 정확해집니다(Stockmeyer 방식). 대신 슬라이싱으로 표현되지 않는 배치는 놓칩니다. 매크로가 수십 개로 늘면 검토할 만합니다.</p>
+      <p style={p}><b>다른 길(미구현):</b> 슬라이싱 플로어플랜(블록을 가로·세로로 반복 분할한 구조)으로 제한하면 DP가 다항 시간에 정확해집니다(Stockmeyer 방식). 대신 슬라이싱으로 표현되지 않는 배치는 놓칩니다. 매크로가 수십 개로 늘면 검토할 만합니다. 정의·표현·이 프로젝트와의 관계는 <b>12절</b>에 따로 정리했습니다.</p>
     </Section>
 
     <Section title="8. SA의 해 표현 — B*-tree가 필요한가">
@@ -441,32 +447,390 @@ function Background() {
       </ul>
     </Section>
 
-    <Section title="9. DP 뒤에 SA로 국소 이동하면 좋은가 — 측정 결과" open>
-      <p style={p}>DP(beam)의 결과를 시작점으로 낮은 온도(T 8 → 0.3)의 SA로 <b>블록 하나를 ±2칸(모양 변경 포함) 옮기는 국소 이동</b>을 10초 돌렸습니다. 먼저 DP 결과가 단일 블록 변경으로 더 좋아질 수 있는지 <b>전수</b>로 확인했습니다.</p>
-      <div className="data-table"><table><thead><tr><th>시작점 (DP, 4칸 버킷 키)</th><th>DP 점수</th><th>단일 블록 변경 전수 확인</th><th>DP 뒤 국소 SA 10초</th><th>블록+의존 블록 묶음 이동 (±4칸)</th></tr></thead><tbody>
+    <Section title="9. beam search 뒤에 SA로 국소 이동하면 좋은가 — 측정 결과" open>
+      <p style={p}>beam search의 결과를 시작점으로 낮은 온도(T 8 → 0.3)의 SA로 <b>블록 하나를 ±2칸(모양 변경 포함) 옮기는 국소 이동</b>을 10초 돌렸습니다. 먼저 beam search 결과가 단일 블록 변경으로 더 좋아질 수 있는지 <b>전수</b>로 확인했습니다.</p>
+      <div className="data-table"><table><thead><tr><th>시작점 (beam search, 4칸 버킷 키)</th><th>beam search 점수</th><th>단일 블록 변경 전수 확인</th><th>beam search 뒤 국소 SA 10초</th><th>블록+의존 블록 묶음 이동 (±4칸)</th></tr></thead><tbody>
         <tr><td>K=8 (4.7초)</td><td><b>−136.51</b></td><td>대안 7,495개 중 합법 149개, <b>개선 0</b></td><td>seed 4개 모두 <b>−136.51</b> (이동 약 4,100회, 수락 123~168회, 불법 약 91%)</td><td>400개 중 합법 6개, 상위 8개 상태에서 <b>개선 0</b></td></tr>
         <tr><td>K=8의 2·3위 상태</td><td>−138.13 / −138.38</td><td>—</td><td>각 3.3초: 변화 없음</td><td>—</td></tr>
         <tr><td>K=32 (12.9초)</td><td><b>−133.14</b></td><td><b>개선 0</b></td><td><b>−133.14</b> (이동 3,901회, 수락 134회)</td><td>400개 중 합법 18개, 상위 8개 상태에서 <b>개선 0</b></td></tr>
       </tbody></table></div>
+      <p style={p}><b>더 큰 이동으로 다시 시험했습니다.</b> 블록 하나와 그 뒤 블록들을 합법 위치로 다시 뽑는 이동, 시작은 beam search K=8 최선(−136.51), 30초, seed 3개, 온도를 바꿔 가며 쟀습니다. beam은 K를 키워 어디까지 가는지 기준값도 쟀습니다.</p>
+      <div className="data-table"><table><thead><tr><th>방법</th><th>결과</th></tr></thead><tbody>
+        <tr><td>큰 이동 SA, T0 = 5 → 1</td><td>seed 3개 모두 <b>−136.51</b> (개선 0)</td></tr>
+        <tr><td>큰 이동 SA, T0 = 20 → 1</td><td>seed 1개 <b>−133.14</b>, 나머지 2개 −136.51</td></tr>
+        <tr><td>큰 이동 SA, T0 = 60 → 1</td><td>seed 3개 모두 <b>−136.51</b> (개선 0)</td></tr>
+        <tr><td>beam search K=32 / 128 / 256 (4칸 버킷)</td><td>모두 <b>−133.14</b> (12.9초 / 37.4초 / 74.2초) — 32 이후로 더 오르지 않음</td></tr>
+      </tbody></table></div>
       <ul style={ul}>
-        <li><b>이 문제에서는 DP 뒤의 국소 SA가 아무것도 개선하지 못했습니다.</b> DP 결과는 이미 단일 블록 이동과 묶음 이동에 대해 <b>국소 최적</b>입니다.</li>
+        <li><b>국소 이동(±2칸 단일 블록, ±4칸 묶음)의 SA는 개선하지 못했습니다.</b> beam search 결과는 이미 이런 이동에 대해 <b>국소 최적</b>입니다.</li>
+        <li><b>큰 이동의 SA는 가끔만 개선합니다.</b> 9번의 30초 실행 중 <b>1번</b>(T0=20)만 −136.51에서 −133.14로 올랐고, 그 값은 beam K=32가 13초에 결정적으로 얻는 값과 같습니다. <b>SA는 어떤 실행에서도 −133.14를 넘지 못했고</b>(처음부터 60초 SA의 최고도 −140.8), K=32~256의 beam도 −133.14에서 멈췄습니다. 이 게임 점수에서는 −133.14가 도달 상한으로 보이지만 <b>전역 최적이라는 증명은 아닙니다.</b></li>
         <li><b>점수를 올린 것은 국소 이동이 아니라 빔 폭입니다.</b> K=8(−136.51) → K=32(−133.14)로 키우면 좋아졌는데, 국소 SA가 K=8 결과에서 −133.14에 도달하지 못했습니다. 두 해는 여러 블록의 위치가 함께 달라서 <b>국소 이동으로는 건널 수 없는 거리</b>에 있습니다.</li>
         <li><b>이동이 경직된 탓도 있습니다.</b> 필수 이웃 규칙(맞닿아야 함) 때문에 블록 하나만 옮기면 91%가 불법이고, 묶음 이동도 합법인 것이 400개 중 6~18개뿐입니다.</li>
-        <li><b>한계:</b> 점수는 게임 proxy입니다. 시험한 이동은 ±2칸 단일 블록과 ±4칸 묶음뿐이고, 여러 블록을 동시에 다시 놓는 큰 이동이나 높은 온도의 SA는 시험하지 않았습니다. 한 문제 인스턴스입니다.</li>
+        <li><b>한계:</b> 점수는 게임 proxy이고 한 문제 인스턴스입니다. 큰 이동 SA는 온도 3가지 × seed 3개(총 9회)뿐이라 "가끔 개선"의 빈도(1/9)는 거친 추정이며, 냉각 스케줄·이동 비율은 튜닝하지 않았습니다.</li>
       </ul>
-      <p style={p}><b>그래서 이 문제에서 DP 결과를 더 좋게 하는 방법은 SA가 아니라 이런 것들입니다(제안):</b> ① 빔 폭 K와 상태 키(버킷 크기) 조정, ② 간격 DP로 50 µm 격자보다 세밀한 <b>µm 좌표 정밀화</b>(정확), ③ <b>실제 비용(L1~L3 결과)을 기준</b>으로 한 국소 개선 — DP가 쓴 게임 점수와 실제 결과가 어긋나는 곳이 개선 여지입니다. 국소 SA가 유효한 경우는 앞 단계 결과가 국소 최적이 아닐 때(스펙트럴 해, 표준셀 24셀 이상)입니다.</p>
+      <p style={p}><b>그래서 이 문제에서 beam search 결과를 더 좋게 하는 방법은 SA가 아니라 이런 것들입니다(제안):</b> ① 빔 폭 K와 상태 키(버킷 크기) 조정, ② 간격 DP로 50 µm 격자보다 세밀한 <b>µm 좌표 정밀화</b>(정확), ③ <b>실제 비용(L1~L3 결과)을 기준</b>으로 한 국소 개선 — beam search가 쓴 게임 점수와 실제 결과가 어긋나는 곳이 개선 여지입니다. 국소 SA가 유효한 경우는 앞 단계 결과가 국소 최적이 아닐 때(스펙트럴 해, 표준셀 24셀 이상)입니다.</p>
+    </Section>
+
+    <Section title="10. SA 단계별 그림 설명 (이동 하나씩 따라가기)" open>
+      <SaStepByStep/>
+    </Section>
+
+    <Section title="11. SA는 어떻게 구현되어 있나 — seed·후보 영역·온도·설정값, 그리고 beam search와의 성능 차이 분석" open>
+      <SaMechanics/>
+    </Section>
+
+    <Section title="11-2. beam search + SA + 간격 DP 결합, 그리고 GA(유전 알고리즘)는 필요한가 — 같은 시간 예산 비교 측정" open>
+      <CombinedSearch/>
+    </Section>
+
+    <Section title="12. 슬라이싱 플로어플랜 — 정의, 표현, 이 프로젝트와의 관계" open>
+      <p style={p}><b>슬라이싱(slicing) 플로어플랜</b>은 사각형 영역을 <b>끝에서 끝까지 한 번에 자르는 선(guillotine cut)</b>으로 재귀적으로 나눠서 만들 수 있는 배치입니다. 영역을 가로 또는 세로로 한 번 잘라 두 조각으로 나누고, 조각마다 같은 방식으로 또 자르기를 블록 하나만 남을 때까지 반복합니다. 이렇게 만들 수 없는 배치가 <b>non-slicing</b>입니다.</p>
+      <svg viewBox="0 0 460 160" width="100%" style={{ maxWidth: 480, display: 'block' }} role="img" aria-label="왼쪽: 4×2 격자는 슬라이싱, 오른쪽: 풍차 5블록은 non-slicing">
+        {[0, 1].map(r => [0, 1, 2, 3].map(c => <g key={`${r}-${c}`}>
+          <rect x={10 + c * 48} y={18 + r * 56} width={44} height={40} rx={3} fill="#85B7EB" stroke="#185FA5"/>
+          <text x={32 + c * 48} y={42 + r * 56} textAnchor="middle" fontSize={11} fill="#042C53">{r * 4 + c}</text>
+        </g>))}
+        <line x1={4} y1={66} x2={206} y2={66} stroke="#C0A02B" strokeWidth={2} strokeDasharray="5 3"/>
+        <text x={10} y={12} fontSize={10} fill="currentColor">슬라이싱: 4×2 격자 (H 자르기 한 줄이 영역 전체를 가로지름)</text>
+        <text x={10} y={140} fontSize={10} fill="currentColor">위·아래 행 안에서는 V 자르기로 4개씩 나눔</text>
+        <rect x={260} y={20} width={100} height={30} fill="#E8C7F0" stroke="#7B3F8F"/><text x={310} y={39} textAnchor="middle" fontSize={11} fill="#3B1346">A</text>
+        <rect x={360} y={20} width={60} height={70} fill="#C7E8D4" stroke="#2E7D55"/><text x={390} y={58} textAnchor="middle" fontSize={11} fill="#10341F">B</text>
+        <rect x={260} y={50} width={40} height={80} fill="#F5D9B5" stroke="#B5701F"/><text x={280} y={92} textAnchor="middle" fontSize={11} fill="#4A2A08">D</text>
+        <rect x={300} y={90} width={120} height={40} fill="#C7DDF5" stroke="#185FA5"/><text x={360} y={114} textAnchor="middle" fontSize={11} fill="#042C53">C</text>
+        <rect x={300} y={50} width={60} height={40} fill="#F5C7C7" stroke="#A32D2D"/><text x={330} y={74} textAnchor="middle" fontSize={11} fill="#501313">E</text>
+        <text x={250} y={12} fontSize={10} fill="currentColor">non-slicing: 풍차(pinwheel) 5블록</text>
+        <text x={250} y={146} fontSize={10} fill="currentColor">어떤 선을 그어도 중간 블록에 막혀 끝까지 못 감</text>
+      </svg>
+
+      <p style={p}><b>표현.</b> 자르기 순서를 이진 트리(잎 = 블록, 안쪽 노드 = <code>H</code> 또는 <code>V</code>)로 쓰고, 그 트리를 후위 표기로 적은 것이 <b>Polish expression</b>입니다. 연산자가 연속으로 같지 않게 쓴 <b>normalized</b> 형태는 배치마다 표현이 하나로 정해집니다(Wong &amp; Liu, 1986). 여기서 <code>V</code>는 두 조각을 <b>좌우로 나란히</b>, <code>H</code>는 <b>위아래로 쌓는</b> 자르기입니다. 이 프로젝트의 4×2 격자(윗줄 ch0~3, 아랫줄 ch4~7)는 다음과 같습니다.</p>
+      <div style={mono}>0 1 V 2 V 3 V   4 5 V 6 V 7 V   H</div>
+      <p style={p}>윗줄 4개를 좌우로 이어 붙이고, 아랫줄 4개도 그렇게 한 뒤, 두 줄을 위아래로 쌓은 것입니다. 블록이 8개이고 연산자가 7개입니다.</p>
+
+      <div className="data-table"><table><thead><tr><th></th><th>Slicing</th><th>Non-slicing</th></tr></thead><tbody>
+        <tr><td><b>표현</b></td><td>슬라이싱 트리, Polish expression</td><td>B*-tree, sequence pair, O-tree 등 (8절)</td></tr>
+        <tr><td><b>크기 계산</b></td><td><code>V</code>는 너비를 더하고 높이는 큰 쪽, <code>H</code>는 높이를 더하고 너비는 큰 쪽. 모양을 바꿀 수 있는 블록은 가능한 (너비, 높이) 곡선을 합쳐 올라가며 최소 면적 모양을 정확히 고름(Stockmeyer, 7절)</td><td>일반적으로 이런 정확한 합성이 안 됨</td></tr>
+        <tr><td><b>SA 이동</b></td><td>피연산자 교환, 연산자 사슬 반전, 피연산자-연산자 교환 세 가지가 <b>항상 유효한 배치</b>를 유지</td><td>표현마다 유효성 처리가 필요</td></tr>
+        <tr><td><b>배치 공간</b></td><td><b>좁음</b> — 풍차처럼 만들 수 없는 배치가 있어 면적 낭비가 생길 수 있음</td><td>넓음 — 이론상 더 촘촘히 배치 가능</td></tr>
+        <tr><td><b>배선 채널</b></td><td>자르는 선이 곧 배선 채널이 되고, 안쪽 조각부터 바깥으로 배선 순서가 정해짐</td><td>채널 순서가 꼬일 수 있고, 채널 폭을 따로 보장해야 함</td></tr>
+        <tr><td><b>계층 설계</b></td><td>트리가 모듈 계층과 자연스럽게 대응</td><td>대응이 약함</td></tr>
+      </tbody></table></div>
+
+      <p style={p}><b>이 프로젝트와의 관계:</b></p>
+      <ul style={ul}>
+        <li>{badge('확정')} <b>검증된 격자 baseline은 slicing입니다.</b> <code>config_hierarchical.json</code>의 좌표(윗줄 y=100, 아랫줄 y=1200, 행 사이 300µm)는 영역 전체를 가로지르는 H 자르기 선 하나가 채널이 되는 구조입니다.</li>
+        <li>{badge('가설')} <b>다른 세션의 <code>CHANNEL_SAFE_MARGIN=300</code> 제약("다이를 가로지르는 빈 띠")은 slicing의 H/V 자르기 채널과 같은 개념입니다.</b> 영역 끝에서 끝까지 이어진 빈 띠가 일정 폭 이상 있어야 한다는 조건이기 때문입니다. 그 제약이 slicing을 염두에 두고 만든 것은 아니며, 이건 비교하는 해석입니다.</li>
+        <li>{badge('확정')} 실패한 macrotetris 후보의 <b>실패 사실은 실측으로 확인됐습니다.</b> v1은 <code>DPL-0036</code>(합법 자리를 못 찾은 hold 수리 버퍼 약 300개 — 다른 세션이 로그로 진단했고, 행 사이 채널을 300→100µm로 좁힌 것이 원인), v2는 <code>GRT-0118</code>(라우팅 혼잡 과다)로 실패했습니다. v2가 왜 혼잡했는지는 로그만으로는 확정하지 못했습니다.</li>
+        <li>{badge('가설')} 두 후보 모두 <b>영역 전체를 가로지르는 가로 방향의 넓은 빈 띠가 사라졌거나 좁아진 배치</b>입니다. v1은 그 띠가 100µm로 좁아졌고, v2는 저장된 좌표로 확인해 보면 가로 방향 전체를 가로지르는 빈 띠가 아예 없고 세로 방향 틈(약 90µm)만 있습니다. 그래서 "slicing 구조를 유지하면 이런 실패를 구조적으로 피할 수 있다"는 가설이 서지만, <b>slicing 구조 자체가 원인이라는 인과는 검증하지 않았습니다</b>(실패 2건 대 성공 baseline 1건뿐).</li>
+        <li><b>ParSAC은 non-slicing 쪽입니다.</b> B*-tree로 매크로를 왼쪽·아래로 압축해 배치하므로 면적에는 유리하지만, 채널 폭을 따로 보장해 주지는 않습니다(8절의 "의도적 간격과 충돌" 항목과 같은 이야기).</li>
+      </ul>
+      <p style={p}><b>한계.</b> slicing이 항상 더 좋은 것은 아닙니다. 매크로가 같은 크기 8개뿐인 지금은 격자가 이미 slicing이라 이득이 작고, 면적이 크게 중요한 문제에서는 non-slicing이 유리합니다. 미구현이지만 매크로가 수십 개로 늘면 "slicing 구조를 유지하는 SA(Polish expression 기반)"와 지금의 자유 좌표 SA·B*-tree를 비교해 볼 만합니다. 비교 지표는 합법 비율과 실제 OpenLane 통과 여부여야 합니다(점수 proxy만으로는 v1·v2 실패를 못 걸러냈습니다).</p>
+    </Section>
+
+    <Section title="13. seed와 시작 배치 — 셀 SA와 Macro Tetris는 어떻게 다른가 (코드 확인)">
+      <p style={p}>10~11절의 칩 배치 SA 외에, 이 대시보드에는 SA가 두 개 더 있습니다. 셋 모두 <code>mulberry32(seed)</code> 난수 생성기를 쓰지만 <b>seed로 만드는 시작 배치의 표현이 다릅니다.</b> 아래는 소스를 읽고 정리한 내용입니다.</p>
+      <div className="data-table"><table><thead><tr><th></th><th>셀 SA (CellSaExperiment)</th><th>Macro Tetris (macroTetrisModel)</th></tr></thead><tbody>
+        <tr><td><b>배치의 표현</b></td><td>한 행에 일렬: <code>order</code>(셀 순서) · <code>flip</code>(좌우 반전) · <code>gaps</code>(셀 사이 빈 site 0~2)</td><td>매크로 8개의 <code>x, y</code> 좌표 + 허브(점)</td></tr>
+        <tr><td><b>seed 정하기</b></td><td>단일 실행은 1, 2, 3…. 비교·보완 실험은 <code>Math.random()</code>으로 뽑은 기준값에 0, 1, 2…를 더함. 내부에서 <code>seed × 7919</code>로 섞음</td><td>누를 때마다 <code>Math.floor(Math.random() × 1e9)</code>. 병렬 lane마다 서로 다른 seed</td></tr>
+        <tr><td><b>시작 배치</b></td><td><code>order</code>는 Fisher–Yates 셔플, <code>flip</code>은 셀마다 50%, <code>gaps</code>는 전부 0</td><td>"처음부터 랜덤" lane만 <code>randomStart</code>: 크기·HARD/SOFT는 그대로, 위치만 <code>x = rng() × (DIE_W − w)</code>, <code>y = rng() × (DIE_H − h)</code>. 허브는 고정 좌표</td></tr>
+        <tr><td><b>합법성</b></td><td>순서로 x를 누적 계산하므로 <b>시작 배치부터 겹침이 없음</b></td><td>겹침·최소 간격(100µm) 위반이 있을 수 있어 <b>합법이 아님</b>. 이어지는 RePlAce 스타일 합법화가 밀어내서 풂</td></tr>
+        <tr><td><b>이동</b></td><td>swap / insert / flip / gap ±1 중 하나를 난수로 고름</td><td>매크로나 허브 하나를 골라 <code>±max(80, 0.6·T)</code> 범위의 난수만큼 평행이동 후 다이 안으로 가둠</td></tr>
+        <tr><td><b>시작 온도</b></td><td>난수 이동 200개를 시험해 올라가는 이동의 평균이 80% 확률로 수용되도록 T0를 정함</td><td>고정값 <code>SA_T0=1500</code>, <code>SA_T_MIN=20</code>, 5000번에 걸쳐 식고 다시 데움</td></tr>
+      </tbody></table></div>
+      <ul style={ul}>
+        <li>{badge('확정')} Macro Tetris의 병렬 lane이 모두 랜덤 시작은 아닙니다. 일부는 <code>bestState</code>(현재 최선)에서 이어서 탐색합니다. "처음부터 랜덤" lane만 위 표의 <code>randomStart</code>를 씁니다.</li>
+        <li>{badge('확정')} 표현을 순서·반전·간격으로 잡은 셀 SA는 불법 배치가 아예 생기지 않고, 좌표로 잡은 Macro Tetris는 불법 배치를 허용하되 합법화·비용 페널티로 처리합니다. 둘은 <b>"합법을 항상 유지하며 탐색"과 "불법을 허용하고 나중에 고침"</b>이라는 서로 다른 설계입니다.</li>
+        <li>{badge('확정')} Macro Tetris는 후보에 seed를 항상 남기지는 않습니다. RePlAce 스타일 후보만 이름에 <code>seed N</code>이 들어갑니다. 그래서 좋은 후보가 나와도 같은 seed로 재현하지 못할 수 있습니다.</li>
+        <li>{badge('가설')} 재현성을 위해 후보와 함께 seed를 저장하도록 바꾸면 좋은 후보를 다시 만들 수 있습니다. 아직 구현하지 않았습니다.</li>
+      </ul>
+    </Section>
+    <Section title="14. 표준셀 부분집합 DP — 문제 정의, 풀이, 그리고 실제 배치 문제와의 차이" open>
+      <p style={p}><b>한 줄 요약.</b> 이 DP는 <b>"한 행에 놓는 셀 n개(n ≤ 23)의 순서와 좌우 반전"</b>을 정확히 푸는 방법입니다(프록시 비용 모델 기준). 칩 전체의 다중 행 배치를 푸는 방법이 아니므로, 결과를 실제 배치 성능으로 읽으면 안 됩니다. 아래는 소스(<code>CellSaExperiment.tsx</code>의 <code>subsetDp</code>, <code>proxyNets</code>, <code>evaluate</code>)를 읽고 정리한 내용입니다.</p>
+
+      <p style={{ ...p, marginBottom: 2 }}><b>1) 문제 정의</b></p>
+      <div className="data-table"><table><thead><tr><th style={{ width: '18%' }}>항목</th><th>내용</th></tr></thead><tbody>
+        <tr><td><b>입력</b></td><td>셀 n개(폭 W<sub>i</sub>, 핀의 정규화된 x 위치와 y 범위), 2핀 넷 목록(드라이버 → 싱크), 규칙(행 높이, site 폭, 배선 트랙), 가중치(면적 · 굴곡 · 수직)</td></tr>
+        <tr><td><b>결정 변수</b></td><td><b>순서</b> π (n!가지)와 셀별 <b>좌우 반전</b> f<sub>i</sub> ∈ {'{'}N, FN{'}'} (2<sup>n</sup>가지)</td></tr>
+        <tr><td><b>고정한 가정</b></td><td>① 셀은 <b>한 행</b>에 일렬 ② 셀 사이 <b>간격 0</b> ③ 셀의 y좌표는 변수가 아님 ④ 넷은 met1과 트랙으로 배선, 넷마다 가장 좋은 트랙을 고름</td></tr>
+        <tr><td><b>목적 함수</b></td><td>면적 항(전체 폭 × 행 높이) + 모든 넷의 배선 비용(가로 길이 + 수직 이동 + 굴곡 가중치)</td></tr>
+        <tr><td><b>출력</b></td><td>비용이 최소인 (순서, 반전). 간격은 전부 0</td></tr>
+        <tr><td><b>규모 제한</b></td><td>n ≤ 23 (<code>MAX_DP_N</code>). 상태 2<sup>n</sup>개 × (비용 8B + 부모 1B + 컷 1B) ≈ 23셀에서 약 80MB</td></tr>
+      </tbody></table></div>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>2) 풀이: 왜 "왼쪽 집합"만 알면 되나</b></p>
+      <p style={p}>간격이 0이면 셀 v의 x좌표는 <b>왼쪽 셀들의 폭의 합</b>이고, 왼쪽 셀들의 순서와는 무관합니다. 왼쪽 셀 a와 오른쪽 셀 b를 잇는 넷의 가로 길이를 이렇게 쪼갭니다.</p>
+      <div style={mono}>{`가로 길이 = (a의 핀 ~ a의 오른쪽 가장자리) + (둘 사이에 낀 셀들의 폭의 합) + (b의 왼쪽 가장자리 ~ b의 핀)
+
+dp[S]        = 집합 S를 가장 왼쪽 |S|칸에 놓는 최소 비용
+dp[S ∪ {v}]  = min over v ∉ S : dp[S] + 증분(S, v)
+증분(S, v)   = (v의 핀 부분: 상대가 S 안이면 왼쪽 가장자리~핀, 밖이면 핀~오른쪽 가장자리)
+             + Wv × (v 위를 지나가는 넷 수)         // = cut[S] − (v의 S쪽 넷 수)
+cut[S ∪ {v}] = cut[S] + (v의 넷 수) − 2 × (v의 S쪽 넷 수)
+반전: 셀마다 독립이라 두 경우(c0, c1) 중 작은 쪽을 고른다`}</div>
+      <p style={p}>증분이 <b>S와 v만으로 정해지므로</b> 순서를 따로 기억하지 않아도 됩니다. 상태가 n!이 아니라 2<sup>n</sup>개가 되고, 시간은 대략 O(2<sup>n</sup>·(n + 넷 수))입니다. 부모 포인터에 마지막 셀(하위 5비트)과 반전 여부(비트 5)를 담아 끝에서 거꾸로 따라가며 순서를 복원합니다. 외판원 문제의 비트마스크 DP(Held–Karp)와 같은 모양입니다.</p>
+
+      <p style={{ ...p, marginBottom: 2 }}><b>3) 어디까지 "정확"한가</b></p>
+      <ul style={ul}>
+        <li>{badge('확정')} <b>프록시 모델에서만 정확합니다.</b> 프록시는 넷마다 핀 도형을 하나로 고정하고 그 중심 x만 씁니다. 넷 비용은 <code>|x 차이| + K</code>이고, K는 위치와 무관한 수직·굴곡 항으로 핀 도형과 트랙만으로 정해져 미리 계산합니다.</li>
+        <li>{badge('확정')} 실제 모델은 거리에 따라 핀 도형을 바꿔 고를 수 있어서, DP 해를 실제 모델로 다시 평가하면 프록시 값과 같거나 <b>작아집니다.</b> 그래서 DP 값은 "프록시 최적"이자 "실제 최적의 근사"입니다.</li>
+        <li>{badge('확정')} 간격이 0이면 전체 폭이 일정해 면적 항은 상수가 됩니다. DP 값에는 넣지 않고 마지막에 더합니다.</li>
+        <li>{badge('미측정')} 이번에 DP와 전수 탐색(<code>exhaustiveSearch</code>)의 답이 일치하는지는 새로 대조해 보지 않았습니다.</li>
+      </ul>
+
+      <p style={{ ...p, marginBottom: 2 }}><b>4) 실제 배치 문제와의 차이</b></p>
+      <div className="data-table"><table><thead><tr><th style={{ width: '16%' }}>항목</th><th style={{ width: '26%' }}>이 DP의 모델</th><th>실제 문제에서 생기는 일</th><th style={{ width: '9%' }}>근거</th></tr></thead><tbody>
+        <tr><td><b>행 수</b></td><td>한 행. 셀의 y는 고정</td><td>칩은 수십~수백 행. 셀이 <b>어느 행에 들어갈지(행 배정)</b>, 행 사이를 잇는 넷, 행 길이 균형이 문제가 됨. 행마다 따로 DP를 돌려 합치는 것으로는 풀리지 않음</td><td>{badge('확정')}</td></tr>
+        <tr><td><b>규모</b></td><td>n ≤ 23</td><td>이 프로젝트의 hierarchical 기준 실행(top만)도 라우팅한 넷이 <b>38,198개</b>(final/metrics.json). 2<sup>n</sup> 상태는 이 규모에서 불가능</td><td>{badge('확정')}</td></tr>
+        <tr><td><b>간격</b></td><td>0으로 고정</td><td>채움·탭·decap 셀, 혼잡을 풀기 위한 여유 간격이 필요함. SA는 간격 0~2를 변수로 쓰지만 DP는 쓰지 않음</td><td>{badge('확정')}</td></tr>
+        <tr><td><b>넷 모양</b></td><td>2핀 넷만. 팬아웃은 같은 드라이버에서 2핀 넷 여러 개로 적음</td><td>다핀 넷은 HPWL이나 Steiner 트리로 길이를 재며, 2핀 넷 분해와 값이 다를 수 있음</td><td>{badge('가설')}</td></tr>
+        <tr><td><b>비용 항</b></td><td>면적 · 가로 길이 · 굴곡 · 수직. 비용식에 타이밍·전력·혼잡 항이 없음</td><td>sign-off는 setup/hold 타이밍, 혼잡(GRT), antenna까지 본다. baseline 실행에서도 setup WNS −6.44ns, antenna 121 nets가 남음</td><td>{badge('확정')}</td></tr>
+        <tr><td><b>방향</b></td><td>N / FN(좌우 반전)만</td><td>실제 행은 전원 레일 공유를 위해 위아래 행을 뒤집어(FS) 놓는 것이 일반적. 이 모델엔 행 간 반전이 없음</td><td>{badge('가설')}</td></tr>
+        <tr><td><b>주변 요소</b></td><td>셀끼리의 넷만 봄. IO 핀·매크로와의 연결 항 없음</td><td>실제 블록은 외부 핀과 매크로까지 포함한 배선 길이가 비용임</td><td>{badge('확정')}</td></tr>
+        <tr><td><b>검증</b></td><td>프록시 비용 비교. DRC/LVS와 연결 안 됨</td><td>배치 결과는 라우팅 후 DRC·LVS·STA로 판정함</td><td>{badge('확정')}</td></tr>
+      </tbody></table></div>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>5) 그래서 이 DP로 말할 수 있는 것과 없는 것</b></p>
+      <ul style={ul}>
+        <li>{badge('확정')} <b>말할 수 있는 것:</b> 한 행에 들어가는 20~23셀 복합 셀의 순서·반전 문제에서, SA가 정확해에서 얼마나 떨어지는지 재는 <b>기준선(ground truth)</b>이 됩니다. 이 대시보드의 기록으로 SA는 평균 +1.3% 나빴습니다(프록시 기준).</li>
+        <li>{badge('확정')} <b>말할 수 없는 것:</b> 칩 전체 배치의 최적성, 타이밍·혼잡·sign-off 통과 여부, 간격을 쓴 배치와의 우열.</li>
+        <li>{badge('가설')} <b>넓히는 방향(미구현):</b> 일반적으로는 행 배정을 분할이나 전역 배치로 먼저 정하고, 각 행 안의 순서를 따로 최적화하는 2단계로 풉니다. 이때 이 DP는 두 번째 단계(행 안 순서)의 부품이 될 수 있습니다. 간격은 간격 DP(5절 후보 2)와 결합하는 쪽이 자연스럽습니다. 슬라이싱 구조로 제한하는 방법은 12절을 보세요. 이 프로젝트에서 시도한 것은 아닙니다.</li>
+      </ul>
+    </Section>
+    <Section title="15. STA 이후 — setup · hold · slack · WNS, 위반을 고치는 법, 그리고 왜 오래 걸리나 (chan_top 실측)" open>
+      <p style={p}>타이밍 위반이 "배선이 길어서"가 아니라는 것을 chan_top 재성형 4개 풀 실행(<code>runs/reshape_full_*</code>)의 STA 리포트와 단계별 실행 시간(<code>runtime.txt</code>)으로 확인했습니다. 수치는 <code>55-openroad-stapostpnr</code>(RCX 이후 sign-off STA)와 <code>35-openroad-stamidpnr-1</code>(CTS 이후)의 <code>max.rpt</code>·<code>min.rpt</code>에서 읽었습니다.</p>
+
+      <p style={{ ...p, marginBottom: 2 }}><b>1) Setup과 Hold — 두 조건</b></p>
+      <SetupHoldConceptFigure/>
+      <div className="data-table"><table><thead><tr><th style={{ width: '16%' }}></th><th>Setup</th><th>Hold</th></tr></thead><tbody>
+        <tr><td><b>묻는 것</b></td><td>데이터가 <b>다음 클럭 엣지 전에</b> 충분히 일찍 도착하는가</td><td>데이터가 <b>같은 엣지 직후에</b> 너무 일찍 바뀌지 않는가</td></tr>
+        <tr><td><b>부등식</b></td><td>launch 클럭 + clk→Q + 경로 지연 ≤ 주기 + capture 클럭 − <b>setup 시간</b> − <b>uncertainty</b></td><td>launch 클럭 + clk→Q + 경로 지연 ≥ capture 클럭 + <b>hold(removal) 시간</b> + <b>uncertainty</b></td></tr>
+        <tr><td><b>쓰는 지연</b></td><td>가장 긴 경로 (max)</td><td>가장 짧은 경로 (min)</td></tr>
+        <tr><td><b>주기와의 관계</b></td><td>주기가 길수록 유리</td><td><b>주기와 무관</b>. 단 이 프로젝트는 uncertainty가 주기의 5%라서 주기를 늘리면 오히려 불리해짐</td></tr>
+        <tr><td><b>불리한 코너</b></td><td>셀이 가장 느린 ss</td><td>셀이 가장 빠른 ff</td></tr>
+        <tr><td><b>이 프로젝트의 값</b></td><td>플롭 setup 시간 0.265~0.275ns (dfrtp_1, ss)</td><td>library hold 시간 약 −0.02~−0.04ns(ff), 비동기 리셋 removal 0.358ns(tt)</td></tr>
+        <tr><td><b>기본 수리</b></td><td>경로를 줄이거나(셀 키우기·버퍼·RTL 파이프라인) 주기를 늘림</td><td>경로에 <b>지연 셀을 넣어</b> 데이터를 늦춤</td></tr>
+      </tbody></table></div>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>2) slack과 WNS는 어떻게 재나</b></p>
+      <ul style={ul}>
+        <li><b>끝점(endpoint)마다 계산합니다.</b> 끝점은 플롭의 D·RESET_B 핀과 출력 포트입니다. STA는 시뮬레이션 없이 그 끝점에 닿는 모든 경로의 도착 시간(setup은 최대, hold는 최소)과 필요 시간을 그래프로 전파해 구합니다.</li>
+        <li><b>slack = 필요 시간 − 도착 시간</b>(setup), <b>도착 시간 − 필요 시간</b>(hold). 음수면 위반입니다.</li>
+        <li><b>WS</b>는 모든 끝점 중 가장 나쁜 slack(부호 포함), <b>WNS</b>는 그중 음수인 값, <b>TNS</b>는 음수 slack의 합입니다. WNS는 "가장 나쁜 한 경로가 얼마나 모자라나", TNS는 "위반이 얼마나 넓게 퍼졌나"를 말합니다.</li>
+        <li><b>코너 9개</b>(min/nom/max 배선 × tt/ss/ff 공정·전압·온도)에서 따로 재고, 최종 WNS는 그중 최악입니다. 이 실행들에서는 setup이 <b>max_ss_100C_1v60</b>에서만 음수였습니다.</li>
+      </ul>
+      <div className="data-table"><table><thead><tr><th>OpenLane 단계</th><th>시점</th><th>배선 기생값</th><th>클럭</th><th>믿을 수 있는 정도</th></tr></thead><tbody>
+        <tr><td>12 STAPrePNR</td><td>합성 직후</td><td>없음</td><td>이상적(지연 0)</td><td>로직 깊이만 확인</td></tr>
+        <tr><td>30 STAMidPNR</td><td>전역 배치 후</td><td>배치 거리로 추정</td><td>이상적</td><td>대략</td></tr>
+        <tr><td>35 / 37 STAMidPNR</td><td>CTS 후 / 리페어 후</td><td>추정</td><td>실제 클럭 트리</td><td>스큐 반영</td></tr>
+        <tr><td>43 STAMidPNR</td><td>전역 라우팅 후</td><td>라우팅 경로로 추정</td><td>실제</td><td>더 가까움</td></tr>
+        <tr><td><b>55 STAPostPNR</b></td><td><b>상세 라우팅 + RCX 후</b></td><td><b>추출한 실제 값(SPEF)</b></td><td>실제</td><td><b>sign-off 기준. 코너 9개 전부</b></td></tr>
+      </tbody></table></div>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>3) Setup 위반을 숫자로 분해 — 500×1280 (WNS −2.690ns, max_ss)</b></p>
+      <div className="data-table"><table><thead><tr><th>항목</th><th>값 (ns)</th><th>설명</th></tr></thead><tbody>
+        <tr><td>주기 (axi_clk)</td><td>52.000</td><td>capture 엣지는 한 주기 뒤</td></tr>
+        <tr><td>− clock uncertainty</td><td>−2.600</td><td>SDC가 <b>주기의 5%</b>로 지정 (<code>chan_top.sdc</code> 130~131행)</td></tr>
+        <tr><td>− setup 시간</td><td>−0.265</td><td>capture 플롭 <code>dfrtp_1</code>의 라이브러리 값</td></tr>
+        <tr><td>+ capture 클럭 − launch 클럭</td><td>≈ +0.001</td><td>launch 0.7466, capture 0.7478 — 스큐가 거의 없음</td></tr>
+        <tr><td><b>허용 데이터 지연</b></td><td><b>49.136</b></td><td>= 52 − 2.6 − 0.265 (+ 스큐)</td></tr>
+        <tr><td>실제 데이터 지연</td><td>51.826</td><td>= 도착 52.572 − launch 클럭 0.747</td></tr>
+        <tr><td>　그중 hold 지연 셀 18개</td><td>20.25</td><td><code>holdNNN</code> · <code>dlygate4sd3_1</code> (셀 하나가 ss에서 약 1.1~1.2ns)</td></tr>
+        <tr><td>　그중 배선(net) 지연</td><td>0.25</td><td><b>전체의 약 0.5%</b></td></tr>
+        <tr><td>　나머지 (원래 로직 + clk→Q 1.0)</td><td>≈ 31.3</td><td>FIFO 읽기 포인터에서 <code>_17532_</code>까지 셀 약 50개</td></tr>
+        <tr><td><b>slack</b></td><td><b>−2.690</b></td><td>= 49.136 − 51.826</td></tr>
+      </tbody></table></div>
+      <SetupBudgetFigure/>
+      <ul style={ul}>
+        <li>{badge('확정')} <b>배선 길이와 setup WNS는 상관이 없습니다.</b> 실제 배선 길이는 650×985 830,680 · 590×1085 857,715 · <b>500×1280 824,297(가장 짧음)</b> · 450×1422 849,663µm인데, 가장 짧은 500×1280이 WNS가 가장 나쁩니다. 최악 경로의 배선 지연은 0.24~0.36ns뿐입니다.</li>
+        <li>{badge('확정')} <b>setup WNS는 ss 코너에서만 음수입니다.</b> 500×1280의 같은 경로가 nom 기준 tt에서는 +3.59, ss에서는 −2.09ns입니다. 허용 시간(49.1ns)은 코너와 무관한데 셀 지연만 느려지기 때문입니다.</li>
+        <li>{badge('확정')} 모양에 따라 달라진 것은 <b>이 경로에 붙은 hold 지연 셀 수</b>입니다. 11개(650×985·590×1085)면 −0.14~−0.18, 12개면 −0.46, 18개면 −2.69입니다.</li>
+      </ul>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>4) Hold 위반을 숫자로 분해 — 590×1085, 35번 단계(CTS 이후), nom_tt</b></p>
+      <HoldBudgetFigure/>
+      <ul style={ul}>
+        <li>{badge('확정')} 경로는 리셋 동기화 플롭 <code>_18177_</code>에서 다른 플롭 <code>_17504_</code>의 <code>RESET_B</code>로 가는 removal 검사입니다. 두 플롭의 클럭 도착 차이는 0.002ns뿐이고, <b>uncertainty 2.6ns를 빼면 +0.24ns 여유</b>입니다. 이 최악 경로는 uncertainty 때문에 위반으로 잡힌 것입니다.</li>
+        <li>{badge('가설')} 위반 끝점 약 4,170개가 대부분 같은 이유로 보입니다(레지스터 간 경로는 대부분 2.6ns보다 짧음). 다만 전부를 경로별로 확인하지는 않았습니다.</li>
+        <li>{badge('확정')} 36번 단계 resizer 로그: <code>RSZ-0046 Found 4176 endpoints with hold violations</code>, <code>RSZ-0032 Inserted 8084 hold buffers</code>(590×1085). 4개 모양 모두 8,075~8,085개로 <b>총량은 같습니다.</b></li>
+        <li>{badge('확정')} 수리 후 hold는 4개 모양 모두 +0.12~+0.14ns로 통과합니다. 이때 최악 hold 경로는 uncertainty가 0.7ns(14ns × 5%)인 src_clk 경로입니다.</li>
+        <li>{badge('확정')} SDC 주석에도 "axi 주기를 키우면 uncertainty·transition 마진이 주기에 비례해 커져 axi_clk 자신의 위반이 더 나빠졌다"고 기록돼 있습니다.</li>
+      </ul>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>5) 원인의 사슬</b></p>
+      <TimingChainFigure/>
+      <ul style={ul}>
+        <li>{badge('확정')} 같은 지연 셀 <code>dlygate4sd3_1</code>이 Liberty 기준 ff 0.377ns · tt 0.550ns · ss 1.112ns로, <b>ss가 ff의 약 2.9배</b>입니다(16절).</li>
+        <li>{badge('가설')} 그래서 hold가 위험한 ff에서 맞추려고 넣은 지연이 setup이 위험한 ss에서는 약 3배로 커지는 구조로 보입니다. resizer가 어느 코너를 기준으로 지연 양을 정했는지는 확인하지 못했습니다.</li>
+        <li>{badge('미측정')} 지연 셀이 왜 하필 그 경로에 18개 몰렸는지는 확인하지 못했습니다. 모양당 1회 실행이라 우연일 수 있습니다.</li>
+      </ul>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>6) 위반이 나면 무엇을 고치고, 왜 다시 검증하나</b></p>
+      <div className="data-table"><table><thead><tr><th>위반</th><th>고치는 방법</th><th>부작용 (그래서 다시 검증)</th><th>이 프로젝트에서</th></tr></thead><tbody>
+        <tr><td>setup</td><td>셀 키우기(upsizing)·버퍼 삽입·로직 재구성</td><td>입력 부하·면적·전력 증가, 배치 밀도가 바뀌어 배선과 기생값이 달라짐</td><td>36번 resizer가 자동으로 수행</td></tr>
+        <tr><td>setup</td><td>RTL 파이프라인(레지스터 추가)</td><td>사이클 지연이 바뀌어 기능 검증부터 다시</td><td><code>ch_cause_o</code>를 레지스터 출력으로 바꿔 axi_clk 위반 해소(SDC 주석, 9/20)</td></tr>
+        <tr><td>setup</td><td>클럭 주기 늘리기</td><td>성능 저하. 이 SDC에선 uncertainty도 커져 hold가 나빠짐</td><td>axi 52 → 54ns로 완화하면 setup 통과(완화를 "닫힘"으로 인정할지는 미정)</td></tr>
+        <tr><td>hold</td><td>지연 셀 삽입</td><td><b>같은 경로의 setup이 느려짐</b></td><td>8,080개 삽입 → 이 절의 setup 위반</td></tr>
+        <tr><td>hold</td><td>hold 여유(<code>HOLD_SLACK_MARGIN</code>) 줄이기</td><td>setup은 좋아지고 hold가 깨질 수 있음</td><td>650×985에서 0.1 → 0: setup −0.139 → −0.096, hold +0.125 → <b>−0.003</b>(새로 위반)</td></tr>
+        <tr><td>hold</td><td>clock uncertainty 조정</td><td>sign-off 근거(지터·스큐 마진)가 약해짐</td><td>미시도. 제약 결정이 필요</td></tr>
+      </tbody></table></div>
+      <ul style={ul}>
+        <li><b>고치면 반드시 다시 검증하는 이유:</b> 수리 하나가 다른 것을 바꿉니다. hold 수리는 setup을 깎고, 셀을 키우거나 넣으면 배치 밀도와 배선이 바뀌어 기생값이 달라집니다. 진짜 기생값은 상세 라우팅과 RCX 뒤에만 있으므로 <b>55번 sign-off STA를 다시 돌려야</b> 최종 타이밍을 알 수 있습니다.</li>
+        <li><b>레이아웃이 바뀌었으니 물리 검증도 다시 합니다.</b> 셀이 늘거나 옮겨지면 DRC(규칙)·LVS(회로 일치)·antenna 결과가 달라질 수 있어 함께 다시 확인합니다.</li>
+        <li>{badge('확정')} 위 표의 hold 여유 실험이 그 예입니다. setup을 줄이려는 조치가 없던 hold 위반을 새로 만들었습니다.</li>
+      </ul>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>7) 왜 이렇게 오래 걸리나 (runtime.txt 실측)</b></p>
+      <div className="data-table"><table><thead><tr><th>실행</th><th>전체</th><th>hold·setup 리페어 (36번)</th><th>상세 라우팅</th><th>DRC (Magic+KLayout)</th><th>STA 전부</th><th>LVS+추출</th></tr></thead><tbody>
+        <tr><td>chan_top 650×985</td><td>64.1분</td><td><b>19.7분</b></td><td>8.9분</td><td>10.0분</td><td>4.0분</td><td>2.4분</td></tr>
+        <tr><td>chan_top 590×1085</td><td>67.6분</td><td><b>21.0분 (31%)</b></td><td>9.3분</td><td>10.5분</td><td>4.2분</td><td>2.6분</td></tr>
+        <tr><td>chan_top 500×1280</td><td>66.4분</td><td><b>20.8분</b></td><td>9.4분</td><td>10.1분</td><td>4.1분</td><td>2.6분</td></tr>
+        <tr><td>chan_top 450×1422</td><td>64.9분</td><td><b>19.7분</b></td><td>9.4분</td><td>9.3분</td><td>4.5분</td><td>2.4분</td></tr>
+        <tr><td>daq_subsystem hierarchical (top)</td><td>293.6분</td><td>52.2분</td><td>17.4분</td><td><b>133.4분</b></td><td>37.9분</td><td>12.4분</td></tr>
+      </tbody></table></div>
+      <ul style={ul}>
+        <li>{badge('확정')} <b>chan_top에서 가장 오래 걸리는 단계는 36번 리페어(약 20분, 전체의 약 30%)</b>입니다. STA 자체는 6번 돌아도 합쳐서 4분 남짓입니다.</li>
+        <li>{badge('가설')} 리페어가 오래 걸리는 이유는 위반 끝점 약 4,170개마다 지연 셀을 하나씩 넣고 타이밍을 다시 갱신하는 일을 8,000번 넘게 반복하기 때문으로 보입니다. hold 위반 수가 줄면 이 시간도 줄 것입니다(미측정).</li>
+        <li>{badge('확정')} hierarchical top은 DRC가 가장 깁니다. 이 실행은 중간에 WSL 재시작으로 끊겨 단계를 다시 돌렸으므로, 이 합계에는 <b>반복된 단계 시간이 포함</b>돼 있습니다.</li>
+        <li>{badge('확정')} 한 번 고칠 때마다 최소 "리페어 → 라우팅 → RCX → STA"를 다시 돌려야 합니다. chan_top 기준으로 배치까지 재사용해도 약 25분입니다(<code>tools/wsl/118_run_reshape_variant.sh</code> 주석).</li>
+      </ul>
+
+      <p style={{ ...p, marginBottom: 2 }}><b>8) 시간을 줄이는 방법</b></p>
+      <div className="data-table"><table><thead><tr><th>방법</th><th>효과</th><th>상태</th></tr></thead><tbody>
+        <tr><td>배치 결과 재사용: 상세 배치 상태(<code>33-…/state_out.json</code>)에서 <code>--from OpenROAD.CTS</code>로 시작</td><td>합성·배치 약 20분 생략. 한 번 시험에 약 25분</td><td>{badge('확정')} 사용 중 (118번 스크립트)</td></tr>
+        <tr><td>타이밍 실험은 <code>--to OpenROAD.STAPostPNR</code>에서 멈춤</td><td>DRC·LVS·스트림아웃(chan_top 약 15분) 생략. 최종 후보만 끝까지</td><td>{badge('확정')} 사용 중</td></tr>
+        <tr><td>hold 수리 직후 ss 코너 STA로 미리 거르기</td><td>라우팅 전에 setup 위반 후보를 버림</td><td>{badge('미측정')}</td></tr>
+        <tr><td>hold 위반 자체 줄이기 (예: hold용 uncertainty를 따로 지정)</td><td>지연 셀 수와 36번 리페어 시간이 함께 줄 가능성</td><td>{badge('가설')} 제약 결정 필요</td></tr>
+        <tr><td>hierarchical로 블록 재사용</td><td>chan_top은 한 번만 sign-off하고 top은 glue만 P&amp;R</td><td>{badge('확정')} 사용 중</td></tr>
+        <tr><td>병렬 실행</td><td>여러 후보를 동시에</td><td>{badge('확정')} 이 호스트(8코어)에서는 전체 P&amp;R을 사실상 한 번에 하나씩만 돌림</td></tr>
+      </tbody></table></div>
+      <ul style={ul}>
+        <li>{badge('가설')} 중간 STA는 사실상 nom_tt만 갱신합니다(43번의 nom_ss·nom_ff 값이 30번과 똑같음). 위반은 ss에서만 생기므로 지금은 55번까지 가야 보입니다. 미리 거르기가 가능한지는 이 점을 바꿔 봐야 압니다.</li>
+        <li>{badge('확정')} 4개 모양에서 CTS 이후 STA의 setup WS는 +3.78~+3.89로 거의 같았고, 최종 WNS는 −0.14~−2.69로 갈렸습니다. 지금 있는 중간 값으로는 최종 위반을 예측하지 못했습니다.</li>
+      </ul>
+    </Section>
+    <Section title="16. 공정 코너(PVT) — ss · tt · ff는 무엇이고, 전압·온도는 얼마나 영향을 주나, 모두 통과해야 하나" open>
+      <p style={p}>STA가 코너 9개에서 따로 재는 이유와, 코너 이름에 들어 있는 공정·배선·전압·온도가 각각 무엇인지 정리했습니다. 설정 값은 chan_top 실행의 <code>resolved.json</code>에서, 셀 지연은 sky130 PDK의 Liberty 파일(<code>sky130_fd_sc_hd__*.lib</code>)에서 직접 읽었습니다.</p>
+
+      <p style={{ ...p, marginBottom: 2 }}><b>1) 코너 이름 읽는 법 — <code>max_ss_100C_1v60</code></b></p>
+      <div className="data-table"><table><thead><tr><th>부분</th><th>무엇의 변동인가</th><th>누가 정하나</th><th>이 프로젝트 설정</th></tr></thead><tbody>
+        <tr><td><b>max</b> (min / nom / max)</td><td><b>배선 공정 편차</b>: 금속선 두께·폭, 절연막 두께 → 배선 저항·용량</td><td>파운드리 (RC 추출 규칙)</td><td><code>RCX_RULESETS</code>: <code>rules.openrcx.sky130A.min/nom/max.calibre</code></td></tr>
+        <tr><td><b>ss</b> (ss / tt / ff)</td><td><b>트랜지스터 공정 편차</b>: 도핑·게이트 길이·산화막 두께 → NMOS·PMOS 속도</td><td>파운드리 (SPICE 모델 → 코너별 Liberty)</td><td><code>LIB</code>: tt_025C_1v80 · ss_100C_1v60 · ff_n40C_1v95 세 파일</td></tr>
+        <tr><td><b>100C</b></td><td>동작 <b>온도</b> (공정 아님)</td><td>사용 환경</td><td>공정과 짝지어진 값</td></tr>
+        <tr><td><b>1v60</b></td><td>전원 <b>전압</b> (공정 아님)</td><td>전원 사양</td><td>공정과 짝지어진 값</td></tr>
+      </tbody></table></div>
+      <ul style={ul}>
+        <li>{badge('확정')} 공정(P)·전압(V)·온도(T)를 합쳐 <b>PVT 코너</b>라고 부릅니다. 배선 RC 3가지 × 트랜지스터 3가지 = <code>STA_CORNERS</code> 9개이고, 기본 코너(<code>DEFAULT_CORNER</code>)는 <code>nom_tt_025C_1v80</code>입니다.</li>
+        <li>{badge('확정')} ss는 <b>느린 공정 + 높은 온도 + 낮은 전압</b>, ff는 <b>빠른 공정 + 낮은 온도 + 높은 전압</b>으로 묶여 있습니다. 가장 나쁜 경우를 만들려는 조합이고, sky130 PDK가 정한 값입니다.</li>
+        <li><b>한 칩이 코너를 오가는 것이 아닙니다.</b> 만들어진 칩마다 공정 분포의 어딘가에 놓이고, ss와 ff는 그 분포의 느린 끝과 빠른 끝입니다. 어느 칩이 어느 쪽일지 모르므로 <b>양 끝에서 모두 통과해야</b> 합니다.</li>
+      </ul>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>2) 왜 ss와 ff를 둘 다 보나 — 이 프로젝트의 실제 값</b></p>
+      <div className="data-table"><table><thead><tr><th>코너 (daq_subsystem hierarchical, final/metrics.json)</th><th>setup WS (ns)</th><th>hold WS (ns)</th></tr></thead><tbody>
+        <tr><td>max_ss_100C_1v60</td><td><b style={{ color: '#c0392b' }}>−6.44 (위반)</b></td><td>+1.94</td></tr>
+        <tr><td>max_tt_025C_1v80</td><td>+2.32</td><td>+0.69</td></tr>
+        <tr><td>max_ff_n40C_1v95</td><td>+2.93</td><td><b style={{ color: '#c0392b' }}>−0.15 (위반)</b></td></tr>
+      </tbody></table></div>
+      <p style={p}>같은 회로에서 <b>setup은 ss에서만, hold는 ff에서만</b> 깨집니다. 셀이 느리면 데이터가 늦게 도착해 setup이 위험하고, 빠르면 너무 일찍 바뀌어 hold가 위험하기 때문입니다.</p>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>3) 전압과 온도는 얼마나 영향을 주나 (Liberty 실측)</b></p>
+      <CornerDelayFigure/>
+      <div className="data-table"><table><thead><tr><th>비교 (나머지 조건은 같음)</th><th>inv_1</th><th>dlygate4sd3_1</th><th>변화</th></tr></thead><tbody>
+        <tr><td><b>전압</b>: ss 100°C, 1.60V → 1.40V</td><td>0.091 → 0.132</td><td>1.112 → 1.657</td><td><b>+45~49%</b></td></tr>
+        <tr><td><b>전압</b>: ss −40°C, 1.76V → 1.28V</td><td>0.061 → 0.158</td><td>0.742 → 3.680</td><td><b>약 2.6~5배</b></td></tr>
+        <tr><td><b>전압</b>: ff −40°C, 1.95V → 1.56V</td><td>0.038 → 0.049</td><td>0.377 → 0.644</td><td><b>+29~71%</b></td></tr>
+        <tr><td><b>온도</b>: tt 1.80V, 25°C → 100°C</td><td>0.049 → 0.048</td><td>0.550 → 0.565</td><td>−2~+3%</td></tr>
+        <tr><td><b>온도</b>: ss 1.60V, −40°C → 100°C</td><td>0.096 → 0.091</td><td>1.077 → 1.112</td><td>−5~+3%</td></tr>
+        <tr><td><b>온도</b>: ff 1.65V, −40°C → 100°C</td><td>0.046 → 0.043</td><td>0.548 → 0.503</td><td>−7~−8%</td></tr>
+        <tr><td><b>STA 코너 전체</b>: ff_n40C_1v95 → tt_025C_1v80 → ss_100C_1v60</td><td>0.038 → 0.049 → 0.091</td><td>0.377 → 0.550 → 1.112</td><td>ss가 ff의 <b>약 2.4~2.9배</b></td></tr>
+      </tbody></table></div>
+      <ul style={ul}>
+        <li>{badge('확정')} <b>전압의 영향이 가장 큽니다.</b> 같은 공정·온도에서 전압만 낮춰도 지연이 크게 늘고, 저전압으로 갈수록 급격히 늘어납니다(1.76V → 1.28V에서 지연 셀 약 5배).</li>
+        <li>{badge('확정')} <b>이 범위에서 온도의 영향은 작고 방향도 일정하지 않습니다</b>(−8~+3%). 낮은 전압에서는 뜨거울 때 오히려 빨라지는 경우도 표에 있습니다.</li>
+        <li>{badge('확정')} 이 표의 ss 값(dlygate 1.112ns)은 15절 최악 경로의 리포트 값(ss에서 셀당 1.11~1.20ns)과 일치합니다.</li>
+        <li>{badge('미측정')} 값은 Liberty 표의 한 점(입력 slew 0.053ns, 부하 약 0.0037pF)입니다. 실제 경로의 slew·부하는 셀마다 달라서 비율도 조금씩 다릅니다.</li>
+      </ul>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>4) 코너로 잡지 못하는 것</b></p>
+      <div className="data-table"><table><thead><tr><th>변동</th><th>다루는 방법</th><th>이 프로젝트</th></tr></thead><tbody>
+        <tr><td>같은 칩 안 셀마다의 속도 차이 (on-chip variation)</td><td><b>derating</b>: 지연에 일정 비율을 곱해 비관적으로 계산</td><td><code>TIME_DERATING_CONSTRAINT</code> = 5(%)</td></tr>
+        <tr><td>클럭 지터·스큐 등 불확실성</td><td><b>clock uncertainty</b> 마진</td><td>주기의 5% (axi 2.6ns, src 0.7ns) — 15절</td></tr>
+        <tr><td>동작 중 전원 강하 (IR drop)</td><td>전원망 분석</td><td>daq_subsystem top의 IR drop worst 0.4mV (1.6V의 약 0.03%)</td></tr>
+      </tbody></table></div>
+      <p style={p}>세 가지 모두 공정 코너와 <b>별개</b>로 더해지는 마진입니다. 코너가 "어떤 칩이 만들어지나", derating·uncertainty는 "한 칩 안에서 얼마나 흔들리나"를 덮습니다.</p>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>5) 모든 코너를 통과해야 하나 — OpenLane 기본값, 이 프로젝트, 실제 sign-off</b></p>
+      <p style={p}><b>모두 통과해야 합니다.</b> 코너는 해석용이 아니라 판정 기준입니다. 만들어진 칩이 공정 분포의 어디에 놓일지 모르기 때문에, 한 코너라도 위반이 있으면 그쪽에 걸린 칩은 동작하지 않을 수 있습니다. 특히 <b>hold 위반은 클럭을 늦춰도 고쳐지지 않아서</b> 제조 후에는 방법이 없습니다.</p>
+      <div className="data-table"><table><thead><tr><th style={{ width: '16%' }}>기준</th><th>무엇에서 멈추나 / 무엇을 통과로 보나</th><th>빠진 것</th></tr></thead><tbody>
+        <tr><td><b>OpenLane 기본값</b></td><td><code>TIMING_VIOLATION_CORNERS: ['*tt*']</code> — <b>tt 위반에서만 흐름을 멈춥니다.</b> ss·ff 위반은 <code>warning.log</code>에 경고만 남기고 끝까지 진행해 "Flow complete"가 됩니다.</td><td>ss의 setup, ff의 hold 판정이 통째로 빠짐</td></tr>
+        <tr><td><b>이 프로젝트의 판정</b></td><td>9개 코너(배선 RC 3 × 공정 3) <b>전부</b> setup·hold 위반 0 + DRC·LVS·antenna 0일 때만 "signoff clean". Flow complete는 통과로 치지 않습니다.</td><td>sf/fs 공정, 저온 setup, 모드별 검사, 크로스토크(SI), 정교한 OCV</td></tr>
+        <tr><td><b>실제 상용 sign-off</b> (일반적인 방식)</td><td>setup은 가장 느린 코너들(고온·저온 모두), hold는 <b>모든 코너</b>. 코너 × 모드(정상·스캔 테스트·저전력)를 전부 검사(MCMM). 보통 수십 개 이상의 조합</td><td>—</td></tr>
+      </tbody></table></div>
+      <ul style={ul}>
+        <li>{badge('확정')} daq_subsystem hierarchical 실행은 "Flow complete"로 끝났지만, <code>warning.log</code>에 <code>Setup violations found in the following corners: max/min/nom_ss_100C_1v60</code>과 <code>Hold violations found in the following corners: max/min/nom_ff_n40C_1v95</code>가 남아 있습니다. chan_top 500×1280도 ss 코너 3개의 setup 위반이 경고로만 남았습니다.</li>
+        <li>{badge('확정')} 그래서 <b>"흐름이 끝났다"와 "타이밍이 닫혔다"는 다른 말</b>입니다. 판정은 <code>warning.log</code>의 코너별 위반이나 <code>final/metrics.json</code>의 코너별 값으로 합니다.</li>
+        <li><b>실제 sign-off가 더 보는 것</b>(일반론, 이 프로젝트에서 확인한 것 아님): ① <b>sf·fs</b> — NMOS·PMOS 중 한쪽만 빠른 공정, 상승·하강 지연이 비대칭이 됨 ② <b>temperature inversion</b> — 미세 공정에서는 저온에서 더 느려질 수 있어 setup도 고온·저온을 모두 봄(위 3번 표에서도 일부 조건은 뜨거울 때 더 빨랐음) ③ <b>배선 코너</b> — Cbest·Cworst·RCbest·RCworst처럼 용량과 저항을 따로 뒤틈 ④ <b>모드</b> — 모드마다 클럭과 제약이 다름 ⑤ <b>SI</b> — 이웃 배선의 간섭으로 바뀌는 지연 ⑥ <b>AOCV·POCV</b> — 경로 깊이·통계에 따른 derating.</li>
+        <li><b>setup은 제품에 따라 여지가 있습니다.</b> 대부분은 최악 코너에서 목표 주파수를 맞추지만, 속도 등급을 나눠 파는 제품(speed binning)은 느린 칩을 낮은 등급으로 팝니다. 이때도 최저 등급 주파수는 최악 코너에서 맞춰야 합니다. <b>hold는 타협하지 않습니다.</b></li>
+        <li>{badge('가설')} OpenLane 기본값이 tt만 막는 것은 흐름을 끝까지 돌려 결과를 얻기 위한 편의로 보입니다. 실험 단계에서는 이 방식이 DRC·LVS까지 정보를 더 얻지만, 최종 sign-off 실행에서는 <code>TIMING_VIOLATION_CORNERS</code>를 전체 코너로 바꾸는 것이 맞습니다(아직 바꾸지 않음).</li>
+        <li>{badge('확정')} 따라서 이 대시보드의 <b>"signoff clean"은 "이 OpenLane 흐름의 9개 코너 기준으로 clean"</b>이라는 뜻입니다. 실제 상용 sign-off보다 좁은 범위입니다.</li>
+      </ul>
+    </Section>
+    <Section title="17. 칩 온도 측정과 열 관리 — 어떻게 재고, 뜨거워지면 어떻게 동작하게 만드나" open>
+      <p style={p}>칩 안의 온도는 <b>온도 센서 회로로 재고</b>, 온도가 오르면 <b>경고 → 성능 낮추기 → 강제 차단</b>의 단계로 대응하게 구성합니다. 아래 1~3은 업계의 일반적인 방식이고, 4는 이 프로젝트의 상황입니다.</p>
+
+      <p style={{ ...p, marginBottom: 2 }}><b>1) 칩 안에서 온도를 재는 방법</b></p>
+      <div className="data-table"><table><thead><tr><th style={{ width: '18%' }}>방식</th><th>원리</th><th>장점</th><th>단점</th></tr></thead><tbody>
+        <tr><td><b>BJT·다이오드 센서</b> (가장 흔함)</td><td>트랜지스터의 베이스-이미터 전압(Vbe)이 온도에 따라 거의 직선으로 변함. 전류가 다른 두 트랜지스터의 Vbe 차이(ΔVbe)는 절대온도에 비례(PTAT)</td><td>정확함 (보정 후 ±1~2°C 수준)</td><td>아날로그 회로와 ADC가 필요하고, 제조 후 보정(trim)이 필요</td></tr>
+        <tr><td><b>링 오실레이터 센서</b></td><td>인버터 고리의 발진 주파수가 온도에 따라 변함 → 카운터로 셈</td><td>표준셀만으로 만들 수 있음 (디지털 흐름으로 배치 가능)</td><td>정확도가 낮고 <b>전압 영향을 크게 받음</b></td></tr>
+        <tr><td><b>외부 열 다이오드</b></td><td>칩 안의 다이오드를 핀으로 빼서 보드의 측정 칩이 읽음</td><td>칩 안 회로가 단순함</td><td>핀이 필요하고, 판단을 칩 밖에서 함</td></tr>
+      </tbody></table></div>
+      <ul style={ul}>
+        <li>{badge('확정')} <b>링 오실레이터 방식의 약점은 16절 측정과 연결됩니다.</b> sky130 <code>inv_1</code>은 온도를 25 → 100°C로 바꿔도 지연이 −2~+3%만 변했지만, 전압을 1.60 → 1.40V로 낮추면 +45% 변했습니다(Liberty 값).</li>
+        <li>{badge('가설')} 그래서 그대로 쓰면 온도보다 전압을 재게 됩니다. 전압을 따로 재서 보정하거나 전압에 둔감한 구조가 필요해 보입니다. Liberty 한 점의 값에서 나온 판단이고, 실제 센서로 시험하지는 않았습니다.</li>
+        <li><b>배치:</b> 온도는 칩 안에서도 고르지 않습니다. 활동이 많은 블록 근처(핫스팟)에 센서를 여러 개 둡니다.</li>
+        <li><b>보정:</b> 공정 편차 때문에 칩마다 센서 출력이 다르므로, 테스트 단계에서 알려진 온도로 한두 점을 재서 보정값을 저장합니다.</li>
+      </ul>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>2) 온도가 오르면 어떻게 동작하게 구성하나</b></p>
+      <ThermalControlFigure/>
+      <div className="data-table"><table><thead><tr><th style={{ width: '14%' }}>단계</th><th>조건 (예시)</th><th>동작</th><th>누가 처리</th></tr></thead><tbody>
+        <tr><td><b>경고</b></td><td>임계 1 초과</td><td>인터럽트로 알림, 기록</td><td>펌웨어·OS</td></tr>
+        <tr><td><b>스로틀링</b></td><td>임계 2 초과</td><td>클럭 분주·게이팅, 작업량 줄이기</td><td>하드웨어(빠름) 또는 소프트웨어</td></tr>
+        <tr><td><b>DVFS</b></td><td>과열이 계속됨</td><td>전압과 주파수를 함께 낮춤. 동적 전력은 대략 C·V²·f에 비례해 전압을 낮추는 효과가 큼</td><td>전력 관리 유닛</td></tr>
+        <tr><td><b>긴급 차단</b> (thermal trip)</td><td>임계 3 초과</td><td>리셋 또는 전원 차단</td><td><b>소프트웨어와 무관한 하드웨어 경로</b> (소프트웨어가 멈춰도 동작해야 함)</td></tr>
+      </tbody></table></div>
+      <ul style={ul}>
+        <li><b>히스테리시스:</b> 올라갈 때와 내려갈 때의 임계값을 다르게 둡니다(그림의 92°C 시작 / 85°C 해제). 경계에서 켜졌다 꺼졌다를 반복하지 않게 하려는 것입니다.</li>
+        <li><b>센서 값 평균:</b> 순간 잡음으로 오동작하지 않게 여러 번 재서 평균을 씁니다.</li>
+        <li><b>시스템 수준:</b> 팬·방열판 제어, 멀티코어에서는 뜨거운 코어의 작업을 다른 코어로 옮기기도 합니다.</li>
+      </ul>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>3) 설계할 때 온도를 고려하는 이유</b></p>
+      <ul style={ul}>
+        <li><b>타이밍 보장 범위:</b> sign-off는 정해진 온도 범위에서만 합니다. 이 프로젝트는 −40°C(ff)부터 100°C(ss)입니다. 그 밖에서는 타이밍이 보장되지 않으므로 <b>스로틀 임계값은 sign-off 상한보다 낮게</b> 잡아야 합니다.</li>
+        <li><b>누설 전류:</b> 온도가 오르면 누설 전류가 크게 늘고, 그 전력이 다시 열을 만듭니다. 이 고리가 커지면 <b>열폭주(thermal runaway)</b>가 생길 수 있어 차단 단계가 필요합니다.</li>
+        <li><b>수명:</b> 배선의 전자이동(EM)과 트랜지스터 노화가 온도가 높을수록 빨라집니다.</li>
+      </ul>
+
+      <p style={{ ...p, marginBottom: 2, marginTop: 10 }}><b>4) 이 프로젝트에서는</b></p>
+      <ul style={ul}>
+        <li>{badge('확정')} Sample Test 4 RTL(<code>samples/sample_test_4/rtl</code>)에는 <b>온도 센서나 열 관리 로직이 없습니다</b>(<code>therm</code>·<code>temperature</code>·<code>tsens</code>로 검색해 확인).</li>
+        <li>{badge('확정')} 이 칩은 정해진 온도 범위(−40~100°C) 안에서 동작한다는 전제로만 검증된 상태입니다. 온도 관리는 칩 밖(보드·시스템)에 맡기는 구조입니다.</li>
+        <li>{badge('가설')} 넣는다면: 센서 출력을 CSR 레지스터로 읽게 하고, 임계값 초과 시 기존 <code>irq_ctrl</code>로 인터럽트를 보내고, 차단은 별도 하드웨어 경로로 두는 구성을 생각할 수 있습니다(미구현, 설계 아이디어).</li>
+        <li>{badge('미측정')} sky130용 오픈소스 온도 센서 생성기(OpenFASoC 등)가 있는 것으로 알려져 있지만, 이 환경에서 확인하지는 않았습니다.</li>
+      </ul>
     </Section>
   </div>
 }
 
-type DesignCandidate = { id: string; label: string; title: string; summary: string; render: () => React.ReactNode }
+type DesignCandidate ={ id: string; label: string; title: string; summary: string; render: () => React.ReactNode }
 const CANDIDATES: DesignCandidate[] = [
   { id: 'c1', label: '설계 후보 1', title: '규칙 인지 진화 — 위반 기억 + 규칙에 맞는 후보 생성 + 다단계 평가',
     summary: 'LVS·DRC 실측 규칙과 남은 공간을 적합도·변이·생성에 직접 반영한다', render: () => <Candidate1/> },
-  { id: 'c2', label: '설계 후보 2', title: 'DP 보조 탐색 — 초기 학습 + 부분 배치 재사용 + 중복 실행 방지',
-    summary: '소수의 서로 다른 실험에서 얻은 DRC·STA 지식을 DP 전이와 검증 우선순위에 반영한다', render: () => <Candidate2/> },
-  { id: 'bg', label: '배경 지식', title: 'SA와 DP — 무엇이 다르고 언제 쓰나',
-    summary: '설계안을 읽는 데 필요한 개념과, 이 프로젝트에서 실제로 잰 SA·DP 비교', render: () => <Background/> },
+  { id: 'c2', label: '설계 후보 2', title: 'beam search 보조 탐색 — 초기 학습 + 부분 배치 재사용 + 중복 실행 방지',
+    summary: '소수의 서로 다른 실험에서 얻은 DRC·STA 지식을 beam search 전이와 검증 우선순위에 반영한다', render: () => <Candidate2/> },
+  { id: 'cmp', label: '결과 비교', title: 'SA와 beam search의 최종 결과, 그리고 설계 후보 1·2 비교',
+    summary: '같은 문제를 두 방법으로 이 화면에서 직접 풀어 최종 배치를 나란히 보고, 두 설계 후보를 표로 비교한다', render: () => <ResultCompare/> },
+  { id: 'bg', label: '배경 지식', title: 'SA와 beam search · DP — 무엇이 다르고 언제 쓰나',
+    summary: '설계안을 읽는 데 필요한 개념과, 이 프로젝트에서 실제로 잰 SA·beam search 비교', render: () => <Background/> },
 ]
 
 export default function EvolutionSaDesigns() {

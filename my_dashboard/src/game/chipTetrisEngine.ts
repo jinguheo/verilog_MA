@@ -161,6 +161,7 @@ const WIRELENGTH_NETS: Array<[BlockId, BlockId, number]> = [
 // reshape the ADC (real LEF 223.71x293.365um) or SRAM (764.24x460.28um) into an
 // unrealistically thin/long footprint that would never exist in the actual macro.
 const MACRO_ASPECT_RATIO_TOLERANCE = 1.5
+const NEIGHBOR_MAX_SPAN = 5
 
 const normalize = (points: Point[]): Point[] => {
   const minX = Math.min(...points.map(([x]) => x))
@@ -175,17 +176,30 @@ const neighborRegionShapes = (base: Point[]): Point[][] => {
   const width = Math.max(...normalized.map(([x]) => x)) + 1
   const height = Math.max(...normalized.map(([, y]) => y)) + 1
   const seeds: Point[][] = [normalized]
+  const splitX = Math.ceil(width / 2)
+  const splitY = Math.ceil(height / 2)
 
   // Preserve occupied area while opening routing channels or distributing the
   // standard-cell region into banks. Gaps are footprint whitespace, not cells.
   for (const gap of [1, 2]) {
-    const splitX = Math.ceil(width / 2)
-    const splitY = Math.ceil(height / 2)
     seeds.push(normalized.map(([x, y]) => [x >= splitX ? x + gap : x, y] as Point))
     seeds.push(normalized.map(([x, y]) => [x, y >= splitY ? y + gap : y] as Point))
   }
   seeds.push(normalized.map(([x, y]) => [x + (y % 2), y] as Point))
   seeds.push(normalized.map(([x, y]) => [x * 2, y * 2] as Point))
+
+  // Extended footprints. They are appended after the original seeds so every earlier shape keeps its
+  // rotation index (saved candidates stay valid). Every footprint stays within NEIGHBOR_MAX_SPAN cells
+  // per side, because the required-neighbor rule only asks one cell to touch the neighbor block and an
+  // unbounded spread would let the rest of the region drift away from it.
+  seeds.push(normalized.map(([x, y]) => [x >= splitX ? x + 3 : x, y] as Point))
+  seeds.push(normalized.map(([x, y]) => [x, y >= splitY ? y + 3 : y] as Point))
+  for (const [gx, gy] of [[2, 1], [1, 2], [2, 2]]) seeds.push(normalized.map(([x, y]) => [x >= splitX ? x + gx : x, y >= splitY ? y + gy : y] as Point))
+  seeds.push(normalized.map((_, i) => [i, 0] as Point))
+  if (normalized.length === 4) {
+    seeds.push([[0, 0], [0, 1], [0, 2], [1, 2]])
+    seeds.push([[0, 0], [1, 0], [2, 0], [1, 1]])
+  }
 
   const shapes: Point[][] = []
   for (const seed of seeds) {
@@ -194,14 +208,24 @@ const neighborRegionShapes = (base: Point[]): Point[][] => {
       const shapeWidth = Math.max(...current.map(([x]) => x)) + 1
       const shapeHeight = Math.max(...current.map(([, y]) => y)) + 1
       const key = JSON.stringify(current)
-      if (shapeWidth <= BOARD_COLS && shapeHeight <= BOARD_ROWS && !shapes.some(shape => JSON.stringify(shape) === key)) shapes.push(current)
+      if (shapeWidth <= NEIGHBOR_MAX_SPAN && shapeHeight <= NEIGHBOR_MAX_SPAN && shapeWidth <= BOARD_COLS && shapeHeight <= BOARD_ROWS && !shapes.some(shape => JSON.stringify(shape) === key)) shapes.push(current)
       current = rotate(current)
     }
   }
   return shapes
 }
 
+// The shape list of a block never changes (BLOCKS is constant), but building it for the neighbor regions
+// costs hundreds of microseconds and the searches call it for every candidate, so it is computed once.
+// Callers must treat the returned arrays as read-only.
+const rotationsCache = new Map<BlockId, Point[][]>()
 export const rotationsFor = (id: BlockId): Point[][] => {
+  let shapes = rotationsCache.get(id)
+  if (!shapes) { shapes = buildRotations(id); rotationsCache.set(id, shapes) }
+  return shapes
+}
+
+const buildRotations = (id: BlockId): Point[][] => {
   if (BLOCKS[id].areaFlexible) {
     const area = BLOCKS[id].base.length
     const baseWidth = Math.max(...BLOCKS[id].base.map(([x]) => x)) + 1
