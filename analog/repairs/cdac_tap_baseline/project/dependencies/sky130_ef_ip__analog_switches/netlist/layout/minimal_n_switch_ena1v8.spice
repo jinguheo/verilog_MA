@@ -1,0 +1,70 @@
+* NGSPICE file created from minimal_n_switch_ena1v8.ext - technology: sky130A
+
+.subckt sky130_fd_pr__nfet_g5v0d10v5_SF7DK5 a_n242_n281# a_n108_n50# a_50_n50# a_n50_n147#
+X0 a_50_n50# a_n50_n147# a_n108_n50# a_n242_n281# sky130_fd_pr__nfet_g5v0d10v5 ad=0.145 pd=1.58 as=0.145 ps=1.58 w=0.5 l=0.5
+.ends
+
+.subckt sky130_fd_pr__nfet_g5v0d10v5_VDJU7P a_n29_n50# a_n187_n50# a_n321_n281# a_29_n147#
++ a_n129_n147# a_129_n50#
+X0 a_129_n50# a_29_n147# a_n29_n50# a_n321_n281# sky130_fd_pr__nfet_g5v0d10v5 ad=0.145 pd=1.58 as=0.0725 ps=0.79 w=0.5 l=0.5
+X1 a_n29_n50# a_n129_n147# a_n187_n50# a_n321_n281# sky130_fd_pr__nfet_g5v0d10v5 ad=0.0725 pd=0.79 as=0.145 ps=1.58 w=0.5 l=0.5
+.ends
+
+.subckt minimum_analog_switch on off out in vdd vss
+XXM1 vss in in off sky130_fd_pr__nfet_g5v0d10v5_SF7DK5
+XXM2 vss out out off sky130_fd_pr__nfet_g5v0d10v5_SF7DK5
+XXM3 in out vss on on out sky130_fd_pr__nfet_g5v0d10v5_VDJU7P
+.ends
+
+.subckt sky130_fd_sc_hvl__inv_2 A VGND VNB VPB VPWR Y
+X0 VPWR A Y VPB sky130_fd_pr__pfet_g5v0d10v5 ad=0.4275 pd=3.57 as=0.21 ps=1.78 w=1.5 l=0.5
+X1 Y A VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.105 pd=1.03 as=0.21375 ps=2.07 w=0.75 l=0.5
+X2 Y A VPWR VPB sky130_fd_pr__pfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.4275 ps=3.57 w=1.5 l=0.5
+X3 VGND A Y VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21375 pd=2.07 as=0.105 ps=1.03 w=0.75 l=0.5
+.ends
+
+.subckt sky130_fd_sc_hvl__lsbuflv2hv_1 A LVPWR VGND VNB VPB VPWR X
+X0 VGND a_404_1133# a_504_1221# VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.21 ps=1.78 w=1.5 l=0.5
+X1 a_504_1221# a_404_1133# VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.21 ps=1.78 w=1.5 l=0.5
+X2 X a_1711_885# VPWR VPB sky130_fd_pr__pfet_g5v0d10v5 ad=0.3975 pd=3.53 as=0.24375 ps=1.825 w=1.5 l=0.5
+X3 X a_1711_885# VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.19875 pd=2.03 as=0.12188 ps=1.075 w=0.75 l=0.5
+X4 VGND A a_404_1133# VNB sky130_fd_pr__nfet_01v8 ad=0.1176 pd=1.12 as=0.2478 ps=2.27 w=0.84 l=0.15
+X5 a_1197_107# a_772_151# VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.21 ps=1.78 w=1.5 l=0.5
+X6 VPWR a_1197_107# a_504_1221# VPB sky130_fd_pr__pfet_g5v0d10v5 ad=0.2142 pd=1.99 as=0.2142 ps=1.99 w=0.42 l=1
+X7 a_504_1221# a_404_1133# VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.3975 pd=3.53 as=0.21 ps=1.78 w=1.5 l=0.5
+X8 a_1197_107# a_772_151# VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.3975 pd=3.53 as=0.21 ps=1.78 w=1.5 l=0.5
+X9 a_504_1221# a_404_1133# VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.3975 ps=3.53 w=1.5 l=0.5
+X10 VGND a_404_1133# a_504_1221# VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.21 ps=1.78 w=1.5 l=0.5
+X11 a_772_151# a_404_1133# VGND VNB sky130_fd_pr__nfet_01v8 ad=0.2478 pd=2.27 as=0.1176 ps=1.12 w=0.84 l=0.15
+X12 VGND a_772_151# a_1197_107# VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.21 ps=1.78 w=1.5 l=0.5
+X13 LVPWR A a_404_1133# LVPWR sky130_fd_pr__pfet_01v8_hvt ad=0.1176 pd=1.12 as=0.2478 ps=2.27 w=0.84 l=0.15
+X14 VPWR a_504_1221# a_1711_885# VPB sky130_fd_pr__pfet_g5v0d10v5 ad=0.24375 pd=1.825 as=0.3975 ps=3.53 w=1.5 l=0.5
+X15 VGND a_504_1221# a_1711_885# VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.12188 pd=1.075 as=0.19875 ps=2.03 w=0.75 l=0.5
+X16 VGND a_772_151# a_1197_107# VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.21 ps=1.78 w=1.5 l=0.5
+X17 a_772_151# a_404_1133# LVPWR LVPWR sky130_fd_pr__pfet_01v8_hvt ad=0.2478 pd=2.27 as=0.1176 ps=1.12 w=0.84 l=0.15
+X18 a_1197_107# a_772_151# VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.3975 ps=3.53 w=1.5 l=0.5
+X19 VPWR a_504_1221# a_1197_107# VPB sky130_fd_pr__pfet_g5v0d10v5 ad=0.1113 pd=1.37 as=0.1365 ps=1.49 w=0.42 l=1
+.ends
+
+.subckt sky130_fd_sc_hvl__diode_2 DIODE VGND VNB VPB VPWR
+X0 VNB DIODE sky130_fd_pr__diode_pw2nd_11v0 perim=3.16e+06 area=6.072e+11
+.ends
+
+.subckt sky130_fd_sc_hvl__decap_4 VGND VNB VPB VPWR
+X0 VGND VPWR VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.19875 pd=2.03 as=0.4125 ps=4.1 w=0.75 l=1
+X1 VPWR VGND VPWR VPB sky130_fd_pr__pfet_g5v0d10v5 ad=0.265 pd=2.53 as=0.55 ps=5.1 w=1 l=1
+.ends
+
+.subckt minimal_n_switch_ena1v8 in out avdd avss dvdd dvss on
+Xminimum_analog_switch_0 minimum_analog_switch_0/on sky130_fd_sc_hvl__inv_2_1/Y out
++ in avdd avss minimum_analog_switch
+Xsky130_fd_sc_hvl__inv_2_0 sky130_fd_sc_hvl__inv_2_1/Y dvss dvss avdd avdd minimum_analog_switch_0/on
++ sky130_fd_sc_hvl__inv_2
+Xsky130_fd_sc_hvl__inv_2_1 sky130_fd_sc_hvl__inv_2_1/A dvss dvss avdd avdd sky130_fd_sc_hvl__inv_2_1/Y
++ sky130_fd_sc_hvl__inv_2
+Xsky130_fd_sc_hvl__lsbuflv2hv_1_0 on dvdd dvss dvss avdd avdd sky130_fd_sc_hvl__inv_2_1/A
++ sky130_fd_sc_hvl__lsbuflv2hv_1
+Xsky130_fd_sc_hvl__diode_2_0 on dvss dvss avdd avdd sky130_fd_sc_hvl__diode_2
+Xsky130_fd_sc_hvl__decap_4_0 dvss dvss avdd avdd sky130_fd_sc_hvl__decap_4
+.ends
+

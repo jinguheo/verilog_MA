@@ -1,0 +1,89 @@
+* NGSPICE file created from isolated_switch_large.ext - technology: sky130A
+
+.subckt sky130_fd_sc_hvl__lsbuflv2hv_1 A LVPWR VGND VNB VPB VPWR X
+X0 VGND a_404_1133# a_504_1221# VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.21 ps=1.78 w=1.5 l=0.5
+X1 a_504_1221# a_404_1133# VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.21 ps=1.78 w=1.5 l=0.5
+X2 X a_1711_885# VPWR VPB sky130_fd_pr__pfet_g5v0d10v5 ad=0.3975 pd=3.53 as=0.24375 ps=1.825 w=1.5 l=0.5
+X3 X a_1711_885# VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.19875 pd=2.03 as=0.12188 ps=1.075 w=0.75 l=0.5
+X4 VGND A a_404_1133# VNB sky130_fd_pr__nfet_01v8 ad=0.1176 pd=1.12 as=0.2478 ps=2.27 w=0.84 l=0.15
+X5 a_1197_107# a_772_151# VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.21 ps=1.78 w=1.5 l=0.5
+X6 VPWR a_1197_107# a_504_1221# VPB sky130_fd_pr__pfet_g5v0d10v5 ad=0.2142 pd=1.99 as=0.2142 ps=1.99 w=0.42 l=1
+X7 a_504_1221# a_404_1133# VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.3975 pd=3.53 as=0.21 ps=1.78 w=1.5 l=0.5
+X8 a_1197_107# a_772_151# VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.3975 pd=3.53 as=0.21 ps=1.78 w=1.5 l=0.5
+X9 a_504_1221# a_404_1133# VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.3975 ps=3.53 w=1.5 l=0.5
+X10 VGND a_404_1133# a_504_1221# VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.21 ps=1.78 w=1.5 l=0.5
+X11 a_772_151# a_404_1133# VGND VNB sky130_fd_pr__nfet_01v8 ad=0.2478 pd=2.27 as=0.1176 ps=1.12 w=0.84 l=0.15
+X12 VGND a_772_151# a_1197_107# VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.21 ps=1.78 w=1.5 l=0.5
+X13 LVPWR A a_404_1133# LVPWR sky130_fd_pr__pfet_01v8_hvt ad=0.1176 pd=1.12 as=0.2478 ps=2.27 w=0.84 l=0.15
+X14 VPWR a_504_1221# a_1711_885# VPB sky130_fd_pr__pfet_g5v0d10v5 ad=0.24375 pd=1.825 as=0.3975 ps=3.53 w=1.5 l=0.5
+X15 VGND a_504_1221# a_1711_885# VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.12188 pd=1.075 as=0.19875 ps=2.03 w=0.75 l=0.5
+X16 VGND a_772_151# a_1197_107# VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.21 ps=1.78 w=1.5 l=0.5
+X17 a_772_151# a_404_1133# LVPWR LVPWR sky130_fd_pr__pfet_01v8_hvt ad=0.2478 pd=2.27 as=0.1176 ps=1.12 w=0.84 l=0.15
+X18 a_1197_107# a_772_151# VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21 pd=1.78 as=0.3975 ps=3.53 w=1.5 l=0.5
+X19 VPWR a_504_1221# a_1197_107# VPB sky130_fd_pr__pfet_g5v0d10v5 ad=0.1113 pd=1.37 as=0.1365 ps=1.49 w=0.42 l=1
+.ends
+
+.subckt sky130_fd_sc_hvl__diode_2 DIODE VGND VNB VPB VPWR
+X0 VNB DIODE sky130_fd_pr__diode_pw2nd_11v0 perim=3.16e+06 area=6.072e+11
+.ends
+
+.subckt sky130_fd_pr__nfet_g5v0d10v5_SABQJA a_n345_n200# a_129_n200# a_n503_n200#
++ a_287_n200# a_445_n200# a_29_n288# a_n129_n288# a_187_n288# a_n287_n288# a_n637_n378#
++ a_345_n288# a_n29_n200# a_n187_n200# a_n445_n288#
+X0 a_n187_n200# a_n287_n288# a_n345_n200# a_n637_n378# sky130_fd_pr__nfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.29 ps=2.29 w=2 l=0.5
+X1 a_287_n200# a_187_n288# a_129_n200# a_n637_n378# sky130_fd_pr__nfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.29 ps=2.29 w=2 l=0.5
+X2 a_n345_n200# a_n445_n288# a_n503_n200# a_n637_n378# sky130_fd_pr__nfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.58 ps=4.58 w=2 l=0.5
+X3 a_129_n200# a_29_n288# a_n29_n200# a_n637_n378# sky130_fd_pr__nfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.29 ps=2.29 w=2 l=0.5
+X4 a_445_n200# a_345_n288# a_287_n200# a_n637_n378# sky130_fd_pr__nfet_g5v0d10v5 ad=0.58 pd=4.58 as=0.29 ps=2.29 w=2 l=0.5
+X5 a_n29_n200# a_n129_n288# a_n187_n200# a_n637_n378# sky130_fd_pr__nfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.29 ps=2.29 w=2 l=0.5
+.ends
+
+.subckt sky130_fd_pr__pfet_g5v0d10v5_LQS9ZD a_n819_n200# a_n345_n200# a_n977_n200#
++ a_29_n297# a_n129_n297# a_187_n297# a_129_n200# a_n503_n200# a_n287_n297# a_819_n297#
++ a_345_n297# a_287_n200# a_n661_n200# a_n919_n297# w_n1177_n497# a_n445_n297# a_919_n200#
++ a_503_n297# a_445_n200# a_n603_n297# a_661_n297# a_603_n200# a_n761_n297# a_761_n200#
++ a_n29_n200# a_n187_n200#
+X0 a_n819_n200# a_n919_n297# a_n977_n200# w_n1177_n497# sky130_fd_pr__pfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.58 ps=4.58 w=2 l=0.5
+X1 a_n661_n200# a_n761_n297# a_n819_n200# w_n1177_n497# sky130_fd_pr__pfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.29 ps=2.29 w=2 l=0.5
+X2 a_919_n200# a_819_n297# a_761_n200# w_n1177_n497# sky130_fd_pr__pfet_g5v0d10v5 ad=0.58 pd=4.58 as=0.29 ps=2.29 w=2 l=0.5
+X3 a_n187_n200# a_n287_n297# a_n345_n200# w_n1177_n497# sky130_fd_pr__pfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.29 ps=2.29 w=2 l=0.5
+X4 a_761_n200# a_661_n297# a_603_n200# w_n1177_n497# sky130_fd_pr__pfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.29 ps=2.29 w=2 l=0.5
+X5 a_287_n200# a_187_n297# a_129_n200# w_n1177_n497# sky130_fd_pr__pfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.29 ps=2.29 w=2 l=0.5
+X6 a_n345_n200# a_n445_n297# a_n503_n200# w_n1177_n497# sky130_fd_pr__pfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.29 ps=2.29 w=2 l=0.5
+X7 a_129_n200# a_29_n297# a_n29_n200# w_n1177_n497# sky130_fd_pr__pfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.29 ps=2.29 w=2 l=0.5
+X8 a_445_n200# a_345_n297# a_287_n200# w_n1177_n497# sky130_fd_pr__pfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.29 ps=2.29 w=2 l=0.5
+X9 a_n503_n200# a_n603_n297# a_n661_n200# w_n1177_n497# sky130_fd_pr__pfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.29 ps=2.29 w=2 l=0.5
+X10 a_n29_n200# a_n129_n297# a_n187_n200# w_n1177_n497# sky130_fd_pr__pfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.29 ps=2.29 w=2 l=0.5
+X11 a_603_n200# a_503_n297# a_445_n200# w_n1177_n497# sky130_fd_pr__pfet_g5v0d10v5 ad=0.29 pd=2.29 as=0.29 ps=2.29 w=2 l=0.5
+.ends
+
+.subckt sky130_fd_pr__nfet_g5v0d10v5_EJGQJV a_50_n100# a_n242_n322# a_n108_n100# a_n50_n188#
+X0 a_50_n100# a_n50_n188# a_n108_n100# a_n242_n322# sky130_fd_pr__nfet_g5v0d10v5 ad=0.29 pd=2.58 as=0.29 ps=2.58 w=1 l=0.5
+.ends
+
+.subckt isolated_switch_3 on off out in vdd shunt vss
+XXM15 m2_961_43# in in m2_961_43# in on on on on vss on m2_961_43# in on sky130_fd_pr__nfet_g5v0d10v5_SABQJA
+Xsky130_fd_pr__pfet_g5v0d10v5_LQS9ZD_0 m2_961_43# out out off off off m2_961_43# m2_961_43#
++ off off off out out off vdd off out off m2_961_43# off off out off m2_961_43# out
++ m2_961_43# sky130_fd_pr__pfet_g5v0d10v5_LQS9ZD
+XXM4 in m2_961_43# m2_961_43# off off off in in off off off m2_961_43# m2_961_43#
++ off vdd off m2_961_43# off in off off m2_961_43# off in m2_961_43# in sky130_fd_pr__pfet_g5v0d10v5_LQS9ZD
+Xsky130_fd_pr__nfet_g5v0d10v5_SABQJA_0 out m2_961_43# m2_961_43# out m2_961_43# on
++ on on on vss on out m2_961_43# on sky130_fd_pr__nfet_g5v0d10v5_SABQJA
+Xsky130_fd_pr__nfet_g5v0d10v5_EJGQJV_0 vss vss m2_961_43# shunt sky130_fd_pr__nfet_g5v0d10v5_EJGQJV
+.ends
+
+.subckt sky130_fd_sc_hvl__inv_1 A VGND VNB VPB VPWR Y
+X0 Y A VPWR VPB sky130_fd_pr__pfet_g5v0d10v5 ad=0.4275 pd=3.57 as=0.4275 ps=3.57 w=1.5 l=0.5
+X1 Y A VGND VNB sky130_fd_pr__nfet_g5v0d10v5 ad=0.21375 pd=2.07 as=0.21375 ps=2.07 w=0.75 l=0.5
+.ends
+
+.subckt isolated_switch_large avss on out in avdd dvdd dvss off
+Xx2 on dvdd dvss dvss avdd avdd x2/X sky130_fd_sc_hvl__lsbuflv2hv_1
+Xx3 off dvdd dvss dvss avdd avdd x3/X sky130_fd_sc_hvl__lsbuflv2hv_1
+Xsky130_fd_sc_hvl__diode_2_0 off dvss dvss avdd avdd sky130_fd_sc_hvl__diode_2
+Xisolated_switch_3_0 x2/X isolated_switch_3_0/off out in avdd x3/X avss isolated_switch_3
+Xsky130_fd_sc_hvl__diode_2_1 on dvss dvss avdd avdd sky130_fd_sc_hvl__diode_2
+Xsky130_fd_sc_hvl__inv_1_0 x2/X dvss dvss avdd avdd isolated_switch_3_0/off sky130_fd_sc_hvl__inv_1
+.ends
+

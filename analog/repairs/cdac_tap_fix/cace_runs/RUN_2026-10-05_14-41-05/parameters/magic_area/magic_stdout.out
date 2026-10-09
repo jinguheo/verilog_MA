@@ -1,0 +1,22 @@
+
+Magic 8.3 revision 489 - Compiled on Thu Aug 22 13:45:15 UTC 2024.
+Starting magic under Tcl interpreter
+Using the terminal as the console.
+Using NULL graphics device.
+Processing system .magicrc file
+Sourcing design .magicrc for technology sky130A ...
+2 Magic internal units = 1 Lambda
+Input style sky130(): scaleFactor=2, multiplier=2
+The following types are not handled by extraction and will be treated as non-electrical types:
+    ubm 
+Scaled tech values by 2 / 1 to match internal grid scaling
+Loading sky130A Device Generator Menu ...
+Using technology "sky130A", version 1.0.532-2-gc6d73a3
+File </mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag/sky130_ef_ip__cdac3v_12bit.mag> is already locked by pid 15918.  Opening read-only.
+Cell sky130_ef_ip__cdac3v_12bit read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Root cell box:
+           width x height  (   llx,  lly  ), (   urx,  ury  )  area (units^2)
+
+microns:  183.655 x 261.295  ( 264.245, -182.840), ( 447.900,  78.455)  47988.133 
+lambda:   18365.50 x 26129.50  ( 26424.50, -18284.00), ( 44790.00,  7845.50)  479881344.00
+internal:  36731 x 52259   ( 52849, -36568), ( 89580,  15691)  1919525329

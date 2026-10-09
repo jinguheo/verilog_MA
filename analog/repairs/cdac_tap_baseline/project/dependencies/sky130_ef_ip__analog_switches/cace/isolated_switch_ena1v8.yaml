@@ -1,0 +1,157 @@
+#--------------------------------------------------------------
+# CACE circuit characterization file
+#--------------------------------------------------------------
+
+name:           isolated_switch_ena1v8
+description:    >
+  Older version of the isolated_switch_onoff with a single enable
+  input in the digital (1.8V) domain.  This single enable does
+  not ensure break-before-make.
+PDK:            sky130A
+
+cace_format:    5.2
+
+authorship:
+  designer:         Tim Edwards
+  company:          Efabless
+  creation_date:    June 27, 2024
+  license:          Apache 2.0
+
+paths:
+  root:             ..
+  schematic:        xschem
+  magic:            mag
+  layout:           gds
+  netlist:          netlist
+  documentation:    docs
+
+pins:
+  dvdd:
+    description: Digital power supply
+    type: power
+  dvss:
+    description: Digital ground
+    type: ground
+  avdd:
+    description: Analog power supply
+    type: power
+  avss:
+    description: Analog ground
+    type: ground
+  on:
+    description: Enable the switch
+    type: signal
+    direction: input
+  in:
+    description: Signal input
+    type: signal
+    direction: input
+  out:
+    description: Signal output
+    type: signal
+    direction: output
+
+default_conditions:
+  dvdd:
+    description: Digital power supply voltage
+    display: dvdd
+    unit: V
+    typical: 1.8
+  avdd:
+    description: Analog power supply voltage
+    display: avdd
+    unit: V
+    typical: 3.3
+  step:
+    description: DC sim step size
+    typical: 10m
+  enable:
+    description: If 1, turn on the switch
+    typical: 1
+  corner:
+    description: Process corner
+    display: Corner
+    typical: tt
+  temperature:
+    description: Ambient temperature
+    display: Temp
+    unit: °C
+    typical: 27
+
+parameters:
+  r_on:
+    description: Maximum on resistance
+    display: R_on
+    unit: Ohm
+    spec:
+      r_on:
+        maximum:
+          value: any
+    tool:
+      ngspice:
+        template: isolated_switch_ena1v8_tb.sch
+        format: ascii
+        suffix: .data
+        variables: [r_on]
+    conditions:
+      corner:
+        enumerate: [tt, ff, ss] # fs, sf
+      temperature:
+        minimum: -40
+        typical: 27
+        maximum: 130
+
+  magic_area:
+    spec:
+      area:
+        display: Area
+        description: Total circuit layout area
+        unit: µm²
+        maximum:
+          value: any
+      width:
+        display: Width
+        description: Total circuit layout width
+        unit: µm
+        maximum:
+          value: any
+      height:
+        display: Height
+        description: Total circuit layout height
+        unit: µm
+        maximum:
+          value: any
+    tool:
+      magic_area
+
+  magic_drc:
+    description: Magic DRC
+    display: Magic DRC
+    spec:
+      drc_errors:
+        maximum:
+          value: 0
+    tool:
+      magic_drc
+
+  netgen_lvs:
+    description: Netgen LVS
+    display: Netgen LVS
+    spec:
+      lvs_errors:
+        maximum:
+          value: 0
+    tool:
+      netgen_lvs:
+        script: isolated_switch_ena1v8_lvs.tcl
+
+  klayout_drc_full:
+    description: KLayout DRC full
+    display: KLayout DRC full
+    spec:
+      drc_errors:
+        maximum:
+          value: 0
+    tool:
+        klayout_drc:
+            args: ['-rd', 'feol=true', '-rd', 'beol=true', '-rd', 'offgrid=true']

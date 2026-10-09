@@ -1,0 +1,75 @@
+[14:41:05] INFO     Maximum number of jobs is 8.        parameter_manager.py:105
+[14:41:05] WARNING  Could not find any pins.                    cace_read.py:573
+[14:41:05] WARNING  Could not find any default conditions.      cace_read.py:578
+[14:41:05] INFO     Working directory set to            parameter_manager.py:153
+                    '/mnt/d/MyWork/Veriolg_MA/analog/re                         
+                    pairs/cdac_tap_fix/project'                                 
+                    ('/mnt/d/MyWork/Veriolg_MA/analog/r                         
+                    epairs/cdac_tap_fix/project').                              
+[14:41:05] INFO     Starting a new run with tag         parameter_manager.py:624
+                    'RUN_2026-10-05_14-41-05'.                                  
+[14:41:05] INFO     PDK root is '/home/oem/eda/pdk'.    parameter_manager.py:637
+[14:41:05] INFO     Running parameters: magic_area, magic_drc,   cace_cli.py:327
+                    netgen_lvs, klayout_drc_full                                
+[14:41:05] INFO     Generating simulation netlist from    cace_regenerate.py:562
+                    schematic…                                                  
+[14:41:05] INFO     Skipping extraction of layout         cace_regenerate.py:408
+                    netlist. Up to date.                                        
+[14:41:05] INFO     Not regenerating GDSII from magic     cace_regenerate.py:892
+                    layout. Up to date.                                         
+────────────────────────────── Started magic_area ──────────────────────────────
+────────────────────────────── Started Magic DRC ───────────────────────────────
+────────────────────────────── Started Netgen LVS ──────────────────────────────
+─────────────────────────── Started KLayout DRC full ───────────────────────────
+[14:41:05] INFO     Running magic to get layout DRC   parameter_magic_drc.py:105
+                    report.                                                     
+[14:41:05] INFO     Running magic to get area         parameter_magic_area.py:95
+                    measurements.                                               
+[14:41:05] INFO     Running netgen to get LVS        parameter_netgen_lvs.py:107
+                    report.                                                     
+[14:41:05] INFO     Running KLayout to get DRC      parameter_klayout_drc.py:118
+                    report.                                                     
+──────────────────────── Completed magic_area: Pass ✅ ─────────────────────────
+[14:41:07] INFO     Netgen LVS report at             parameter_netgen_lvs.py:217
+                    '../cace_runs/RUN_2026-10-05_14-                            
+                    41-05/parameters/netgen_lvs/sky1                            
+                    30_ef_ip__cdac3v_12bit_comp.out'                            
+                    …                                                           
+──────────────────────── Completed Netgen LVS: Fail ❌ ─────────────────────────
+[14:41:10] INFO     Magic DRC report at               parameter_magic_drc.py:181
+                    '../cace_runs/RUN_2026-10-05_14-4                           
+                    1-05/parameters/magic_drc/magic_d                           
+                    rc.out'…                                                    
+───────────────────────── Completed Magic DRC: Pass ✅ ─────────────────────────
+[14:41:18] INFO     KLayout DRC report at           parameter_klayout_drc.py:218
+                    '../cace_runs/RUN_2026-10-05_14                             
+                    -41-05/parameters/klayout_drc_f                             
+                    ull/drc_report.lyrdb'…                                      
+───────────────────── Completed KLayout DRC full: Fail ❌ ──────────────────────
+[14:41:18] INFO     Done with CACE simulations and evaluations   cace_cli.py:371
+                    in 0:00:13.                                                 
+                  CACE Summary for sky130_ef_ip__cdac3v_12bit                   
+
+netlist source: layout                                                          
+
+                                                                                
+                            Min     Min     Typ     Typ     Max     Max         
+ Param…  Tool    Result   Limit   Value  Target   Value   Limit   Value  Status 
+ ────────────────────────────────────────────────────────────────────────────── 
+ Area    magic…  area          ​        ​        ​        ​     any  47988…   Pass  
+                                                                    µm²    ✅   
+ Width   magic…  width         ​        ​        ​        ​     any  183.6…   Pass  
+                                                                     µm    ✅   
+ Height  magic…  height        ​        ​        ​        ​     any  261.2…   Pass  
+                                                                     µm    ✅   
+ Magic   magic…  drc_e…        ​        ​        ​        ​       0       0   Pass  
+ DRC                                                                       ✅   
+ Netgen  netge…  lvs_e…        ​        ​        ​        ​       0      51   Fail  
+ LVS                                                                       ❌   
+ KLayo…  klayo…  drc_e…        ​        ​        ​        ​       0       2   Fail  
+ DRC                                                                       ❌   
+ full                                                                           
+                                                                                
+[14:41:18] INFO     CACE failed, skipping documentation          cace_cli.py:404
+                    generation.                                                 
+exit 2

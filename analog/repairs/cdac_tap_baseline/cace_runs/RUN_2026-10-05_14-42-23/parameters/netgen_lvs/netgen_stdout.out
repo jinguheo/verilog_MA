@@ -1,0 +1,415 @@
+Netgen 1.5.278 compiled on Sun Sep 29 13:29:03 UTC 2024
+Warning: netgen command 'format' use fully-qualified name '::netgen::format'
+Warning: netgen command 'global' use fully-qualified name '::netgen::global'
+Generating JSON file result
+Reading netlist file /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/project/netlist/layout/sky130_ef_ip__cdac3v_12bit.spice
+Call to undefined subcircuit sky130_fd_pr__pfet_g5v0d10v5
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_pr__nfet_g5v0d10v5
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_pr__cap_mim_m3_1
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_pr__cap_mim_m3_2
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_pr__diode_pw2nd_11v0
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_pr__nfet_01v8
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_pr__pfet_01v8_hvt
+Creating placeholder cell definition.
+Reading netlist file /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/project/netlist/schematic/sky130_ef_ip__cdac3v_12bit.spice
+Call to undefined subcircuit EF_BANK_CAP_12
+Creating placeholder cell definition.
+Call to undefined subcircuit EF_AMUX0201_ARRAY1
+Creating placeholder cell definition.
+Call to undefined subcircuit EF_SW_RST
+Creating placeholder cell definition.
+Call to undefined subcircuit cdac_lvlshift_array
+Creating placeholder cell definition.
+Call to undefined subcircuit EF_LSB_CAP
+Creating placeholder cell definition.
+Call to undefined subcircuit EF_MSB_CAP
+Creating placeholder cell definition.
+Call to undefined subcircuit EF_SC_CAP
+Creating placeholder cell definition.
+Call to undefined subcircuit EF_AMUX21x
+Creating placeholder cell definition.
+Call to undefined subcircuit simple_analog_switch
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_sc_hvl__diode_2
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_sc_hvl__lsbuflv2hv_1
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_sc_hvl__decap_4
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_sc_hvl__inv_2
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_pr__cap_mim_m3_1
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_pr__cap_mim_m3_2
+Creating placeholder cell definition.
+Call to undefined subcircuit simple_analog_switch_2
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_sc_hvl__nor2_1
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_sc_hvl__decap_8
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_pr__nfet_g5v0d10v5
+Creating placeholder cell definition.
+Call to undefined subcircuit sky130_fd_pr__pfet_g5v0d10v5
+Creating placeholder cell definition.
+
+Reading setup file /home/oem/eda/pdk/sky130A/libs.tech/netgen/sky130A_setup.tcl
+
+Model sky130_fd_pr__nfet_01v8 pin 1 == 3
+No property mult found for device sky130_fd_pr__nfet_01v8
+No property sa found for device sky130_fd_pr__nfet_01v8
+No property sb found for device sky130_fd_pr__nfet_01v8
+No property sd found for device sky130_fd_pr__nfet_01v8
+No property nf found for device sky130_fd_pr__nfet_01v8
+No property nrd found for device sky130_fd_pr__nfet_01v8
+No property nrs found for device sky130_fd_pr__nfet_01v8
+No property area found for device sky130_fd_pr__nfet_01v8
+No property perim found for device sky130_fd_pr__nfet_01v8
+No property topography found for device sky130_fd_pr__nfet_01v8
+Model sky130_fd_pr__nfet_g5v0d10v5 pin 1 == 3
+No property mult found for device sky130_fd_pr__nfet_g5v0d10v5
+No property sa found for device sky130_fd_pr__nfet_g5v0d10v5
+No property sb found for device sky130_fd_pr__nfet_g5v0d10v5
+No property sd found for device sky130_fd_pr__nfet_g5v0d10v5
+No property nf found for device sky130_fd_pr__nfet_g5v0d10v5
+No property nrd found for device sky130_fd_pr__nfet_g5v0d10v5
+No property nrs found for device sky130_fd_pr__nfet_g5v0d10v5
+No property area found for device sky130_fd_pr__nfet_g5v0d10v5
+No property perim found for device sky130_fd_pr__nfet_g5v0d10v5
+No property topography found for device sky130_fd_pr__nfet_g5v0d10v5
+Model sky130_fd_pr__nfet_g5v0d10v5 pin 1 == 3
+No property area found for device sky130_fd_pr__nfet_g5v0d10v5
+No property perim found for device sky130_fd_pr__nfet_g5v0d10v5
+No property topography found for device sky130_fd_pr__nfet_g5v0d10v5
+Model sky130_fd_pr__pfet_01v8_hvt pin 1 == 3
+No property mult found for device sky130_fd_pr__pfet_01v8_hvt
+No property sa found for device sky130_fd_pr__pfet_01v8_hvt
+No property sb found for device sky130_fd_pr__pfet_01v8_hvt
+No property sd found for device sky130_fd_pr__pfet_01v8_hvt
+No property nf found for device sky130_fd_pr__pfet_01v8_hvt
+No property nrd found for device sky130_fd_pr__pfet_01v8_hvt
+No property nrs found for device sky130_fd_pr__pfet_01v8_hvt
+No property area found for device sky130_fd_pr__pfet_01v8_hvt
+No property perim found for device sky130_fd_pr__pfet_01v8_hvt
+No property topography found for device sky130_fd_pr__pfet_01v8_hvt
+Model sky130_fd_pr__pfet_g5v0d10v5 pin 1 == 3
+No property mult found for device sky130_fd_pr__pfet_g5v0d10v5
+No property sa found for device sky130_fd_pr__pfet_g5v0d10v5
+No property sb found for device sky130_fd_pr__pfet_g5v0d10v5
+No property sd found for device sky130_fd_pr__pfet_g5v0d10v5
+No property nf found for device sky130_fd_pr__pfet_g5v0d10v5
+No property nrd found for device sky130_fd_pr__pfet_g5v0d10v5
+No property nrs found for device sky130_fd_pr__pfet_g5v0d10v5
+No property area found for device sky130_fd_pr__pfet_g5v0d10v5
+No property perim found for device sky130_fd_pr__pfet_g5v0d10v5
+No property topography found for device sky130_fd_pr__pfet_g5v0d10v5
+Model sky130_fd_pr__pfet_g5v0d10v5 pin 1 == 3
+No property area found for device sky130_fd_pr__pfet_g5v0d10v5
+No property perim found for device sky130_fd_pr__pfet_g5v0d10v5
+No property topography found for device sky130_fd_pr__pfet_g5v0d10v5
+No property value found for device sky130_fd_pr__diode_pw2nd_11v0
+No property mult found for device sky130_fd_pr__diode_pw2nd_11v0
+No property area found for device sky130_fd_pr__cap_mim_m3_1
+No property value found for device sky130_fd_pr__cap_mim_m3_1
+No property mult found for device sky130_fd_pr__cap_mim_m3_1
+No property perim found for device sky130_fd_pr__cap_mim_m3_1
+No property mf found for device sky130_fd_pr__cap_mim_m3_1
+No property area found for device sky130_fd_pr__cap_mim_m3_1
+No property value found for device sky130_fd_pr__cap_mim_m3_1
+No property mult found for device sky130_fd_pr__cap_mim_m3_1
+No property perim found for device sky130_fd_pr__cap_mim_m3_1
+No property area found for device sky130_fd_pr__cap_mim_m3_2
+No property value found for device sky130_fd_pr__cap_mim_m3_2
+No property mult found for device sky130_fd_pr__cap_mim_m3_2
+No property perim found for device sky130_fd_pr__cap_mim_m3_2
+No property mf found for device sky130_fd_pr__cap_mim_m3_2
+No property area found for device sky130_fd_pr__cap_mim_m3_2
+No property value found for device sky130_fd_pr__cap_mim_m3_2
+No property mult found for device sky130_fd_pr__cap_mim_m3_2
+No property perim found for device sky130_fd_pr__cap_mim_m3_2
+Comparison output logged to file /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/cace_runs/RUN_2026-10-05_14-42-23/parameters/netgen_lvs/sky130_ef_ip__cdac3v_12bit_comp.out
+Logging to file "/mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/cace_runs/RUN_2026-10-05_14-42-23/parameters/netgen_lvs/sky130_ef_ip__cdac3v_12bit_comp.out" enabled
+Circuit sky130_fd_pr__nfet_g5v0d10v5 contains no devices.
+Circuit sky130_fd_pr__pfet_g5v0d10v5 contains no devices.
+Circuit sky130_fd_pr__cap_mim_m3_1 contains no devices.
+Circuit sky130_fd_pr__cap_mim_m3_2 contains no devices.
+
+Contents of circuit 1:  Circuit: 'simple_analog_switch_2'
+Circuit simple_analog_switch_2 contains 12 device instances.
+  Class: sky130_fd_pr__nfet_g5v0d10v5 instances:   4
+  Class: sky130_fd_pr__pfet_g5v0d10v5 instances:   8
+Circuit contains 6 nets.
+Contents of circuit 2:  Circuit: 'simple_analog_switch_2'
+Circuit simple_analog_switch_2 contains 2 device instances.
+  Class: sky130_fd_pr__nfet_g5v0d10v5 instances:   1
+  Class: sky130_fd_pr__pfet_g5v0d10v5 instances:   1
+Circuit contains 6 nets.
+
+Circuit was modified by parallel/series device merging.
+New circuit summary:
+
+Contents of circuit 1:  Circuit: 'simple_analog_switch_2'
+Circuit simple_analog_switch_2 contains 2 device instances.
+  Class: sky130_fd_pr__nfet_g5v0d10v5 instances:   1
+  Class: sky130_fd_pr__pfet_g5v0d10v5 instances:   1
+Circuit contains 6 nets.
+Contents of circuit 2:  Circuit: 'simple_analog_switch_2'
+Circuit simple_analog_switch_2 contains 2 device instances.
+  Class: sky130_fd_pr__nfet_g5v0d10v5 instances:   1
+  Class: sky130_fd_pr__pfet_g5v0d10v5 instances:   1
+Circuit contains 6 nets.
+
+Circuit 1 contains 2 devices, Circuit 2 contains 2 devices.
+Circuit 1 contains 6 nets,    Circuit 2 contains 6 nets.
+
+Circuit sky130_fd_sc_hvl__inv_2 contains no devices.
+Circuit sky130_fd_sc_hvl__decap_8 contains no devices.
+Circuit sky130_fd_sc_hvl__nor2_1 contains no devices.
+
+Contents of circuit 1:  Circuit: 'simple_analog_switch'
+Circuit simple_analog_switch contains 12 device instances.
+  Class: sky130_fd_pr__nfet_g5v0d10v5 instances:   4
+  Class: sky130_fd_pr__pfet_g5v0d10v5 instances:   8
+Circuit contains 6 nets.
+Contents of circuit 2:  Circuit: 'simple_analog_switch'
+Circuit simple_analog_switch contains 6 device instances.
+  Class: sky130_fd_pr__nfet_g5v0d10v5 instances:   3
+  Class: sky130_fd_pr__pfet_g5v0d10v5 instances:   3
+Circuit contains 6 nets.
+
+Circuit was modified by parallel/series device merging.
+New circuit summary:
+
+Contents of circuit 1:  Circuit: 'simple_analog_switch'
+Circuit simple_analog_switch contains 6 device instances.
+  Class: sky130_fd_pr__nfet_g5v0d10v5 instances:   3
+  Class: sky130_fd_pr__pfet_g5v0d10v5 instances:   3
+Circuit contains 6 nets.
+Contents of circuit 2:  Circuit: 'simple_analog_switch'
+Circuit simple_analog_switch contains 6 device instances.
+  Class: sky130_fd_pr__nfet_g5v0d10v5 instances:   3
+  Class: sky130_fd_pr__pfet_g5v0d10v5 instances:   3
+Circuit contains 6 nets.
+
+Circuit 1 contains 6 devices, Circuit 2 contains 6 devices.
+Circuit 1 contains 6 nets,    Circuit 2 contains 6 nets.
+
+
+Contents of circuit 1:  Circuit: 'EF_AMUX21x'
+Circuit EF_AMUX21x contains 14 device instances.
+  Class: sky130_fd_sc_hvl__nor2_1 instances:   2
+  Class: simple_analog_switch_2 instances:   3
+  Class: sky130_fd_sc_hvl__inv_2 instances:   5
+  Class: sky130_fd_sc_hvl__decap_8 instances:   4
+Circuit contains 76 nets, and 1 disconnected pin.
+Contents of circuit 2:  Circuit: 'EF_AMUX21x'
+Circuit EF_AMUX21x contains 14 device instances.
+  Class: sky130_fd_sc_hvl__nor2_1 instances:   2
+  Class: simple_analog_switch_2 instances:   3
+  Class: sky130_fd_sc_hvl__inv_2 instances:   5
+  Class: sky130_fd_sc_hvl__decap_8 instances:   4
+Circuit contains 76 nets.
+
+Circuit was modified by parallel/series device merging.
+New circuit summary:
+
+Contents of circuit 1:  Circuit: 'EF_AMUX21x'
+Circuit EF_AMUX21x contains 11 device instances.
+  Class: sky130_fd_sc_hvl__nor2_1 instances:   2
+  Class: simple_analog_switch_2 instances:   3
+  Class: sky130_fd_sc_hvl__inv_2 instances:   5
+  Class: sky130_fd_sc_hvl__decap_8 instances:   1
+Circuit contains 76 nets, and 1 disconnected pin.
+Contents of circuit 2:  Circuit: 'EF_AMUX21x'
+Circuit EF_AMUX21x contains 11 device instances.
+  Class: sky130_fd_sc_hvl__nor2_1 instances:   2
+  Class: simple_analog_switch_2 instances:   3
+  Class: sky130_fd_sc_hvl__inv_2 instances:   5
+  Class: sky130_fd_sc_hvl__decap_8 instances:   1
+Circuit contains 76 nets.
+
+Circuit 1 contains 11 devices, Circuit 2 contains 11 devices.
+Circuit 1 contains 64 nets,    Circuit 2 contains 64 nets.
+
+  Flattening non-matched subcircuits EF_AMUX21x EF_AMUX21x
+
+Flattening instances of EF_AMUX21x in file /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/project/netlist/layout/sky130_ef_ip__cdac3v_12bit.spice
+Flattening instances of EF_AMUX21x in file /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/project/netlist/schematic/sky130_ef_ip__cdac3v_12bit.spice
+Circuit sky130_fd_sc_hvl__decap_4 contains no devices.
+Circuit sky130_fd_sc_hvl__diode_2 contains no devices.
+Circuit sky130_fd_sc_hvl__lsbuflv2hv_1 contains no devices.
+
+Contents of circuit 1:  Circuit: 'EF_SW_RST'
+Circuit EF_SW_RST contains 2 device instances.
+  Class: simple_analog_switch  instances:   2
+Circuit contains 7 nets, and 4 disconnected pins.
+Contents of circuit 2:  Circuit: 'EF_SW_RST'
+Circuit EF_SW_RST contains 2 device instances.
+  Class: simple_analog_switch  instances:   2
+Circuit contains 7 nets, and 1 disconnected pin.
+
+Circuit 1 contains 2 devices, Circuit 2 contains 2 devices.
+Circuit 1 contains 7 nets,    Circuit 2 contains 7 nets.
+
+  Flattening non-matched subcircuits EF_SW_RST EF_SW_RST
+
+Flattening instances of EF_SW_RST in file /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/project/netlist/layout/sky130_ef_ip__cdac3v_12bit.spice
+Flattening instances of EF_SW_RST in file /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/project/netlist/schematic/sky130_ef_ip__cdac3v_12bit.spice
+
+Contents of circuit 1:  Circuit: 'EF_AMUX0201_ARRAY1'
+Circuit EF_AMUX0201_ARRAY1 contains 132 device instances.
+  Class: sky130_fd_sc_hvl__nor2_1 instances:  24
+  Class: simple_analog_switch_2 instances:  36
+  Class: sky130_fd_sc_hvl__inv_2 instances:  60
+  Class: sky130_fd_sc_hvl__decap_8 instances:  12
+Circuit contains 836 nets, and 1 disconnected pin.
+Contents of circuit 2:  Circuit: 'EF_AMUX0201_ARRAY1'
+Circuit EF_AMUX0201_ARRAY1 contains 132 device instances.
+  Class: sky130_fd_sc_hvl__nor2_1 instances:  24
+  Class: simple_analog_switch_2 instances:  36
+  Class: sky130_fd_sc_hvl__inv_2 instances:  60
+  Class: sky130_fd_sc_hvl__decap_8 instances:  12
+Circuit contains 835 nets.
+
+Circuit was modified by parallel/series device merging.
+New circuit summary:
+
+Contents of circuit 1:  Circuit: 'EF_AMUX0201_ARRAY1'
+Circuit EF_AMUX0201_ARRAY1 contains 121 device instances.
+  Class: sky130_fd_sc_hvl__nor2_1 instances:  24
+  Class: simple_analog_switch_2 instances:  36
+  Class: sky130_fd_sc_hvl__inv_2 instances:  60
+  Class: sky130_fd_sc_hvl__decap_8 instances:   1
+Circuit contains 836 nets, and 1 disconnected pin.
+Contents of circuit 2:  Circuit: 'EF_AMUX0201_ARRAY1'
+Circuit EF_AMUX0201_ARRAY1 contains 121 device instances.
+  Class: sky130_fd_sc_hvl__nor2_1 instances:  24
+  Class: simple_analog_switch_2 instances:  36
+  Class: sky130_fd_sc_hvl__inv_2 instances:  60
+  Class: sky130_fd_sc_hvl__decap_8 instances:   1
+Circuit contains 835 nets.
+
+Circuit 1 contains 121 devices, Circuit 2 contains 121 devices.
+Circuit 1 contains 648 nets,    Circuit 2 contains 647 nets. *** MISMATCH ***
+
+  Flattening non-matched subcircuits EF_AMUX0201_ARRAY1 EF_AMUX0201_ARRAY1
+
+Flattening instances of EF_AMUX0201_ARRAY1 in file /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/project/netlist/layout/sky130_ef_ip__cdac3v_12bit.spice
+Flattening instances of EF_AMUX0201_ARRAY1 in file /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/project/netlist/schematic/sky130_ef_ip__cdac3v_12bit.spice
+
+Contents of circuit 1:  Circuit: 'EF_BANK_CAP_12'
+Circuit EF_BANK_CAP_12 contains 380 device instances.
+  Class: sky130_fd_pr__cap_mim_m3_1 instances: 190
+  Class: sky130_fd_pr__cap_mim_m3_2 instances: 190
+Circuit contains 10 nets, and 1 disconnected pin.
+Contents of circuit 2:  Circuit: 'EF_BANK_CAP_12'
+Circuit EF_BANK_CAP_12 contains 34 device instances.
+  Class: sky130_fd_pr__cap_mim_m3_1 instances:  17
+  Class: sky130_fd_pr__cap_mim_m3_2 instances:  17
+Circuit contains 16 nets.
+
+Circuit was modified by parallel/series device merging.
+New circuit summary:
+
+Contents of circuit 1:  Circuit: 'EF_BANK_CAP_12'
+Circuit EF_BANK_CAP_12 contains 20 device instances.
+  Class: sky130_fd_pr__cap_mim_m3_1 instances:  10
+  Class: sky130_fd_pr__cap_mim_m3_2 instances:  10
+Circuit contains 10 nets, and 1 disconnected pin.
+Contents of circuit 2:  Circuit: 'EF_BANK_CAP_12'
+Circuit EF_BANK_CAP_12 contains 30 device instances.
+  Class: sky130_fd_pr__cap_mim_m3_1 instances:  15
+  Class: sky130_fd_pr__cap_mim_m3_2 instances:  15
+Circuit contains 16 nets.
+
+Circuit 1 contains 20 devices, Circuit 2 contains 30 devices. *** MISMATCH ***
+Circuit 1 contains 10 nets,    Circuit 2 contains 16 nets. *** MISMATCH ***
+
+  Flattening non-matched subcircuits EF_BANK_CAP_12 EF_BANK_CAP_12
+
+Flattening instances of EF_BANK_CAP_12 in file /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/project/netlist/layout/sky130_ef_ip__cdac3v_12bit.spice
+Flattening instances of EF_BANK_CAP_12 in file /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/project/netlist/schematic/sky130_ef_ip__cdac3v_12bit.spice
+
+Contents of circuit 1:  Circuit: 'cdac_lvlshift_array'
+Circuit cdac_lvlshift_array contains 44 device instances.
+  Class: sky130_fd_sc_hvl__diode_2 instances:  14
+  Class: sky130_fd_sc_hvl__inv_2 instances:   1
+  Class: sky130_fd_sc_hvl__decap_4 instances:  15
+  Class: sky130_fd_sc_hvl__lsbuflv2hv_1 instances:  14
+Circuit contains 266 nets.
+Contents of circuit 2:  Circuit: 'cdac_lvlshift_array'
+Circuit cdac_lvlshift_array contains 44 device instances.
+  Class: sky130_fd_sc_hvl__diode_2 instances:  14
+  Class: sky130_fd_sc_hvl__inv_2 instances:   1
+  Class: sky130_fd_sc_hvl__decap_4 instances:  15
+  Class: sky130_fd_sc_hvl__lsbuflv2hv_1 instances:  14
+Circuit contains 266 nets.
+
+Circuit was modified by parallel/series device merging.
+New circuit summary:
+
+Contents of circuit 1:  Circuit: 'cdac_lvlshift_array'
+Circuit cdac_lvlshift_array contains 30 device instances.
+  Class: sky130_fd_sc_hvl__diode_2 instances:  14
+  Class: sky130_fd_sc_hvl__inv_2 instances:   1
+  Class: sky130_fd_sc_hvl__decap_4 instances:   1
+  Class: sky130_fd_sc_hvl__lsbuflv2hv_1 instances:  14
+Circuit contains 266 nets.
+Contents of circuit 2:  Circuit: 'cdac_lvlshift_array'
+Circuit cdac_lvlshift_array contains 30 device instances.
+  Class: sky130_fd_sc_hvl__diode_2 instances:  14
+  Class: sky130_fd_sc_hvl__inv_2 instances:   1
+  Class: sky130_fd_sc_hvl__decap_4 instances:   1
+  Class: sky130_fd_sc_hvl__lsbuflv2hv_1 instances:  14
+Circuit contains 266 nets.
+
+Circuit 1 contains 30 devices, Circuit 2 contains 30 devices.
+Circuit 1 contains 210 nets,    Circuit 2 contains 210 nets.
+
+  Flattening non-matched subcircuits cdac_lvlshift_array cdac_lvlshift_array
+
+Flattening instances of cdac_lvlshift_array in file /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/project/netlist/layout/sky130_ef_ip__cdac3v_12bit.spice
+Flattening instances of cdac_lvlshift_array in file /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/project/netlist/schematic/sky130_ef_ip__cdac3v_12bit.spice
+
+Contents of circuit 1:  Circuit: 'sky130_ef_ip__cdac3v_12bit'
+Circuit sky130_ef_ip__cdac3v_12bit contains 173 device instances.
+  Class: simple_analog_switch  instances:   2
+  Class: sky130_fd_sc_hvl__nor2_1 instances:  24
+  Class: sky130_fd_pr__cap_mim_m3_1 instances:  10
+  Class: sky130_fd_pr__cap_mim_m3_2 instances:  10
+  Class: simple_analog_switch_2 instances:  36
+  Class: sky130_fd_sc_hvl__diode_2 instances:  14
+  Class: sky130_fd_sc_hvl__inv_2 instances:  61
+  Class: sky130_fd_sc_hvl__decap_4 instances:   1
+  Class: sky130_fd_sc_hvl__decap_8 instances:   1
+  Class: sky130_fd_sc_hvl__lsbuflv2hv_1 instances:  14
+Circuit contains 1084 nets.
+Contents of circuit 2:  Circuit: 'sky130_ef_ip__cdac3v_12bit'
+Circuit sky130_ef_ip__cdac3v_12bit contains 183 device instances.
+  Class: simple_analog_switch  instances:   2
+  Class: sky130_fd_sc_hvl__nor2_1 instances:  24
+  Class: sky130_fd_pr__cap_mim_m3_1 instances:  15
+  Class: sky130_fd_pr__cap_mim_m3_2 instances:  15
+  Class: simple_analog_switch_2 instances:  36
+  Class: sky130_fd_sc_hvl__diode_2 instances:  14
+  Class: sky130_fd_sc_hvl__inv_2 instances:  61
+  Class: sky130_fd_sc_hvl__decap_4 instances:   1
+  Class: sky130_fd_sc_hvl__decap_8 instances:   1
+  Class: sky130_fd_sc_hvl__lsbuflv2hv_1 instances:  14
+Circuit contains 1093 nets.
+
+Circuit 1 contains 173 devices, Circuit 2 contains 183 devices. *** MISMATCH ***
+Circuit 1 contains 840 nets,    Circuit 2 contains 846 nets. *** MISMATCH ***
+
+
+Final result: 
+Top level cell failed pin matching.
+
+Logging to file "/mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_baseline/cace_runs/RUN_2026-10-05_14-42-23/parameters/netgen_lvs/sky130_ef_ip__cdac3v_12bit_comp.out" disabled
+LVS Done.

@@ -1,0 +1,59 @@
+
+Magic 8.3 revision 489 - Compiled on Thu Aug 22 13:45:15 UTC 2024.
+Starting magic under Tcl interpreter
+Using the terminal as the console.
+Using NULL graphics device.
+Processing system .magicrc file
+Sourcing design .magicrc for technology sky130A ...
+2 Magic internal units = 1 Lambda
+Input style sky130(): scaleFactor=2, multiplier=2
+The following types are not handled by extraction and will be treated as non-electrical types:
+    ubm 
+Scaled tech values by 2 / 1 to match internal grid scaling
+Loading sky130A Device Generator Menu ...
+Using technology "sky130A", version 1.0.532-2-gc6d73a3
+Cell sky130_ef_ip__cdac3v_12bit read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+DRC style is now "drc(full)"
+Cell cdac_via_3cut read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell EF_SW_RST read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell simple_analog_switch read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag/../dependencies/sky130_ef_ip__analog_switches/mag
+Cell sky130_fd_pr__pfet_g5v0d10v5_KL97Y6 read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag/../dependencies/sky130_ef_ip__analog_switches/mag/paramcells
+Cell sky130_fd_pr__pfet_g5v0d10v5_KLHCT5 read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag/../dependencies/sky130_ef_ip__analog_switches/mag/paramcells
+Cell sky130_fd_pr__nfet_g5v0d10v5_WSEQJ8 read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag/../dependencies/sky130_ef_ip__analog_switches/mag/paramcells
+Scaled magic input cell sky130_fd_pr__nfet_g5v0d10v5_WSEQJ8 geometry by factor of 2
+Cell sky130_fd_pr__nfet_g5v0d10v5_EJGQFX read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag/../dependencies/sky130_ef_ip__analog_switches/mag/paramcells
+Cell iso_switch_via read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag/../dependencies/sky130_ef_ip__analog_switches/mag
+Scaled magic input cell iso_switch_via geometry by factor of 2
+Cell cdac_dummy_switch read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell cdac_lvlshift_array read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell sky130_fd_sc_hvl__lsbuflv2hv_1 read from path /home/oem/eda/pdk/sky130A/libs.ref/sky130_fd_sc_hvl/mag
+Cell sky130_fd_sc_hvl__inv_2 read from path /home/oem/eda/pdk/sky130A/libs.ref/sky130_fd_sc_hvl/mag
+Cell sky130_fd_sc_hvl__fill_2 read from path /home/oem/eda/pdk/sky130A/libs.ref/sky130_fd_sc_hvl/mag
+Cell sky130_fd_sc_hvl__fill_1 read from path /home/oem/eda/pdk/sky130A/libs.ref/sky130_fd_sc_hvl/mag
+Cell sky130_fd_sc_hvl__diode_2 read from path /home/oem/eda/pdk/sky130A/libs.ref/sky130_fd_sc_hvl/mag
+Cell sky130_fd_sc_hvl__decap_4 read from path /home/oem/eda/pdk/sky130A/libs.ref/sky130_fd_sc_hvl/mag
+Cell EF_AMUX0201_ARRAY1 read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell EF_AMUX21x read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell sky130_fd_sc_hvl__nor2_1 read from path /home/oem/eda/pdk/sky130A/libs.ref/sky130_fd_sc_hvl/mag
+Cell sky130_fd_sc_hvl__decap_8 read from path /home/oem/eda/pdk/sky130A/libs.ref/sky130_fd_sc_hvl/mag
+Cell simple_analog_switch_2 read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag/../dependencies/sky130_ef_ip__analog_switches/mag
+Cell sky130_fd_pr__nfet_g5v0d10v5_N9BQ2J read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag/../dependencies/sky130_ef_ip__analog_switches/mag/paramcells
+Cell sky130_fd_pr__pfet_g5v0d10v5_KLJ6Y6 read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag/../dependencies/sky130_ef_ip__analog_switches/mag/paramcells
+Cell iso_switch_via_med read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag/../dependencies/sky130_ef_ip__analog_switches/mag
+Scaled magic input cell iso_switch_via_med geometry by factor of 2
+Cell EF_BANK_CAP_12 read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell cdac_ratioed_cap read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell cdac_cross_short read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell cdac_cross2_short read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell caparray_connect_near read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell cap_array_half read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell cdac_unit_cap read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell caparray_connect_split read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell caparray_connect_none read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Cell caparray_connect_far read from path /mnt/d/MyWork/Veriolg_MA/analog/repairs/cdac_tap_fix/project/mag
+Processing timestamp mismatches.
+Timestamp mismatches found in these cells: simple_analog_switch, sky130_fd_pr__pfet_g5v0d10v5_KL97Y6, sky130_fd_pr__pfet_g5v0d10v5_KLHCT5, sky130_fd_pr__nfet_g5v0d10v5_WSEQJ8, sky130_fd_pr__nfet_g5v0d10v5_EJGQFX, iso_switch_via, cdac_lvlshift_array, sky130_fd_sc_hvl__lsbuflv2hv_1, sky130_fd_sc_hvl__fill_2, sky130_fd_sc_hvl__fill_1, sky130_fd_sc_hvl__diode_2, sky130_fd_sc_hvl__decap_4, EF_AMUX0201_ARRAY1, sky130_fd_sc_hvl__inv_2, EF_AMUX21x, sky130_fd_sc_hvl__nor2_1, sky130_fd_sc_hvl__decap_8, simple_analog_switch_2.
+Loading DRC CIF style.
+drc = 0
+No errors found.
+

@@ -1,0 +1,309 @@
+VERSION 5.7 ;
+  NOWIREEXTENSIONATPIN ON ;
+  DIVIDERCHAR "/" ;
+  BUSBITCHARS "[]" ;
+MACRO sky130_ef_ip__adc3v_12bit
+  CLASS BLOCK ;
+  FOREIGN sky130_ef_ip__adc3v_12bit ;
+  ORIGIN 0.000 0.000 ;
+  SIZE 223.710 BY 293.365 ;
+  PIN adc_dac_val[11]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met2 ;
+        RECT 94.230 0.000 94.370 1.500 ;
+    END
+  END adc_dac_val[11]
+  PIN adc_dac_val[10]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met2 ;
+        RECT 93.670 0.000 93.810 1.500 ;
+    END
+  END adc_dac_val[10]
+  PIN adc_dac_val[9]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met2 ;
+        RECT 93.110 0.000 93.250 1.500 ;
+    END
+  END adc_dac_val[9]
+  PIN adc_dac_val[8]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met2 ;
+        RECT 92.550 0.000 92.690 1.500 ;
+    END
+  END adc_dac_val[8]
+  PIN adc_dac_val[7]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met2 ;
+        RECT 91.990 0.000 92.130 1.500 ;
+    END
+  END adc_dac_val[7]
+  PIN adc_dac_val[6]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met2 ;
+        RECT 91.430 0.000 91.570 1.500 ;
+    END
+  END adc_dac_val[6]
+  PIN adc_dac_val[5]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met2 ;
+        RECT 90.870 0.000 91.010 1.500 ;
+    END
+  END adc_dac_val[5]
+  PIN adc_dac_val[4]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met2 ;
+        RECT 90.310 0.000 90.450 1.500 ;
+    END
+  END adc_dac_val[4]
+  PIN adc_dac_val[3]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met2 ;
+        RECT 89.750 0.000 89.890 1.500 ;
+    END
+  END adc_dac_val[3]
+  PIN adc_dac_val[2]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met2 ;
+        RECT 89.190 0.000 89.330 1.500 ;
+    END
+  END adc_dac_val[2]
+  PIN adc_dac_val[1]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met2 ;
+        RECT 88.630 0.000 88.770 1.500 ;
+    END
+  END adc_dac_val[1]
+  PIN adc_dac_val[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met2 ;
+        RECT 88.070 0.000 88.210 1.500 ;
+    END
+  END adc_dac_val[0]
+  PIN adc_ena
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met3 ;
+        RECT 223.080 152.480 223.710 152.790 ;
+    END
+  END adc_ena
+  PIN adc_reset
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met2 ;
+        RECT 80.160 0.000 80.340 1.500 ;
+    END
+  END adc_reset
+  PIN adc_comp_out
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    ANTENNADIFFAREA 4.350000 ;
+    PORT
+      LAYER met3 ;
+        RECT 222.830 144.305 223.515 144.605 ;
+    END
+  END adc_comp_out
+  PIN adc_hold
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.859200 ;
+    ANTENNADIFFAREA 0.607200 ;
+    PORT
+      LAYER met2 ;
+        RECT 79.245 0.000 79.425 1.500 ;
+    END
+  END adc_hold
+  PIN adc_vrefL
+    DIRECTION INOUT ;
+    USE ANALOG ;
+    ANTENNADIFFAREA 121.799995 ;
+    PORT
+      LAYER met4 ;
+        RECT 88.700 290.235 90.955 293.310 ;
+    END
+  END adc_vrefL
+  PIN vssd
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 0.065 201.435 7.905 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 187.535 0.065 192.635 134.895 ;
+    END
+  END vssd
+  PIN adc_vrefH
+    DIRECTION INOUT ;
+    USE ANALOG ;
+    ANTENNADIFFAREA 121.799995 ;
+    PORT
+      LAYER met4 ;
+        RECT 93.255 290.290 95.510 293.365 ;
+    END
+  END adc_vrefH
+  PIN adc_trim
+    DIRECTION INPUT ;
+    USE ANALOG ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 214.605 0.830 215.280 ;
+    END
+  END adc_trim
+  PIN adc_vCM
+    DIRECTION INOUT ;
+    USE ANALOG ;
+    ANTENNAGATEAREA 70.000000 ;
+    ANTENNADIFFAREA 121.799995 ;
+    PORT
+      LAYER met4 ;
+        RECT 178.920 290.465 180.755 293.355 ;
+    END
+  END adc_vCM
+  PIN adc_in
+    DIRECTION INPUT ;
+    USE ANALOG ;
+    ANTENNADIFFAREA 10.440000 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 146.050 1.265 146.810 ;
+    END
+  END adc_in
+  PIN vccd
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 9.690 201.315 17.530 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 196.185 9.690 201.280 129.365 ;
+    END
+  END vccd
+  PIN vdda
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 285.680 202.235 293.150 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 196.850 201.580 201.950 293.300 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 218.240 145.365 222.055 205.395 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 201.950 201.580 218.240 205.395 ;
+    END
+  END vdda
+  PIN vssa
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met5 ;
+        RECT 0.000 276.005 202.235 283.475 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 187.530 139.270 192.635 284.310 ;
+    END
+  END vssa
+  OBS
+      LAYER nwell ;
+        RECT 2.195 14.775 223.430 266.200 ;
+      LAYER li1 ;
+        RECT 2.630 14.905 223.100 265.810 ;
+      LAYER met1 ;
+        RECT 0.000 14.875 223.100 269.945 ;
+      LAYER met2 ;
+        RECT 0.035 1.780 223.200 275.780 ;
+        RECT 0.035 1.500 78.965 1.780 ;
+        RECT 79.705 1.500 79.880 1.780 ;
+        RECT 80.620 1.500 87.790 1.780 ;
+        RECT 94.650 1.500 223.200 1.780 ;
+      LAYER met3 ;
+        RECT 0.830 215.680 223.200 278.610 ;
+        RECT 1.230 214.205 223.200 215.680 ;
+        RECT 0.830 153.190 223.200 214.205 ;
+        RECT 0.830 152.080 222.680 153.190 ;
+        RECT 0.830 147.210 223.200 152.080 ;
+        RECT 1.665 145.650 223.200 147.210 ;
+        RECT 0.830 145.005 223.200 145.650 ;
+        RECT 0.830 143.905 222.430 145.005 ;
+        RECT 0.830 18.230 223.200 143.905 ;
+      LAYER met4 ;
+        RECT 1.235 289.835 88.300 293.355 ;
+        RECT 91.355 289.890 92.855 293.355 ;
+        RECT 95.910 290.065 178.520 293.355 ;
+        RECT 181.155 290.065 185.000 293.355 ;
+        RECT 95.910 289.890 185.000 290.065 ;
+        RECT 91.355 289.835 185.000 289.890 ;
+        RECT 1.235 284.710 185.000 289.835 ;
+        RECT 1.235 138.870 185.000 284.710 ;
+        RECT 1.235 135.295 185.000 138.870 ;
+        RECT 1.235 0.065 185.000 135.295 ;
+      LAYER met5 ;
+        RECT 29.155 28.510 154.505 265.525 ;
+  END
+END sky130_ef_ip__adc3v_12bit
+END LIBRARY
+

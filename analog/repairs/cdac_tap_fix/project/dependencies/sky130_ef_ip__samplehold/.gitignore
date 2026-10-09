@@ -1,0 +1,12 @@
+cace/*spice
+cace/xschemrc
+cace/sky130_ef_ip__samplehold_out.txt
+ngspice/*
+netlist/*
+spice/*
+xschem/*.spice
+mag/*.ext
+mag/*.res.ext
+mag/*.nodes
+mag/*.sim
+.spiceinit

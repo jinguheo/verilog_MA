@@ -1,0 +1,22 @@
+** sch_path: /home/tim/gits/sky130_ef_ip__analog_switches/xschem/simplest_analog_switch_ena1v8.sch
+.subckt simplest_analog_switch_ena1v8 avss on out in avdd dvdd dvss
+*.PININFO on:I avss:B out:B in:B avdd:B dvdd:B dvss:B
+x2 on dvdd dvss dvss avdd avdd net3 sky130_fd_sc_hvl__lsbuflv2hv_1
+x3 net1 net2 avss out in avdd simple_analog_switch_2
+x1 net3 dvss dvss avdd avdd net2 sky130_fd_sc_hvl__inv_2
+x4 net2 dvss dvss avdd avdd net1 sky130_fd_sc_hvl__inv_2
+x5[1] dvss dvss avdd avdd sky130_fd_sc_hvl__decap_4
+x5[0] dvss dvss avdd avdd sky130_fd_sc_hvl__decap_4
+x5 on dvss dvss avdd avdd sky130_fd_sc_hvl__diode_2
+.ends
+
+* expanding   symbol:  simple_analog_switch_2.sym # of pins=6
+** sym_path: /home/tim/gits/sky130_ef_ip__analog_switches/xschem/simple_analog_switch_2.sym
+** sch_path: /home/tim/gits/sky130_ef_ip__analog_switches/xschem/simple_analog_switch_2.sch
+.subckt simple_analog_switch_2 on off vss out in vdd
+*.PININFO on:I out:B vdd:B vss:B in:B off:I
+XM1 in on out vss sky130_fd_pr__nfet_g5v0d10v5 L=0.5 W=20 nf=4 m=1
+XM2 in off out vdd sky130_fd_pr__pfet_g5v0d10v5 L=0.5 W=40 nf=8 m=1
+.ends
+
+.end

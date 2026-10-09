@@ -1,0 +1,4 @@
+runs/*
+cace/templates/*.sym
+cace/templates/*.spice
+cace/runs/*
