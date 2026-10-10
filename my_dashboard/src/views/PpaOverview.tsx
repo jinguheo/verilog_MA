@@ -270,6 +270,18 @@ export default function PpaOverview() {
       <p className="ppaov-note">&quot;미실행&quot;은 통과가 아니라 <b>그 단계까지 아직 안 갔다</b>는 뜻이고 최종 run에서는 반드시 채워져야 합니다. &quot;대체됨&quot;은 이전 run이라 따로 돌릴 필요가 없다는 뜻입니다. 이어받은 run(<code>ppa3_antfix3_signoff</code>, <code>ppa3_fin*</code>)은 앞 단계 값을 이전 run의 상태에서 물려받습니다. 위반이 있어도 flow를 끝까지 돌리는 설정(<code>config_antfix4</code>)에서도 개수는 숨기지 않고 그대로 기록됩니다.</p>
     </section>
     <section className="card">
+      <div className="card-title"><div><small className="kicker">PPA 3 · OPEN ISSUES</small><h3>PPA 3 현재 이슈와 해결 방안 (2026-10-10)</h3></div><span className="connection">풀지 못한 항목만</span></div>
+      <p className="ppaov-note">통과한 항목: 타이밍(setup +9.05 / hold +0.13 ns) · antenna 0 · route DRC 0 · XOR 0 · KLayout DRC 0 · SRAM 밖 Magic DRC 0 (ADC를 x 40 → 30.24로 이동, <code>ppa3_adcslew</code>/<code>ppa3_adcslew2_signoff</code>). 아래는 남은 이슈와 해결 방안입니다. 해결 방안은 아직 실행하지 않은 제안이며 효과는 검증 전입니다.</p>
+      <div className="data-table"><table><thead><tr><th>#</th><th>이슈</th><th>현재 상태 (실측)</th><th>해결 방안</th></tr></thead><tbody>
+        <tr><td>1</td><td><b>ADC 전원 핀 3개 미연결 → LVS 7건</b></td><td>ADC <code>vccd</code>·<code>vdda</code>·<code>vssa</code>가 전원 grid에 물리적으로 연결되지 않음(<code>vssd</code>만 연결). PDN 로그에 &quot;No via inserted between met4 and met5&quot;가 반복(예: x 217.8, y 347.3 / 426.0). strap 위치(<code>FP_PDN_VOFFSET</code>) 3가지를 바꿔도 동일(5,134건) → offset은 원인이 아님. LVS는 363 → 7건까지 감소.</td><td><b>(a)</b> 실패한 via 좌표를 ADC LEF의 rail·장애물(OBS met4/met5)과 겹쳐 원인 확인(가장 먼저) · <b>(b)</b> <code>PDN_MACRO_CONNECTIONS</code>를 핀별로 나눠 한 핀씩 연결해 보며 두 줄 처리 문제인지 확인 · <b>(c)</b> via 규칙(via4.1/4.2)을 지키는 크기로 연결 조각을 다시 설계(이전 시도는 KLayout 185건을 만듦) · <b>(d)</b> 정석: 아날로그 <code>vdda/vssa</code>를 별도 전원 도메인으로 정의하고 ADC 주변에 전용 strap을 둠 — top에 새 전원 핀이 생기고 3.3 V/1.8 V 구조 결정이 필요</td></tr>
+        <tr><td>2</td><td><b>max-slew 위반 15건</b></td><td>설정으로 42 → 15건까지 감소. SRAM22 입력 핀의 lib 한계 <code>max_transition</code> 0.351 ns를 넘는 핀이 원인 후보.</td><td>SRAM 입력 핀 앞에 buffer 삽입 · <code>DESIGN_REPAIR_MAX_SLEW_PCT</code>·<code>CTS_MAX_SLEW</code>를 더 낮춤 · repair 순서(다이오드 삽입 후 재수리) 조정</td></tr>
+        <tr><td>3</td><td><b>SRAM22 내부 Magic DRC 15,859,501건</b></td><td>전부 macro 내부(일반 로직 규칙 위주). 배치·라우팅으로 줄일 수 없음.</td><td>macro 내부를 제외한 범위를 명시해 보고 · 제조 제출 시 대상 foundry/MPW 규칙 파일, waiver, 공급자 검증서 확인 · 필요하면 공급자에게 규칙 해석 문의</td></tr>
+        <tr><td>4</td><td><b>최종 run에 Magic DRC metric 없음</b></td><td>WSL이 꺼져 Magic DRC 단계의 XML 변환이 중단 → <code>ppa3_adcslew2_signoff</code>는 KLayout부터 이어받아 해당 metric이 비어 있음(위반 리포트 파일에는 있음: macro 밖 0건).</td><td>안정된 환경에서 Magic.DRC 단계를 처음부터 한 번 완주(메모리 여유 확보, 실행 1개씩) 후 metric 기록</td></tr>
+        <tr><td>5</td><td><b>CDAC 6건·ADC 비교기 19건 (<code>diff/tap.18,20</code>)</b></td><td>CDAC 6건은 복사본에서 0건으로 수정(원본 unchanged). 이 규칙은 PPA3 top-level GDS DRC에는 나타나지 않음.</td><td>PPA3 DRC에는 반영 불필요한지 먼저 확인 · 비교기 19건은 N-tap 이동이 필요해 아날로그 성능 영향 검토 후 결정</td></tr>
+        <tr><td>6</td><td><b>WSL 반복 종료로 긴 실행 중단</b></td><td>메모리 부족(Windows 저메모리 이벤트)과 원인 미확인 재시작으로 실행이 여러 번 끊김.</td><td>Magic DRC는 한 번에 1개만 실행 · keep-alive 유지 · 중단 시 마지막 완료 단계부터 이어받기(<code>123_resume_ppa3.sh</code>) · 결과 리포트 파일 단위로 확인</td></tr>
+      </tbody></table></div>
+    </section>
+    <section className="card">
       <div className="card-title"><div><small className="kicker">GLOSSARY</small><h3>antenna 위반이란? (PPA 3 baseline 2건 → 재실행 0건)</h3></div><span className="connection">용어 설명</span></div>
       <AntennaExplainer defaultOpen />
     </section>
