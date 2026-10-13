@@ -1,0 +1,15 @@
+from virtuoso_bridge import VirtuosoClient
+c = VirtuosoClient.from_env()
+def sk(s):
+    r = c.execute_skill(s)
+    print(">>", s.splitlines()[0][:90]); print("  ", (r.output or "")[:300], r.errors or "")
+sk('vvRuleSource()')
+sk('vvRules("met2")')
+sk('vvDirections()')
+sk('cv = dbOpenCellViewByType("testlib" "smoke_rules" "layout" "maskLayout" "w")')
+sk('dbCreateRect(cv list("met2" "drawing") list(list(-0.15 -0.15) list(0.15 0.15)))\ndbCreateRect(cv list("met2" "drawing") list(list(2.85 -0.15) list(3.15 0.15)))\ndbCreateRect(cv list("met2" "drawing") list(list(1.4 -1.0) list(1.6 1.0)))')
+sk('vvRoute(cv "met2" list(0 0) list(3 0))')
+sk('vvCheckRules(cv)')
+sk('dbCreatePath(cv list("met2" "drawing") list(list(0.0 0.24) list(1.2 0.24)) 0.14)')
+sk('vvCheckRules(cv)')
+sk('vvOfficialDrc(cv)')

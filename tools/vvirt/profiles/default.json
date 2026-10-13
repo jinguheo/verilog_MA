@@ -1,0 +1,16 @@
+{
+  "name": "default",
+  "description": "No habits: minimum rules, cells abutted, single via, no taps.",
+  "rules": {},
+  "habits": {
+    "directions": {"met1": "H", "met2": "V", "met3": "H", "met4": "V"},
+    "widthMultiple": {},
+    "spaceMultiple": 1.0,
+    "viasPerConnection": 1,
+    "snapGrid": 0.005,
+    "cellGap": 0.0,
+    "alternateRowFlip": false,
+    "tapCell": null,
+    "tapEnds": false
+  }
+}

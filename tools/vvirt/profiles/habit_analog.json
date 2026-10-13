@@ -1,0 +1,16 @@
+{
+  "name": "habit_analog",
+  "description": "Conservative designer habits: 1.5x spacing margin, 2x wire width on met2/met3, 2 vias per connection, one-site gap between cells, tap cells at both row ends, alternate rows flipped (VPWR/VGND sharing), 0.01 um grid.",
+  "rules": {"met2": {"minSpace": 0.20}, "met3": {"minSpace": 0.40}},
+  "habits": {
+    "directions": {"met1": "H", "met2": "V", "met3": "H", "met4": "V"},
+    "widthMultiple": {"met2": 2.0, "met3": 2.0},
+    "spaceMultiple": 1.5,
+    "viasPerConnection": 2,
+    "snapGrid": 0.01,
+    "cellGap": 0.46,
+    "alternateRowFlip": true,
+    "tapCell": "sky130_fd_sc_hd__tapvpwrvgnd_1",
+    "tapEnds": true
+  }
+}

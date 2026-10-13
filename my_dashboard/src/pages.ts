@@ -33,6 +33,8 @@ export const PAGES: PageMeta[] = [
     subtitle: '기존 배치 후보를 부모로 삼아 진화 탐색하고 SA로 개선하는 구현 계획을 정리합니다.' },
   { id: 'stdcells', label: 'Standard Cells', icon: '▤', section: 'experiments', title: 'Standard Cells — sky130A PDK',
     subtitle: 'sky130A 표준셀 라이브러리와 PDK 변경·복잡한 표준셀 실험을 정리합니다.' },
+  { id: 'vb', label: 'VB (Virtuoso Bridge)', icon: 'V', section: 'experiments', title: 'VB — Virtuoso Bridge + 가상 Virtuoso',
+    subtitle: 'virtuoso-bridge와 가상 Virtuoso(vvirt)로 LLM이 SKILL로 sky130 표준셀 레이아웃을 만들고 수정하는 구현·결과·한계를 정리합니다.' },
   { id: 'knowledge', label: 'Knowledge DB', icon: 'K', section: 'knowledge', title: 'Knowledge DB Overview',
     subtitle: '설계 지식 소스(스펙, 코드, 도구 문서)의 연결 상태를 확인합니다.' },
   { id: 'tools', label: 'Tool Comparison', icon: 'T', section: 'knowledge', title: 'EDA Tool Comparison',

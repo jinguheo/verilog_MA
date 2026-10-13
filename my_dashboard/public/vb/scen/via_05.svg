@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="328" viewBox="0 0 1480 328">
+<rect width="100%" height="100%" fill="#fbfbfb"/>
+<title>testlib/scen_via/layout</title>
+<text x="8" y="22" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="15" font-weight="bold" fill="#111">testlib / scen_via — 크기 4.50 × 0.50 µm (위에서 본 모습)</text>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="90.6,237.8 203.8,237.8 203.8,124.6 90.6,124.6"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="996.2,237.8 1109.4,237.8 1109.4,124.6 996.2,124.6"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="110.9,217.4 183.4,217.4 183.4,144.9 110.9,144.9"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="1016.6,217.4 1089.1,217.4 1089.1,144.9 1016.6,144.9"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="130.2,198.2 164.2,198.2 164.2,164.2 130.2,164.2"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="1035.8,198.2 1069.8,198.2 1069.8,164.2 1035.8,164.2"/>
+<polygon fill="#c95fd1" fill-opacity="0.55" stroke="#c95fd1" stroke-width="0.6" points="90.6,237.8 203.8,237.8 203.8,124.6 90.6,124.6"/>
+<polygon fill="#c95fd1" fill-opacity="0.55" stroke="#c95fd1" stroke-width="0.6" points="996.2,237.8 1109.4,237.8 1109.4,124.6 996.2,124.6"/>
+<polygon fill="#c95fd1" fill-opacity="0.55" stroke="#c95fd1" stroke-width="0.6" points="110.9,217.4 183.4,217.4 183.4,144.9 110.9,144.9"/>
+<polygon fill="#c95fd1" fill-opacity="0.55" stroke="#c95fd1" stroke-width="0.6" points="105.3,223.1 189.1,223.1 189.1,139.3 105.3,139.3"/>
+<polygon fill="#c95fd1" fill-opacity="0.55" stroke="#c95fd1" stroke-width="0.6" points="1016.6,217.4 1089.1,217.4 1089.1,144.9 1016.6,144.9"/>
+<polygon fill="#c95fd1" fill-opacity="0.55" stroke="#c95fd1" stroke-width="0.6" points="1010.9,223.1 1094.7,223.1 1094.7,139.3 1010.9,139.3"/>
+<polygon fill="#333333" fill-opacity="0.95" stroke="#333333" stroke-width="0.6" points="124.5,203.8 169.8,203.8 169.8,158.5 124.5,158.5"/>
+<polygon fill="#333333" fill-opacity="0.95" stroke="#333333" stroke-width="0.6" points="1030.2,203.8 1075.5,203.8 1075.5,158.5 1030.2,158.5"/>
+<polygon fill="#3fbfa0" fill-opacity="0.55" stroke="#3fbfa0" stroke-width="0.6" points="113.2,215.1 1086.8,215.1 1086.8,147.2 113.2,147.2"/>
+<polygon fill="#3fbfa0" fill-opacity="0.55" stroke="#3fbfa0" stroke-width="0.6" points="109.8,218.5 184.5,218.5 184.5,143.8 109.8,143.8"/>
+<polygon fill="#3fbfa0" fill-opacity="0.55" stroke="#3fbfa0" stroke-width="0.6" points="1015.5,218.5 1090.2,218.5 1090.2,143.8 1015.5,143.8"/>
+<text x="147.2" y="185.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="bold" fill="#222" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">met1 사각형</text>
+<text x="1052.8" y="185.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="bold" fill="#222" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">met1 사각형</text>
+<text x="147.2" y="185.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="bold" fill="#222" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">met2 사각형</text>
+<text x="1052.8" y="185.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="bold" fill="#222" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">met2 사각형</text>
+<text x="600.0" y="185.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="bold" fill="#222" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">met3 배선 폭0.3</text>
+<text x="155.2" y="175.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="normal" fill="#333" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">M1M2_PR</text>
+<text x="155.2" y="175.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="normal" fill="#333" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">M2M3_PR</text>
+<text x="1060.8" y="175.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="normal" fill="#333" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">M1M2_PR</text>
+<text x="1060.8" y="175.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="normal" fill="#333" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">M2M3_PR</text>
+<rect x="1206" y="8" width="274" height="306" rx="6" fill="#fff" stroke="#c8c8c8"/>
+<text x="1214" y="30" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="14" font-weight="bold" fill="#111">범례 — 색이 뜻하는 것</text>
+<rect x="1214" y="48" width="22" height="14" fill="#4a74d9" fill-opacity="0.6" stroke="#4a74d9"/>
+<text x="1244" y="59" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">met1</text>
+<text x="1244" y="72" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">금속1: 전원 레일(VPWR/VGND)·배선</text>
+<rect x="1214" y="76" width="22" height="14" fill="#222222" fill-opacity="0.95" stroke="#222222"/>
+<text x="1244" y="87" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">via (met1-met2)</text>
+<text x="1244" y="100" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">met1 ↔ met2 연결 비아</text>
+<rect x="1214" y="104" width="22" height="14" fill="#c95fd1" fill-opacity="0.6" stroke="#c95fd1"/>
+<text x="1244" y="115" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">met2</text>
+<text x="1244" y="128" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">금속2 배선</text>
+<rect x="1214" y="132" width="22" height="14" fill="#333333" fill-opacity="0.95" stroke="#333333"/>
+<text x="1244" y="143" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">via2 (met2-met3)</text>
+<text x="1244" y="156" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">met2 ↔ met3 연결 비아</text>
+<rect x="1214" y="160" width="22" height="14" fill="#3fbfa0" fill-opacity="0.6" stroke="#3fbfa0"/>
+<text x="1244" y="171" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">met3</text>
+<text x="1244" y="184" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">금속3 배선</text>
+<text x="1214" y="208" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">그림 안의 표시</text>
+<text x="1214" y="225" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#111">점선 상자 = 배치된 셀(이름 + 셀 종류)</text>
+<text x="1214" y="242" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#111">빨간 원 + 이름 = 핀(입력/출력)</text>
+<text x="1214" y="259" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#111">VPWR(위)·VGND(아래) = 전원 레일</text>
+<text x="1214" y="276" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#111">&#x27;met2 배선&#x27; 같은 글자 = 직접 그린 도형의 층</text>
+</svg>

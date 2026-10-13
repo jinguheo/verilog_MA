@@ -1,0 +1,426 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1480" height="1326" viewBox="0 0 1480 1326">
+<rect width="100%" height="100%" fill="#fbfbfb"/>
+<title>testlib/scen_habit_analog/layout</title>
+<text x="8" y="22" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="15" font-weight="bold" fill="#111">testlib / scen_habit_analog — 크기 5.44 × 5.92 µm (위에서 본 모습)</text>
+<polygon fill="#b9d9a0" fill-opacity="0.35" stroke="#b9d9a0" stroke-width="0.6" points="76.9,952.3 238.5,952.3 238.5,643.6 76.9,643.6"/>
+<polygon fill="#b9d9a0" fill-opacity="0.35" stroke="#b9d9a0" stroke-width="0.6" points="253.8,952.3 592.3,952.3 592.3,643.6 253.8,643.6"/>
+<polygon fill="#b9d9a0" fill-opacity="0.35" stroke="#b9d9a0" stroke-width="0.6" points="318.3,696.5 351.0,696.5 351.0,663.8 318.3,663.8"/>
+<polygon fill="#b9d9a0" fill-opacity="0.35" stroke="#b9d9a0" stroke-width="0.6" points="318.3,696.5 351.0,696.5 351.0,663.8 318.3,663.8"/>
+<polygon fill="#b9d9a0" fill-opacity="0.35" stroke="#b9d9a0" stroke-width="0.6" points="671.2,696.5 703.8,696.5 703.8,663.8 671.2,663.8"/>
+<polygon fill="#b9d9a0" fill-opacity="0.35" stroke="#b9d9a0" stroke-width="0.6" points="607.7,952.3 946.2,952.3 946.2,643.6 607.7,643.6"/>
+<polygon fill="#b9d9a0" fill-opacity="0.35" stroke="#b9d9a0" stroke-width="0.6" points="961.5,952.3 1123.1,952.3 1123.1,643.6 961.5,643.6"/>
+<polygon fill="#b9d9a0" fill-opacity="0.35" stroke="#b9d9a0" stroke-width="0.6" points="76.9,408.0 238.5,408.0 238.5,716.7 76.9,716.7"/>
+<polygon fill="#b9d9a0" fill-opacity="0.35" stroke="#b9d9a0" stroke-width="0.6" points="318.3,663.8 351.0,663.8 351.0,696.5 318.3,696.5"/>
+<polygon fill="#b9d9a0" fill-opacity="0.35" stroke="#b9d9a0" stroke-width="0.6" points="253.8,408.0 592.3,408.0 592.3,716.7 253.8,716.7"/>
+<polygon fill="#b9d9a0" fill-opacity="0.35" stroke="#b9d9a0" stroke-width="0.6" points="672.1,663.8 704.8,663.8 704.8,696.5 672.1,696.5"/>
+<polygon fill="#b9d9a0" fill-opacity="0.35" stroke="#b9d9a0" stroke-width="0.6" points="607.7,408.0 946.2,408.0 946.2,716.7 607.7,716.7"/>
+<polygon fill="#b9d9a0" fill-opacity="0.35" stroke="#b9d9a0" stroke-width="0.6" points="961.5,408.0 1123.1,408.0 1123.1,716.7 961.5,716.7"/>
+<polygon fill="#d7c4a8" fill-opacity="0.35" stroke="#d7c4a8" stroke-width="0.6" points="318.3,1219.6 351.0,1219.6 351.0,1186.9 318.3,1186.9"/>
+<polygon fill="#d7c4a8" fill-opacity="0.35" stroke="#d7c4a8" stroke-width="0.6" points="318.3,1219.6 351.0,1219.6 351.0,1186.9 318.3,1186.9"/>
+<polygon fill="#d7c4a8" fill-opacity="0.35" stroke="#d7c4a8" stroke-width="0.6" points="671.2,1219.6 703.8,1219.6 703.8,1186.9 671.2,1186.9"/>
+<polygon fill="#d7c4a8" fill-opacity="0.35" stroke="#d7c4a8" stroke-width="0.6" points="320.2,140.7 352.9,140.7 352.9,173.4 320.2,173.4"/>
+<polygon fill="#d7c4a8" fill-opacity="0.35" stroke="#d7c4a8" stroke-width="0.6" points="672.1,140.7 704.8,140.7 704.8,173.4 672.1,173.4"/>
+<polygon fill="#eeeeee" fill-opacity="0.35" stroke="#eeeeee" stroke-width="0.6" points="113.5,1203.2 201.9,1203.2 201.9,680.2 113.5,680.2"/>
+<polygon fill="#eeeeee" fill-opacity="0.35" stroke="#eeeeee" stroke-width="0.6" points="290.4,1203.2 555.8,1203.2 555.8,680.2 290.4,680.2"/>
+<polygon fill="#eeeeee" fill-opacity="0.35" stroke="#eeeeee" stroke-width="0.6" points="644.2,1203.2 909.6,1203.2 909.6,680.2 644.2,680.2"/>
+<polygon fill="#eeeeee" fill-opacity="0.35" stroke="#eeeeee" stroke-width="0.6" points="998.1,1203.2 1086.5,1203.2 1086.5,680.2 998.1,680.2"/>
+<polygon fill="#eeeeee" fill-opacity="0.35" stroke="#eeeeee" stroke-width="0.6" points="113.5,157.1 201.9,157.1 201.9,680.2 113.5,680.2"/>
+<polygon fill="#eeeeee" fill-opacity="0.35" stroke="#eeeeee" stroke-width="0.6" points="290.4,157.1 555.8,157.1 555.8,680.2 290.4,680.2"/>
+<polygon fill="#eeeeee" fill-opacity="0.35" stroke="#eeeeee" stroke-width="0.6" points="644.2,157.1 909.6,157.1 909.6,680.2 644.2,680.2"/>
+<polygon fill="#eeeeee" fill-opacity="0.35" stroke="#eeeeee" stroke-width="0.6" points="998.1,157.1 1086.5,157.1 1086.5,680.2 998.1,680.2"/>
+<polygon fill="#7fbf7f" fill-opacity="0.55" stroke="#7fbf7f" stroke-width="0.6" points="355.8,917.7 484.6,917.7 484.6,725.3 355.8,725.3"/>
+<polygon fill="#7fbf7f" fill-opacity="0.55" stroke="#7fbf7f" stroke-width="0.6" points="355.8,1158.0 484.6,1158.0 484.6,1033.0 355.8,1033.0"/>
+<polygon fill="#7fbf7f" fill-opacity="0.55" stroke="#7fbf7f" stroke-width="0.6" points="674.0,917.7 883.7,917.7 883.7,725.3 674.0,725.3"/>
+<polygon fill="#7fbf7f" fill-opacity="0.55" stroke="#7fbf7f" stroke-width="0.6" points="674.0,1158.0 883.7,1158.0 883.7,1033.0 674.0,1033.0"/>
+<polygon fill="#7fbf7f" fill-opacity="0.55" stroke="#7fbf7f" stroke-width="0.6" points="316.3,202.3 529.8,202.3 529.8,302.3 316.3,302.3"/>
+<polygon fill="#7fbf7f" fill-opacity="0.55" stroke="#7fbf7f" stroke-width="0.6" points="316.3,483.0 529.8,483.0 529.8,635.0 316.3,635.0"/>
+<polygon fill="#7fbf7f" fill-opacity="0.55" stroke="#7fbf7f" stroke-width="0.6" points="672.1,202.3 881.7,202.3 881.7,327.3 672.1,327.3"/>
+<polygon fill="#7fbf7f" fill-opacity="0.55" stroke="#7fbf7f" stroke-width="0.6" points="672.1,442.7 881.7,442.7 881.7,635.0 672.1,635.0"/>
+<polygon fill="#5fa05f" fill-opacity="0.55" stroke="#5fa05f" stroke-width="0.6" points="141.3,1141.7 174.0,1141.7 174.0,1040.7 141.3,1040.7"/>
+<polygon fill="#5fa05f" fill-opacity="0.55" stroke="#5fa05f" stroke-width="0.6" points="141.3,910.0 174.0,910.0 174.0,741.7 141.3,741.7"/>
+<polygon fill="#5fa05f" fill-opacity="0.55" stroke="#5fa05f" stroke-width="0.6" points="1026.0,1141.7 1058.7,1141.7 1058.7,1040.7 1026.0,1040.7"/>
+<polygon fill="#5fa05f" fill-opacity="0.55" stroke="#5fa05f" stroke-width="0.6" points="1026.0,910.0 1058.7,910.0 1058.7,741.7 1026.0,741.7"/>
+<polygon fill="#5fa05f" fill-opacity="0.55" stroke="#5fa05f" stroke-width="0.6" points="141.3,218.6 174.0,218.6 174.0,319.6 141.3,319.6"/>
+<polygon fill="#5fa05f" fill-opacity="0.55" stroke="#5fa05f" stroke-width="0.6" points="141.3,450.3 174.0,450.3 174.0,618.6 141.3,618.6"/>
+<polygon fill="#5fa05f" fill-opacity="0.55" stroke="#5fa05f" stroke-width="0.6" points="1026.0,218.6 1058.7,218.6 1058.7,319.6 1026.0,319.6"/>
+<polygon fill="#5fa05f" fill-opacity="0.55" stroke="#5fa05f" stroke-width="0.6" points="1026.0,450.3 1058.7,450.3 1058.7,618.6 1026.0,618.6"/>
+<polygon fill="#e9b6c9" fill-opacity="0.35" stroke="#e9b6c9" stroke-width="0.6" points="113.5,1166.7 201.9,1166.7 201.9,1015.7 113.5,1015.7"/>
+<polygon fill="#e9b6c9" fill-opacity="0.35" stroke="#e9b6c9" stroke-width="0.6" points="113.5,716.7 201.9,716.7 201.9,643.6 113.5,643.6"/>
+<polygon fill="#e9b6c9" fill-opacity="0.35" stroke="#e9b6c9" stroke-width="0.6" points="290.4,942.7 555.8,942.7 555.8,643.6 290.4,643.6"/>
+<polygon fill="#e9b6c9" fill-opacity="0.35" stroke="#e9b6c9" stroke-width="0.6" points="644.2,942.7 909.6,942.7 909.6,643.6 644.2,643.6"/>
+<polygon fill="#e9b6c9" fill-opacity="0.35" stroke="#e9b6c9" stroke-width="0.6" points="998.1,1166.7 1086.5,1166.7 1086.5,1015.7 998.1,1015.7"/>
+<polygon fill="#e9b6c9" fill-opacity="0.35" stroke="#e9b6c9" stroke-width="0.6" points="998.1,716.7 1086.5,716.7 1086.5,643.6 998.1,643.6"/>
+<polygon fill="#e9b6c9" fill-opacity="0.35" stroke="#e9b6c9" stroke-width="0.6" points="113.5,193.6 201.9,193.6 201.9,344.6 113.5,344.6"/>
+<polygon fill="#e9b6c9" fill-opacity="0.35" stroke="#e9b6c9" stroke-width="0.6" points="113.5,643.6 201.9,643.6 201.9,716.7 113.5,716.7"/>
+<polygon fill="#e9b6c9" fill-opacity="0.35" stroke="#e9b6c9" stroke-width="0.6" points="290.4,430.2 555.8,430.2 555.8,716.7 290.4,716.7"/>
+<polygon fill="#e9b6c9" fill-opacity="0.35" stroke="#e9b6c9" stroke-width="0.6" points="644.2,417.7 909.6,417.7 909.6,716.7 644.2,716.7"/>
+<polygon fill="#e9b6c9" fill-opacity="0.35" stroke="#e9b6c9" stroke-width="0.6" points="998.1,193.6 1086.5,193.6 1086.5,344.6 998.1,344.6"/>
+<polygon fill="#e9b6c9" fill-opacity="0.35" stroke="#e9b6c9" stroke-width="0.6" points="998.1,643.6 1086.5,643.6 1086.5,716.7 998.1,716.7"/>
+<polygon fill="#b6c9e9" fill-opacity="0.35" stroke="#b6c9e9" stroke-width="0.6" points="113.5,1239.8 201.9,1239.8 201.9,1166.7 113.5,1166.7"/>
+<polygon fill="#b6c9e9" fill-opacity="0.35" stroke="#b6c9e9" stroke-width="0.6" points="113.5,935.0 201.9,935.0 201.9,716.7 113.5,716.7"/>
+<polygon fill="#b6c9e9" fill-opacity="0.35" stroke="#b6c9e9" stroke-width="0.6" points="290.4,1239.8 555.8,1239.8 555.8,1008.0 290.4,1008.0"/>
+<polygon fill="#b6c9e9" fill-opacity="0.35" stroke="#b6c9e9" stroke-width="0.6" points="644.2,1239.8 909.6,1239.8 909.6,1008.0 644.2,1008.0"/>
+<polygon fill="#b6c9e9" fill-opacity="0.35" stroke="#b6c9e9" stroke-width="0.6" points="998.1,1239.8 1086.5,1239.8 1086.5,1166.7 998.1,1166.7"/>
+<polygon fill="#b6c9e9" fill-opacity="0.35" stroke="#b6c9e9" stroke-width="0.6" points="998.1,935.0 1086.5,935.0 1086.5,716.7 998.1,716.7"/>
+<polygon fill="#b6c9e9" fill-opacity="0.35" stroke="#b6c9e9" stroke-width="0.6" points="113.5,120.5 201.9,120.5 201.9,193.6 113.5,193.6"/>
+<polygon fill="#b6c9e9" fill-opacity="0.35" stroke="#b6c9e9" stroke-width="0.6" points="113.5,425.3 201.9,425.3 201.9,643.6 113.5,643.6"/>
+<polygon fill="#b6c9e9" fill-opacity="0.35" stroke="#b6c9e9" stroke-width="0.6" points="290.4,120.5 555.8,120.5 555.8,352.3 290.4,352.3"/>
+<polygon fill="#b6c9e9" fill-opacity="0.35" stroke="#b6c9e9" stroke-width="0.6" points="644.2,120.5 909.6,120.5 909.6,352.3 644.2,352.3"/>
+<polygon fill="#b6c9e9" fill-opacity="0.35" stroke="#b6c9e9" stroke-width="0.6" points="998.1,120.5 1086.5,120.5 1086.5,193.6 998.1,193.6"/>
+<polygon fill="#b6c9e9" fill-opacity="0.35" stroke="#b6c9e9" stroke-width="0.6" points="998.1,425.3 1086.5,425.3 1086.5,643.6 998.1,643.6"/>
+<polygon fill="#cac" fill-opacity="0.55" stroke="#cac" stroke-width="0.6" points="113.5,962.8 201.9,962.8 201.9,680.2 113.5,680.2"/>
+<polygon fill="#cac" fill-opacity="0.55" stroke="#cac" stroke-width="0.6" points="290.4,962.8 555.8,962.8 555.8,680.2 290.4,680.2"/>
+<polygon fill="#cac" fill-opacity="0.55" stroke="#cac" stroke-width="0.6" points="644.2,962.8 909.6,962.8 909.6,680.2 644.2,680.2"/>
+<polygon fill="#cac" fill-opacity="0.55" stroke="#cac" stroke-width="0.6" points="998.1,962.8 1086.5,962.8 1086.5,680.2 998.1,680.2"/>
+<polygon fill="#cac" fill-opacity="0.55" stroke="#cac" stroke-width="0.6" points="113.5,397.5 201.9,397.5 201.9,680.2 113.5,680.2"/>
+<polygon fill="#cac" fill-opacity="0.55" stroke="#cac" stroke-width="0.6" points="290.4,397.5 555.8,397.5 555.8,680.2 290.4,680.2"/>
+<polygon fill="#cac" fill-opacity="0.55" stroke="#cac" stroke-width="0.6" points="644.2,397.5 909.6,397.5 909.6,680.2 644.2,680.2"/>
+<polygon fill="#cac" fill-opacity="0.55" stroke="#cac" stroke-width="0.6" points="998.1,397.5 1086.5,397.5 1086.5,680.2 998.1,680.2"/>
+<polygon fill="#bbb" fill-opacity="0.35" stroke="#bbb" stroke-width="0.6" points="290.4,1015.7 555.8,1015.7 555.8,944.6 290.4,944.6"/>
+<polygon fill="#bbb" fill-opacity="0.35" stroke="#bbb" stroke-width="0.6" points="644.2,1015.7 909.6,1015.7 909.6,944.6 644.2,944.6"/>
+<polygon fill="#bbb" fill-opacity="0.35" stroke="#bbb" stroke-width="0.6" points="290.4,344.6 555.8,344.6 555.8,428.2 290.4,428.2"/>
+<polygon fill="#bbb" fill-opacity="0.35" stroke="#bbb" stroke-width="0.6" points="644.2,344.6 909.6,344.6 909.6,415.7 644.2,415.7"/>
+<polygon fill="#d94b4b" fill-opacity="0.55" stroke="#d94b4b" stroke-width="0.6" points="434.6,700.3 405.8,700.3 405.8,948.4 351.9,948.4 351.9,1011.9 405.8,1011.9 405.8,1183.0 434.6,1183.0"/>
+<polygon fill="#d94b4b" fill-opacity="0.55" stroke="#d94b4b" stroke-width="0.6" points="889.4,948.4 833.7,948.4 833.7,700.3 804.8,700.3 804.8,1183.0 833.7,1183.0 833.7,1011.9 889.4,1011.9"/>
+<polygon fill="#d94b4b" fill-opacity="0.55" stroke="#d94b4b" stroke-width="0.6" points="752.9,700.3 724.0,700.3 724.0,948.4 664.4,948.4 664.4,1011.9 724.0,1011.9 724.0,1183.0 752.9,1183.0"/>
+<polygon fill="#d94b4b" fill-opacity="0.55" stroke="#d94b4b" stroke-width="0.6" points="481.7,424.4 479.8,424.4 479.8,660.0 451.0,660.0 451.0,424.4 429.8,424.4 429.8,360.9 451.0,360.9 451.0,177.3 479.8,177.3 479.8,360.9 481.7,360.9"/>
+<polygon fill="#d94b4b" fill-opacity="0.55" stroke="#d94b4b" stroke-width="0.6" points="395.2,339.8 389.4,339.8 389.4,445.5 395.2,445.5 395.2,660.0 366.3,660.0 366.3,468.6 360.6,468.6 360.6,411.9 316.3,411.9 316.3,348.4 360.6,348.4 360.6,316.7 366.3,316.7 366.3,177.3 395.2,177.3"/>
+<polygon fill="#d94b4b" fill-opacity="0.55" stroke="#d94b4b" stroke-width="0.6" points="831.7,660.0 802.9,660.0 802.9,411.9 751.0,411.9 751.0,660.0 722.1,660.0 722.1,411.9 664.4,411.9 664.4,348.4 722.1,348.4 722.1,177.3 751.0,177.3 751.0,348.4 802.9,348.4 802.9,177.3 831.7,177.3"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="141.3,1096.5 174.0,1096.5 174.0,1063.8 141.3,1063.8"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="141.3,886.9 174.0,886.9 174.0,854.2 141.3,854.2"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="141.3,797.5 174.0,797.5 174.0,764.8 141.3,764.8"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="363.5,769.6 396.2,769.6 396.2,736.9 363.5,736.9"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="363.5,835.0 396.2,835.0 396.2,802.3 363.5,802.3"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="363.5,900.3 396.2,900.3 396.2,867.7 363.5,867.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="363.5,1077.3 396.2,1077.3 396.2,1044.6 363.5,1044.6"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="363.5,1142.7 396.2,1142.7 396.2,1110.0 363.5,1110.0"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="367.3,996.5 400.0,996.5 400.0,963.8 367.3,963.8"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="444.2,769.6 476.9,769.6 476.9,736.9 444.2,736.9"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="444.2,835.0 476.9,835.0 476.9,802.3 444.2,802.3"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="444.2,900.3 476.9,900.3 476.9,867.7 444.2,867.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="444.2,1077.3 476.9,1077.3 476.9,1044.6 444.2,1044.6"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="444.2,1142.7 476.9,1142.7 476.9,1110.0 444.2,1110.0"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="843.3,1146.5 876.0,1146.5 876.0,1113.8 843.3,1113.8"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="843.3,1081.1 876.0,1081.1 876.0,1048.4 843.3,1048.4"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="681.7,769.6 714.4,769.6 714.4,736.9 681.7,736.9"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="681.7,835.0 714.4,835.0 714.4,802.3 681.7,802.3"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="681.7,900.3 714.4,900.3 714.4,867.7 681.7,867.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="681.7,1081.1 714.4,1081.1 714.4,1048.4 681.7,1048.4"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="681.7,1146.5 714.4,1146.5 714.4,1113.8 681.7,1113.8"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="762.5,769.6 795.2,769.6 795.2,736.9 762.5,736.9"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="762.5,835.0 795.2,835.0 795.2,802.3 762.5,802.3"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="762.5,900.3 795.2,900.3 795.2,867.7 762.5,867.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="840.4,996.5 873.1,996.5 873.1,963.8 840.4,963.8"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="843.3,769.6 876.0,769.6 876.0,736.9 843.3,736.9"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="678.8,996.5 711.5,996.5 711.5,963.8 678.8,963.8"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="843.3,835.0 876.0,835.0 876.0,802.3 843.3,802.3"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="843.3,900.3 876.0,900.3 876.0,867.7 843.3,867.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="1026.0,1096.5 1058.7,1096.5 1058.7,1063.8 1026.0,1063.8"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="1026.0,886.9 1058.7,886.9 1058.7,854.2 1026.0,854.2"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="1026.0,797.5 1058.7,797.5 1058.7,764.8 1026.0,764.8"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="141.3,263.8 174.0,263.8 174.0,296.5 141.3,296.5"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="141.3,473.4 174.0,473.4 174.0,506.1 141.3,506.1"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="141.3,562.8 174.0,562.8 174.0,595.5 141.3,595.5"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="489.4,242.7 522.1,242.7 522.1,275.3 489.4,275.3"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="489.4,505.2 522.1,505.2 522.1,537.8 489.4,537.8"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="489.4,583.0 522.1,583.0 522.1,615.7 489.4,615.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="439.4,376.3 472.1,376.3 472.1,409.0 439.4,409.0"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="406.7,213.8 439.4,213.8 439.4,246.5 406.7,246.5"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="406.7,517.7 439.4,517.7 439.4,550.3 406.7,550.3"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="406.7,583.0 439.4,583.0 439.4,615.7 406.7,615.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="326.0,363.8 358.7,363.8 358.7,396.5 326.0,396.5"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="324.0,226.3 356.7,226.3 356.7,259.0 324.0,259.0"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="324.0,517.7 356.7,517.7 356.7,550.3 324.0,550.3"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="324.0,583.0 356.7,583.0 356.7,615.7 324.0,615.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="841.3,213.8 874.0,213.8 874.0,246.5 841.3,246.5"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="841.3,283.0 874.0,283.0 874.0,315.7 841.3,315.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="841.3,460.0 874.0,460.0 874.0,492.7 841.3,492.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="841.3,525.3 874.0,525.3 874.0,558.0 841.3,558.0"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="841.3,590.7 874.0,590.7 874.0,623.4 841.3,623.4"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="760.6,213.8 793.3,213.8 793.3,246.5 760.6,246.5"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="760.6,283.0 793.3,283.0 793.3,315.7 760.6,315.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="760.6,460.0 793.3,460.0 793.3,492.7 760.6,492.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="760.6,525.3 793.3,525.3 793.3,558.0 760.6,558.0"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="760.6,590.7 793.3,590.7 793.3,623.4 760.6,623.4"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="679.8,590.7 712.5,590.7 712.5,623.4 679.8,623.4"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="679.8,213.8 712.5,213.8 712.5,246.5 679.8,246.5"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="679.8,283.0 712.5,283.0 712.5,315.7 679.8,315.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="679.8,363.8 712.5,363.8 712.5,396.5 679.8,396.5"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="679.8,460.0 712.5,460.0 712.5,492.7 679.8,492.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="679.8,525.3 712.5,525.3 712.5,558.0 679.8,558.0"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="1026.0,263.8 1058.7,263.8 1058.7,296.5 1026.0,296.5"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="1026.0,473.4 1058.7,473.4 1058.7,506.1 1026.0,506.1"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="1026.0,562.8 1058.7,562.8 1058.7,595.5 1026.0,595.5"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="718.7,838.8 838.9,838.8 838.9,806.1 718.7,806.1"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="284.1,398.4 404.3,398.4 404.3,365.7 284.1,365.7"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="129.8,1203.2 185.6,1203.2 185.6,1047.5 129.8,1047.5"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="129.8,920.5 185.6,920.5 185.6,680.2 129.8,680.2"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="113.5,696.5 201.9,696.5 201.9,663.8 113.5,663.8"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="113.5,1219.6 201.9,1219.6 201.9,1186.9 113.5,1186.9"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="351.9,996.5 415.4,996.5 415.4,950.3 351.9,950.3"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="492.3,729.2 428.8,729.2 428.8,917.7 448.1,917.7 448.1,1033.0 428.8,1033.0 428.8,1154.2 492.3,1154.2"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="290.4,696.5 555.8,696.5 555.8,663.8 290.4,663.8"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="290.4,1219.6 555.8,1219.6 555.8,1186.9 290.4,1186.9"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="351.9,1202.3 396.2,1202.3 396.2,1029.2 351.9,1029.2"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="355.8,915.7 396.2,915.7 396.2,688.8 355.8,688.8"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="359.6,990.7 392.3,990.7 392.3,958.0 359.6,958.0"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="448.1,925.3 480.8,925.3 480.8,892.7 448.1,892.7"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="448.1,990.7 480.8,990.7 480.8,958.0 448.1,958.0"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="909.6,1186.9 720.2,1186.9 720.2,1033.0 660.6,1033.0 660.6,1186.9 644.2,1186.9 644.2,1219.6 909.6,1219.6"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="909.6,663.8 644.2,663.8 644.2,696.5 660.6,696.5 660.6,915.7 714.4,915.7 714.4,696.5 843.3,696.5 843.3,915.7 893.3,915.7 893.3,696.5 909.6,696.5"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="662.5,1000.3 726.9,1000.3 726.9,948.4 662.5,948.4"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="825.0,996.5 889.4,996.5 889.4,948.4 825.0,948.4"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="893.3,1033.0 792.3,1033.0 792.3,917.7 810.6,917.7 810.6,729.2 747.1,729.2 747.1,917.7 759.6,917.7 759.6,1154.2 893.3,1154.2"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="848.1,990.7 880.8,990.7 880.8,958.0 848.1,958.0"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="759.6,1121.5 792.3,1121.5 792.3,1088.8 759.6,1088.8"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="759.6,1056.1 792.3,1056.1 792.3,1023.4 759.6,1023.4"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="759.6,990.7 792.3,990.7 792.3,958.0 759.6,958.0"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="671.2,990.7 703.8,990.7 703.8,958.0 671.2,958.0"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="1014.4,1203.2 1070.2,1203.2 1070.2,1047.5 1014.4,1047.5"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="1014.4,920.5 1070.2,920.5 1070.2,680.2 1014.4,680.2"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="998.1,696.5 1086.5,696.5 1086.5,663.8 998.1,663.8"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="998.1,1219.6 1086.5,1219.6 1086.5,1186.9 998.1,1186.9"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="129.8,157.1 185.6,157.1 185.6,312.8 129.8,312.8"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="129.8,439.8 185.6,439.8 185.6,680.2 129.8,680.2"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="113.5,663.8 201.9,663.8 201.9,696.5 113.5,696.5"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="113.5,140.7 201.9,140.7 201.9,173.4 113.5,173.4"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="539.4,631.1 487.5,631.1 487.5,457.1 504.8,457.1 504.8,303.2 489.4,303.2 489.4,206.1 539.4,206.1"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="555.8,173.4 454.8,173.4 454.8,246.5 391.3,246.5 391.3,173.4 290.4,173.4 290.4,140.7 555.8,140.7"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="472.1,424.4 451.9,424.4 451.9,485.0 356.7,485.0 356.7,631.1 322.1,631.1 322.1,452.3 419.2,452.3 419.2,311.9 324.0,311.9 324.0,206.1 356.7,206.1 356.7,279.2 451.9,279.2 451.9,360.9 472.1,360.9"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="310.6,346.5 376.0,346.5 376.0,417.7 310.6,417.7"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="555.8,696.5 290.4,696.5 290.4,663.8 391.3,663.8 391.3,517.7 454.8,517.7 454.8,663.8 555.8,663.8"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="493.3,238.8 526.0,238.8 526.0,271.5 493.3,271.5"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="493.3,500.3 526.0,500.3 526.0,533.0 493.3,533.0"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="493.3,565.7 526.0,565.7 526.0,598.4 493.3,598.4"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="318.3,369.6 351.0,369.6 351.0,402.3 318.3,402.3"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="318.3,663.8 351.0,663.8 351.0,696.5 318.3,696.5"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="320.2,140.7 352.9,140.7 352.9,173.4 320.2,173.4"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="909.6,696.5 644.2,696.5 644.2,663.8 668.3,663.8 668.3,444.6 712.5,444.6 712.5,663.8 841.3,663.8 841.3,444.6 881.7,444.6 881.7,663.8 909.6,663.8"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="808.7,631.1 745.2,631.1 745.2,442.7 760.6,442.7 760.6,327.3 745.2,327.3 745.2,206.1 808.7,206.1"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="664.4,363.8 727.9,363.8 727.9,411.9 664.4,411.9"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="909.6,173.4 881.7,173.4 881.7,331.1 841.3,331.1 841.3,173.4 712.5,173.4 712.5,331.1 668.3,331.1 668.3,173.4 644.2,173.4 644.2,140.7 909.6,140.7"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="760.6,304.2 793.3,304.2 793.3,336.9 760.6,336.9"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="672.1,369.6 704.8,369.6 704.8,402.3 672.1,402.3"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="760.6,435.0 793.3,435.0 793.3,467.7 760.6,467.7"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="760.6,369.6 793.3,369.6 793.3,402.3 760.6,402.3"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="1014.4,157.1 1070.2,157.1 1070.2,312.8 1014.4,312.8"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="1014.4,439.8 1070.2,439.8 1070.2,680.2 1014.4,680.2"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="998.1,663.8 1086.5,663.8 1086.5,696.5 998.1,696.5"/>
+<polygon fill="#e0a03c" fill-opacity="0.55" stroke="#e0a03c" stroke-width="0.6" points="998.1,140.7 1086.5,140.7 1086.5,173.4 998.1,173.4"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="718.7,838.8 751.4,838.8 751.4,806.1 718.7,806.1"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="806.2,838.8 838.9,838.8 838.9,806.1 806.2,806.1"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="284.1,398.4 316.8,398.4 316.8,365.7 284.1,365.7"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="371.6,398.4 404.3,398.4 404.3,365.7 371.6,365.7"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="141.3,1219.6 174.0,1219.6 174.0,1186.9 141.3,1186.9"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="141.3,696.5 174.0,696.5 174.0,663.8 141.3,663.8"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="406.7,696.5 439.4,696.5 439.4,663.8 406.7,663.8"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="406.7,1219.6 439.4,1219.6 439.4,1186.9 406.7,1186.9"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="495.2,696.5 527.9,696.5 527.9,663.8 495.2,663.8"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="495.2,1219.6 527.9,1219.6 527.9,1186.9 495.2,1186.9"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="318.3,696.5 351.0,696.5 351.0,663.8 318.3,663.8"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="318.3,1219.6 351.0,1219.6 351.0,1186.9 318.3,1186.9"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="849.0,696.5 881.7,696.5 881.7,663.8 849.0,663.8"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="672.1,696.5 704.8,696.5 704.8,663.8 672.1,663.8"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="672.1,1219.6 704.8,1219.6 704.8,1186.9 672.1,1186.9"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="760.6,696.5 793.3,696.5 793.3,663.8 760.6,663.8"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="760.6,1219.6 793.3,1219.6 793.3,1186.9 760.6,1186.9"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="849.0,1219.6 881.7,1219.6 881.7,1186.9 849.0,1186.9"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="1026.0,1219.6 1058.7,1219.6 1058.7,1186.9 1026.0,1186.9"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="1026.0,696.5 1058.7,696.5 1058.7,663.8 1026.0,663.8"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="141.3,140.7 174.0,140.7 174.0,173.4 141.3,173.4"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="141.3,663.8 174.0,663.8 174.0,696.5 141.3,696.5"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="495.2,140.7 527.9,140.7 527.9,173.4 495.2,173.4"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="495.2,663.8 527.9,663.8 527.9,696.5 495.2,696.5"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="406.7,140.7 439.4,140.7 439.4,173.4 406.7,173.4"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="406.7,663.8 439.4,663.8 439.4,696.5 406.7,696.5"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="318.3,140.7 351.0,140.7 351.0,173.4 318.3,173.4"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="318.3,663.8 351.0,663.8 351.0,696.5 318.3,696.5"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="849.0,140.7 881.7,140.7 881.7,173.4 849.0,173.4"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="672.1,663.8 704.8,663.8 704.8,696.5 672.1,696.5"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="672.1,140.7 704.8,140.7 704.8,173.4 672.1,173.4"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="760.6,663.8 793.3,663.8 793.3,696.5 760.6,696.5"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="760.6,140.7 793.3,140.7 793.3,173.4 760.6,173.4"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="849.0,663.8 881.7,663.8 881.7,696.5 849.0,696.5"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="1026.0,140.7 1058.7,140.7 1058.7,173.4 1026.0,173.4"/>
+<polygon fill="#444444" fill-opacity="0.95" stroke="#444444" stroke-width="0.6" points="1026.0,663.8 1058.7,663.8 1058.7,696.5 1026.0,696.5"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="707.2,850.3 850.5,850.3 850.5,794.6 707.2,794.6"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="709.1,853.2 848.6,853.2 848.6,791.7 709.1,791.7"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="272.6,410.0 415.9,410.0 415.9,354.2 272.6,354.2"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="274.5,412.8 413.9,412.8 413.9,351.3 274.5,351.3"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="133.7,1220.5 182.7,1220.5 182.7,1184.0 133.7,1184.0"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="134.6,699.4 185.6,699.4 185.6,671.5 134.6,671.5"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="113.5,1249.4 201.9,1249.4 201.9,1157.1 113.5,1157.1"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="113.5,726.3 201.9,726.3 201.9,634.0 113.5,634.0"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="318.3,1219.6 351.0,1219.6 351.0,1186.9 318.3,1186.9"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="318.3,696.5 351.0,696.5 351.0,663.8 318.3,663.8"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="318.3,696.5 351.0,696.5 351.0,663.8 318.3,663.8"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="318.3,1219.6 351.0,1219.6 351.0,1186.9 318.3,1186.9"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="290.4,634.0 555.8,634.0 555.8,726.3 290.4,726.3"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="290.4,1157.1 555.8,1157.1 555.8,1249.4 290.4,1249.4"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="671.2,1219.6 703.8,1219.6 703.8,1186.9 671.2,1186.9"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="671.2,696.5 703.8,696.5 703.8,663.8 671.2,663.8"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="644.2,634.0 909.6,634.0 909.6,726.3 644.2,726.3"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="644.2,1157.1 909.6,1157.1 909.6,1249.4 644.2,1249.4"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="1018.3,1220.5 1067.3,1220.5 1067.3,1184.0 1018.3,1184.0"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="1019.2,699.4 1070.2,699.4 1070.2,671.5 1019.2,671.5"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="998.1,1249.4 1086.5,1249.4 1086.5,1157.1 998.1,1157.1"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="998.1,726.3 1086.5,726.3 1086.5,634.0 998.1,634.0"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="133.7,139.8 182.7,139.8 182.7,176.3 133.7,176.3"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="134.6,660.9 185.6,660.9 185.6,688.8 134.6,688.8"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="113.5,110.9 201.9,110.9 201.9,203.2 113.5,203.2"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="113.5,634.0 201.9,634.0 201.9,726.3 113.5,726.3"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="320.2,140.7 352.9,140.7 352.9,173.4 320.2,173.4"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="318.3,663.8 351.0,663.8 351.0,696.5 318.3,696.5"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="290.4,203.2 555.8,203.2 555.8,110.9 290.4,110.9"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="290.4,726.3 555.8,726.3 555.8,634.0 290.4,634.0"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="672.1,663.8 704.8,663.8 704.8,696.5 672.1,696.5"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="672.1,140.7 704.8,140.7 704.8,173.4 672.1,173.4"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="644.2,726.3 909.6,726.3 909.6,634.0 644.2,634.0"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="644.2,203.2 909.6,203.2 909.6,110.9 644.2,110.9"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="1018.3,139.8 1067.3,139.8 1067.3,176.3 1018.3,176.3"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="1019.2,660.9 1070.2,660.9 1070.2,688.8 1019.2,688.8"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="998.1,110.9 1086.5,110.9 1086.5,203.2 998.1,203.2"/>
+<polygon fill="#4a74d9" fill-opacity="0.55" stroke="#4a74d9" stroke-width="0.6" points="998.1,634.0 1086.5,634.0 1086.5,726.3 998.1,726.3"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="725.5,836.9 754.3,836.9 754.3,808.0 725.5,808.0"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="803.4,836.9 832.2,836.9 832.2,808.0 803.4,808.0"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="290.9,396.5 319.7,396.5 319.7,367.7 290.9,367.7"/>
+<polygon fill="#222222" fill-opacity="0.95" stroke="#222222" stroke-width="0.6" points="368.7,396.5 397.6,396.5 397.6,367.7 368.7,367.7"/>
+<polygon fill="#c95fd1" fill-opacity="0.55" stroke="#c95fd1" stroke-width="0.6" points="317.3,849.4 805.8,849.4 805.8,795.5 317.3,795.5"/>
+<polygon fill="#c95fd1" fill-opacity="0.55" stroke="#c95fd1" stroke-width="0.6" points="317.3,849.4 371.2,849.4 371.2,355.2 317.3,355.2"/>
+<polygon fill="#c95fd1" fill-opacity="0.55" stroke="#c95fd1" stroke-width="0.6" points="709.1,853.2 848.6,853.2 848.6,791.7 709.1,791.7"/>
+<polygon fill="#c95fd1" fill-opacity="0.55" stroke="#c95fd1" stroke-width="0.6" points="274.5,412.8 413.9,412.8 413.9,351.3 274.5,351.3"/>
+<text x="157.7" y="801.9" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#2f6b2f" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">N-well (PMOS 영역)</text>
+<text x="423.1" y="801.9" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#2f6b2f" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">N-well (PMOS 영역)</text>
+<text x="776.9" y="801.9" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#2f6b2f" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">N-well (PMOS 영역)</text>
+<text x="1042.3" y="801.9" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#2f6b2f" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">N-well (PMOS 영역)</text>
+<text x="157.7" y="566.4" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#2f6b2f" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">N-well (PMOS 영역)</text>
+<text x="423.1" y="566.4" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#2f6b2f" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">N-well (PMOS 영역)</text>
+<text x="776.9" y="566.4" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#2f6b2f" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">N-well (PMOS 영역)</text>
+<text x="1042.3" y="566.4" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#2f6b2f" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">N-well (PMOS 영역)</text>
+<rect x="113.5" y="680.2" width="88.5" height="523.1" fill="none" stroke="#222" stroke-width="1.4" stroke-dasharray="7 4"/>
+<rect x="115.5" y="682.2" width="84.5" height="29" rx="3" fill="#fff" fill-opacity="0.9" stroke="#222" stroke-width="0.7"/>
+<text x="119.5" y="695.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">A_TAP0</text>
+<text x="119.5" y="707.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" fill="#444">tapvpwrvgnd_</text>
+<text x="197.9" y="1103.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#235" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VGND 접지</text>
+<text x="197.9" y="793.9" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#a33" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VPWR 전원+</text>
+<rect x="290.4" y="680.2" width="265.4" height="523.1" fill="none" stroke="#222" stroke-width="1.4" stroke-dasharray="7 4"/>
+<rect x="292.4" y="682.2" width="41.0" height="29" rx="3" fill="#fff" fill-opacity="0.9" stroke="#222" stroke-width="0.7"/>
+<text x="296.4" y="695.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">A1</text>
+<text x="296.4" y="707.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" fill="#444">inv_1</text>
+<circle cx="383.7" cy="973.4" r="3.4" fill="#fff" stroke="#c00" stroke-width="1.5"/>
+<text x="389.7" y="977.4" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" font-weight="bold" fill="#a00" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">A 입력</text>
+<text x="551.8" y="1215.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#235" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VGND 접지</text>
+<text x="551.8" y="676.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#a33" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VPWR 전원+</text>
+<circle cx="460.6" cy="823.4" r="3.4" fill="#fff" stroke="#c00" stroke-width="1.5"/>
+<text x="466.6" y="827.4" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" font-weight="bold" fill="#a00" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">Y 출력</text>
+<rect x="644.2" y="680.2" width="265.4" height="523.1" fill="none" stroke="#222" stroke-width="1.4" stroke-dasharray="7 4"/>
+<rect x="646.2" y="682.2" width="53.4" height="29" rx="3" fill="#fff" fill-opacity="0.9" stroke="#222" stroke-width="0.7"/>
+<text x="650.2" y="695.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">A2</text>
+<text x="650.2" y="707.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" fill="#444">nand2_1</text>
+<circle cx="857.2" cy="972.5" r="3.4" fill="#fff" stroke="#c00" stroke-width="1.5"/>
+<text x="863.2" y="976.5" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" font-weight="bold" fill="#a00" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">A 입력</text>
+<circle cx="694.7" cy="974.4" r="3.4" fill="#fff" stroke="#c00" stroke-width="1.5"/>
+<text x="700.7" y="978.4" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" font-weight="bold" fill="#a00" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">B 입력</text>
+<text x="905.6" y="1215.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#235" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VGND 접지</text>
+<text x="905.6" y="676.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#a33" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VPWR 전원+</text>
+<circle cx="778.8" cy="823.4" r="3.4" fill="#fff" stroke="#c00" stroke-width="1.5"/>
+<text x="784.8" y="827.4" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" font-weight="bold" fill="#a00" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">Y 출력</text>
+<rect x="998.1" y="680.2" width="88.5" height="523.1" fill="none" stroke="#222" stroke-width="1.4" stroke-dasharray="7 4"/>
+<rect x="1000.1" y="682.2" width="84.5" height="29" rx="3" fill="#fff" fill-opacity="0.9" stroke="#222" stroke-width="0.7"/>
+<text x="1004.1" y="695.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">A_TAP1</text>
+<text x="1004.1" y="707.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" fill="#444">tapvpwrvgnd_</text>
+<text x="1082.5" y="1103.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#235" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VGND 접지</text>
+<text x="1082.5" y="793.9" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#a33" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VPWR 전원+</text>
+<rect x="113.5" y="157.1" width="88.5" height="523.1" fill="none" stroke="#222" stroke-width="1.4" stroke-dasharray="7 4"/>
+<rect x="115.5" y="159.1" width="84.5" height="29" rx="3" fill="#fff" fill-opacity="0.9" stroke="#222" stroke-width="0.7"/>
+<text x="119.5" y="172.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">B_TAP0</text>
+<text x="119.5" y="184.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" fill="#444">tapvpwrvgnd_</text>
+<text x="197.9" y="281.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#235" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VGND 접지</text>
+<text x="197.9" y="558.4" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#a33" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VPWR 전원+</text>
+<rect x="290.4" y="157.1" width="265.4" height="523.1" fill="none" stroke="#222" stroke-width="1.4" stroke-dasharray="7 4"/>
+<rect x="292.4" y="159.1" width="90.6" height="29" rx="3" fill="#fff" fill-opacity="0.9" stroke="#222" stroke-width="0.7"/>
+<text x="296.4" y="172.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">B1</text>
+<text x="296.4" y="184.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" fill="#444">buf_1 (MX 반전)</text>
+<circle cx="343.3" cy="382.1" r="3.4" fill="#fff" stroke="#c00" stroke-width="1.5"/>
+<text x="349.3" y="386.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" font-weight="bold" fill="#a00" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">A 입력</text>
+<text x="551.8" y="169.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#235" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VGND 접지</text>
+<text x="551.8" y="676.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#a33" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VPWR 전원+</text>
+<circle cx="513.5" cy="544.1" r="3.4" fill="#fff" stroke="#c00" stroke-width="1.5"/>
+<text x="519.5" y="548.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" font-weight="bold" fill="#a00" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">X 출력</text>
+<rect x="644.2" y="157.1" width="265.4" height="523.1" fill="none" stroke="#222" stroke-width="1.4" stroke-dasharray="7 4"/>
+<rect x="646.2" y="159.1" width="90.6" height="29" rx="3" fill="#fff" fill-opacity="0.9" stroke="#222" stroke-width="0.7"/>
+<text x="650.2" y="172.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">B2</text>
+<text x="650.2" y="184.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" fill="#444">inv_2 (MX 반전)</text>
+<circle cx="696.2" cy="387.8" r="3.4" fill="#fff" stroke="#c00" stroke-width="1.5"/>
+<text x="702.2" y="391.8" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" font-weight="bold" fill="#a00" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">A 입력</text>
+<text x="905.6" y="169.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#235" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VGND 접지</text>
+<text x="905.6" y="676.2" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#a33" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VPWR 전원+</text>
+<circle cx="776.9" cy="536.9" r="3.4" fill="#fff" stroke="#c00" stroke-width="1.5"/>
+<text x="782.9" y="540.9" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" font-weight="bold" fill="#a00" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">Y 출력</text>
+<rect x="998.1" y="157.1" width="88.5" height="523.1" fill="none" stroke="#222" stroke-width="1.4" stroke-dasharray="7 4"/>
+<rect x="1000.1" y="159.1" width="84.5" height="29" rx="3" fill="#fff" fill-opacity="0.9" stroke="#222" stroke-width="0.7"/>
+<text x="1004.1" y="172.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">B_TAP1</text>
+<text x="1004.1" y="184.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10" fill="#444">tapvpwrvgnd_</text>
+<text x="1082.5" y="281.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#235" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VGND 접지</text>
+<text x="1082.5" y="558.4" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="bold" fill="#a33" text-anchor="end" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">VPWR 전원+</text>
+<text x="548.1" y="619.7" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="bold" fill="#222" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">met2 배선 폭0.28</text>
+<text x="786.8" y="816.5" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="normal" fill="#333" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">mcon</text>
+<text x="786.8" y="816.5" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="normal" fill="#333" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">via</text>
+<text x="352.2" y="376.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="normal" fill="#333" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">mcon</text>
+<text x="352.2" y="376.1" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" font-weight="normal" fill="#333" text-anchor="start" stroke="#fff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">via</text>
+<rect x="1206" y="8" width="274" height="614" rx="6" fill="#fff" stroke="#c8c8c8"/>
+<text x="1214" y="30" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="14" font-weight="bold" fill="#111">범례 — 색이 뜻하는 것</text>
+<rect x="1214" y="48" width="22" height="14" fill="#b9d9a0" fill-opacity="0.6" stroke="#b9d9a0"/>
+<text x="1244" y="59" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">N-well</text>
+<text x="1244" y="72" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">PMOS가 들어가는 N형 웰 영역</text>
+<rect x="1214" y="76" width="22" height="14" fill="#d7c4a8" fill-opacity="0.6" stroke="#d7c4a8"/>
+<text x="1244" y="87" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">P-well</text>
+<text x="1244" y="100" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">NMOS 쪽 P형 웰/기판</text>
+<rect x="1214" y="104" width="22" height="14" fill="#eeeeee" fill-opacity="0.6" stroke="#eeeeee"/>
+<text x="1244" y="115" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">표준셀 영역</text>
+<text x="1244" y="128" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">표준셀 영역 표시(areaid)</text>
+<rect x="1214" y="132" width="22" height="14" fill="#7fbf7f" fill-opacity="0.6" stroke="#7fbf7f"/>
+<text x="1244" y="143" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">diff</text>
+<text x="1244" y="156" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">활성영역: 소스/드레인이 되는 곳</text>
+<rect x="1214" y="160" width="22" height="14" fill="#5fa05f" fill-opacity="0.6" stroke="#5fa05f"/>
+<text x="1244" y="171" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">tap</text>
+<text x="1244" y="184" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">웰·기판 전위를 잡는 접점 영역</text>
+<rect x="1214" y="188" width="22" height="14" fill="#e9b6c9" fill-opacity="0.6" stroke="#e9b6c9"/>
+<text x="1244" y="199" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">P+ implant</text>
+<text x="1244" y="212" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">P형 도핑(PMOS S/D, 기판 탭)</text>
+<rect x="1214" y="216" width="22" height="14" fill="#b6c9e9" fill-opacity="0.6" stroke="#b6c9e9"/>
+<text x="1244" y="227" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">N+ implant</text>
+<text x="1244" y="240" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">N형 도핑(NMOS S/D, 웰 탭)</text>
+<rect x="1214" y="244" width="22" height="14" fill="#cac" fill-opacity="0.6" stroke="#cac"/>
+<text x="1244" y="255" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">hvt implant</text>
+<text x="1244" y="268" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">고문턱전압 implant</text>
+<rect x="1214" y="272" width="22" height="14" fill="#bbb" fill-opacity="0.6" stroke="#bbb"/>
+<text x="1244" y="283" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">npc</text>
+<text x="1244" y="296" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">공정용 마스크(nitride poly cut)</text>
+<rect x="1214" y="300" width="22" height="14" fill="#d94b4b" fill-opacity="0.6" stroke="#d94b4b"/>
+<text x="1244" y="311" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">poly</text>
+<text x="1244" y="324" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">폴리실리콘: 트랜지스터 게이트(붉은 세로선)</text>
+<rect x="1214" y="328" width="22" height="14" fill="#222222" fill-opacity="0.95" stroke="#222222"/>
+<text x="1244" y="339" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">licon (접점)</text>
+<text x="1244" y="352" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">diff/poly → li1 접점(검은 점)</text>
+<rect x="1214" y="356" width="22" height="14" fill="#e0a03c" fill-opacity="0.6" stroke="#e0a03c"/>
+<text x="1244" y="367" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">li1</text>
+<text x="1244" y="380" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">셀 안쪽 배선, 셀 입출력 핀 모양</text>
+<rect x="1214" y="384" width="22" height="14" fill="#444444" fill-opacity="0.95" stroke="#444444"/>
+<text x="1244" y="395" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">mcon (비아)</text>
+<text x="1244" y="408" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">li1 → met1 연결 비아</text>
+<rect x="1214" y="412" width="22" height="14" fill="#4a74d9" fill-opacity="0.6" stroke="#4a74d9"/>
+<text x="1244" y="423" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">met1</text>
+<text x="1244" y="436" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">금속1: 전원 레일(VPWR/VGND)·배선</text>
+<rect x="1214" y="440" width="22" height="14" fill="#222222" fill-opacity="0.95" stroke="#222222"/>
+<text x="1244" y="451" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">via (met1-met2)</text>
+<text x="1244" y="464" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">met1 ↔ met2 연결 비아</text>
+<rect x="1214" y="468" width="22" height="14" fill="#c95fd1" fill-opacity="0.6" stroke="#c95fd1"/>
+<text x="1244" y="479" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">met2</text>
+<text x="1244" y="492" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="9.5" fill="#555">금속2 배선</text>
+<text x="1214" y="516" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="12" font-weight="bold" fill="#111">그림 안의 표시</text>
+<text x="1214" y="533" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#111">점선 상자 = 배치된 셀(이름 + 셀 종류)</text>
+<text x="1214" y="550" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#111">빨간 원 + 이름 = 핀(입력/출력)</text>
+<text x="1214" y="567" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#111">VPWR(위)·VGND(아래) = 전원 레일</text>
+<text x="1214" y="584" font-family="Segoe UI, Malgun Gothic, Apple SD Gothic Neo, sans-serif" font-size="10.5" font-weight="normal" fill="#111">&#x27;met2 배선&#x27; 같은 글자 = 직접 그린 도형의 층</text>
+</svg>

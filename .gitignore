@@ -60,3 +60,9 @@ docs/session_notes/
 /bin/
 /lib/
 /pyvenv.cfg
+
+# vvirt (virtual Virtuoso): upstream clone, installed deps, generated workspace
+tools/virtuoso-bridge-lite/
+tools/vvirt/vendor/
+tools/vvirt/.pipcache/
+tools/vvirt/workspace/
