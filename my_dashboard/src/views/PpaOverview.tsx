@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
 import AntennaExplainer from './AntennaExplainer'
 import ppa3Runs from '../data/ppa3Runs.json'
+import precheck from '../data/precheck.json'
 
 // "PPA 실험 요약" 탭 — PPA1/2/3의 목적, 요구 사항, 블록 그림, 진행 상황을 한 화면에 모은다.
 // 수치와 상태는 PPA 실험 1/2/3 탭, analog/README.md, ppa3_adc_capture 실행 로그에서 확인한 값만 쓴다.
@@ -154,6 +155,10 @@ const stepName = (s: string | null) => s ? s.replace(/^\d+-/, '') : '-'
 const ppa3State = (r: Ppa3Run) => r.state === 'running' ? <span className="connection">실행 중</span> : r.state === 'finished' ? <span className="ok-badge">완주</span>
   : <span className="warning-badge">{r.exit_code ? `중단 (exit ${r.exit_code})` : '중단·미완'}</span>
 
+interface PreCheckItem { id: string; title: string; status: 'pass' | 'fail' | 'not run' | 'info'; value: string; hint: string }
+interface PreCheckRun { run: string; checks: PreCheckItem[]; summary?: { pass: number; fail: number; not_run: number } }
+const PRECHECK_RUNS = precheck.runs as unknown as PreCheckRun[]
+const preBadge = (st: PreCheckItem['status']) => st === 'pass' ? <span className="ok-badge">통과</span> : st === 'fail' ? <span className="warning-badge">실패</span> : st === 'info' ? <span className="connection">참고</span> : <span style={{ color: 'var(--text-muted)' }}>미실행</span>
 export default function PpaOverview() {
   return <section className="ppaov">
     <section className="card">
@@ -284,6 +289,56 @@ export default function PpaOverview() {
     <section className="card">
       <div className="card-title"><div><small className="kicker">GLOSSARY</small><h3>antenna 위반이란? (PPA 3 baseline 2건 → 재실행 0건)</h3></div><span className="connection">용어 설명</span></div>
       <AntennaExplainer defaultOpen />
+    </section>
+    <section className="card">
+      <div className="card-title"><div><small className="kicker">CHECKLIST</small><h3>미리 알아 두면 좋은 것 — 이번 PPA 작업에서 실제로 겪은 것</h3></div><span className="connection">2026-10-13</span></div>
+      <p className="ppaov-note">아래는 이 프로젝트에서 직접 겪고 확인한 것만 적었습니다. &quot;확인 방법&quot;은 해당 문제를 일찍 찾는 방법입니다. 시간은 이 환경에서 실제로 걸린 값입니다.</p>
+      <div className="data-table"><table><thead><tr><th>#</th><th>미리 알아 둘 것</th><th>이번에 겪은 일</th><th>일찍 확인하는 방법</th></tr></thead><tbody>
+        <tr><td>1</td><td><b>macro 옆 좁은 행 조각에는 tap이 안 들어간다</b></td><td>ADC를 x=40에 두자 왼쪽에 폭 9.7 µm 조각이 남아 tap 0개, decap 497개 → LU.2/LU.3/nwell.4 1,861건 + LVS 불일치 대부분</td><td>macro를 코어 끝에서 halo(10 µm)만큼 띄우거나 끝에 붙임. 배치 직후 tap 분포 확인. DEF 기준 Magic DRC(몇 분)에서도 nwell.4로 먼저 나타남</td></tr>
+        <tr><td>2</td><td><b>macro 전원 핀은 PDN이 자동으로 못 잇는 경우가 있다</b></td><td>ADC 전원 핀 3개 미연결(PDN-0110, PSM-0039). 이름이 아니라 핀 모양과 장애물 문제였음</td><td>PDN 직후 <code>--to Checker.PowerGridViolations</code>(약 2분)로 중단 검사. 실패한 via는 pdngen이 만든 via 마스터를 다시 넣어 수리(<code>131_ppa3_pdnfix_flow.sh</code>)</td></tr>
+        <tr><td>3</td><td><b>전원 grid 검사 실패는 &quot;deferred&quot;라 flow가 계속 돈다</b></td><td>171,476건이 나와도 2시간 flow가 끝까지 돌았고 LVS에서야 드러남</td><td><code>130_ppa3_failfast.sh</code>처럼 PDN 직후에 따로 끊기. 경고(PSM-0039)를 반드시 읽기</td></tr>
+        <tr><td>4</td><td><b>전원 연결은 라우팅이 아니라 PDN 단계의 일</b></td><td>신호 연결은 정상인데 전원만 빠짐. 라우터는 전원을 special net으로 제외함</td><td>macro 핀 위치와 strap 층·간격을 배치 전에 맞춤. 설정만 바꿔서는 안 풀리면 via를 직접 보완</td></tr>
+        <tr><td>5</td><td><b>DEF 기준 DRC는 빠르지만 macro 내부를 안 본다</b></td><td>DEF 기준 559건 vs GDS 기준 15,861,362건. SRAM 내부 15,859,501건은 DEF에서 안 보임</td><td>빠른 선별은 DEF, 최종 판정은 GDS. DEF 결과를 &quot;DRC 통과&quot;로 보고하지 않기</td></tr>
+        <tr><td>6</td><td><b>macro 내부 위반은 제조 쪽이 알아서 처리해 주지 않는다</b></td><td>SRAM22 내부 15.86M건(일반 로직 규칙 위주)</td><td>제외 범위를 명시해 보고. 제조 제출 때는 foundry/MPW 규칙·waiver·공급자 검증서 확인</td></tr>
+        <tr><td>7</td><td><b>LVS는 macro를 빈 placeholder로 비교한다</b></td><td>LVS 불일치 363건의 원인은 macro 내부가 아니라 ADC 왼쪽 decap/nwell 섬이었음 (제가 처음엔 전원 미연결로 잘못 짚었음)</td><td>LVS 리포트에서 device 차이 개수와 종류(decap_12 +57 등)를 먼저 보기</td></tr>
+        <tr><td>8</td><td><b>antenna는 라우팅이 바뀌면 다른 net으로 옮겨 간다</b></td><td>수리 margin을 올려도 net만 바뀌며 1건씩 남음. 450×1422는 오히려 4건으로 증가</td><td>다이오드는 라우팅 전에 넣어 두고 라우팅 후 재검사. margin을 계속 올리기보다 긴 배선 분할(<code>GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH 300</code>)이 효과적이었음</td></tr>
+        <tr><td>9</td><td><b>타이밍 통과가 설계 개선이 아닐 수 있다</b></td><td>chan_top setup 통과는 axi 클럭을 52 → 54 ns로 완화한 결과. 닫힘으로 인정할지는 별도 결정</td><td>결과표에 &quot;실행 조건(클럭, 설정)&quot;을 함께 적기</td></tr>
+        <tr><td>10</td><td><b>macro GDS를 읽을 때 Magic이 fatal로 멈출 수 있다</b></td><td>SRAM GDS의 알 수 없는 layer 읽기 오류 97건으로 WriteLEF에서 중단</td><td><code>MAGIC_CAPTURE_ERRORS=false</code> (오류 개수는 따로 확인). 위반을 숨기지 않게 non-fatal 설정은 개수를 기록하는 방식으로만 사용</td></tr>
+        <tr><td>11</td><td><b>checker를 non-fatal로 하면 끝까지 돌지만 결과를 꼭 읽어야 한다</b></td><td><code>ERROR_ON_*=false</code>로 완주했지만 통과가 아니라 개수가 기록된 것</td><td>최종 <code>final/metrics.json</code>과 위반 리포트를 직접 확인</td></tr>
+        <tr><td>12</td><td><b>PPA3의 CDAC/비교기 규칙(diff/tap.18,20)은 top-level GDS DRC에 안 나타났다</b></td><td>CDAC 6건을 복사본에서 고쳤지만 PPA3 통과에는 필요하지 않았을 가능성</td><td>아날로그 IP를 고치기 전에 상위 flow의 실제 DRC에 나타나는 규칙인지 먼저 확인</td></tr>
+        <tr><td>13</td><td><b>Magic DRC를 동시에 두 개 돌리면 메모리가 부족하다</b></td><td>Magic DRC 한 개당 6.5 GB. 둘을 병렬로 돌리자 Windows 저메모리 이벤트로 WSL이 종료</td><td>긴 실행은 한 번에 1개. 결과 리포트 파일을 단계마다 확인</td></tr>
+        <tr><td>14</td><td><b>WSL이 꺼지면 긴 실행이 사라진다</b></td><td>여러 번 중단. keep-alive를 걸어도 완전히 막지는 못함</td><td>detached 실행 + <code>--from</code>으로 이어받기(<code>123_resume_ppa3.sh</code>). 위반 리포트는 변환 전에도 파일로 남아 있어 직접 분류 가능</td></tr>
+        <tr><td>15</td><td><b>생성한 도구(가상 Virtuoso)는 LVS가 없어 최종 판정에 못 쓴다</b></td><td>vvirt는 SKILL을 해석해 자체 DB로 레이아웃을 만들고, KLayout은 검사에만 씀</td><td>빠른 후보 선별 필터로만 사용하고 최종은 OpenLane signoff(Magic/KLayout/Netgen)로 확인</td></tr>
+      </tbody></table></div>
+    </section>
+    <section className="card">
+      <div className="card-title"><div><small className="kicker">PRE-CHECK</small><h3>사전 점검 스크립트 — 들어 있는 점검과 실제 결과</h3></div><span className="connection">{(precheck.generated as string).replace('T', ' ')}</span></div>
+      <p className="ppaov-note">두 단계로 나뉩니다. <b>(1) 사전 점검(flow 시작 전, 약 3분)</b>은 floorplan·PDN 문제를 2시간짜리 flow 전에 찾습니다. <b>(2) 결과 점검(flow 후, 파일만 읽음)</b>은 run 폴더의 결과를 한 표로 모아 통과·실패·미실행을 구분합니다. &quot;미실행&quot;은 통과로 세지 않고, macro 내부 위반은 따로 분리하며, DEF 기준 Magic DRC는 통과로 인정하지 않습니다.</p>
+      <div className="data-table"><table><thead><tr><th>단계</th><th>점검</th><th>무엇을 잡나</th><th>실행</th></tr></thead><tbody>
+        <tr><td rowSpan={4}><b>(1) 사전 점검</b><small style={{ display: 'block', color: 'var(--text-muted)' }}>flow 시작 전 · 약 3분</small></td><td>floorplan·PDN 생성</td><td>설정 오류, macro 배치 불가</td><td rowSpan={4}><code>bash tools/wsl/132_ppa3_precheck_early.sh &lt;variant&gt;</code><small style={{ display: 'block', color: 'var(--text-muted)' }}>종료 코드 0 = 통과, 3 = 문제 발견</small></td></tr>
+        <tr><td>pdngen이 못 넣은 met4-met5 via 자동 수리</td><td>ADC 같은 macro 전원 핀의 via 누락 (수리 못 하면 알림)</td></tr>
+        <tr><td>전원 grid 연결 검사 (PSM)</td><td>macro 전원 핀 미연결(<code>PSM-0039</code>), 끊긴 grid 노드</td></tr>
+        <tr><td>tap 커버리지 (<code>tools/precheck/tap_coverage.tcl</code>)</td><td>행의 어느 지점이든 tap에서 15 µm를 넘으면 실패 — macro 옆 tap 없는 행 조각(래치업 DRC·떠 있는 nwell 섬의 원인)</td></tr>
+        <tr><td rowSpan={9}><b>(2) 결과 점검</b><small style={{ display: 'block', color: 'var(--text-muted)' }}>flow 후 · 파일만 읽음</small></td><td>전원 grid (PSM)</td><td>flow 로그의 전원 grid 위반 개수</td><td rowSpan={9}><code>python tools/precheck/ppa3_precheck.py run &lt;run&gt;</code><br/><code>python tools/precheck/ppa3_precheck.py all</code></td></tr>
+        <tr><td>route DRC · antenna · XOR</td><td><code>final/metrics.json</code>(없으면 마지막 단계 state)의 개수</td></tr>
+        <tr><td>KLayout DRC</td><td>규칙 위반 개수</td></tr>
+        <tr><td>Magic DRC — macro 밖</td><td>위반 리포트를 읽어 macro 영역(설정의 위치+LEF 크기) 밖 위반만 규칙별로 집계</td></tr>
+        <tr><td>Magic DRC — macro 내부</td><td>공급자 IP 내부 위반을 따로 집계(제외 범위 명시용, 통과·실패로 세지 않음)</td></tr>
+        <tr><td>LVS</td><td>불일치 개수와 device·net·pin 구분</td></tr>
+        <tr><td>타이밍 setup / hold</td><td>최악 슬랙 (음수면 실패)</td></tr>
+        <tr><td>max-slew · max-cap</td><td>위반 개수</td></tr>
+        <tr><td>DEF 기준 DRC 구분</td><td><code>MAGIC_DRC_USE_GDS=false</code>이면 &quot;DEF 기준&quot;으로 표시하고 통과로 세지 않음</td></tr>
+      </tbody></table></div>
+      <h4 style={{ margin: '14px 0 4px', fontSize: 13 }}>실제 시험 결과</h4>
+      <div className="data-table"><table><thead><tr><th>시험</th><th>결과</th></tr></thead><tbody>
+        <tr><td>사전 점검 — 현재 후보 <code>adcpwr</code> (ADC x=30.24 + via 수리)</td><td><span className="ok-badge">통과</span> via 5곳 수리 · PSM 경고 0 · tap 미달 행 0 (약 3분)</td></tr>
+        <tr><td>사전 점검 — 이전 배치 <code>pwr1</code> (ADC x=40)</td><td><span className="warning-badge">중단</span> tap 미달 행 110개(x 20.2~29.9, y 148~445 µm — 실제 DRC 1,861건이 났던 바로 그 자리) · SRAM 전원 핀 미연결 PSM 경고 1,007건</td></tr>
+      </tbody></table></div>
+      <h4 style={{ margin: '14px 0 4px', fontSize: 13 }}>run별 결과 점검 (파일만 읽어 약 1분)</h4>
+      <div className="data-table"><table><thead><tr><th>점검</th>{PRECHECK_RUNS.map(r => <th key={r.run}>{r.run.replace('ppa3_', '')}<small style={{ display: 'block', color: 'var(--text-muted)', fontWeight: 400 }}>통과 {r.summary?.pass ?? 0} · 실패 {r.summary?.fail ?? 0} · 미실행 {r.summary?.not_run ?? 0}</small></th>)}</tr></thead><tbody>
+        {PRECHECK_RUNS[0].checks.map((c0, i) => <tr key={c0.id}><td><b>{c0.title.replace(' (macro 밖, GDS 기준)', ' (macro 밖)')}</b></td>{PRECHECK_RUNS.map(r => { const c = r.checks[i]; return <td key={r.run}>{preBadge(c.status)}<small style={{ display: 'block', color: 'var(--text-muted)' }}>{c.value}</small></td> })}</tr>)}
+      </tbody></table></div>
+      <p className="ppaov-note">전원 grid(PSM)가 &quot;미실행&quot;인 것은 이 run들이 앞 단계를 이어받은 run이라 flow 로그에 그 단계가 없기 때문입니다. <code>ppa3_adcslew2_signoff</code>의 Magic DRC(macro 밖)는 중단된 <code>ppa3_adcslew_signoff</code>의 완성된 위반 리포트에서 읽었습니다.</p>
     </section>
   </section>
 }

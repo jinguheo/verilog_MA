@@ -1,0 +1,308 @@
+{
+ "generated": "2026-10-13T22:51",
+ "runs": [
+  {
+   "run": "ppa3_antfix4_signoff",
+   "checks": [
+    {
+     "id": "pdn",
+     "title": "전원 grid 연결 (PSM)",
+     "status": "not run",
+     "value": "이 run에는 해당 단계 기록 없음(이어받은 run)",
+     "hint": "PDN 직후 132_ppa3_precheck_early.sh로 먼저 확인"
+    },
+    {
+     "id": "route",
+     "title": "route DRC",
+     "status": "pass",
+     "value": "0건",
+     "hint": ""
+    },
+    {
+     "id": "antenna",
+     "title": "antenna",
+     "status": "pass",
+     "value": "0건",
+     "hint": "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH 300"
+    },
+    {
+     "id": "xor",
+     "title": "XOR (Magic vs KLayout GDS)",
+     "status": "pass",
+     "value": "0건",
+     "hint": ""
+    },
+    {
+     "id": "klayout",
+     "title": "KLayout DRC",
+     "status": "fail",
+     "value": "1건",
+     "hint": ""
+    },
+    {
+     "id": "magic",
+     "title": "Magic DRC (macro 밖, GDS 기준)",
+     "status": "fail",
+     "value": "1861건 (LU.3 908, LU.2 896, nwell.4 57)",
+     "hint": "macro 옆 행 조각의 tap 부족 → tap_coverage.tcl"
+    },
+    {
+     "id": "magic_macro",
+     "title": "Magic DRC (macro 내부)",
+     "status": "info",
+     "value": "u_capture_path.u_capture.u_capture_sram.u_sram22 15,859,501",
+     "hint": "공급자 IP 내부 — 제외 범위를 명시해 별도 보고"
+    },
+    {
+     "id": "lvs",
+     "title": "LVS",
+     "status": "fail",
+     "value": "363건 (device 107, net 45, pin 36)",
+     "hint": ""
+    },
+    {
+     "id": "timing",
+     "title": "타이밍 (setup / hold)",
+     "status": "pass",
+     "value": "+10.39 / +0.18 ns",
+     "hint": ""
+    },
+    {
+     "id": "slew",
+     "title": "max-slew 위반",
+     "status": "fail",
+     "value": "42건",
+     "hint": ""
+    },
+    {
+     "id": "cap",
+     "title": "max-cap 위반",
+     "status": "fail",
+     "value": "1건",
+     "hint": ""
+    }
+   ],
+   "generated": "2026-10-13T22:48",
+   "metrics_source": "final/metrics.json",
+   "magic": {
+    "total": 15861362,
+    "inside_macros": {
+     "u_capture_path.u_capture.u_capture_sram.u_sram22": 15859501
+    },
+    "outside": 1861,
+    "outside_rules": {
+     "All nwells must contain metal-connected N+ taps (nwell.4)": 57,
+     "P-diff distance to N-tap must be < 15.0um (LU.3)": 908,
+     "N-diff distance to P-tap must be < 15.0um (LU.2)": 896
+    },
+    "report_complete": true
+   },
+   "summary": {
+    "pass": 4,
+    "fail": 5,
+    "not_run": 1
+   }
+  },
+  {
+   "run": "ppa3_pdn_a_signoff",
+   "checks": [
+    {
+     "id": "pdn",
+     "title": "전원 grid 연결 (PSM)",
+     "status": "not run",
+     "value": "이 run에는 해당 단계 기록 없음(이어받은 run)",
+     "hint": "PDN 직후 132_ppa3_precheck_early.sh로 먼저 확인"
+    },
+    {
+     "id": "route",
+     "title": "route DRC",
+     "status": "pass",
+     "value": "0건",
+     "hint": ""
+    },
+    {
+     "id": "antenna",
+     "title": "antenna",
+     "status": "pass",
+     "value": "0건",
+     "hint": "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH 300"
+    },
+    {
+     "id": "xor",
+     "title": "XOR (Magic vs KLayout GDS)",
+     "status": "pass",
+     "value": "0건",
+     "hint": ""
+    },
+    {
+     "id": "klayout",
+     "title": "KLayout DRC",
+     "status": "fail",
+     "value": "185건",
+     "hint": ""
+    },
+    {
+     "id": "magic",
+     "title": "Magic DRC (macro 밖, GDS 기준)",
+     "status": "fail",
+     "value": "1861건 (LU.3 908, LU.2 896, nwell.4 57)",
+     "hint": "macro 옆 행 조각의 tap 부족 → tap_coverage.tcl"
+    },
+    {
+     "id": "magic_macro",
+     "title": "Magic DRC (macro 내부)",
+     "status": "info",
+     "value": "u_adc 16, u_capture_path.u_capture.u_capture_sram.u_sram22 15,859,501",
+     "hint": "공급자 IP 내부 — 제외 범위를 명시해 별도 보고"
+    },
+    {
+     "id": "lvs",
+     "title": "LVS",
+     "status": "fail",
+     "value": "387건 (device 109, net 46, pin 59)",
+     "hint": ""
+    },
+    {
+     "id": "timing",
+     "title": "타이밍 (setup / hold)",
+     "status": "pass",
+     "value": "+10.38 / +0.18 ns",
+     "hint": ""
+    },
+    {
+     "id": "slew",
+     "title": "max-slew 위반",
+     "status": "fail",
+     "value": "43건",
+     "hint": ""
+    },
+    {
+     "id": "cap",
+     "title": "max-cap 위반",
+     "status": "fail",
+     "value": "1건",
+     "hint": ""
+    }
+   ],
+   "generated": "2026-10-13T22:49",
+   "metrics_source": "final/metrics.json",
+   "magic": {
+    "total": 15861378,
+    "inside_macros": {
+     "u_capture_path.u_capture.u_capture_sram.u_sram22": 15859501,
+     "u_adc": 16
+    },
+    "outside": 1861,
+    "outside_rules": {
+     "All nwells must contain metal-connected N+ taps (nwell.4)": 57,
+     "P-diff distance to N-tap must be < 15.0um (LU.3)": 908,
+     "N-diff distance to P-tap must be < 15.0um (LU.2)": 896
+    },
+    "report_complete": true
+   },
+   "summary": {
+    "pass": 4,
+    "fail": 5,
+    "not_run": 1
+   }
+  },
+  {
+   "run": "ppa3_adcslew2_signoff",
+   "checks": [
+    {
+     "id": "pdn",
+     "title": "전원 grid 연결 (PSM)",
+     "status": "not run",
+     "value": "이 run에는 해당 단계 기록 없음(이어받은 run)",
+     "hint": "PDN 직후 132_ppa3_precheck_early.sh로 먼저 확인"
+    },
+    {
+     "id": "route",
+     "title": "route DRC",
+     "status": "pass",
+     "value": "0건",
+     "hint": ""
+    },
+    {
+     "id": "antenna",
+     "title": "antenna",
+     "status": "pass",
+     "value": "0건",
+     "hint": "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH 300"
+    },
+    {
+     "id": "xor",
+     "title": "XOR (Magic vs KLayout GDS)",
+     "status": "pass",
+     "value": "0건",
+     "hint": ""
+    },
+    {
+     "id": "klayout",
+     "title": "KLayout DRC",
+     "status": "pass",
+     "value": "0건",
+     "hint": ""
+    },
+    {
+     "id": "magic",
+     "title": "Magic DRC (macro 밖, GDS 기준)",
+     "status": "pass",
+     "value": "0건",
+     "hint": "macro 옆 행 조각의 tap 부족 → tap_coverage.tcl"
+    },
+    {
+     "id": "magic_macro",
+     "title": "Magic DRC (macro 내부)",
+     "status": "info",
+     "value": "u_capture_path.u_capture.u_capture_sram.u_sram22 15,859,501",
+     "hint": "공급자 IP 내부 — 제외 범위를 명시해 별도 보고"
+    },
+    {
+     "id": "lvs",
+     "title": "LVS",
+     "status": "fail",
+     "value": "7건 (device 0, net 1, pin 4)",
+     "hint": ""
+    },
+    {
+     "id": "timing",
+     "title": "타이밍 (setup / hold)",
+     "status": "pass",
+     "value": "+9.05 / +0.13 ns",
+     "hint": ""
+    },
+    {
+     "id": "slew",
+     "title": "max-slew 위반",
+     "status": "fail",
+     "value": "15건",
+     "hint": ""
+    },
+    {
+     "id": "cap",
+     "title": "max-cap 위반",
+     "status": "pass",
+     "value": "0건",
+     "hint": ""
+    }
+   ],
+   "generated": "2026-10-13T22:50",
+   "metrics_source": "final/metrics.json",
+   "magic": {
+    "total": 15859501,
+    "inside_macros": {
+     "u_capture_path.u_capture.u_capture_sram.u_sram22": 15859501
+    },
+    "outside": 0,
+    "outside_rules": {},
+    "report_complete": true
+   },
+   "summary": {
+    "pass": 7,
+    "fail": 2,
+    "not_run": 1
+   }
+  }
+ ]
+}
