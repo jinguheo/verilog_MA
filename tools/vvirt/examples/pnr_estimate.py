@@ -19,7 +19,7 @@ import time
 
 ROOT = "/mnt/d/MyWork/Veriolg_MA"
 sys.path.insert(0, ROOT + "/tools/vvirt/src")
-from vvirt import def_export, pdk_params, pnr_est, route_check  # noqa: E402
+from vvirt import conn_check, def_export, netlist, pdk_params, pnr_est, route_check  # noqa: E402
 from vvirt.stdcell import StdCellLib  # noqa: E402
 
 
@@ -30,6 +30,15 @@ def find_def(p: str) -> str:
             raise SystemExit(f"no final/def/*.def in {p}")
         return c[0]
     return p
+
+
+def find_netlist(target: str, explicit: str | None) -> str | None:
+    if explicit:
+        return explicit
+    if os.path.isdir(target):
+        c = sorted(glob.glob(os.path.join(target, "final", "nl", "*.nl.v")))
+        return c[0] if c else None
+    return None
 
 
 def macro_lefs(defpath: str) -> list[str]:
@@ -65,7 +74,7 @@ def publish(name: str, res: dict, out: str) -> None:
     e = res["estimate"]
     data[name] = {"def": os.path.relpath(res["def"], ROOT).replace(os.sep, "/"), "seconds": res["seconds"], "stats": {k: v for k, v in e["stats"].items() if k != "longest_nets"},
                   "findings": [f for f in e["findings"] if f["kind"] != "congestion"][:40], "congestion": [f for f in e["findings"] if f["kind"] == "congestion"][:12],
-                  "eco": res["eco"][:40], "rules": res["rules"], "route_check": e.get("route_check"), "longest_nets": e["stats"].get("longest_nets", [])[:5], "die": e["die"]}
+                  "eco": res["eco"][:40], "rules": res["rules"], "route_check": e.get("route_check"), "connectivity": e.get("connectivity"), "longest_nets": e["stats"].get("longest_nets", [])[:5], "die": e["die"]}
     json.dump(data, open(jp, "w", encoding="utf-8"), indent=1, ensure_ascii=False)
 
 
@@ -79,6 +88,8 @@ def main() -> int:
     ap.add_argument("--lu", type=float, help="override the latch-up distance read from the PDK (um)")
     ap.add_argument("--lib", default="testlib", help="library of the cellview the markers are drawn into (open the real layout cell there)")
     ap.add_argument("--cell", help="cell the markers are drawn into (default <name>_overlay)")
+    ap.add_argument("--netlist", help="structural Verilog netlist to check the DEF connectivity against (default: final/nl/*.nl.v of a run folder)")
+    ap.add_argument("--no-netlist", action="store_true", help="skip the netlist-versus-DEF connectivity check")
     ap.add_argument("--dashboard", action="store_true", help="also publish json + svg + overlay for the dashboard VB tab")
     a = ap.parse_args()
     dpath = find_def(a.target)
@@ -97,6 +108,13 @@ def main() -> int:
             rc = route_check.check(d, tl.layers, def_export.read_tlef_vias(tl.path), def_export.def_via_shapes)
             est["route_check"] = {"counts": rc["counts"], "layers_checked": rc["layers_checked"], "tech_lef": os.path.basename(tl.path)}
             est["findings"] += rc["findings"]
+    nlpath = None if a.no_netlist else find_netlist(a.target, a.netlist)
+    if nlpath:
+        try:
+            est["connectivity"] = conn_check.check(d, netlist.load(nlpath, power_pins={"VPWR", "VGND", "VPB", "VNB"}))
+            est["connectivity"]["netlist"] = os.path.relpath(nlpath, ROOT).replace(os.sep, "/")
+        except netlist.NetlistError as exc:
+            est["connectivity"] = {"error": str(exc), "netlist": nlpath}
     t2 = time.time()
     eco = pnr_est.suggest_eco(d, sizes, est)
     res = {"name": name, "def": dpath, "seconds": {"read": round(t1 - t0, 2), "estimate": round(t2 - t1, 2)}, "rules": pp, "estimate": est, "eco": eco, "routed": d.routed}
@@ -119,6 +137,13 @@ def main() -> int:
             break
     if "route_check" in est:
         print(f"  route check ({est['route_check']['tech_lef']}): shorts {est['route_check']['counts']['short']}  spacing {est['route_check']['counts']['spacing']}  layers {len(est['route_check']['layers_checked'])}")
+    cc = est.get("connectivity")
+    if cc and "error" in cc:
+        print(f"  connectivity: netlist not read ({cc['error']})")
+    elif cc:
+        i, n = cc["instances"], cc["nets"]
+        print(f"  connectivity vs {os.path.basename(cc['netlist'])}: instances netlist {i['netlist']} / def {i['def']} (physical-only {i['physical_only_in_def']}), only-netlist {i['only_in_netlist_count']}, only-def {i['only_in_def_count']}, master mismatch {i['master_mismatch_count']}")
+        print(f"    nets equal {n['equal']}/{n['def_checked']}  open {n['open']}  short {n['short']}  unknown pins {n['unknown_pins']}  absent from def {n['netlist_nets_absent_from_def']}  -> {'consistent' if cc['clean'] else 'DIFFERENCES'}")
     print(f"  findings {len(est['findings'])}  suggested ECO edits {len(eco)}")
     return 0
 

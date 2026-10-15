@@ -252,8 +252,9 @@ def flatten(mods: dict[str, Module], top: str | None = None, power_pins: set[str
                     if len(sig) == 1:
                         pins[pin] = local(sig[0])
                     elif len(sig) > 1:
+                        # sig is msb first; a leaf cell's bus port is taken to be declared [n-1:0], so the first entry is bit n-1
                         for k, s in enumerate(sig):
-                            pins[f"{pin}[{k}]"] = local(s)
+                            pins[f"{pin}[{len(sig) - 1 - k}]"] = local(s)
                 insts[full] = (cell, pins)
 
     tm = mods[top]

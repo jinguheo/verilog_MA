@@ -2,8 +2,8 @@
  "ppa3_antfix4": {
   "def": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix4_signoff/final/def/ppa3_adc_capture_top.def",
   "seconds": {
-   "read": 0.48,
-   "estimate": 1.89
+   "read": 1.24,
+   "estimate": 6.11
   },
   "stats": {
    "components": 24732,
@@ -285,6 +285,39 @@
    },
    "tech_lef": "sky130_fd_sc_hd__nom.tlef"
   },
+  "connectivity": {
+   "instances": {
+    "netlist": 24732,
+    "def": 24732,
+    "physical_only_in_def": 22053,
+    "only_in_netlist": [],
+    "only_in_netlist_count": 0,
+    "only_in_def": [],
+    "only_in_def_count": 0,
+    "master_mismatch": [],
+    "master_mismatch_count": 0
+   },
+   "nets": {
+    "def_checked": 1235,
+    "equal": 1235,
+    "open": 0,
+    "short": 0,
+    "unknown_pins": 0,
+    "netlist_nets_absent_from_def": 0
+   },
+   "examples": {
+    "open": [],
+    "short": [],
+    "absent": []
+   },
+   "clean": true,
+   "scope": [
+    "signal nets only (no power, constants or top-level ports)",
+    "by instance/pin sets, not net names",
+    "description-level, not geometry: not LVS"
+   ],
+   "netlist": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix4_signoff/final/nl/ppa3_adc_capture_top.nl.v"
+  },
   "longest_nets": [
    {
     "net": "u_capture_path.u_capture.capture_commit_word",
@@ -317,38 +350,13 @@
    0.0,
    1250.0,
    600.0
-  ],
-  "export": {
-   "instances": 13920,
-   "wires": 11386,
-   "vias": 11650,
-   "patches": 37,
-   "statements": 60293,
-   "chunks": 31,
-   "masters_without_size": {
-    "sky130_ef_sc_hd__decap_12": 10810,
-    "sky130_ef_ip__adc3v_12bit": 1,
-    "sram22_1024x32m8w8": 1
-   },
-   "unknown_vias_or_layers": {},
-   "unverified_orientations": [],
-   "window": null,
-   "verify": {
-    "instances_compared": 13920,
-    "boxes_differ": 0,
-    "shapes_in_cellview": 46373
-   },
-   "lib": "pnr_import",
-   "cell": "ppa3_antfix4",
-   "tech_lef": "sky130_fd_sc_hd__nom.tlef",
-   "verified": true
-  }
+  ]
  },
  "ppa3_adcslew2": {
   "def": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_adcslew2_signoff/final/def/ppa3_adc_capture_top.def",
   "seconds": {
-   "read": 0.35,
-   "estimate": 1.38
+   "read": 1.2,
+   "estimate": 6.12
   },
   "stats": {
    "components": 24685,
@@ -534,6 +542,39 @@
    },
    "tech_lef": "sky130_fd_sc_hd__nom.tlef"
   },
+  "connectivity": {
+   "instances": {
+    "netlist": 24685,
+    "def": 24685,
+    "physical_only_in_def": 21741,
+    "only_in_netlist": [],
+    "only_in_netlist_count": 0,
+    "only_in_def": [],
+    "only_in_def_count": 0,
+    "master_mismatch": [],
+    "master_mismatch_count": 0
+   },
+   "nets": {
+    "def_checked": 1505,
+    "equal": 1505,
+    "open": 0,
+    "short": 0,
+    "unknown_pins": 0,
+    "netlist_nets_absent_from_def": 0
+   },
+   "examples": {
+    "open": [],
+    "short": [],
+    "absent": []
+   },
+   "clean": true,
+   "scope": [
+    "signal nets only (no power, constants or top-level ports)",
+    "by instance/pin sets, not net names",
+    "description-level, not geometry: not LVS"
+   ],
+   "netlist": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_adcslew2_signoff/final/nl/ppa3_adc_capture_top.nl.v"
+  },
   "longest_nets": [
    {
     "net": "net255",
@@ -566,31 +607,6 @@
    0.0,
    1250.0,
    600.0
-  ],
-  "export": {
-   "instances": 13837,
-   "wires": 12172,
-   "vias": 12669,
-   "patches": 30,
-   "statements": 64046,
-   "chunks": 33,
-   "masters_without_size": {
-    "sky130_ef_sc_hd__decap_12": 10846,
-    "sky130_ef_ip__adc3v_12bit": 1,
-    "sram22_1024x32m8w8": 1
-   },
-   "unknown_vias_or_layers": {},
-   "unverified_orientations": [],
-   "window": null,
-   "verify": {
-    "instances_compared": 13837,
-    "boxes_differ": 0,
-    "shapes_in_cellview": 50209
-   },
-   "lib": "pnr_import",
-   "cell": "ppa3_adcslew2",
-   "tech_lef": "sky130_fd_sc_hd__nom.tlef",
-   "verified": true
-  }
+  ]
  }
 }
