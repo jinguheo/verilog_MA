@@ -2,6 +2,7 @@ import { ReactNode } from 'react'
 import AntennaExplainer from './AntennaExplainer'
 import ppa3Runs from '../data/ppa3Runs.json'
 import precheck from '../data/precheck.json'
+import PpaEvidence from './PpaEvidence'
 
 // "PPA 실험 요약" 탭 — PPA1/2/3의 목적, 요구 사항, 블록 그림, 진행 상황을 한 화면에 모은다.
 // 수치와 상태는 PPA 실험 1/2/3 탭, analog/README.md, ppa3_adc_capture 실행 로그에서 확인한 값만 쓴다.
@@ -162,7 +163,7 @@ const preBadge = (st: PreCheckItem['status']) => st === 'pass' ? <span className
 export default function PpaOverview() {
   return <section className="ppaov">
     <section className="card">
-      <div className="card-title"><div><small className="kicker">PPA EXPERIMENT MAP</small><h2>PPA 실험 1 → 2 → 3 한눈에 보기</h2></div><span className="connection">2026-10-04 기준</span></div>
+      <div className="card-title"><div><small className="kicker">PPA EXPERIMENT MAP</small><h2>PPA 실험 1 → 2 → 3 한눈에 보기</h2></div><span className="connection">2026-10-13 기준</span></div>
       <p className="ppaov-intro">세 실험은 이어져 있습니다. <b>1번</b>이 ADC 기준점(면적·DRC/LVS)을 잡고, <b>2번</b>이 그 ADC 뒤에 붙는 캡처 데이터 경로(RTL)를 검증하며, <b>3번</b>이 둘을 한 칩 안에 배치·라우팅해 물리 구현으로 묶습니다. 아날로그 측 물리 게이트(CDAC DRC 잔여 6건)는 1번에서 시작해 3번까지 이어집니다.</p>
       <div className="data-table"><table><thead><tr><th>실험</th><th>한 줄 목적</th><th>범위</th><th>상태</th></tr></thead><tbody>
         <tr><td><b>PPA 1</b></td><td>공개 12-bit SAR ADC를 골라 면적·물리 검증 기준점 확보</td><td>아날로그 IP · DRC/LVS</td><td><span className="analog-badge blocked">물리 게이트 보류</span> CDAC DRC 6건</td></tr>
@@ -246,7 +247,7 @@ export default function PpaOverview() {
       ]}
       steps={[
         ['done', 'wrapper RTL (ppa3_adc_capture_top) lint pass'],
-        ['done', 'floorplan 고정 — ADC (40,150) · SRAM (430,65)'],
+        ['done', 'floorplan — SRAM (430,65) · ADC는 처음 (40,150)이었으나 tap 없는 행 조각 때문에 (30.24,150)으로 이동(2026-10-09)'],
         ['done', 'baseline: OpenLane 59/74단계까지 실행 — route DRC 0 · setup/hold 위반 0 · util 64.9%'],
         ['done', 'antenna 수리 재실행 — 7건 → 0건 (ppa3_antfix2, 2026-10-04: 긴 배선 300µm 분할 repair + heuristic diode) · route DRC 0 · 최악 setup +10.39 ns'],
         ['done', 'Magic.WriteLEF 통과 — SRAM macro GDS의 읽기 오류 97건을 무시하는 설정으로 (MAGIC_CAPTURE_ERRORS=false)'],
@@ -274,11 +275,12 @@ export default function PpaOverview() {
       <p className="ppaov-note"><b>macro 내부 DRC 위반의 취급:</b> SRAM22 내부 위반(15,859,501건, 일반 로직용 규칙인 local interconnect·diffusion 폭 등)은 hard macro IP 내부라 배치·라우팅으로 줄일 수 없습니다. bitcell이 별도 규칙으로 만들어졌을 가능성이 있지만 공급자에게 확인한 것은 아니며, <b>제조 쪽이 알아서 처리해 주는 것이 아니므로</b> 실제 제조 제출 때는 대상 foundry/MPW의 규칙 파일과 waiver, 공급자 검증서를 확인해야 합니다. 이 실험에서는 macro 내부를 제외한 top-level 위반(1,861건: LU.2/LU.3 래치업 1,804 + nwell.4 57)을 실제 확인 대상으로 보고, 제외한 범위를 이렇게 명시합니다. DEF 기준 DRC는 macro 내부를 보지 않으므로 통과로 세지 않습니다.</p>
       <p className="ppaov-note">&quot;미실행&quot;은 통과가 아니라 <b>그 단계까지 아직 안 갔다</b>는 뜻이고 최종 run에서는 반드시 채워져야 합니다. &quot;대체됨&quot;은 이전 run이라 따로 돌릴 필요가 없다는 뜻입니다. 이어받은 run(<code>ppa3_antfix3_signoff</code>, <code>ppa3_fin*</code>)은 앞 단계 값을 이전 run의 상태에서 물려받습니다. 위반이 있어도 flow를 끝까지 돌리는 설정(<code>config_antfix4</code>)에서도 개수는 숨기지 않고 그대로 기록됩니다.</p>
     </section>
+    <PpaEvidence />
     <section className="card">
       <div className="card-title"><div><small className="kicker">PPA 3 · OPEN ISSUES</small><h3>PPA 3 현재 이슈와 해결 방안 (2026-10-10)</h3></div><span className="connection">풀지 못한 항목만</span></div>
       <p className="ppaov-note">통과한 항목: 타이밍(setup +9.05 / hold +0.13 ns) · antenna 0 · route DRC 0 · XOR 0 · KLayout DRC 0 · SRAM 밖 Magic DRC 0 (ADC를 x 40 → 30.24로 이동, <code>ppa3_adcslew</code>/<code>ppa3_adcslew2_signoff</code>). 아래는 남은 이슈와 해결 방안입니다. 해결 방안은 아직 실행하지 않은 제안이며 효과는 검증 전입니다.</p>
       <div className="data-table"><table><thead><tr><th>#</th><th>이슈</th><th>현재 상태 (실측)</th><th>해결 방안</th></tr></thead><tbody>
-        <tr><td>1</td><td><b>ADC 전원 핀 3개 미연결 → LVS 7건</b></td><td><b>진단·수리 방안 구현(2026-10-10):</b> 실패한 via는 5곳이었고 모두 ADC 전원 핀 met4 stripe와 코어 met5 strap의 교차점(크기 5.1×1.6, 5.1×7.5, 5.1×7.8, 3.8×1.6 µm)이었음. pdngen이 같은 크기로 만든 via 마스터를 그 위치에 다시 넣으면 PSM 연결 검사가 0건이 됨(<code>tools/wsl/131_ppa3_pdnfix_flow.sh</code>, 전원 연결 실패 시 3분 만에 중단하는 fail-fast 포함). 이 설정으로 전체 flow(<code>ppa3_adcpwr</code>)를 돌리는 중이며 LVS·KLayout 결과는 아직 없음. 이전 관측: ADC <code>vccd</code>·<code>vdda</code>·<code>vssa</code>가 grid에 연결되지 않음(<code>vssd</code>만 연결). PDN 로그에 &quot;No via inserted between met4 and met5&quot;가 반복(예: x 217.8, y 347.3 / 426.0). strap 위치(<code>FP_PDN_VOFFSET</code>) 3가지를 바꿔도 동일(5,134건) → offset은 원인이 아님. LVS는 363 → 7건까지 감소.</td><td><b>(a)</b> 실패한 via 좌표를 ADC LEF의 rail·장애물(OBS met4/met5)과 겹쳐 원인 확인(가장 먼저) · <b>(b)</b> <code>PDN_MACRO_CONNECTIONS</code>를 핀별로 나눠 한 핀씩 연결해 보며 두 줄 처리 문제인지 확인 · <b>(c)</b> via 규칙(via4.1/4.2)을 지키는 크기로 연결 조각을 다시 설계(이전 시도는 KLayout 185건을 만듦) · <b>(d)</b> 정석: 아날로그 <code>vdda/vssa</code>를 별도 전원 도메인으로 정의하고 ADC 주변에 전용 strap을 둠 — top에 새 전원 핀이 생기고 3.3 V/1.8 V 구조 결정이 필요</td></tr>
+        <tr><td>1</td><td><b>ADC 전원 핀 3개 미연결 → LVS 7건</b></td><td><b>진단·수리 방안 구현(2026-10-10):</b> 실패한 via는 5곳이었고 모두 ADC 전원 핀 met4 stripe와 코어 met5 strap의 교차점(크기 5.1×1.6, 5.1×7.5, 5.1×7.8, 3.8×1.6 µm)이었음. pdngen이 같은 크기로 만든 via 마스터를 그 위치에 다시 넣으면 PSM 연결 검사가 0건이 됨(<code>tools/wsl/131_ppa3_pdnfix_flow.sh</code>, 전원 연결 실패 시 3분 만에 중단하는 fail-fast 포함). 이 설정(<code>ppa3_adcpwr</code>)은 사전 점검만 통과했고 <b>전체 flow는 아직 완주한 적이 없음</b>(2026-10-10 시도는 WSL 재시작으로 중단) — LVS·KLayout 결과는 아직 없음. 이전 관측: ADC <code>vccd</code>·<code>vdda</code>·<code>vssa</code>가 grid에 연결되지 않음(<code>vssd</code>만 연결). PDN 로그에 &quot;No via inserted between met4 and met5&quot;가 반복(예: x 217.8, y 347.3 / 426.0). strap 위치(<code>FP_PDN_VOFFSET</code>) 3가지를 바꿔도 동일(5,134건) → offset은 원인이 아님. LVS는 363 → 7건까지 감소.</td><td><b>(a)</b> 실패한 via 좌표를 ADC LEF의 rail·장애물(OBS met4/met5)과 겹쳐 원인 확인(가장 먼저) · <b>(b)</b> <code>PDN_MACRO_CONNECTIONS</code>를 핀별로 나눠 한 핀씩 연결해 보며 두 줄 처리 문제인지 확인 · <b>(c)</b> via 규칙(via4.1/4.2)을 지키는 크기로 연결 조각을 다시 설계(이전 시도는 KLayout 185건을 만듦) · <b>(d)</b> 정석: 아날로그 <code>vdda/vssa</code>를 별도 전원 도메인으로 정의하고 ADC 주변에 전용 strap을 둠 — top에 새 전원 핀이 생기고 3.3 V/1.8 V 구조 결정이 필요</td></tr>
         <tr><td>2</td><td><b>max-slew 위반 15건</b></td><td>설정으로 42 → 15건까지 감소. SRAM22 입력 핀의 lib 한계 <code>max_transition</code> 0.351 ns를 넘는 핀이 원인 후보.</td><td>SRAM 입력 핀 앞에 buffer 삽입 · <code>DESIGN_REPAIR_MAX_SLEW_PCT</code>·<code>CTS_MAX_SLEW</code>를 더 낮춤 · repair 순서(다이오드 삽입 후 재수리) 조정</td></tr>
         <tr><td>3</td><td><b>SRAM22 내부 Magic DRC 15,859,501건</b></td><td>전부 macro 내부(일반 로직 규칙 위주). 배치·라우팅으로 줄일 수 없음.</td><td>macro 내부를 제외한 범위를 명시해 보고 · 제조 제출 시 대상 foundry/MPW 규칙 파일, waiver, 공급자 검증서 확인 · 필요하면 공급자에게 규칙 해석 문의</td></tr>
         <tr><td>4</td><td><b>최종 run에 Magic DRC metric 없음</b></td><td>WSL이 꺼져 Magic DRC 단계의 XML 변환이 중단 → <code>ppa3_adcslew2_signoff</code>는 KLayout부터 이어받아 해당 metric이 비어 있음(위반 리포트 파일에는 있음: macro 밖 0건).</td><td>안정된 환경에서 Magic.DRC 단계를 처음부터 한 번 완주(메모리 여유 확보, 실행 1개씩) 후 metric 기록</td></tr>

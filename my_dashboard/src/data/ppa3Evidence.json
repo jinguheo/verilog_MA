@@ -1,0 +1,4615 @@
+{
+ "schema": "veriolg.evidence/1",
+ "generated": "2026-10-14T22:31",
+ "runs": {
+  "RUN_2026-09-24_14-07-59": {
+   "schema": "veriolg.evidence/1",
+   "subject": {
+    "kind": "openlane-run",
+    "id": "RUN_2026-09-24_14-07-59",
+    "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/RUN_2026-09-24_14-07-59",
+    "label": "baseline (09-24)"
+   },
+   "produced": {
+    "by": "tools/ppa3_evidence.py @ 6771a45",
+    "at": "2026-10-14T22:31:16"
+   },
+   "environment": {
+    "pdk": "sky130A",
+    "pdk_version": "0fe599b2afb6708d281543108caf8310912f54af",
+    "std_cell_library": "sky130_fd_sc_hd",
+    "design": "ppa3_adc_capture_top"
+   },
+   "inputs": {
+    "f1": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/RUN_2026-09-24_14-07-59/resolved.json",
+     "role": "settings the run was started with",
+     "sha256": "dd8adebd2fde88fd888f3797b30b73170120fe252926d803ee83ee0080dff515",
+     "bytes": 166198,
+     "mtime": "2026-09-24T14:29:15"
+    },
+    "f2": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/RUN_2026-09-24_14-07-59/58-klayout-streamout/state_out.json",
+     "role": "state after the last finished step (58-klayout-streamout)",
+     "sha256": "a5c865733ea4841beba0140d01ad4ed494a9cb40d63651a8e4fb401c6ce650c4",
+     "bytes": 23238,
+     "mtime": "2026-09-24T14:54:59"
+    }
+   },
+   "context": {
+    "CLOCK_PERIOD": 20,
+    "FP_CORE_UTIL": 50,
+    "PL_TARGET_DENSITY_PCT": 35,
+    "DIE_AREA": [
+     0,
+     0,
+     1250,
+     600
+    ],
+    "MAGIC_DRC_USE_GDS": true,
+    "GRT_ANTENNA_ITERS": 3,
+    "GRT_ANTENNA_MARGIN": 10,
+    "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH": 0,
+    "DESIGN_REPAIR_MAX_SLEW_PCT": 20,
+    "DESIGN_REPAIR_MAX_CAP_PCT": 20,
+    "CTS_MAX_SLEW": null,
+    "RUN_HEURISTIC_DIODE_INSERTION": false,
+    "FP_PDN_VOFFSET": 16.32,
+    "PDN_MACRO_CONNECTIONS": [
+     "u_capture_path.u_capture.u_capture_sram.u_sram22 vccd vssd vdd vss"
+    ],
+    "ERROR_ON_MAGIC_DRC": true,
+    "ERROR_ON_LVS_ERROR": true,
+    "ERROR_ON_KLAYOUT_DRC": true,
+    "ERROR_ON_XOR_ERROR": true,
+    "resumed_from_earlier_state": false
+   },
+   "claims": [
+    {
+     "id": "m.setup_ws",
+     "kind": "observed",
+     "name": "setup_ws",
+     "value": 11.197149302463508,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup__ws",
+      "step": "58-klayout-streamout",
+      "first_seen_step": "54-openroad-stapostpnr"
+     },
+     "unit": "ns",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_ws",
+     "kind": "observed",
+     "name": "hold_ws",
+     "value": 0.18053276051744832,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold__ws",
+      "step": "58-klayout-streamout",
+      "first_seen_step": "54-openroad-stapostpnr"
+     },
+     "unit": "ns",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.setup_vio",
+     "kind": "observed",
+     "name": "setup_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup_vio__count",
+      "step": "58-klayout-streamout",
+      "first_seen_step": "12-openroad-staprepnr"
+     },
+     "unit": "count",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_vio",
+     "kind": "observed",
+     "name": "hold_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold_vio__count",
+      "step": "58-klayout-streamout",
+      "first_seen_step": "12-openroad-staprepnr"
+     },
+     "unit": "count",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.antenna_nets",
+     "kind": "observed",
+     "name": "antenna_nets",
+     "value": 2,
+     "source": {
+      "input": "f2",
+      "key": "metrics.antenna__violating__nets",
+      "step": "58-klayout-streamout",
+      "first_seen_step": "45-openroad-checkantennas-1"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.route_drc",
+     "kind": "observed",
+     "name": "route_drc",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__drc_errors",
+      "step": "58-klayout-streamout",
+      "first_seen_step": "43-openroad-detailedrouting"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.magic_drc",
+     "kind": "unknown",
+     "name": "magic_drc",
+     "value": null,
+     "reason": "no step producing it (magic-drc / checker-magicdrc) exists in the run; this run folder holds steps 01-verilator-lint..59-magic-writelef; last finished step: 58-klayout-streamout"
+    },
+    {
+     "id": "m.klayout_drc",
+     "kind": "unknown",
+     "name": "klayout_drc",
+     "value": null,
+     "reason": "no step producing it (klayout-drc / checker-klayoutdrc) exists in the run; this run folder holds steps 01-verilator-lint..59-magic-writelef; last finished step: 58-klayout-streamout"
+    },
+    {
+     "id": "m.lvs",
+     "kind": "unknown",
+     "name": "lvs",
+     "value": null,
+     "reason": "no step producing it (netgen-lvs / checker-lvs) exists in the run; this run folder holds steps 01-verilator-lint..59-magic-writelef; last finished step: 58-klayout-streamout"
+    },
+    {
+     "id": "m.xor",
+     "kind": "unknown",
+     "name": "xor",
+     "value": null,
+     "reason": "no step producing it (klayout-xor / checker-xor) exists in the run; this run folder holds steps 01-verilator-lint..59-magic-writelef; last finished step: 58-klayout-streamout"
+    },
+    {
+     "id": "m.max_slew_vio",
+     "kind": "observed",
+     "name": "max_slew_vio",
+     "value": 29,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_slew_violation__count",
+      "step": "58-klayout-streamout",
+      "first_seen_step": "54-openroad-stapostpnr"
+     },
+     "unit": "count",
+     "depends_on_context": [
+      "DESIGN_REPAIR_MAX_SLEW_PCT",
+      "CTS_MAX_SLEW"
+     ]
+    },
+    {
+     "id": "m.max_cap_vio",
+     "kind": "observed",
+     "name": "max_cap_vio",
+     "value": 1,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_cap_violation__count",
+      "step": "58-klayout-streamout",
+      "first_seen_step": "54-openroad-stapostpnr"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.power_grid_vio",
+     "kind": "observed",
+     "name": "power_grid_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__power_grid_violation__count",
+      "step": "58-klayout-streamout",
+      "first_seen_step": "20-openroad-generatepdn"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.utilization",
+     "kind": "observed",
+     "name": "utilization",
+     "value": 0.648859,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__utilization",
+      "step": "58-klayout-streamout",
+      "first_seen_step": "41-openroad-repairantennas"
+     },
+     "unit": "ratio"
+    },
+    {
+     "id": "m.area",
+     "kind": "observed",
+     "name": "area",
+     "value": 437544,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__area",
+      "step": "58-klayout-streamout",
+      "first_seen_step": "41-openroad-repairantennas"
+     },
+     "unit": "um2"
+    },
+    {
+     "id": "m.power",
+     "kind": "observed",
+     "name": "power",
+     "value": 0.002581067616119981,
+     "source": {
+      "input": "f2",
+      "key": "metrics.power__total",
+      "step": "58-klayout-streamout",
+      "first_seen_step": "54-openroad-stapostpnr"
+     },
+     "unit": "W"
+    },
+    {
+     "id": "m.wirelength",
+     "kind": "observed",
+     "name": "wirelength",
+     "value": 55020,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__wirelength",
+      "step": "58-klayout-streamout",
+      "first_seen_step": "43-openroad-detailedrouting"
+     },
+     "unit": "um"
+    },
+    {
+     "id": "c.magic_drc_mode",
+     "kind": "observed",
+     "name": "magic_drc_mode",
+     "value": "GDS (macro interiors included)",
+     "source": {
+      "input": "f1",
+      "key": "MAGIC_DRC_USE_GDS"
+     }
+    },
+    {
+     "id": "c.clock_period",
+     "kind": "observed",
+     "name": "CLOCK_PERIOD",
+     "value": 20,
+     "source": {
+      "input": "f1",
+      "key": "CLOCK_PERIOD"
+     }
+    },
+    {
+     "id": "c.error_on_magic_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_MAGIC_DRC",
+     "value": true,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_MAGIC_DRC"
+     }
+    },
+    {
+     "id": "c.error_on_lvs_error",
+     "kind": "observed",
+     "name": "ERROR_ON_LVS_ERROR",
+     "value": true,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_LVS_ERROR"
+     }
+    },
+    {
+     "id": "c.error_on_klayout_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_KLAYOUT_DRC",
+     "value": true,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_KLAYOUT_DRC"
+     }
+    },
+    {
+     "id": "r.steps_done",
+     "kind": "observed",
+     "name": "steps_done",
+     "value": 57,
+     "source": {
+      "tool": "directory listing",
+      "key": "step folders that contain state_out.json"
+     }
+    },
+    {
+     "id": "r.process_alive",
+     "kind": "observed",
+     "name": "process_alive_at_collection",
+     "value": false,
+     "source": {
+      "tool": "ps (WSL)",
+      "key": "openlane --run-tag"
+     },
+     "note": "point-in-time reading taken when this record was produced"
+    },
+    {
+     "id": "r.exit_code",
+     "kind": "unknown",
+     "name": "exit_code",
+     "value": null,
+     "reason": "no launcher summary file for this run"
+    },
+    {
+     "id": "d.setup_met",
+     "kind": "derived",
+     "name": "setup_met",
+     "value": true,
+     "from": [
+      "m.setup_ws"
+     ],
+     "rule": "setup_ws >= 0"
+    },
+    {
+     "id": "d.hold_met",
+     "kind": "derived",
+     "name": "hold_met",
+     "value": true,
+     "from": [
+      "m.hold_ws"
+     ],
+     "rule": "hold_ws >= 0"
+    },
+    {
+     "id": "d.signoff_counts_present",
+     "kind": "derived",
+     "name": "signoff_counts_present",
+     "value": 1,
+     "from": [
+      "m.route_drc"
+     ],
+     "rule": "number of the 5 signoff counts ['route_drc', 'magic_drc', 'klayout_drc', 'lvs', 'xor'] that have a value"
+    },
+    {
+     "id": "i.state",
+     "kind": "inferred",
+     "name": "state",
+     "value": "stopped",
+     "basis": "no final/metrics.json and no live openlane process with this run tag",
+     "confidence": "medium",
+     "limitations": [
+      "a process list is a point-in-time reading",
+      "a stopped run may have been cut by a WSL restart rather than failing"
+     ]
+    }
+   ],
+   "limitations": [
+    "metrics are the values in the last finished step's state; a metric produced by an earlier step may not reflect later changes",
+    "collected from run folders only; nothing was re-measured"
+   ],
+   "coverage": {
+    "observed": 20,
+    "derived": 3,
+    "inferred": 1,
+    "unknown": 5
+   }
+  },
+  "ppa3_antenna_fix": {
+   "schema": "veriolg.evidence/1",
+   "subject": {
+    "kind": "openlane-run",
+    "id": "ppa3_antenna_fix",
+    "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antenna_fix",
+    "label": "antenna 반복 10 · margin 20"
+   },
+   "produced": {
+    "by": "tools/ppa3_evidence.py @ 6771a45",
+    "at": "2026-10-14T22:31:16"
+   },
+   "environment": {
+    "pdk": "sky130A",
+    "pdk_version": "0fe599b2afb6708d281543108caf8310912f54af",
+    "std_cell_library": "sky130_fd_sc_hd",
+    "design": "ppa3_adc_capture_top"
+   },
+   "inputs": {
+    "f1": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antenna_fix/resolved.json",
+     "role": "settings the run was started with",
+     "sha256": "3e5a2c35a4de2ec8fd427a7839a52bf79262baabd12e3403cdf66f28f71f1273",
+     "bytes": 166199,
+     "mtime": "2026-10-04T21:36:40"
+    },
+    "f2": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antenna_fix/18-openroad-irdropreport/state_out.json",
+     "role": "state after the last finished step (18-openroad-irdropreport)",
+     "sha256": "63cb86acffb5aea94cd6986a8c49c681c7360829c3e03f12f8148acd99afbdb6",
+     "bytes": 22584,
+     "mtime": "2026-10-04T21:43:30"
+    },
+    "f3": {
+     "path": "tools/wsl/logs/ppa3_antenna_fix.summary",
+     "role": "launcher summary (exit code)",
+     "sha256": "c06b0310150a7485e55e0af0e89b92453473ae08a9089d2f49e4e2089c0ba361",
+     "bytes": 221,
+     "mtime": "2026-10-04T21:46:47"
+    }
+   },
+   "context": {
+    "CLOCK_PERIOD": 20,
+    "FP_CORE_UTIL": 50,
+    "PL_TARGET_DENSITY_PCT": 35,
+    "DIE_AREA": [
+     0,
+     0,
+     1250,
+     600
+    ],
+    "MAGIC_DRC_USE_GDS": true,
+    "GRT_ANTENNA_ITERS": 10,
+    "GRT_ANTENNA_MARGIN": 20,
+    "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH": 0,
+    "DESIGN_REPAIR_MAX_SLEW_PCT": 20,
+    "DESIGN_REPAIR_MAX_CAP_PCT": 20,
+    "CTS_MAX_SLEW": null,
+    "RUN_HEURISTIC_DIODE_INSERTION": false,
+    "FP_PDN_VOFFSET": 16.32,
+    "PDN_MACRO_CONNECTIONS": [
+     "u_capture_path.u_capture.u_capture_sram.u_sram22 vccd vssd vdd vss"
+    ],
+    "ERROR_ON_MAGIC_DRC": true,
+    "ERROR_ON_LVS_ERROR": true,
+    "ERROR_ON_KLAYOUT_DRC": true,
+    "ERROR_ON_XOR_ERROR": true,
+    "resumed_from_earlier_state": true
+   },
+   "claims": [
+    {
+     "id": "m.setup_ws",
+     "kind": "observed",
+     "name": "setup_ws",
+     "value": 11.15170654051276,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup__ws",
+      "step": "18-openroad-irdropreport",
+      "first_seen_step": "17-openroad-stapostpnr"
+     },
+     "unit": "ns",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_ws",
+     "kind": "observed",
+     "name": "hold_ws",
+     "value": 0.18225776959074624,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold__ws",
+      "step": "18-openroad-irdropreport",
+      "first_seen_step": "17-openroad-stapostpnr"
+     },
+     "unit": "ns",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.setup_vio",
+     "kind": "observed",
+     "name": "setup_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup_vio__count",
+      "step": "18-openroad-irdropreport",
+      "first_seen_step": "01-openroad-globalrouting"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_vio",
+     "kind": "observed",
+     "name": "hold_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold_vio__count",
+      "step": "18-openroad-irdropreport",
+      "first_seen_step": "01-openroad-globalrouting"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.antenna_nets",
+     "kind": "observed",
+     "name": "antenna_nets",
+     "value": 5,
+     "source": {
+      "input": "f2",
+      "key": "metrics.antenna__violating__nets",
+      "step": "18-openroad-irdropreport",
+      "first_seen_step": "04-openroad-repairantennas"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.route_drc",
+     "kind": "observed",
+     "name": "route_drc",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__drc_errors",
+      "step": "18-openroad-irdropreport",
+      "first_seen_step": "06-openroad-detailedrouting"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.magic_drc",
+     "kind": "unknown",
+     "name": "magic_drc",
+     "value": null,
+     "reason": "no step producing it (magic-drc / checker-magicdrc) exists in the run; this run folder holds steps 01-openroad-globalrouting..19-magic-streamout; last finished step: 18-openroad-irdropreport; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.klayout_drc",
+     "kind": "unknown",
+     "name": "klayout_drc",
+     "value": null,
+     "reason": "no step producing it (klayout-drc / checker-klayoutdrc) exists in the run; this run folder holds steps 01-openroad-globalrouting..19-magic-streamout; last finished step: 18-openroad-irdropreport; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.lvs",
+     "kind": "unknown",
+     "name": "lvs",
+     "value": null,
+     "reason": "no step producing it (netgen-lvs / checker-lvs) exists in the run; this run folder holds steps 01-openroad-globalrouting..19-magic-streamout; last finished step: 18-openroad-irdropreport; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.xor",
+     "kind": "unknown",
+     "name": "xor",
+     "value": null,
+     "reason": "no step producing it (klayout-xor / checker-xor) exists in the run; this run folder holds steps 01-openroad-globalrouting..19-magic-streamout; last finished step: 18-openroad-irdropreport; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.max_slew_vio",
+     "kind": "observed",
+     "name": "max_slew_vio",
+     "value": 30,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_slew_violation__count",
+      "step": "18-openroad-irdropreport",
+      "first_seen_step": "17-openroad-stapostpnr"
+     },
+     "unit": "count",
+     "depends_on_context": [
+      "DESIGN_REPAIR_MAX_SLEW_PCT",
+      "CTS_MAX_SLEW"
+     ]
+    },
+    {
+     "id": "m.max_cap_vio",
+     "kind": "observed",
+     "name": "max_cap_vio",
+     "value": 1,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_cap_violation__count",
+      "step": "18-openroad-irdropreport",
+      "first_seen_step": "17-openroad-stapostpnr"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.power_grid_vio",
+     "kind": "observed",
+     "name": "power_grid_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__power_grid_violation__count",
+      "step": "18-openroad-irdropreport",
+      "first_seen_step": "01-openroad-globalrouting"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.utilization",
+     "kind": "observed",
+     "name": "utilization",
+     "value": 0.649753,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__utilization",
+      "step": "18-openroad-irdropreport",
+      "first_seen_step": "04-openroad-repairantennas"
+     },
+     "unit": "ratio"
+    },
+    {
+     "id": "m.area",
+     "kind": "observed",
+     "name": "area",
+     "value": 438147,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__area",
+      "step": "18-openroad-irdropreport",
+      "first_seen_step": "04-openroad-repairantennas"
+     },
+     "unit": "um2"
+    },
+    {
+     "id": "m.power",
+     "kind": "observed",
+     "name": "power",
+     "value": 0.002563279354944825,
+     "source": {
+      "input": "f2",
+      "key": "metrics.power__total",
+      "step": "18-openroad-irdropreport",
+      "first_seen_step": "17-openroad-stapostpnr"
+     },
+     "unit": "W"
+    },
+    {
+     "id": "m.wirelength",
+     "kind": "observed",
+     "name": "wirelength",
+     "value": 55214,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__wirelength",
+      "step": "18-openroad-irdropreport",
+      "first_seen_step": "06-openroad-detailedrouting"
+     },
+     "unit": "um"
+    },
+    {
+     "id": "c.magic_drc_mode",
+     "kind": "observed",
+     "name": "magic_drc_mode",
+     "value": "GDS (macro interiors included)",
+     "source": {
+      "input": "f1",
+      "key": "MAGIC_DRC_USE_GDS"
+     }
+    },
+    {
+     "id": "c.clock_period",
+     "kind": "observed",
+     "name": "CLOCK_PERIOD",
+     "value": 20,
+     "source": {
+      "input": "f1",
+      "key": "CLOCK_PERIOD"
+     }
+    },
+    {
+     "id": "c.error_on_magic_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_MAGIC_DRC",
+     "value": true,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_MAGIC_DRC"
+     }
+    },
+    {
+     "id": "c.error_on_lvs_error",
+     "kind": "observed",
+     "name": "ERROR_ON_LVS_ERROR",
+     "value": true,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_LVS_ERROR"
+     }
+    },
+    {
+     "id": "c.error_on_klayout_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_KLAYOUT_DRC",
+     "value": true,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_KLAYOUT_DRC"
+     }
+    },
+    {
+     "id": "r.steps_done",
+     "kind": "observed",
+     "name": "steps_done",
+     "value": 18,
+     "source": {
+      "tool": "directory listing",
+      "key": "step folders that contain state_out.json"
+     }
+    },
+    {
+     "id": "r.process_alive",
+     "kind": "observed",
+     "name": "process_alive_at_collection",
+     "value": false,
+     "source": {
+      "tool": "ps (WSL)",
+      "key": "openlane --run-tag"
+     },
+     "note": "point-in-time reading taken when this record was produced"
+    },
+    {
+     "id": "r.exit_code",
+     "kind": "observed",
+     "name": "exit_code",
+     "value": 143,
+     "source": {
+      "input": "f3",
+      "key": "last 'exit code:' line"
+     }
+    },
+    {
+     "id": "d.setup_met",
+     "kind": "derived",
+     "name": "setup_met",
+     "value": true,
+     "from": [
+      "m.setup_ws"
+     ],
+     "rule": "setup_ws >= 0"
+    },
+    {
+     "id": "d.hold_met",
+     "kind": "derived",
+     "name": "hold_met",
+     "value": true,
+     "from": [
+      "m.hold_ws"
+     ],
+     "rule": "hold_ws >= 0"
+    },
+    {
+     "id": "d.signoff_counts_present",
+     "kind": "derived",
+     "name": "signoff_counts_present",
+     "value": 1,
+     "from": [
+      "m.route_drc"
+     ],
+     "rule": "number of the 5 signoff counts ['route_drc', 'magic_drc', 'klayout_drc', 'lvs', 'xor'] that have a value"
+    },
+    {
+     "id": "i.state",
+     "kind": "inferred",
+     "name": "state",
+     "value": "stopped",
+     "basis": "no final/metrics.json and no live openlane process with this run tag",
+     "confidence": "medium",
+     "limitations": [
+      "a process list is a point-in-time reading",
+      "a stopped run may have been cut by a WSL restart rather than failing"
+     ]
+    }
+   ],
+   "limitations": [
+    "metrics are the values in the last finished step's state; a metric produced by an earlier step may not reflect later changes",
+    "collected from run folders only; nothing was re-measured"
+   ],
+   "coverage": {
+    "observed": 21,
+    "derived": 3,
+    "inferred": 1,
+    "unknown": 4
+   }
+  },
+  "ppa3_antfix2": {
+   "schema": "veriolg.evidence/1",
+   "subject": {
+    "kind": "openlane-run",
+    "id": "ppa3_antfix2",
+    "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix2",
+    "label": "긴 배선 300µm 분할 repair + heuristic diode"
+   },
+   "produced": {
+    "by": "tools/ppa3_evidence.py @ 6771a45",
+    "at": "2026-10-14T22:31:16"
+   },
+   "environment": {
+    "pdk": "sky130A",
+    "pdk_version": "0fe599b2afb6708d281543108caf8310912f54af",
+    "std_cell_library": "sky130_fd_sc_hd",
+    "design": "ppa3_adc_capture_top"
+   },
+   "inputs": {
+    "f1": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix2/resolved.json",
+     "role": "settings the run was started with",
+     "sha256": "733b913e8ae2d2a107d4d04cfddcbbfd46f761812460db17afcb7469672db351",
+     "bytes": 166198,
+     "mtime": "2026-10-04T21:43:36"
+    },
+    "f2": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix2/22-klayout-streamout/state_out.json",
+     "role": "state after the last finished step (22-klayout-streamout)",
+     "sha256": "c2316bf6d3381477d45b9b63d75aa81dbbf4262f79efbe13cb4dc4b42eeced0c",
+     "bytes": 22997,
+     "mtime": "2026-10-04T22:06:05"
+    },
+    "f3": {
+     "path": "tools/wsl/logs/ppa3_antfix2.summary",
+     "role": "launcher summary (exit code)",
+     "sha256": "ccb46f0382783d18178c41ab4c017aeba48f1c9901a7dcfb88356c99e16c1edc",
+     "bytes": 210,
+     "mtime": "2026-10-04T22:27:51"
+    }
+   },
+   "context": {
+    "CLOCK_PERIOD": 20,
+    "FP_CORE_UTIL": 50,
+    "PL_TARGET_DENSITY_PCT": 35,
+    "DIE_AREA": [
+     0,
+     0,
+     1250,
+     600
+    ],
+    "MAGIC_DRC_USE_GDS": true,
+    "GRT_ANTENNA_ITERS": 3,
+    "GRT_ANTENNA_MARGIN": 10,
+    "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH": 300,
+    "DESIGN_REPAIR_MAX_SLEW_PCT": 20,
+    "DESIGN_REPAIR_MAX_CAP_PCT": 20,
+    "CTS_MAX_SLEW": null,
+    "RUN_HEURISTIC_DIODE_INSERTION": true,
+    "FP_PDN_VOFFSET": 16.32,
+    "PDN_MACRO_CONNECTIONS": [
+     "u_capture_path.u_capture.u_capture_sram.u_sram22 vccd vssd vdd vss"
+    ],
+    "ERROR_ON_MAGIC_DRC": true,
+    "ERROR_ON_LVS_ERROR": true,
+    "ERROR_ON_KLAYOUT_DRC": true,
+    "ERROR_ON_XOR_ERROR": true,
+    "resumed_from_earlier_state": true
+   },
+   "claims": [
+    {
+     "id": "m.setup_ws",
+     "kind": "observed",
+     "name": "setup_ws",
+     "value": 10.391591881116428,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup__ws",
+      "step": "22-klayout-streamout",
+      "first_seen_step": "19-openroad-stapostpnr"
+     },
+     "unit": "ns",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_ws",
+     "kind": "observed",
+     "name": "hold_ws",
+     "value": 0.1829240699578193,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold__ws",
+      "step": "22-klayout-streamout",
+      "first_seen_step": "19-openroad-stapostpnr"
+     },
+     "unit": "ns",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.setup_vio",
+     "kind": "observed",
+     "name": "setup_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup_vio__count",
+      "step": "22-klayout-streamout",
+      "first_seen_step": "01-openroad-globalrouting"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_vio",
+     "kind": "observed",
+     "name": "hold_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold_vio__count",
+      "step": "22-klayout-streamout",
+      "first_seen_step": "01-openroad-globalrouting"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.antenna_nets",
+     "kind": "observed",
+     "name": "antenna_nets",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.antenna__violating__nets",
+      "step": "22-klayout-streamout",
+      "first_seen_step": "10-openroad-checkantennas-1"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.route_drc",
+     "kind": "observed",
+     "name": "route_drc",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__drc_errors",
+      "step": "22-klayout-streamout",
+      "first_seen_step": "08-openroad-detailedrouting"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.magic_drc",
+     "kind": "unknown",
+     "name": "magic_drc",
+     "value": null,
+     "reason": "no step producing it (magic-drc / checker-magicdrc) exists in the run; this run folder holds steps 01-openroad-globalrouting..23-magic-writelef; last finished step: 22-klayout-streamout; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.klayout_drc",
+     "kind": "unknown",
+     "name": "klayout_drc",
+     "value": null,
+     "reason": "no step producing it (klayout-drc / checker-klayoutdrc) exists in the run; this run folder holds steps 01-openroad-globalrouting..23-magic-writelef; last finished step: 22-klayout-streamout; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.lvs",
+     "kind": "unknown",
+     "name": "lvs",
+     "value": null,
+     "reason": "no step producing it (netgen-lvs / checker-lvs) exists in the run; this run folder holds steps 01-openroad-globalrouting..23-magic-writelef; last finished step: 22-klayout-streamout; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.xor",
+     "kind": "unknown",
+     "name": "xor",
+     "value": null,
+     "reason": "no step producing it (klayout-xor / checker-xor) exists in the run; this run folder holds steps 01-openroad-globalrouting..23-magic-writelef; last finished step: 22-klayout-streamout; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.max_slew_vio",
+     "kind": "observed",
+     "name": "max_slew_vio",
+     "value": 42,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_slew_violation__count",
+      "step": "22-klayout-streamout",
+      "first_seen_step": "19-openroad-stapostpnr"
+     },
+     "unit": "count",
+     "depends_on_context": [
+      "DESIGN_REPAIR_MAX_SLEW_PCT",
+      "CTS_MAX_SLEW"
+     ]
+    },
+    {
+     "id": "m.max_cap_vio",
+     "kind": "observed",
+     "name": "max_cap_vio",
+     "value": 1,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_cap_violation__count",
+      "step": "22-klayout-streamout",
+      "first_seen_step": "19-openroad-stapostpnr"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.power_grid_vio",
+     "kind": "observed",
+     "name": "power_grid_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__power_grid_violation__count",
+      "step": "22-klayout-streamout",
+      "first_seen_step": "01-openroad-globalrouting"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.utilization",
+     "kind": "observed",
+     "name": "utilization",
+     "value": 0.653982,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__utilization",
+      "step": "22-klayout-streamout",
+      "first_seen_step": "06-openroad-repairantennas"
+     },
+     "unit": "ratio"
+    },
+    {
+     "id": "m.area",
+     "kind": "observed",
+     "name": "area",
+     "value": 440998,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__area",
+      "step": "22-klayout-streamout",
+      "first_seen_step": "06-openroad-repairantennas"
+     },
+     "unit": "um2"
+    },
+    {
+     "id": "m.power",
+     "kind": "observed",
+     "name": "power",
+     "value": 0.0026927918661385775,
+     "source": {
+      "input": "f2",
+      "key": "metrics.power__total",
+      "step": "22-klayout-streamout",
+      "first_seen_step": "19-openroad-stapostpnr"
+     },
+     "unit": "W"
+    },
+    {
+     "id": "m.wirelength",
+     "kind": "observed",
+     "name": "wirelength",
+     "value": 57273,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__wirelength",
+      "step": "22-klayout-streamout",
+      "first_seen_step": "08-openroad-detailedrouting"
+     },
+     "unit": "um"
+    },
+    {
+     "id": "c.magic_drc_mode",
+     "kind": "observed",
+     "name": "magic_drc_mode",
+     "value": "GDS (macro interiors included)",
+     "source": {
+      "input": "f1",
+      "key": "MAGIC_DRC_USE_GDS"
+     }
+    },
+    {
+     "id": "c.clock_period",
+     "kind": "observed",
+     "name": "CLOCK_PERIOD",
+     "value": 20,
+     "source": {
+      "input": "f1",
+      "key": "CLOCK_PERIOD"
+     }
+    },
+    {
+     "id": "c.error_on_magic_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_MAGIC_DRC",
+     "value": true,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_MAGIC_DRC"
+     }
+    },
+    {
+     "id": "c.error_on_lvs_error",
+     "kind": "observed",
+     "name": "ERROR_ON_LVS_ERROR",
+     "value": true,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_LVS_ERROR"
+     }
+    },
+    {
+     "id": "c.error_on_klayout_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_KLAYOUT_DRC",
+     "value": true,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_KLAYOUT_DRC"
+     }
+    },
+    {
+     "id": "r.steps_done",
+     "kind": "observed",
+     "name": "steps_done",
+     "value": 22,
+     "source": {
+      "tool": "directory listing",
+      "key": "step folders that contain state_out.json"
+     }
+    },
+    {
+     "id": "r.process_alive",
+     "kind": "observed",
+     "name": "process_alive_at_collection",
+     "value": false,
+     "source": {
+      "tool": "ps (WSL)",
+      "key": "openlane --run-tag"
+     },
+     "note": "point-in-time reading taken when this record was produced"
+    },
+    {
+     "id": "r.exit_code",
+     "kind": "observed",
+     "name": "exit_code",
+     "value": 2,
+     "source": {
+      "input": "f3",
+      "key": "last 'exit code:' line"
+     }
+    },
+    {
+     "id": "d.setup_met",
+     "kind": "derived",
+     "name": "setup_met",
+     "value": true,
+     "from": [
+      "m.setup_ws"
+     ],
+     "rule": "setup_ws >= 0"
+    },
+    {
+     "id": "d.hold_met",
+     "kind": "derived",
+     "name": "hold_met",
+     "value": true,
+     "from": [
+      "m.hold_ws"
+     ],
+     "rule": "hold_ws >= 0"
+    },
+    {
+     "id": "d.signoff_counts_present",
+     "kind": "derived",
+     "name": "signoff_counts_present",
+     "value": 1,
+     "from": [
+      "m.route_drc"
+     ],
+     "rule": "number of the 5 signoff counts ['route_drc', 'magic_drc', 'klayout_drc', 'lvs', 'xor'] that have a value"
+    },
+    {
+     "id": "i.state",
+     "kind": "inferred",
+     "name": "state",
+     "value": "stopped",
+     "basis": "no final/metrics.json and no live openlane process with this run tag",
+     "confidence": "medium",
+     "limitations": [
+      "a process list is a point-in-time reading",
+      "a stopped run may have been cut by a WSL restart rather than failing"
+     ]
+    }
+   ],
+   "limitations": [
+    "metrics are the values in the last finished step's state; a metric produced by an earlier step may not reflect later changes",
+    "collected from run folders only; nothing was re-measured"
+   ],
+   "coverage": {
+    "observed": 21,
+    "derived": 3,
+    "inferred": 1,
+    "unknown": 4
+   }
+  },
+  "ppa3_antfix3_signoff": {
+   "schema": "veriolg.evidence/1",
+   "subject": {
+    "kind": "openlane-run",
+    "id": "ppa3_antfix3_signoff",
+    "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix3_signoff",
+    "label": "antfix2 + Magic 읽기 오류 무시 (signoff부터) · GDS 기준 DRC"
+   },
+   "produced": {
+    "by": "tools/ppa3_evidence.py @ 6771a45",
+    "at": "2026-10-14T22:31:16"
+   },
+   "environment": {
+    "pdk": "sky130A",
+    "pdk_version": "0fe599b2afb6708d281543108caf8310912f54af",
+    "std_cell_library": "sky130_fd_sc_hd",
+    "design": "ppa3_adc_capture_top"
+   },
+   "inputs": {
+    "f1": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix3_signoff/resolved.json",
+     "role": "settings the run was started with",
+     "sha256": "0ab32df3c09c34cf9a440694bf351954dc543d026813a0a795a30b7120fa6491",
+     "bytes": 166199,
+     "mtime": "2026-10-05T14:19:40"
+    },
+    "f2": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix3_signoff/06-checker-xor/state_out.json",
+     "role": "state after the last finished step (06-checker-xor)",
+     "sha256": "406d3dc7bc6fd54ffcdabf61c8fe78a1f9478605894da548c8fef7244b5e9970",
+     "bytes": 23207,
+     "mtime": "2026-10-05T14:57:18"
+    },
+    "f3": {
+     "path": "tools/wsl/logs/ppa3_antfix3_signoff.summary",
+     "role": "launcher summary (exit code)",
+     "sha256": "de402991d6bc3896b5e5313610c6153fc3126670fa0bda777885a2086ce3aad3",
+     "bytes": 128,
+     "mtime": "2026-10-05T14:19:39"
+    }
+   },
+   "context": {
+    "CLOCK_PERIOD": 20,
+    "FP_CORE_UTIL": 50,
+    "PL_TARGET_DENSITY_PCT": 35,
+    "DIE_AREA": [
+     0,
+     0,
+     1250,
+     600
+    ],
+    "MAGIC_DRC_USE_GDS": true,
+    "GRT_ANTENNA_ITERS": 3,
+    "GRT_ANTENNA_MARGIN": 10,
+    "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH": 300,
+    "DESIGN_REPAIR_MAX_SLEW_PCT": 20,
+    "DESIGN_REPAIR_MAX_CAP_PCT": 20,
+    "CTS_MAX_SLEW": null,
+    "RUN_HEURISTIC_DIODE_INSERTION": true,
+    "FP_PDN_VOFFSET": 16.32,
+    "PDN_MACRO_CONNECTIONS": [
+     "u_capture_path.u_capture.u_capture_sram.u_sram22 vccd vssd vdd vss"
+    ],
+    "ERROR_ON_MAGIC_DRC": true,
+    "ERROR_ON_LVS_ERROR": true,
+    "ERROR_ON_KLAYOUT_DRC": true,
+    "ERROR_ON_XOR_ERROR": true,
+    "resumed_from_earlier_state": true
+   },
+   "claims": [
+    {
+     "id": "m.setup_ws",
+     "kind": "observed",
+     "name": "setup_ws",
+     "value": 10.391591881116428,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup__ws",
+      "step": "06-checker-xor",
+      "first_seen_step": "01-magic-streamout"
+     },
+     "unit": "ns",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_ws",
+     "kind": "observed",
+     "name": "hold_ws",
+     "value": 0.1829240699578193,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold__ws",
+      "step": "06-checker-xor",
+      "first_seen_step": "01-magic-streamout"
+     },
+     "unit": "ns",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.setup_vio",
+     "kind": "observed",
+     "name": "setup_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup_vio__count",
+      "step": "06-checker-xor",
+      "first_seen_step": "01-magic-streamout"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_vio",
+     "kind": "observed",
+     "name": "hold_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold_vio__count",
+      "step": "06-checker-xor",
+      "first_seen_step": "01-magic-streamout"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.antenna_nets",
+     "kind": "observed",
+     "name": "antenna_nets",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.antenna__violating__nets",
+      "step": "06-checker-xor",
+      "first_seen_step": "01-magic-streamout"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.route_drc",
+     "kind": "observed",
+     "name": "route_drc",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__drc_errors",
+      "step": "06-checker-xor",
+      "first_seen_step": "01-magic-streamout"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.magic_drc",
+     "kind": "unknown",
+     "name": "magic_drc",
+     "value": null,
+     "reason": "07-magic-drc started but has no state_out.json (did not finish); last finished step: 06-checker-xor; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.klayout_drc",
+     "kind": "unknown",
+     "name": "klayout_drc",
+     "value": null,
+     "reason": "no step producing it (klayout-drc / checker-klayoutdrc) exists in the run; this run folder holds steps 01-magic-streamout..07-magic-drc; last finished step: 06-checker-xor; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.lvs",
+     "kind": "unknown",
+     "name": "lvs",
+     "value": null,
+     "reason": "no step producing it (netgen-lvs / checker-lvs) exists in the run; this run folder holds steps 01-magic-streamout..07-magic-drc; last finished step: 06-checker-xor; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.xor",
+     "kind": "observed",
+     "name": "xor",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__xor_difference__count",
+      "step": "06-checker-xor",
+      "first_seen_step": "05-klayout-xor"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.max_slew_vio",
+     "kind": "observed",
+     "name": "max_slew_vio",
+     "value": 42,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_slew_violation__count",
+      "step": "06-checker-xor",
+      "first_seen_step": "01-magic-streamout"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "DESIGN_REPAIR_MAX_SLEW_PCT",
+      "CTS_MAX_SLEW"
+     ]
+    },
+    {
+     "id": "m.max_cap_vio",
+     "kind": "observed",
+     "name": "max_cap_vio",
+     "value": 1,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_cap_violation__count",
+      "step": "06-checker-xor",
+      "first_seen_step": "01-magic-streamout"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.power_grid_vio",
+     "kind": "observed",
+     "name": "power_grid_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__power_grid_violation__count",
+      "step": "06-checker-xor",
+      "first_seen_step": "01-magic-streamout"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.utilization",
+     "kind": "observed",
+     "name": "utilization",
+     "value": 0.653982,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__utilization",
+      "step": "06-checker-xor",
+      "first_seen_step": "01-magic-streamout"
+     },
+     "unit": "ratio",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.area",
+     "kind": "observed",
+     "name": "area",
+     "value": 440998,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__area",
+      "step": "06-checker-xor",
+      "first_seen_step": "01-magic-streamout"
+     },
+     "unit": "um2",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.power",
+     "kind": "observed",
+     "name": "power",
+     "value": 0.0026927918661385775,
+     "source": {
+      "input": "f2",
+      "key": "metrics.power__total",
+      "step": "06-checker-xor",
+      "first_seen_step": "01-magic-streamout"
+     },
+     "unit": "W",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.wirelength",
+     "kind": "observed",
+     "name": "wirelength",
+     "value": 57273,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__wirelength",
+      "step": "06-checker-xor",
+      "first_seen_step": "01-magic-streamout"
+     },
+     "unit": "um",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "c.magic_drc_mode",
+     "kind": "observed",
+     "name": "magic_drc_mode",
+     "value": "GDS (macro interiors included)",
+     "source": {
+      "input": "f1",
+      "key": "MAGIC_DRC_USE_GDS"
+     }
+    },
+    {
+     "id": "c.clock_period",
+     "kind": "observed",
+     "name": "CLOCK_PERIOD",
+     "value": 20,
+     "source": {
+      "input": "f1",
+      "key": "CLOCK_PERIOD"
+     }
+    },
+    {
+     "id": "c.error_on_magic_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_MAGIC_DRC",
+     "value": true,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_MAGIC_DRC"
+     }
+    },
+    {
+     "id": "c.error_on_lvs_error",
+     "kind": "observed",
+     "name": "ERROR_ON_LVS_ERROR",
+     "value": true,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_LVS_ERROR"
+     }
+    },
+    {
+     "id": "c.error_on_klayout_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_KLAYOUT_DRC",
+     "value": true,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_KLAYOUT_DRC"
+     }
+    },
+    {
+     "id": "r.steps_done",
+     "kind": "observed",
+     "name": "steps_done",
+     "value": 6,
+     "source": {
+      "tool": "directory listing",
+      "key": "step folders that contain state_out.json"
+     }
+    },
+    {
+     "id": "r.process_alive",
+     "kind": "observed",
+     "name": "process_alive_at_collection",
+     "value": false,
+     "source": {
+      "tool": "ps (WSL)",
+      "key": "openlane --run-tag"
+     },
+     "note": "point-in-time reading taken when this record was produced"
+    },
+    {
+     "id": "r.exit_code",
+     "kind": "unknown",
+     "name": "exit_code",
+     "value": null,
+     "reason": "ppa3_antfix3_signoff.summary has no 'exit code:' line"
+    },
+    {
+     "id": "d.setup_met",
+     "kind": "derived",
+     "name": "setup_met",
+     "value": true,
+     "from": [
+      "m.setup_ws"
+     ],
+     "rule": "setup_ws >= 0"
+    },
+    {
+     "id": "d.hold_met",
+     "kind": "derived",
+     "name": "hold_met",
+     "value": true,
+     "from": [
+      "m.hold_ws"
+     ],
+     "rule": "hold_ws >= 0"
+    },
+    {
+     "id": "d.signoff_counts_present",
+     "kind": "derived",
+     "name": "signoff_counts_present",
+     "value": 2,
+     "from": [
+      "m.route_drc",
+      "m.xor"
+     ],
+     "rule": "number of the 5 signoff counts ['route_drc', 'magic_drc', 'klayout_drc', 'lvs', 'xor'] that have a value"
+    },
+    {
+     "id": "i.state",
+     "kind": "inferred",
+     "name": "state",
+     "value": "stopped",
+     "basis": "no final/metrics.json and no live openlane process with this run tag",
+     "confidence": "medium",
+     "limitations": [
+      "a process list is a point-in-time reading",
+      "a stopped run may have been cut by a WSL restart rather than failing"
+     ]
+    }
+   ],
+   "limitations": [
+    "metrics are the values in the last finished step's state; a metric produced by an earlier step may not reflect later changes",
+    "collected from run folders only; nothing was re-measured"
+   ],
+   "coverage": {
+    "observed": 21,
+    "derived": 3,
+    "inferred": 1,
+    "unknown": 4
+   }
+  },
+  "ppa3_antfix4_signoff": {
+   "schema": "veriolg.evidence/1",
+   "subject": {
+    "kind": "openlane-run",
+    "id": "ppa3_antfix4_signoff",
+    "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix4_signoff",
+    "label": "antfix3 + 검사 단계 non-fatal · GDS 전체 기준 Magic DRC (재시작 후 다시 실행)"
+   },
+   "produced": {
+    "by": "tools/ppa3_evidence.py @ 6771a45",
+    "at": "2026-10-14T22:31:16"
+   },
+   "environment": {
+    "pdk": "sky130A",
+    "pdk_version": "0fe599b2afb6708d281543108caf8310912f54af",
+    "std_cell_library": "sky130_fd_sc_hd",
+    "design": "ppa3_adc_capture_top"
+   },
+   "inputs": {
+    "f1": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix4_signoff/resolved.json",
+     "role": "settings the run was started with",
+     "sha256": "0f63a68b574075add397634b1c9d272bf9f808e39d125f992f0f3ded843c2e08",
+     "bytes": 166205,
+     "mtime": "2026-10-05T16:12:19"
+    },
+    "f2": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix4_signoff/13-misc-reportmanufacturability/state_out.json",
+     "role": "state after the last finished step (13-misc-reportmanufacturability)",
+     "sha256": "c7bfc6a7c129ceadf8ce815090008b3865edd179e27587aba32a115fba6ab587",
+     "bytes": 23819,
+     "mtime": "2026-10-05T17:57:12"
+    },
+    "f3": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix4_signoff/final/metrics.json",
+     "role": "final metrics (written only when the flow finishes)",
+     "sha256": "e6962b1d4b3e30d9505538a3ee6d1627700c73919e5a7ec15fd719d21c1e5137",
+     "bytes": 16373,
+     "mtime": "2026-10-05T17:57:20"
+    },
+    "f4": {
+     "path": "tools/wsl/logs/ppa3_antfix4_signoff.summary",
+     "role": "launcher summary (exit code)",
+     "sha256": "eaba766ff11bac4a1615c207e46129cc9998fe4c703eca7ea58ded24e1dcbfac",
+     "bytes": 721,
+     "mtime": "2026-10-05T17:57:20"
+    }
+   },
+   "context": {
+    "CLOCK_PERIOD": 20,
+    "FP_CORE_UTIL": 50,
+    "PL_TARGET_DENSITY_PCT": 35,
+    "DIE_AREA": [
+     0,
+     0,
+     1250,
+     600
+    ],
+    "MAGIC_DRC_USE_GDS": true,
+    "GRT_ANTENNA_ITERS": 3,
+    "GRT_ANTENNA_MARGIN": 10,
+    "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH": 300,
+    "DESIGN_REPAIR_MAX_SLEW_PCT": 20,
+    "DESIGN_REPAIR_MAX_CAP_PCT": 20,
+    "CTS_MAX_SLEW": null,
+    "RUN_HEURISTIC_DIODE_INSERTION": true,
+    "FP_PDN_VOFFSET": 16.32,
+    "PDN_MACRO_CONNECTIONS": [
+     "u_capture_path.u_capture.u_capture_sram.u_sram22 vccd vssd vdd vss"
+    ],
+    "ERROR_ON_MAGIC_DRC": false,
+    "ERROR_ON_LVS_ERROR": false,
+    "ERROR_ON_KLAYOUT_DRC": false,
+    "ERROR_ON_XOR_ERROR": false,
+    "resumed_from_earlier_state": true
+   },
+   "claims": [
+    {
+     "id": "m.setup_ws",
+     "kind": "observed",
+     "name": "setup_ws",
+     "value": 10.391591881116428,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup__ws",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "ns",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_ws",
+     "kind": "observed",
+     "name": "hold_ws",
+     "value": 0.1829240699578193,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold__ws",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "ns",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.setup_vio",
+     "kind": "observed",
+     "name": "setup_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup_vio__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_vio",
+     "kind": "observed",
+     "name": "hold_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold_vio__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.antenna_nets",
+     "kind": "observed",
+     "name": "antenna_nets",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.antenna__violating__nets",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.route_drc",
+     "kind": "observed",
+     "name": "route_drc",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__drc_errors",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.magic_drc",
+     "kind": "observed",
+     "name": "magic_drc",
+     "value": 15861362,
+     "source": {
+      "input": "f2",
+      "key": "metrics.magic__drc_error__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "MAGIC_DRC_USE_GDS"
+     ]
+    },
+    {
+     "id": "m.klayout_drc",
+     "kind": "observed",
+     "name": "klayout_drc",
+     "value": 1,
+     "source": {
+      "input": "f2",
+      "key": "metrics.klayout__drc_error__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "02-klayout-drc"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.lvs",
+     "kind": "observed",
+     "name": "lvs",
+     "value": 363,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__lvs_error__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "07-netgen-lvs"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.xor",
+     "kind": "observed",
+     "name": "xor",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__xor_difference__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.max_slew_vio",
+     "kind": "observed",
+     "name": "max_slew_vio",
+     "value": 42,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_slew_violation__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "DESIGN_REPAIR_MAX_SLEW_PCT",
+      "CTS_MAX_SLEW"
+     ]
+    },
+    {
+     "id": "m.max_cap_vio",
+     "kind": "observed",
+     "name": "max_cap_vio",
+     "value": 1,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_cap_violation__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.power_grid_vio",
+     "kind": "observed",
+     "name": "power_grid_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__power_grid_violation__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.utilization",
+     "kind": "observed",
+     "name": "utilization",
+     "value": 0.653982,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__utilization",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "ratio",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.area",
+     "kind": "observed",
+     "name": "area",
+     "value": 440998,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__area",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "um2",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.power",
+     "kind": "observed",
+     "name": "power",
+     "value": 0.0026927918661385775,
+     "source": {
+      "input": "f2",
+      "key": "metrics.power__total",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "W",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.wirelength",
+     "kind": "observed",
+     "name": "wirelength",
+     "value": 57273,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__wirelength",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "um",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "c.magic_drc_mode",
+     "kind": "observed",
+     "name": "magic_drc_mode",
+     "value": "GDS (macro interiors included)",
+     "source": {
+      "input": "f1",
+      "key": "MAGIC_DRC_USE_GDS"
+     }
+    },
+    {
+     "id": "c.clock_period",
+     "kind": "observed",
+     "name": "CLOCK_PERIOD",
+     "value": 20,
+     "source": {
+      "input": "f1",
+      "key": "CLOCK_PERIOD"
+     }
+    },
+    {
+     "id": "c.error_on_magic_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_MAGIC_DRC",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_MAGIC_DRC"
+     }
+    },
+    {
+     "id": "c.error_on_lvs_error",
+     "kind": "observed",
+     "name": "ERROR_ON_LVS_ERROR",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_LVS_ERROR"
+     }
+    },
+    {
+     "id": "c.error_on_klayout_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_KLAYOUT_DRC",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_KLAYOUT_DRC"
+     }
+    },
+    {
+     "id": "r.steps_done",
+     "kind": "observed",
+     "name": "steps_done",
+     "value": 13,
+     "source": {
+      "tool": "directory listing",
+      "key": "step folders that contain state_out.json"
+     }
+    },
+    {
+     "id": "r.final_metrics_present",
+     "kind": "observed",
+     "name": "final_metrics_present",
+     "value": true,
+     "source": {
+      "input": "f3",
+      "key": "(file exists)"
+     }
+    },
+    {
+     "id": "r.process_alive",
+     "kind": "observed",
+     "name": "process_alive_at_collection",
+     "value": false,
+     "source": {
+      "tool": "ps (WSL)",
+      "key": "openlane --run-tag"
+     },
+     "note": "point-in-time reading taken when this record was produced"
+    },
+    {
+     "id": "r.exit_code",
+     "kind": "observed",
+     "name": "exit_code",
+     "value": 0,
+     "source": {
+      "input": "f4",
+      "key": "last 'exit code:' line"
+     }
+    },
+    {
+     "id": "d.setup_met",
+     "kind": "derived",
+     "name": "setup_met",
+     "value": true,
+     "from": [
+      "m.setup_ws"
+     ],
+     "rule": "setup_ws >= 0"
+    },
+    {
+     "id": "d.hold_met",
+     "kind": "derived",
+     "name": "hold_met",
+     "value": true,
+     "from": [
+      "m.hold_ws"
+     ],
+     "rule": "hold_ws >= 0"
+    },
+    {
+     "id": "d.signoff_counts_present",
+     "kind": "derived",
+     "name": "signoff_counts_present",
+     "value": 5,
+     "from": [
+      "m.route_drc",
+      "m.magic_drc",
+      "m.klayout_drc",
+      "m.lvs",
+      "m.xor"
+     ],
+     "rule": "number of the 5 signoff counts ['route_drc', 'magic_drc', 'klayout_drc', 'lvs', 'xor'] that have a value"
+    },
+    {
+     "id": "i.state",
+     "kind": "inferred",
+     "name": "state",
+     "value": "finished",
+     "basis": "final/metrics.json exists",
+     "confidence": "high",
+     "limitations": [
+      "a process list is a point-in-time reading",
+      "a stopped run may have been cut by a WSL restart rather than failing"
+     ]
+    }
+   ],
+   "limitations": [
+    "some checkers were set non-fatal (ERROR_ON_*=false): the flow continues past violations, so completion does not mean a pass",
+    "metrics are the values in the last finished step's state; a metric produced by an earlier step may not reflect later changes",
+    "collected from run folders only; nothing was re-measured"
+   ],
+   "coverage": {
+    "observed": 26,
+    "derived": 3,
+    "inferred": 1,
+    "unknown": 0
+   }
+  },
+  "ppa3_antfix5_signoff": {
+   "schema": "veriolg.evidence/1",
+   "subject": {
+    "kind": "openlane-run",
+    "id": "ppa3_antfix5_signoff",
+    "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix5_signoff",
+    "label": "antfix3 + 검사 단계 non-fatal + Magic DRC를 DEF 기준으로 (macro 내부 미검사)"
+   },
+   "produced": {
+    "by": "tools/ppa3_evidence.py @ 6771a45",
+    "at": "2026-10-14T22:31:16"
+   },
+   "environment": {
+    "pdk": "sky130A",
+    "pdk_version": "0fe599b2afb6708d281543108caf8310912f54af",
+    "std_cell_library": "sky130_fd_sc_hd",
+    "design": "ppa3_adc_capture_top"
+   },
+   "inputs": {
+    "f1": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix5_signoff/resolved.json",
+     "role": "settings the run was started with",
+     "sha256": "928f3bace2ae8c33f050bf4922773f2568f275d5caf45f77e63019625d3f598b",
+     "bytes": 166206,
+     "mtime": "2026-10-05T16:10:00"
+    },
+    "f2": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix5_signoff/13-misc-reportmanufacturability/state_out.json",
+     "role": "state after the last finished step (13-misc-reportmanufacturability)",
+     "sha256": "f0f15aed6c57549a6d99a340786333a3384bb32b4ba5a2d49d697ce42cd10870",
+     "bytes": 23814,
+     "mtime": "2026-10-05T16:24:38"
+    },
+    "f3": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix5_signoff/final/metrics.json",
+     "role": "final metrics (written only when the flow finishes)",
+     "sha256": "61661e932c97af870879fad63cb39a0869edc5674517a640c69050d7978cb1d6",
+     "bytes": 16368,
+     "mtime": "2026-10-05T16:24:46"
+    },
+    "f4": {
+     "path": "tools/wsl/logs/ppa3_antfix5_signoff.summary",
+     "role": "launcher summary (exit code)",
+     "sha256": "f3176a1aa2ff28f3cf16ec0fe926b70fe8a9a47c74dd38668dfa0606ea4b94a1",
+     "bytes": 716,
+     "mtime": "2026-10-05T16:24:46"
+    }
+   },
+   "context": {
+    "CLOCK_PERIOD": 20,
+    "FP_CORE_UTIL": 50,
+    "PL_TARGET_DENSITY_PCT": 35,
+    "DIE_AREA": [
+     0,
+     0,
+     1250,
+     600
+    ],
+    "MAGIC_DRC_USE_GDS": false,
+    "GRT_ANTENNA_ITERS": 3,
+    "GRT_ANTENNA_MARGIN": 10,
+    "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH": 300,
+    "DESIGN_REPAIR_MAX_SLEW_PCT": 20,
+    "DESIGN_REPAIR_MAX_CAP_PCT": 20,
+    "CTS_MAX_SLEW": null,
+    "RUN_HEURISTIC_DIODE_INSERTION": true,
+    "FP_PDN_VOFFSET": 16.32,
+    "PDN_MACRO_CONNECTIONS": [
+     "u_capture_path.u_capture.u_capture_sram.u_sram22 vccd vssd vdd vss"
+    ],
+    "ERROR_ON_MAGIC_DRC": false,
+    "ERROR_ON_LVS_ERROR": false,
+    "ERROR_ON_KLAYOUT_DRC": false,
+    "ERROR_ON_XOR_ERROR": false,
+    "resumed_from_earlier_state": true
+   },
+   "claims": [
+    {
+     "id": "m.setup_ws",
+     "kind": "observed",
+     "name": "setup_ws",
+     "value": 10.391591881116428,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup__ws",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "ns",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_ws",
+     "kind": "observed",
+     "name": "hold_ws",
+     "value": 0.1829240699578193,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold__ws",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "ns",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.setup_vio",
+     "kind": "observed",
+     "name": "setup_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup_vio__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_vio",
+     "kind": "observed",
+     "name": "hold_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold_vio__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.antenna_nets",
+     "kind": "observed",
+     "name": "antenna_nets",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.antenna__violating__nets",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.route_drc",
+     "kind": "observed",
+     "name": "route_drc",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__drc_errors",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.magic_drc",
+     "kind": "observed",
+     "name": "magic_drc",
+     "value": 559,
+     "source": {
+      "input": "f2",
+      "key": "metrics.magic__drc_error__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "MAGIC_DRC_USE_GDS"
+     ]
+    },
+    {
+     "id": "m.klayout_drc",
+     "kind": "observed",
+     "name": "klayout_drc",
+     "value": 1,
+     "source": {
+      "input": "f2",
+      "key": "metrics.klayout__drc_error__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "02-klayout-drc"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.lvs",
+     "kind": "observed",
+     "name": "lvs",
+     "value": 363,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__lvs_error__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "07-netgen-lvs"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.xor",
+     "kind": "observed",
+     "name": "xor",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__xor_difference__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.max_slew_vio",
+     "kind": "observed",
+     "name": "max_slew_vio",
+     "value": 42,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_slew_violation__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "DESIGN_REPAIR_MAX_SLEW_PCT",
+      "CTS_MAX_SLEW"
+     ]
+    },
+    {
+     "id": "m.max_cap_vio",
+     "kind": "observed",
+     "name": "max_cap_vio",
+     "value": 1,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_cap_violation__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.power_grid_vio",
+     "kind": "observed",
+     "name": "power_grid_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__power_grid_violation__count",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.utilization",
+     "kind": "observed",
+     "name": "utilization",
+     "value": 0.653982,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__utilization",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "ratio",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.area",
+     "kind": "observed",
+     "name": "area",
+     "value": 440998,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__area",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "um2",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.power",
+     "kind": "observed",
+     "name": "power",
+     "value": 0.0026927918661385775,
+     "source": {
+      "input": "f2",
+      "key": "metrics.power__total",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "W",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.wirelength",
+     "kind": "observed",
+     "name": "wirelength",
+     "value": 57273,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__wirelength",
+      "step": "13-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-drc"
+     },
+     "unit": "um",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "c.magic_drc_mode",
+     "kind": "observed",
+     "name": "magic_drc_mode",
+     "value": "DEF (macro interiors NOT examined)",
+     "source": {
+      "input": "f1",
+      "key": "MAGIC_DRC_USE_GDS"
+     }
+    },
+    {
+     "id": "c.clock_period",
+     "kind": "observed",
+     "name": "CLOCK_PERIOD",
+     "value": 20,
+     "source": {
+      "input": "f1",
+      "key": "CLOCK_PERIOD"
+     }
+    },
+    {
+     "id": "c.error_on_magic_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_MAGIC_DRC",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_MAGIC_DRC"
+     }
+    },
+    {
+     "id": "c.error_on_lvs_error",
+     "kind": "observed",
+     "name": "ERROR_ON_LVS_ERROR",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_LVS_ERROR"
+     }
+    },
+    {
+     "id": "c.error_on_klayout_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_KLAYOUT_DRC",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_KLAYOUT_DRC"
+     }
+    },
+    {
+     "id": "r.steps_done",
+     "kind": "observed",
+     "name": "steps_done",
+     "value": 13,
+     "source": {
+      "tool": "directory listing",
+      "key": "step folders that contain state_out.json"
+     }
+    },
+    {
+     "id": "r.final_metrics_present",
+     "kind": "observed",
+     "name": "final_metrics_present",
+     "value": true,
+     "source": {
+      "input": "f3",
+      "key": "(file exists)"
+     }
+    },
+    {
+     "id": "r.process_alive",
+     "kind": "observed",
+     "name": "process_alive_at_collection",
+     "value": false,
+     "source": {
+      "tool": "ps (WSL)",
+      "key": "openlane --run-tag"
+     },
+     "note": "point-in-time reading taken when this record was produced"
+    },
+    {
+     "id": "r.exit_code",
+     "kind": "observed",
+     "name": "exit_code",
+     "value": 0,
+     "source": {
+      "input": "f4",
+      "key": "last 'exit code:' line"
+     }
+    },
+    {
+     "id": "d.setup_met",
+     "kind": "derived",
+     "name": "setup_met",
+     "value": true,
+     "from": [
+      "m.setup_ws"
+     ],
+     "rule": "setup_ws >= 0"
+    },
+    {
+     "id": "d.hold_met",
+     "kind": "derived",
+     "name": "hold_met",
+     "value": true,
+     "from": [
+      "m.hold_ws"
+     ],
+     "rule": "hold_ws >= 0"
+    },
+    {
+     "id": "d.signoff_counts_present",
+     "kind": "derived",
+     "name": "signoff_counts_present",
+     "value": 5,
+     "from": [
+      "m.route_drc",
+      "m.magic_drc",
+      "m.klayout_drc",
+      "m.lvs",
+      "m.xor"
+     ],
+     "rule": "number of the 5 signoff counts ['route_drc', 'magic_drc', 'klayout_drc', 'lvs', 'xor'] that have a value"
+    },
+    {
+     "id": "i.state",
+     "kind": "inferred",
+     "name": "state",
+     "value": "finished",
+     "basis": "final/metrics.json exists",
+     "confidence": "high",
+     "limitations": [
+      "a process list is a point-in-time reading",
+      "a stopped run may have been cut by a WSL restart rather than failing"
+     ]
+    }
+   ],
+   "limitations": [
+    "Magic DRC ran on DEF: it does not look inside macros, so a zero there is not a pass",
+    "some checkers were set non-fatal (ERROR_ON_*=false): the flow continues past violations, so completion does not mean a pass",
+    "metrics are the values in the last finished step's state; a metric produced by an earlier step may not reflect later changes",
+    "collected from run folders only; nothing was re-measured"
+   ],
+   "coverage": {
+    "observed": 26,
+    "derived": 3,
+    "inferred": 1,
+    "unknown": 0
+   }
+  },
+  "ppa3_pdn2": {
+   "schema": "veriolg.evidence/1",
+   "subject": {
+    "kind": "openlane-run",
+    "id": "ppa3_pdn2",
+    "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_pdn2",
+    "label": "사용자 정의 PDN + ADC 전원 rail 연결 조각 (단일 전원 가정, WriteLEF 앞까지)"
+   },
+   "produced": {
+    "by": "tools/ppa3_evidence.py @ 6771a45",
+    "at": "2026-10-14T22:31:16"
+   },
+   "environment": {
+    "pdk": "sky130A",
+    "pdk_version": "0fe599b2afb6708d281543108caf8310912f54af",
+    "std_cell_library": "sky130_fd_sc_hd",
+    "design": "ppa3_adc_capture_top"
+   },
+   "inputs": {
+    "f1": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_pdn2/resolved.json",
+     "role": "settings the run was started with",
+     "sha256": "e3d96bfdd16efc58749b389592686374b11e4c58b8c2a6c4a8ac3649704964f6",
+     "bytes": 166371,
+     "mtime": "2026-10-05T21:08:58"
+    },
+    "f2": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_pdn2/39-klayout-streamout/state_out.json",
+     "role": "state after the last finished step (39-klayout-streamout)",
+     "sha256": "8e8e460cbd87721adbd6e5a4fb83ee60bce01a1a40b77774e15e805411015bed",
+     "bytes": 22821,
+     "mtime": "2026-10-05T21:39:19"
+    },
+    "f3": {
+     "path": "tools/wsl/logs/ppa3_pdn2.summary",
+     "role": "launcher summary (exit code)",
+     "sha256": "25766a37df49cb2c38f2ae1b62a72b3dbcf4c789e131ce0dadc3a37da08d4678",
+     "bytes": 372,
+     "mtime": "2026-10-05T21:08:57"
+    }
+   },
+   "context": {
+    "CLOCK_PERIOD": 20,
+    "FP_CORE_UTIL": 50,
+    "PL_TARGET_DENSITY_PCT": 35,
+    "DIE_AREA": [
+     0,
+     0,
+     1250,
+     600
+    ],
+    "MAGIC_DRC_USE_GDS": true,
+    "GRT_ANTENNA_ITERS": 3,
+    "GRT_ANTENNA_MARGIN": 10,
+    "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH": 300,
+    "DESIGN_REPAIR_MAX_SLEW_PCT": 20,
+    "DESIGN_REPAIR_MAX_CAP_PCT": 20,
+    "CTS_MAX_SLEW": null,
+    "RUN_HEURISTIC_DIODE_INSERTION": true,
+    "FP_PDN_VOFFSET": 16.32,
+    "PDN_MACRO_CONNECTIONS": [
+     "u_capture_path.u_capture.u_capture_sram.u_sram22 VPWR VGND vdd vss",
+     "u_adc VPWR VGND vccd vssd",
+     "u_adc VPWR VGND vdda vssa"
+    ],
+    "ERROR_ON_MAGIC_DRC": false,
+    "ERROR_ON_LVS_ERROR": false,
+    "ERROR_ON_KLAYOUT_DRC": false,
+    "ERROR_ON_XOR_ERROR": false,
+    "resumed_from_earlier_state": true
+   },
+   "claims": [
+    {
+     "id": "m.setup_ws",
+     "kind": "observed",
+     "name": "setup_ws",
+     "value": 10.379047248761797,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup__ws",
+      "step": "39-klayout-streamout",
+      "first_seen_step": "36-openroad-stapostpnr"
+     },
+     "unit": "ns",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_ws",
+     "kind": "observed",
+     "name": "hold_ws",
+     "value": 0.18376706232425863,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold__ws",
+      "step": "39-klayout-streamout",
+      "first_seen_step": "36-openroad-stapostpnr"
+     },
+     "unit": "ns",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.setup_vio",
+     "kind": "observed",
+     "name": "setup_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup_vio__count",
+      "step": "39-klayout-streamout",
+      "first_seen_step": "01-odb-removepdnobstructions"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_vio",
+     "kind": "observed",
+     "name": "hold_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold_vio__count",
+      "step": "39-klayout-streamout",
+      "first_seen_step": "01-odb-removepdnobstructions"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.antenna_nets",
+     "kind": "observed",
+     "name": "antenna_nets",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.antenna__violating__nets",
+      "step": "39-klayout-streamout",
+      "first_seen_step": "27-openroad-checkantennas-1"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.route_drc",
+     "kind": "observed",
+     "name": "route_drc",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__drc_errors",
+      "step": "39-klayout-streamout",
+      "first_seen_step": "25-openroad-detailedrouting"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.magic_drc",
+     "kind": "unknown",
+     "name": "magic_drc",
+     "value": null,
+     "reason": "no step producing it (magic-drc / checker-magicdrc) exists in the run; this run folder holds steps 01-odb-removepdnobstructions..40-magic-writelef; last finished step: 39-klayout-streamout; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.klayout_drc",
+     "kind": "unknown",
+     "name": "klayout_drc",
+     "value": null,
+     "reason": "no step producing it (klayout-drc / checker-klayoutdrc) exists in the run; this run folder holds steps 01-odb-removepdnobstructions..40-magic-writelef; last finished step: 39-klayout-streamout; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.lvs",
+     "kind": "unknown",
+     "name": "lvs",
+     "value": null,
+     "reason": "no step producing it (netgen-lvs / checker-lvs) exists in the run; this run folder holds steps 01-odb-removepdnobstructions..40-magic-writelef; last finished step: 39-klayout-streamout; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.xor",
+     "kind": "unknown",
+     "name": "xor",
+     "value": null,
+     "reason": "no step producing it (klayout-xor / checker-xor) exists in the run; this run folder holds steps 01-odb-removepdnobstructions..40-magic-writelef; last finished step: 39-klayout-streamout; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.max_slew_vio",
+     "kind": "observed",
+     "name": "max_slew_vio",
+     "value": 43,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_slew_violation__count",
+      "step": "39-klayout-streamout",
+      "first_seen_step": "36-openroad-stapostpnr"
+     },
+     "unit": "count",
+     "depends_on_context": [
+      "DESIGN_REPAIR_MAX_SLEW_PCT",
+      "CTS_MAX_SLEW"
+     ]
+    },
+    {
+     "id": "m.max_cap_vio",
+     "kind": "observed",
+     "name": "max_cap_vio",
+     "value": 1,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_cap_violation__count",
+      "step": "39-klayout-streamout",
+      "first_seen_step": "36-openroad-stapostpnr"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.power_grid_vio",
+     "kind": "observed",
+     "name": "power_grid_vio",
+     "value": 5140,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__power_grid_violation__count",
+      "step": "39-klayout-streamout",
+      "first_seen_step": "01-odb-removepdnobstructions"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.utilization",
+     "kind": "observed",
+     "name": "utilization",
+     "value": 0.653982,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__utilization",
+      "step": "39-klayout-streamout",
+      "first_seen_step": "23-openroad-repairantennas"
+     },
+     "unit": "ratio"
+    },
+    {
+     "id": "m.area",
+     "kind": "observed",
+     "name": "area",
+     "value": 440998,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__area",
+      "step": "39-klayout-streamout",
+      "first_seen_step": "23-openroad-repairantennas"
+     },
+     "unit": "um2"
+    },
+    {
+     "id": "m.power",
+     "kind": "observed",
+     "name": "power",
+     "value": 0.0026937525253742933,
+     "source": {
+      "input": "f2",
+      "key": "metrics.power__total",
+      "step": "39-klayout-streamout",
+      "first_seen_step": "36-openroad-stapostpnr"
+     },
+     "unit": "W"
+    },
+    {
+     "id": "m.wirelength",
+     "kind": "observed",
+     "name": "wirelength",
+     "value": 57264,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__wirelength",
+      "step": "39-klayout-streamout",
+      "first_seen_step": "25-openroad-detailedrouting"
+     },
+     "unit": "um"
+    },
+    {
+     "id": "c.magic_drc_mode",
+     "kind": "observed",
+     "name": "magic_drc_mode",
+     "value": "GDS (macro interiors included)",
+     "source": {
+      "input": "f1",
+      "key": "MAGIC_DRC_USE_GDS"
+     }
+    },
+    {
+     "id": "c.clock_period",
+     "kind": "observed",
+     "name": "CLOCK_PERIOD",
+     "value": 20,
+     "source": {
+      "input": "f1",
+      "key": "CLOCK_PERIOD"
+     }
+    },
+    {
+     "id": "c.error_on_magic_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_MAGIC_DRC",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_MAGIC_DRC"
+     }
+    },
+    {
+     "id": "c.error_on_lvs_error",
+     "kind": "observed",
+     "name": "ERROR_ON_LVS_ERROR",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_LVS_ERROR"
+     }
+    },
+    {
+     "id": "c.error_on_klayout_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_KLAYOUT_DRC",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_KLAYOUT_DRC"
+     }
+    },
+    {
+     "id": "r.steps_done",
+     "kind": "observed",
+     "name": "steps_done",
+     "value": 38,
+     "source": {
+      "tool": "directory listing",
+      "key": "step folders that contain state_out.json"
+     }
+    },
+    {
+     "id": "r.process_alive",
+     "kind": "observed",
+     "name": "process_alive_at_collection",
+     "value": false,
+     "source": {
+      "tool": "ps (WSL)",
+      "key": "openlane --run-tag"
+     },
+     "note": "point-in-time reading taken when this record was produced"
+    },
+    {
+     "id": "r.exit_code",
+     "kind": "unknown",
+     "name": "exit_code",
+     "value": null,
+     "reason": "ppa3_pdn2.summary has no 'exit code:' line"
+    },
+    {
+     "id": "d.setup_met",
+     "kind": "derived",
+     "name": "setup_met",
+     "value": true,
+     "from": [
+      "m.setup_ws"
+     ],
+     "rule": "setup_ws >= 0"
+    },
+    {
+     "id": "d.hold_met",
+     "kind": "derived",
+     "name": "hold_met",
+     "value": true,
+     "from": [
+      "m.hold_ws"
+     ],
+     "rule": "hold_ws >= 0"
+    },
+    {
+     "id": "d.signoff_counts_present",
+     "kind": "derived",
+     "name": "signoff_counts_present",
+     "value": 1,
+     "from": [
+      "m.route_drc"
+     ],
+     "rule": "number of the 5 signoff counts ['route_drc', 'magic_drc', 'klayout_drc', 'lvs', 'xor'] that have a value"
+    },
+    {
+     "id": "i.state",
+     "kind": "inferred",
+     "name": "state",
+     "value": "stopped",
+     "basis": "no final/metrics.json and no live openlane process with this run tag",
+     "confidence": "medium",
+     "limitations": [
+      "a process list is a point-in-time reading",
+      "a stopped run may have been cut by a WSL restart rather than failing"
+     ]
+    }
+   ],
+   "limitations": [
+    "some checkers were set non-fatal (ERROR_ON_*=false): the flow continues past violations, so completion does not mean a pass",
+    "metrics are the values in the last finished step's state; a metric produced by an earlier step may not reflect later changes",
+    "collected from run folders only; nothing was re-measured"
+   ],
+   "coverage": {
+    "observed": 20,
+    "derived": 3,
+    "inferred": 1,
+    "unknown": 5
+   }
+  },
+  "ppa3_pdn_a_signoff": {
+   "schema": "veriolg.evidence/1",
+   "subject": {
+    "kind": "openlane-run",
+    "id": "ppa3_pdn_a_signoff",
+    "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_pdn_a_signoff",
+    "label": "ppa3_pdn2를 WriteLEF부터 이어받은 signoff (단일 전원 가정)"
+   },
+   "produced": {
+    "by": "tools/ppa3_evidence.py @ 6771a45",
+    "at": "2026-10-14T22:31:16"
+   },
+   "environment": {
+    "pdk": "sky130A",
+    "pdk_version": "0fe599b2afb6708d281543108caf8310912f54af",
+    "std_cell_library": "sky130_fd_sc_hd",
+    "design": "ppa3_adc_capture_top"
+   },
+   "inputs": {
+    "f1": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_pdn_a_signoff/resolved.json",
+     "role": "settings the run was started with",
+     "sha256": "e3d96bfdd16efc58749b389592686374b11e4c58b8c2a6c4a8ac3649704964f6",
+     "bytes": 166371,
+     "mtime": "2026-10-08T19:50:20"
+    },
+    "f2": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_pdn_a_signoff/17-misc-reportmanufacturability/state_out.json",
+     "role": "state after the last finished step (17-misc-reportmanufacturability)",
+     "sha256": "528a8b497001f63cc09646a543ee37c1ffd3c547d73923a1e6b248947d0d7db8",
+     "bytes": 23612,
+     "mtime": "2026-10-08T21:39:53"
+    },
+    "f3": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_pdn_a_signoff/final/metrics.json",
+     "role": "final metrics (written only when the flow finishes)",
+     "sha256": "d869cead3979246a1c920f72f30425c28c888c7bc4eedd45365a2b870b41695f",
+     "bytes": 16326,
+     "mtime": "2026-10-08T21:40:01"
+    },
+    "f4": {
+     "path": "tools/wsl/logs/ppa3_pdn_a_signoff.summary",
+     "role": "launcher summary (exit code)",
+     "sha256": "dc5ead8316326f1ce4b6b6ab880534b459b7fa53f441012c2409a912429a9fc9",
+     "bytes": 720,
+     "mtime": "2026-10-08T21:40:01"
+    }
+   },
+   "context": {
+    "CLOCK_PERIOD": 20,
+    "FP_CORE_UTIL": 50,
+    "PL_TARGET_DENSITY_PCT": 35,
+    "DIE_AREA": [
+     0,
+     0,
+     1250,
+     600
+    ],
+    "MAGIC_DRC_USE_GDS": true,
+    "GRT_ANTENNA_ITERS": 3,
+    "GRT_ANTENNA_MARGIN": 10,
+    "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH": 300,
+    "DESIGN_REPAIR_MAX_SLEW_PCT": 20,
+    "DESIGN_REPAIR_MAX_CAP_PCT": 20,
+    "CTS_MAX_SLEW": null,
+    "RUN_HEURISTIC_DIODE_INSERTION": true,
+    "FP_PDN_VOFFSET": 16.32,
+    "PDN_MACRO_CONNECTIONS": [
+     "u_capture_path.u_capture.u_capture_sram.u_sram22 VPWR VGND vdd vss",
+     "u_adc VPWR VGND vccd vssd",
+     "u_adc VPWR VGND vdda vssa"
+    ],
+    "ERROR_ON_MAGIC_DRC": false,
+    "ERROR_ON_LVS_ERROR": false,
+    "ERROR_ON_KLAYOUT_DRC": false,
+    "ERROR_ON_XOR_ERROR": false,
+    "resumed_from_earlier_state": true
+   },
+   "claims": [
+    {
+     "id": "m.setup_ws",
+     "kind": "observed",
+     "name": "setup_ws",
+     "value": 10.379047248761797,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup__ws",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-writelef"
+     },
+     "unit": "ns",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_ws",
+     "kind": "observed",
+     "name": "hold_ws",
+     "value": 0.18376706232425863,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold__ws",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-writelef"
+     },
+     "unit": "ns",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.setup_vio",
+     "kind": "observed",
+     "name": "setup_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup_vio__count",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-writelef"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_vio",
+     "kind": "observed",
+     "name": "hold_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold_vio__count",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-writelef"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.antenna_nets",
+     "kind": "observed",
+     "name": "antenna_nets",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.antenna__violating__nets",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-writelef"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.route_drc",
+     "kind": "observed",
+     "name": "route_drc",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__drc_errors",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-writelef"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.magic_drc",
+     "kind": "observed",
+     "name": "magic_drc",
+     "value": 15861378,
+     "source": {
+      "input": "f2",
+      "key": "metrics.magic__drc_error__count",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "05-magic-drc"
+     },
+     "unit": "count",
+     "depends_on_context": [
+      "MAGIC_DRC_USE_GDS"
+     ]
+    },
+    {
+     "id": "m.klayout_drc",
+     "kind": "observed",
+     "name": "klayout_drc",
+     "value": 185,
+     "source": {
+      "input": "f2",
+      "key": "metrics.klayout__drc_error__count",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "06-klayout-drc"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.lvs",
+     "kind": "observed",
+     "name": "lvs",
+     "value": 387,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__lvs_error__count",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "11-netgen-lvs"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.xor",
+     "kind": "observed",
+     "name": "xor",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__xor_difference__count",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "03-klayout-xor"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.max_slew_vio",
+     "kind": "observed",
+     "name": "max_slew_vio",
+     "value": 43,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_slew_violation__count",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-writelef"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "DESIGN_REPAIR_MAX_SLEW_PCT",
+      "CTS_MAX_SLEW"
+     ]
+    },
+    {
+     "id": "m.max_cap_vio",
+     "kind": "observed",
+     "name": "max_cap_vio",
+     "value": 1,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_cap_violation__count",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-writelef"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.power_grid_vio",
+     "kind": "observed",
+     "name": "power_grid_vio",
+     "value": 5140,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__power_grid_violation__count",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-writelef"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.utilization",
+     "kind": "observed",
+     "name": "utilization",
+     "value": 0.653982,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__utilization",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-writelef"
+     },
+     "unit": "ratio",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.area",
+     "kind": "observed",
+     "name": "area",
+     "value": 440998,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__area",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-writelef"
+     },
+     "unit": "um2",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.power",
+     "kind": "observed",
+     "name": "power",
+     "value": 0.0026937525253742933,
+     "source": {
+      "input": "f2",
+      "key": "metrics.power__total",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-writelef"
+     },
+     "unit": "W",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.wirelength",
+     "kind": "observed",
+     "name": "wirelength",
+     "value": 57264,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__wirelength",
+      "step": "17-misc-reportmanufacturability",
+      "first_seen_step": "01-magic-writelef"
+     },
+     "unit": "um",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "c.magic_drc_mode",
+     "kind": "observed",
+     "name": "magic_drc_mode",
+     "value": "GDS (macro interiors included)",
+     "source": {
+      "input": "f1",
+      "key": "MAGIC_DRC_USE_GDS"
+     }
+    },
+    {
+     "id": "c.clock_period",
+     "kind": "observed",
+     "name": "CLOCK_PERIOD",
+     "value": 20,
+     "source": {
+      "input": "f1",
+      "key": "CLOCK_PERIOD"
+     }
+    },
+    {
+     "id": "c.error_on_magic_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_MAGIC_DRC",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_MAGIC_DRC"
+     }
+    },
+    {
+     "id": "c.error_on_lvs_error",
+     "kind": "observed",
+     "name": "ERROR_ON_LVS_ERROR",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_LVS_ERROR"
+     }
+    },
+    {
+     "id": "c.error_on_klayout_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_KLAYOUT_DRC",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_KLAYOUT_DRC"
+     }
+    },
+    {
+     "id": "r.steps_done",
+     "kind": "observed",
+     "name": "steps_done",
+     "value": 17,
+     "source": {
+      "tool": "directory listing",
+      "key": "step folders that contain state_out.json"
+     }
+    },
+    {
+     "id": "r.final_metrics_present",
+     "kind": "observed",
+     "name": "final_metrics_present",
+     "value": true,
+     "source": {
+      "input": "f3",
+      "key": "(file exists)"
+     }
+    },
+    {
+     "id": "r.process_alive",
+     "kind": "observed",
+     "name": "process_alive_at_collection",
+     "value": false,
+     "source": {
+      "tool": "ps (WSL)",
+      "key": "openlane --run-tag"
+     },
+     "note": "point-in-time reading taken when this record was produced"
+    },
+    {
+     "id": "r.exit_code",
+     "kind": "observed",
+     "name": "exit_code",
+     "value": 0,
+     "source": {
+      "input": "f4",
+      "key": "last 'exit code:' line"
+     }
+    },
+    {
+     "id": "d.setup_met",
+     "kind": "derived",
+     "name": "setup_met",
+     "value": true,
+     "from": [
+      "m.setup_ws"
+     ],
+     "rule": "setup_ws >= 0"
+    },
+    {
+     "id": "d.hold_met",
+     "kind": "derived",
+     "name": "hold_met",
+     "value": true,
+     "from": [
+      "m.hold_ws"
+     ],
+     "rule": "hold_ws >= 0"
+    },
+    {
+     "id": "d.signoff_counts_present",
+     "kind": "derived",
+     "name": "signoff_counts_present",
+     "value": 5,
+     "from": [
+      "m.route_drc",
+      "m.magic_drc",
+      "m.klayout_drc",
+      "m.lvs",
+      "m.xor"
+     ],
+     "rule": "number of the 5 signoff counts ['route_drc', 'magic_drc', 'klayout_drc', 'lvs', 'xor'] that have a value"
+    },
+    {
+     "id": "i.state",
+     "kind": "inferred",
+     "name": "state",
+     "value": "finished",
+     "basis": "final/metrics.json exists",
+     "confidence": "high",
+     "limitations": [
+      "a process list is a point-in-time reading",
+      "a stopped run may have been cut by a WSL restart rather than failing"
+     ]
+    }
+   ],
+   "limitations": [
+    "some checkers were set non-fatal (ERROR_ON_*=false): the flow continues past violations, so completion does not mean a pass",
+    "metrics are the values in the last finished step's state; a metric produced by an earlier step may not reflect later changes",
+    "collected from run folders only; nothing was re-measured"
+   ],
+   "coverage": {
+    "observed": 26,
+    "derived": 3,
+    "inferred": 1,
+    "unknown": 0
+   }
+  },
+  "ppa3_adcshift_signoff": {
+   "schema": "veriolg.evidence/1",
+   "subject": {
+    "kind": "openlane-run",
+    "id": "ppa3_adcshift_signoff",
+    "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_adcshift_signoff",
+    "label": "ADC를 x 40→30.24로 이동(왼쪽 행 조각 제거), antfix4 설정 · signoff부터 이어받음"
+   },
+   "produced": {
+    "by": "tools/ppa3_evidence.py @ 6771a45",
+    "at": "2026-10-14T22:31:17"
+   },
+   "environment": {
+    "pdk": "sky130A",
+    "pdk_version": "0fe599b2afb6708d281543108caf8310912f54af",
+    "std_cell_library": "sky130_fd_sc_hd",
+    "design": "ppa3_adc_capture_top"
+   },
+   "inputs": {
+    "f1": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_adcshift_signoff/resolved.json",
+     "role": "settings the run was started with",
+     "sha256": "03ea63226f26c7b3b4877fcd03a0b8ac5a31c846c74bbd51eab5231d387bca4a",
+     "bytes": 166217,
+     "mtime": "2026-10-09T14:32:03"
+    },
+    "f2": {
+     "path": "tools/wsl/logs/ppa3_adcshift_signoff.summary",
+     "role": "launcher summary (exit code)",
+     "sha256": "939af94b263b314d9f071460e5d8c9d826998b00cc2be98e7e8f4eb50e2970d8",
+     "bytes": 114,
+     "mtime": "2026-10-09T14:32:02"
+    }
+   },
+   "context": {
+    "CLOCK_PERIOD": 20,
+    "FP_CORE_UTIL": 50,
+    "PL_TARGET_DENSITY_PCT": 35,
+    "DIE_AREA": [
+     0,
+     0,
+     1250,
+     600
+    ],
+    "MAGIC_DRC_USE_GDS": true,
+    "GRT_ANTENNA_ITERS": 3,
+    "GRT_ANTENNA_MARGIN": 10,
+    "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH": 300,
+    "DESIGN_REPAIR_MAX_SLEW_PCT": 20,
+    "DESIGN_REPAIR_MAX_CAP_PCT": 20,
+    "CTS_MAX_SLEW": null,
+    "RUN_HEURISTIC_DIODE_INSERTION": true,
+    "FP_PDN_VOFFSET": 16.32,
+    "PDN_MACRO_CONNECTIONS": [
+     "u_capture_path.u_capture.u_capture_sram.u_sram22 vccd vssd vdd vss"
+    ],
+    "ERROR_ON_MAGIC_DRC": false,
+    "ERROR_ON_LVS_ERROR": false,
+    "ERROR_ON_KLAYOUT_DRC": false,
+    "ERROR_ON_XOR_ERROR": false,
+    "resumed_from_earlier_state": true
+   },
+   "claims": [
+    {
+     "id": "m.setup_ws",
+     "kind": "unknown",
+     "name": "setup_ws",
+     "value": null,
+     "reason": "no step producing it (stapostpnr / stapostpnr) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.hold_ws",
+     "kind": "unknown",
+     "name": "hold_ws",
+     "value": null,
+     "reason": "no step producing it (stapostpnr / sta) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.setup_vio",
+     "kind": "unknown",
+     "name": "setup_vio",
+     "value": null,
+     "reason": "no step producing it (checker-setupviolations / stapostpnr) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.hold_vio",
+     "kind": "unknown",
+     "name": "hold_vio",
+     "value": null,
+     "reason": "no step producing it (checker-holdviolations / stapostpnr) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.antenna_nets",
+     "kind": "unknown",
+     "name": "antenna_nets",
+     "value": null,
+     "reason": "no step producing it (checker-antenna / repairantennas) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.route_drc",
+     "kind": "unknown",
+     "name": "route_drc",
+     "value": null,
+     "reason": "no step producing it (detailedrouting / checker-trdrc) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.magic_drc",
+     "kind": "unknown",
+     "name": "magic_drc",
+     "value": null,
+     "reason": "01-magic-drc started but has no state_out.json (did not finish); run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.klayout_drc",
+     "kind": "unknown",
+     "name": "klayout_drc",
+     "value": null,
+     "reason": "no step producing it (klayout-drc / checker-klayoutdrc) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.lvs",
+     "kind": "unknown",
+     "name": "lvs",
+     "value": null,
+     "reason": "no step producing it (netgen-lvs / checker-lvs) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.xor",
+     "kind": "unknown",
+     "name": "xor",
+     "value": null,
+     "reason": "no step producing it (klayout-xor / checker-xor) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.max_slew_vio",
+     "kind": "unknown",
+     "name": "max_slew_vio",
+     "value": null,
+     "reason": "no step producing it (checker-maxslewviolations / stapostpnr) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.max_cap_vio",
+     "kind": "unknown",
+     "name": "max_cap_vio",
+     "value": null,
+     "reason": "no step producing it (checker-maxcapviolations / stapostpnr) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.power_grid_vio",
+     "kind": "unknown",
+     "name": "power_grid_vio",
+     "value": null,
+     "reason": "no step producing it (checker-powergridviolations / pdn) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.utilization",
+     "kind": "unknown",
+     "name": "utilization",
+     "value": null,
+     "reason": "no step producing it (floorplan / globalplacement) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.area",
+     "kind": "unknown",
+     "name": "area",
+     "value": null,
+     "reason": "no step producing it (floorplan / globalplacement) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.power",
+     "kind": "unknown",
+     "name": "power",
+     "value": null,
+     "reason": "no step producing it (stapostpnr / sta) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.wirelength",
+     "kind": "unknown",
+     "name": "wirelength",
+     "value": null,
+     "reason": "no step producing it (globalrouting / detailedrouting) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "c.magic_drc_mode",
+     "kind": "observed",
+     "name": "magic_drc_mode",
+     "value": "GDS (macro interiors included)",
+     "source": {
+      "input": "f1",
+      "key": "MAGIC_DRC_USE_GDS"
+     }
+    },
+    {
+     "id": "c.clock_period",
+     "kind": "observed",
+     "name": "CLOCK_PERIOD",
+     "value": 20,
+     "source": {
+      "input": "f1",
+      "key": "CLOCK_PERIOD"
+     }
+    },
+    {
+     "id": "c.error_on_magic_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_MAGIC_DRC",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_MAGIC_DRC"
+     }
+    },
+    {
+     "id": "c.error_on_lvs_error",
+     "kind": "observed",
+     "name": "ERROR_ON_LVS_ERROR",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_LVS_ERROR"
+     }
+    },
+    {
+     "id": "c.error_on_klayout_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_KLAYOUT_DRC",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_KLAYOUT_DRC"
+     }
+    },
+    {
+     "id": "r.steps_done",
+     "kind": "observed",
+     "name": "steps_done",
+     "value": 0,
+     "source": {
+      "tool": "directory listing",
+      "key": "step folders that contain state_out.json"
+     }
+    },
+    {
+     "id": "r.process_alive",
+     "kind": "observed",
+     "name": "process_alive_at_collection",
+     "value": false,
+     "source": {
+      "tool": "ps (WSL)",
+      "key": "openlane --run-tag"
+     },
+     "note": "point-in-time reading taken when this record was produced"
+    },
+    {
+     "id": "r.exit_code",
+     "kind": "unknown",
+     "name": "exit_code",
+     "value": null,
+     "reason": "ppa3_adcshift_signoff.summary has no 'exit code:' line"
+    },
+    {
+     "id": "d.signoff_counts_present",
+     "kind": "unknown",
+     "name": "signoff_counts_present",
+     "value": null,
+     "reason": "none of the signoff counts has a value in this run"
+    },
+    {
+     "id": "i.state",
+     "kind": "inferred",
+     "name": "state",
+     "value": "stopped",
+     "basis": "no final/metrics.json and no live openlane process with this run tag",
+     "confidence": "medium",
+     "limitations": [
+      "a process list is a point-in-time reading",
+      "a stopped run may have been cut by a WSL restart rather than failing"
+     ]
+    }
+   ],
+   "limitations": [
+    "some checkers were set non-fatal (ERROR_ON_*=false): the flow continues past violations, so completion does not mean a pass",
+    "metrics are the values in the last finished step's state; a metric produced by an earlier step may not reflect later changes",
+    "collected from run folders only; nothing was re-measured"
+   ],
+   "coverage": {
+    "observed": 7,
+    "derived": 0,
+    "inferred": 1,
+    "unknown": 19
+   }
+  },
+  "ppa3_adcslew_signoff": {
+   "schema": "veriolg.evidence/1",
+   "subject": {
+    "kind": "openlane-run",
+    "id": "ppa3_adcslew_signoff",
+    "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_adcslew_signoff",
+    "label": "ADC 이동 + slew/cap 여유 50% · CTS slew 0.2 ns · signoff부터 이어받음"
+   },
+   "produced": {
+    "by": "tools/ppa3_evidence.py @ 6771a45",
+    "at": "2026-10-14T22:31:17"
+   },
+   "environment": {
+    "pdk": "sky130A",
+    "pdk_version": "0fe599b2afb6708d281543108caf8310912f54af",
+    "std_cell_library": "sky130_fd_sc_hd",
+    "design": "ppa3_adc_capture_top"
+   },
+   "inputs": {
+    "f1": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_adcslew_signoff/resolved.json",
+     "role": "settings the run was started with",
+     "sha256": "edb886d87542d5d8ac9a6085c921870f986d301e2a93220fbda76dcb0c680faa",
+     "bytes": 166216,
+     "mtime": "2026-10-09T21:29:27"
+    },
+    "f2": {
+     "path": "tools/wsl/logs/ppa3_adcslew_signoff.summary",
+     "role": "launcher summary (exit code)",
+     "sha256": "89bd9eabb39c8cf9d4b32d3c312339d97fec99a3855775d287c02a96e5e78def",
+     "bytes": 112,
+     "mtime": "2026-10-09T21:29:21"
+    }
+   },
+   "context": {
+    "CLOCK_PERIOD": 20,
+    "FP_CORE_UTIL": 50,
+    "PL_TARGET_DENSITY_PCT": 35,
+    "DIE_AREA": [
+     0,
+     0,
+     1250,
+     600
+    ],
+    "MAGIC_DRC_USE_GDS": true,
+    "GRT_ANTENNA_ITERS": 3,
+    "GRT_ANTENNA_MARGIN": 10,
+    "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH": 300,
+    "DESIGN_REPAIR_MAX_SLEW_PCT": 50,
+    "DESIGN_REPAIR_MAX_CAP_PCT": 50,
+    "CTS_MAX_SLEW": 0.2,
+    "RUN_HEURISTIC_DIODE_INSERTION": true,
+    "FP_PDN_VOFFSET": 16.32,
+    "PDN_MACRO_CONNECTIONS": [
+     "u_capture_path.u_capture.u_capture_sram.u_sram22 vccd vssd vdd vss"
+    ],
+    "ERROR_ON_MAGIC_DRC": false,
+    "ERROR_ON_LVS_ERROR": false,
+    "ERROR_ON_KLAYOUT_DRC": false,
+    "ERROR_ON_XOR_ERROR": false,
+    "resumed_from_earlier_state": true
+   },
+   "claims": [
+    {
+     "id": "m.setup_ws",
+     "kind": "unknown",
+     "name": "setup_ws",
+     "value": null,
+     "reason": "no step producing it (stapostpnr / stapostpnr) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.hold_ws",
+     "kind": "unknown",
+     "name": "hold_ws",
+     "value": null,
+     "reason": "no step producing it (stapostpnr / sta) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.setup_vio",
+     "kind": "unknown",
+     "name": "setup_vio",
+     "value": null,
+     "reason": "no step producing it (checker-setupviolations / stapostpnr) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.hold_vio",
+     "kind": "unknown",
+     "name": "hold_vio",
+     "value": null,
+     "reason": "no step producing it (checker-holdviolations / stapostpnr) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.antenna_nets",
+     "kind": "unknown",
+     "name": "antenna_nets",
+     "value": null,
+     "reason": "no step producing it (checker-antenna / repairantennas) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.route_drc",
+     "kind": "unknown",
+     "name": "route_drc",
+     "value": null,
+     "reason": "no step producing it (detailedrouting / checker-trdrc) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.magic_drc",
+     "kind": "unknown",
+     "name": "magic_drc",
+     "value": null,
+     "reason": "01-magic-drc started but has no state_out.json (did not finish); run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.klayout_drc",
+     "kind": "unknown",
+     "name": "klayout_drc",
+     "value": null,
+     "reason": "no step producing it (klayout-drc / checker-klayoutdrc) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.lvs",
+     "kind": "unknown",
+     "name": "lvs",
+     "value": null,
+     "reason": "no step producing it (netgen-lvs / checker-lvs) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.xor",
+     "kind": "unknown",
+     "name": "xor",
+     "value": null,
+     "reason": "no step producing it (klayout-xor / checker-xor) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.max_slew_vio",
+     "kind": "unknown",
+     "name": "max_slew_vio",
+     "value": null,
+     "reason": "no step producing it (checker-maxslewviolations / stapostpnr) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.max_cap_vio",
+     "kind": "unknown",
+     "name": "max_cap_vio",
+     "value": null,
+     "reason": "no step producing it (checker-maxcapviolations / stapostpnr) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.power_grid_vio",
+     "kind": "unknown",
+     "name": "power_grid_vio",
+     "value": null,
+     "reason": "no step producing it (checker-powergridviolations / pdn) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.utilization",
+     "kind": "unknown",
+     "name": "utilization",
+     "value": null,
+     "reason": "no step producing it (floorplan / globalplacement) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.area",
+     "kind": "unknown",
+     "name": "area",
+     "value": null,
+     "reason": "no step producing it (floorplan / globalplacement) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.power",
+     "kind": "unknown",
+     "name": "power",
+     "value": null,
+     "reason": "no step producing it (stapostpnr / sta) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.wirelength",
+     "kind": "unknown",
+     "name": "wirelength",
+     "value": null,
+     "reason": "no step producing it (globalrouting / detailedrouting) exists in the run; this run folder holds steps 01-magic-drc..01-magic-drc; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "c.magic_drc_mode",
+     "kind": "observed",
+     "name": "magic_drc_mode",
+     "value": "GDS (macro interiors included)",
+     "source": {
+      "input": "f1",
+      "key": "MAGIC_DRC_USE_GDS"
+     }
+    },
+    {
+     "id": "c.clock_period",
+     "kind": "observed",
+     "name": "CLOCK_PERIOD",
+     "value": 20,
+     "source": {
+      "input": "f1",
+      "key": "CLOCK_PERIOD"
+     }
+    },
+    {
+     "id": "c.error_on_magic_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_MAGIC_DRC",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_MAGIC_DRC"
+     }
+    },
+    {
+     "id": "c.error_on_lvs_error",
+     "kind": "observed",
+     "name": "ERROR_ON_LVS_ERROR",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_LVS_ERROR"
+     }
+    },
+    {
+     "id": "c.error_on_klayout_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_KLAYOUT_DRC",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_KLAYOUT_DRC"
+     }
+    },
+    {
+     "id": "r.steps_done",
+     "kind": "observed",
+     "name": "steps_done",
+     "value": 0,
+     "source": {
+      "tool": "directory listing",
+      "key": "step folders that contain state_out.json"
+     }
+    },
+    {
+     "id": "r.process_alive",
+     "kind": "observed",
+     "name": "process_alive_at_collection",
+     "value": false,
+     "source": {
+      "tool": "ps (WSL)",
+      "key": "openlane --run-tag"
+     },
+     "note": "point-in-time reading taken when this record was produced"
+    },
+    {
+     "id": "r.exit_code",
+     "kind": "unknown",
+     "name": "exit_code",
+     "value": null,
+     "reason": "ppa3_adcslew_signoff.summary has no 'exit code:' line"
+    },
+    {
+     "id": "d.signoff_counts_present",
+     "kind": "unknown",
+     "name": "signoff_counts_present",
+     "value": null,
+     "reason": "none of the signoff counts has a value in this run"
+    },
+    {
+     "id": "i.state",
+     "kind": "inferred",
+     "name": "state",
+     "value": "stopped",
+     "basis": "no final/metrics.json and no live openlane process with this run tag",
+     "confidence": "medium",
+     "limitations": [
+      "a process list is a point-in-time reading",
+      "a stopped run may have been cut by a WSL restart rather than failing"
+     ]
+    }
+   ],
+   "limitations": [
+    "some checkers were set non-fatal (ERROR_ON_*=false): the flow continues past violations, so completion does not mean a pass",
+    "metrics are the values in the last finished step's state; a metric produced by an earlier step may not reflect later changes",
+    "collected from run folders only; nothing was re-measured"
+   ],
+   "coverage": {
+    "observed": 7,
+    "derived": 0,
+    "inferred": 1,
+    "unknown": 19
+   }
+  },
+  "ppa3_adcslew2_signoff": {
+   "schema": "veriolg.evidence/1",
+   "subject": {
+    "kind": "openlane-run",
+    "id": "ppa3_adcslew2_signoff",
+    "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_adcslew2_signoff",
+    "label": "ADC 이동 + slew 여유 · KLayout DRC부터 이어받아 완주 (Magic DRC 리포트는 ppa3_adcslew_signoff/01-magic-drc, SRAM 밖 0건)"
+   },
+   "produced": {
+    "by": "tools/ppa3_evidence.py @ 6771a45",
+    "at": "2026-10-14T22:31:17"
+   },
+   "environment": {
+    "pdk": "sky130A",
+    "pdk_version": "0fe599b2afb6708d281543108caf8310912f54af",
+    "std_cell_library": "sky130_fd_sc_hd",
+    "design": "ppa3_adc_capture_top"
+   },
+   "inputs": {
+    "f1": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_adcslew2_signoff/resolved.json",
+     "role": "settings the run was started with",
+     "sha256": "edb886d87542d5d8ac9a6085c921870f986d301e2a93220fbda76dcb0c680faa",
+     "bytes": 166216,
+     "mtime": "2026-10-09T22:43:11"
+    },
+    "f2": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_adcslew2_signoff/12-misc-reportmanufacturability/state_out.json",
+     "role": "state after the last finished step (12-misc-reportmanufacturability)",
+     "sha256": "300ccff17d12858e28de5952c50a37552b9f2bf086e744b1742ead57d6ce8f13",
+     "bytes": 23705,
+     "mtime": "2026-10-09T22:54:34"
+    },
+    "f3": {
+     "path": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_adcslew2_signoff/final/metrics.json",
+     "role": "final metrics (written only when the flow finishes)",
+     "sha256": "fcd941064a1a8b9873740263a1f0c21f59d85173d373b8c0f4cac7328f286879",
+     "bytes": 16324,
+     "mtime": "2026-10-09T22:54:51"
+    },
+    "f4": {
+     "path": "tools/wsl/logs/ppa3_adcslew2_signoff.summary",
+     "role": "launcher summary (exit code)",
+     "sha256": "6f897f44a73b141992a018edcc26c484549fd33cd94f62b2b807de21f6c6a640",
+     "bytes": 674,
+     "mtime": "2026-10-09T22:54:51"
+    }
+   },
+   "context": {
+    "CLOCK_PERIOD": 20,
+    "FP_CORE_UTIL": 50,
+    "PL_TARGET_DENSITY_PCT": 35,
+    "DIE_AREA": [
+     0,
+     0,
+     1250,
+     600
+    ],
+    "MAGIC_DRC_USE_GDS": true,
+    "GRT_ANTENNA_ITERS": 3,
+    "GRT_ANTENNA_MARGIN": 10,
+    "GRT_DESIGN_REPAIR_MAX_WIRE_LENGTH": 300,
+    "DESIGN_REPAIR_MAX_SLEW_PCT": 50,
+    "DESIGN_REPAIR_MAX_CAP_PCT": 50,
+    "CTS_MAX_SLEW": 0.2,
+    "RUN_HEURISTIC_DIODE_INSERTION": true,
+    "FP_PDN_VOFFSET": 16.32,
+    "PDN_MACRO_CONNECTIONS": [
+     "u_capture_path.u_capture.u_capture_sram.u_sram22 vccd vssd vdd vss"
+    ],
+    "ERROR_ON_MAGIC_DRC": false,
+    "ERROR_ON_LVS_ERROR": false,
+    "ERROR_ON_KLAYOUT_DRC": false,
+    "ERROR_ON_XOR_ERROR": false,
+    "resumed_from_earlier_state": true
+   },
+   "claims": [
+    {
+     "id": "m.setup_ws",
+     "kind": "observed",
+     "name": "setup_ws",
+     "value": 9.053312133994153,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup__ws",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "ns",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_ws",
+     "kind": "observed",
+     "name": "hold_ws",
+     "value": 0.13495088761778218,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold__ws",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "ns",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.setup_vio",
+     "kind": "observed",
+     "name": "setup_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__setup_vio__count",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.hold_vio",
+     "kind": "observed",
+     "name": "hold_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.timing__hold_vio__count",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "CLOCK_PERIOD"
+     ]
+    },
+    {
+     "id": "m.antenna_nets",
+     "kind": "observed",
+     "name": "antenna_nets",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.antenna__violating__nets",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.route_drc",
+     "kind": "observed",
+     "name": "route_drc",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__drc_errors",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.magic_drc",
+     "kind": "unknown",
+     "name": "magic_drc",
+     "value": null,
+     "reason": "02-checker-magicdrc finished but did not report it; last finished step: 12-misc-reportmanufacturability; run was resumed, so only inherited values exist here"
+    },
+    {
+     "id": "m.klayout_drc",
+     "kind": "observed",
+     "name": "klayout_drc",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.klayout__drc_error__count",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.lvs",
+     "kind": "observed",
+     "name": "lvs",
+     "value": 7,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__lvs_error__count",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "06-netgen-lvs"
+     },
+     "unit": "count"
+    },
+    {
+     "id": "m.xor",
+     "kind": "observed",
+     "name": "xor",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__xor_difference__count",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.max_slew_vio",
+     "kind": "observed",
+     "name": "max_slew_vio",
+     "value": 15,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_slew_violation__count",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here",
+     "depends_on_context": [
+      "DESIGN_REPAIR_MAX_SLEW_PCT",
+      "CTS_MAX_SLEW"
+     ]
+    },
+    {
+     "id": "m.max_cap_vio",
+     "kind": "observed",
+     "name": "max_cap_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__max_cap_violation__count",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.power_grid_vio",
+     "kind": "observed",
+     "name": "power_grid_vio",
+     "value": 0,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__power_grid_violation__count",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "count",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.utilization",
+     "kind": "observed",
+     "name": "utilization",
+     "value": 0.655405,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__utilization",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "ratio",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.area",
+     "kind": "observed",
+     "name": "area",
+     "value": 441958,
+     "source": {
+      "input": "f2",
+      "key": "metrics.design__instance__area",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "um2",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.power",
+     "kind": "observed",
+     "name": "power",
+     "value": 0.0026485451962798834,
+     "source": {
+      "input": "f2",
+      "key": "metrics.power__total",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "W",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "m.wirelength",
+     "kind": "observed",
+     "name": "wirelength",
+     "value": 58573,
+     "source": {
+      "input": "f2",
+      "key": "metrics.route__wirelength",
+      "step": "12-misc-reportmanufacturability",
+      "first_seen_step": "01-klayout-drc"
+     },
+     "unit": "um",
+     "note": "first seen at this folder's first step: the value was inherited from the earlier run's state, not measured here"
+    },
+    {
+     "id": "c.magic_drc_mode",
+     "kind": "observed",
+     "name": "magic_drc_mode",
+     "value": "GDS (macro interiors included)",
+     "source": {
+      "input": "f1",
+      "key": "MAGIC_DRC_USE_GDS"
+     }
+    },
+    {
+     "id": "c.clock_period",
+     "kind": "observed",
+     "name": "CLOCK_PERIOD",
+     "value": 20,
+     "source": {
+      "input": "f1",
+      "key": "CLOCK_PERIOD"
+     }
+    },
+    {
+     "id": "c.error_on_magic_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_MAGIC_DRC",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_MAGIC_DRC"
+     }
+    },
+    {
+     "id": "c.error_on_lvs_error",
+     "kind": "observed",
+     "name": "ERROR_ON_LVS_ERROR",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_LVS_ERROR"
+     }
+    },
+    {
+     "id": "c.error_on_klayout_drc",
+     "kind": "observed",
+     "name": "ERROR_ON_KLAYOUT_DRC",
+     "value": false,
+     "source": {
+      "input": "f1",
+      "key": "ERROR_ON_KLAYOUT_DRC"
+     }
+    },
+    {
+     "id": "r.steps_done",
+     "kind": "observed",
+     "name": "steps_done",
+     "value": 12,
+     "source": {
+      "tool": "directory listing",
+      "key": "step folders that contain state_out.json"
+     }
+    },
+    {
+     "id": "r.final_metrics_present",
+     "kind": "observed",
+     "name": "final_metrics_present",
+     "value": true,
+     "source": {
+      "input": "f3",
+      "key": "(file exists)"
+     }
+    },
+    {
+     "id": "r.process_alive",
+     "kind": "observed",
+     "name": "process_alive_at_collection",
+     "value": false,
+     "source": {
+      "tool": "ps (WSL)",
+      "key": "openlane --run-tag"
+     },
+     "note": "point-in-time reading taken when this record was produced"
+    },
+    {
+     "id": "r.exit_code",
+     "kind": "observed",
+     "name": "exit_code",
+     "value": 0,
+     "source": {
+      "input": "f4",
+      "key": "last 'exit code:' line"
+     }
+    },
+    {
+     "id": "d.setup_met",
+     "kind": "derived",
+     "name": "setup_met",
+     "value": true,
+     "from": [
+      "m.setup_ws"
+     ],
+     "rule": "setup_ws >= 0"
+    },
+    {
+     "id": "d.hold_met",
+     "kind": "derived",
+     "name": "hold_met",
+     "value": true,
+     "from": [
+      "m.hold_ws"
+     ],
+     "rule": "hold_ws >= 0"
+    },
+    {
+     "id": "d.signoff_counts_present",
+     "kind": "derived",
+     "name": "signoff_counts_present",
+     "value": 4,
+     "from": [
+      "m.route_drc",
+      "m.klayout_drc",
+      "m.lvs",
+      "m.xor"
+     ],
+     "rule": "number of the 5 signoff counts ['route_drc', 'magic_drc', 'klayout_drc', 'lvs', 'xor'] that have a value"
+    },
+    {
+     "id": "i.state",
+     "kind": "inferred",
+     "name": "state",
+     "value": "finished",
+     "basis": "final/metrics.json exists",
+     "confidence": "high",
+     "limitations": [
+      "a process list is a point-in-time reading",
+      "a stopped run may have been cut by a WSL restart rather than failing"
+     ]
+    }
+   ],
+   "limitations": [
+    "some checkers were set non-fatal (ERROR_ON_*=false): the flow continues past violations, so completion does not mean a pass",
+    "metrics are the values in the last finished step's state; a metric produced by an earlier step may not reflect later changes",
+    "collected from run folders only; nothing was re-measured"
+   ],
+   "coverage": {
+    "observed": 25,
+    "derived": 3,
+    "inferred": 1,
+    "unknown": 1
+   }
+  }
+ }
+}

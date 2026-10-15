@@ -1,0 +1,17 @@
+.pev-legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 6px 0 12px; font-size: 12.5px; }
+.pev-legend label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.pev-legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.pev-pick { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 8px 0; font-size: 12.5px; }
+.pev-pick select { font-size: 12.5px; padding: 3px 6px; border-radius: 6px; border: 1px solid var(--border, rgba(127,127,127,.4)); background: transparent; color: inherit; }
+.pev-kind { color: #fff; font-size: 11px; padding: 1px 8px; border-radius: 10px; white-space: nowrap; }
+.pev-src { font-size: 12px; line-height: 1.5; }
+.pev-src code { font-size: 11.5px; }
+.pev-dim { color: var(--text-muted, #888); }
+.pev-warn { color: #a56a00; display: block; }
+.pev-unknown { color: #d4472a; }
+.pev-lims { font-size: 12.5px; line-height: 1.6; margin: 10px 0 0; padding-left: 20px; }
+.pev-meta { font-size: 11.5px; color: var(--text-muted, #888); margin: 6px 0 0; }
+.pev-h { margin: 18px 0 4px; font-size: 14px; }
+.pev-ctxwarn { background: rgba(212, 71, 42, .1); border-left: 4px solid #d4472a; padding: 8px 12px; border-radius: 6px; font-size: 12.5px; line-height: 1.7; }
+.pev-ctxwarn code { display: inline-block; margin: 0 6px 2px 0; font-size: 11.5px; }
+.pev-ctxok { font-size: 12.5px; color: #1D9E75; }

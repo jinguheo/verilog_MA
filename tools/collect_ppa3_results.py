@@ -3,18 +3,25 @@
     python tools/collect_ppa3_results.py
 
 Reads   samples/sample_test_4/asic/ppa3_adc_capture/runs/<run>  (state_out.json of the last finished step, final/metrics.json)
-Writes  my_dashboard/src/data/ppa3Runs.json
+Writes  my_dashboard/src/data/ppa3Runs.json            (what the table shows)
+        my_dashboard/src/data/ppa3Evidence.json        (per run: where every number came from — observed / derived / inferred / unknown,
+                                                        file digests, reasons for unknowns; see tools/evidence.py)
 Counts that are not measured yet stay null ("not run"), they are never filled with defaults.
 """
 import json
 import re
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import ppa3_evidence  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNS = ROOT / "samples/sample_test_4/asic/ppa3_adc_capture/runs"
 OUT = ROOT / "my_dashboard/src/data/ppa3Runs.json"
+EVIDENCE_OUT = ROOT / "my_dashboard/src/data/ppa3Evidence.json"
 LOGS = ROOT / "tools/wsl/logs"
 TOTAL_STEPS = 74  # OpenLane Classic flow for this config
 
@@ -33,7 +40,7 @@ LABELS = {
 }
 KEYS = {
     "setup_ws": "timing__setup__ws", "hold_ws": "timing__hold__ws",
-    "setup_vio": "timing__setup_vio__count", "hold_vio": "timing__hold__vio_count",
+    "setup_vio": "timing__setup_vio__count", "hold_vio": "timing__hold_vio__count",
     "antenna_nets": "antenna__violating__nets", "route_drc": "route__drc_errors",
     "magic_drc": "magic__drc_error__count", "klayout_drc": "klayout__drc_error__count",
     "lvs": "design__lvs_error__count", "xor": "design__xor_difference__count",
@@ -51,7 +58,8 @@ def live_tags():
     return set(re.findall(r"--run-tag (\S+)", out))
 
 
-def collect():
+def collect(evidence=None):
+    """Rows for the table. If an `evidence` dict is passed it is filled with one evidence record per run."""
     alive = live_tags()
     rows = []
     names = ["RUN_2026-09-24_14-07-59", "ppa3_antenna_fix", "ppa3_antfix2", "ppa3_antfix3_signoff", "ppa3_antfix4_signoff", "ppa3_antfix5_signoff", "ppa3_pdn2", "ppa3_pdn_a_signoff", "ppa3_adcshift_signoff", "ppa3_adcslew_signoff", "ppa3_adcslew2_signoff"]
@@ -89,6 +97,9 @@ def collect():
         else:
             state = "stopped"
         # steps counted from the first step id of resumed runs are not comparable, so only report the numbers
+        row_meta = {"label": LABELS.get(name, name)}
+        if evidence is not None:
+            evidence[name] = ppa3_evidence.build(run, ROOT, row_meta, alive, summary if summary.exists() else None)
         rows.append({
             "run": name, "label": LABELS.get(name, name), "state": state, "exit_code": exit_code,
             "steps_done": len(done), "last_step": done[-1] if done else None,
@@ -101,8 +112,11 @@ def collect():
 
 
 if __name__ == "__main__":
-    rows = collect()
+    evidence = {}
+    rows = collect(evidence)
     OUT.parent.mkdir(parents=True, exist_ok=True)
+    EVIDENCE_OUT.write_text(json.dumps({"schema": "veriolg.evidence/1", "generated": datetime.now().isoformat(timespec="minutes"), "runs": evidence},
+                                       indent=1, ensure_ascii=False), encoding="utf8")
     OUT.write_text(json.dumps({"generated": datetime.now().isoformat(timespec="minutes"), "total_steps": TOTAL_STEPS, "runs": rows}, indent=1, ensure_ascii=False), encoding="utf8")
     for r in rows:
         m = r["metrics"]
