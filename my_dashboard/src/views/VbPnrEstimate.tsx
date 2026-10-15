@@ -6,7 +6,8 @@ interface Finding { kind: string; severity: string; bbox: number[]; msg: string 
 interface Eco { op: string; from?: number[]; dx?: number; master?: string; near?: number[]; alt?: string; why?: string; name?: string; to?: number[] }
 interface Rules { site_um: number; row_um: number; lu_um: number; tap_dist_um: number | null; source: Record<string, string> }
 interface Exp { instances: number; wires: number; vias: number; patches: number; chunks: number; lib: string; cell: string; tech_lef: string; verified: boolean; unverified_orientations: string[]; verify?: { instances_compared: number; boxes_differ: number; shapes_in_cellview: number } }
-interface Run { rules: Rules; route_check?: { counts: { short: number; spacing: number }; layers_checked: Record<string, number>; tech_lef: string }; export?: Exp; def: string; seconds: { read: number; estimate: number }; stats: Record<string, number>; findings: Finding[]; congestion: Finding[]; eco: Eco[] }
+interface Conn { netlist: string; error?: string; clean?: boolean; instances?: { netlist: number; def: number; physical_only_in_def: number; only_in_netlist_count: number; only_in_def_count: number; master_mismatch_count: number }; nets?: { def_checked: number; equal: number; open: number; short: number; unknown_pins: number; netlist_nets_absent_from_def: number }; scope?: string[] }
+interface Run { rules: Rules; connectivity?: Conn; route_check?: { counts: { short: number; spacing: number }; layers_checked: Record<string, number>; tech_lef: string }; export?: Exp; def: string; seconds: { read: number; estimate: number }; stats: Record<string, number>; findings: Finding[]; congestion: Finding[]; eco: Eco[] }
 const RUNS = pnr as unknown as Record<string, Run>
 const TITLE: Record<string, string> = { ppa3_antfix4: 'ADC x=40 (탭 없는 띠가 생긴 배치)', ppa3_adcslew2: 'ADC x=30.24 (수정한 배치)' }
 const KIND: Record<string, string> = { tap_far: '탭에서 너무 멂 (래치업/nwell 부유)', overlap: '셀 겹침', route_short: '배선 단락', route_spacing: '배선 간격 부족', outside_die: '다이 밖', off_grid: '격자 어긋남', congestion: '배선 혼잡 후보' }
@@ -29,10 +30,13 @@ export default function VbPnrEstimate() {
       <div className="stat-card"><small>탭 점검 (17µm 안에 탭)</small><strong className={s.tap_far_rows ? 'bad-text' : 'ok-text'}>{s.tap_far_rows}행 부족</strong><span>탭 {s.taps.toLocaleString()}개</span></div>
       <div className="stat-card"><small>선 길이 (HPWL → 실제 배선)</small><strong>{f1(s.hpwl_um / 1000)} mm → {f1((s.routed_um ?? 0) / 1000)} mm</strong><span>{s.routed_over_hpwl ? `${s.routed_over_hpwl.toFixed(2)}배 · 비아 ${s.vias.toLocaleString()}` : '배선 없음'}</span></div>
       {r.route_check && <div className="stat-card"><small>배선 규칙 (tech LEF 간격)</small><strong className={r.route_check.counts.short + r.route_check.counts.spacing ? 'bad-text' : 'ok-text'}>단락 {r.route_check.counts.short} · 간격 {r.route_check.counts.spacing}</strong><span>금속 {Object.keys(r.route_check.layers_checked).length}층 검사</span></div>}
+      {r.connectivity?.nets && r.connectivity.instances && <div className="stat-card"><small>넷리스트 ↔ DEF 연결 일치</small><strong className={r.connectivity.clean ? 'ok-text' : 'bad-text'}>{r.connectivity.nets.equal.toLocaleString()} / {r.connectivity.nets.def_checked.toLocaleString()} net 일치</strong><span>열림 {r.connectivity.nets.open} · 단락 {r.connectivity.nets.short} · 인스턴스 차이 {r.connectivity.instances.only_in_netlist_count + r.connectivity.instances.only_in_def_count + r.connectivity.instances.master_mismatch_count} (LVS 아님)</span></div>}
       <div className="stat-card"><small>혼잡 후보 (RUDY)</small><strong>{s.rudy_hot_bins ?? 0}칸</strong><span>최대 {s.rudy_max ? f1(s.rudy_max) : '-'} (평균 {s.rudy_mean ? s.rudy_mean.toFixed(2) : '-'})</span></div>
     </div>
 
-    <h3 style={{ margin: '14px 0 4px', fontSize: 14 }}>발견 사항 {errs.length ? `(오류 ${errs.length}건)` : '(오류 없음)'}</h3>
+    {r.connectivity?.nets && <p className="vb-note">연결 일치는 <code>{r.connectivity.netlist}</code>와 DEF를 <b>핀 집합</b>으로 비교한 것입니다(net 이름은 무시). 신호 net만 보고 전원·상수·최상위 포트는 제외하며, 물리 형상은 보지 않으므로 <b>LVS가 아닙니다</b> — DEF가 두 핀을 연결했다고 적어도 금속에서 실제로 이어졌는지는 이 검사로 알 수 없습니다.</p>}
+    {r.connectivity?.error && <p className="vb-note">넷리스트 비교를 하지 못했습니다: {r.connectivity.error}</p>}
+    <h3 style={{ margin: '14px 0 4px', fontSize: 14 }}>발견 사항{errs.length ? `(오류 ${errs.length}건)` : '(오류 없음)'}</h3>
     {r.findings.length === 0 ? <p className="vb-note">오류 후보가 없습니다.</p> :
       <div className="data-table"><table><thead><tr><th>종류</th><th>위치 (x0,y0 – x1,y1 µm)</th><th>내용</th></tr></thead><tbody>
         {r.findings.map((f, i) => <tr key={i}><td>{KIND[f.kind] ?? f.kind}</td><td><code>{f.bbox.map(f1).join(', ')}</code></td><td>{f.msg}</td></tr>)}

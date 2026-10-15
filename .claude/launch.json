@@ -4,6 +4,12 @@
     {
       "name": "my_dashboard",
       "url": "http://127.0.0.1:5173"
+    },
+    {
+      "name": "my_dashboard_dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "my_dashboard", "run", "dev", "--", "--host", "127.0.0.1", "--port", "5190"],
+      "port": 5190
     }
   ]
 }
