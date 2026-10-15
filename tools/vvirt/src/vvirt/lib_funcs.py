@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from . import gdsimport
+from . import api_registry, gdsimport, records
 from .odb import CellView, Database, DdObj, TechFile
 from .skill_lang import Interp, SkillError
 
@@ -92,15 +92,22 @@ def install(interp: Interp, db: Database, out_dir: str) -> None:
     F["isWritable"] = lambda p: True if allowed(str(p)) and os.access(str(p), os.W_OK) else None
 
     # ------------------------------------------------------------------ real PDK libraries / GDS / copy
-    def attach(name):
+    def attach(name, **kw):
         lib = db.attach_pdk_lib(str(name))
-        return [lib.libname, len(lib.masters), lib.gds is not None]
+        if kw.get("positional"):
+            return [lib.libname, len(lib.masters), lib.gds is not None]
+        return records.rec(("library", lib.libname), ("cells", len(lib.masters)), ("hasGds", lib.gds is not None))
 
-    def v_import(lib, path, top=None):
+    def v_import(lib, path, top=None, **kw):
         p = str(path)
         if not allowed(p) or not os.path.isfile(p):
             raise SkillError(f"*Error* vvImportGds: cannot read {p} (allowed: workspace, /tmp, the PDK)")
-        return gdsimport.import_gds(db, str(lib), p, str(top) if top else None).as_list()
+        st = gdsimport.import_gds(db, str(lib), p, str(top) if top else None)
+        if kw.get("positional"):
+            return st.as_list()
+        return records.rec(("cells", st.cells), ("shapes", st.shapes), ("instances", st.instances), ("skippedShapes", st.skipped_shapes),
+                           ("skippedRefs", st.skipped_refs),
+                           ("skippedLayers", [records.rec(("layer", a), ("datatype", b), ("count", n)) for (a, b), n in sorted(st.skipped_layers.items())] or None))
 
     def v_copy(src_lib, src_cell, dst_lib, dst_cell=None):
         cv = gdsimport.copy_cell(db, libname(src_lib), str(src_cell), str(dst_lib), str(dst_cell or src_cell))
@@ -118,7 +125,7 @@ def install(interp: Interp, db: Database, out_dir: str) -> None:
     F["vvPdkLibs"] = lambda: sorted(os.listdir(os.path.join(db.stdlib.root, "libs.ref"))) if db.stdlib.root else None
 
     # cell info across every attached PDK library: vvCellInfo(cell [lib])
-    def cell_info(cell, lib=None):
+    def cell_info(cell, lib=None, **kw):
         c = str(cell)
         for ln, sl in db.std.items():
             if lib is not None and str(lib) != ln:
@@ -126,11 +133,42 @@ def install(interp: Interp, db: Database, out_dir: str) -> None:
             m = sl.masters.get(c)
             if m is None:
                 continue
+            if kw.get("positional"):
+                pins = []
+                for p in m.pins.values():
+                    r0 = p.rects[0] if p.rects else None
+                    pins.append([p.name, p.direction, p.use, r0[0] if r0 else None, [[r0[1], r0[2]], [r0[3], r0[4]]] if r0 else None])
+                return [m.name, m.width, m.height, pins]
             pins = []
             for p in m.pins.values():
                 r0 = p.rects[0] if p.rects else None
-                pins.append([p.name, p.direction, p.use, r0[0] if r0 else None, [[r0[1], r0[2]], [r0[3], r0[4]]] if r0 else None])
-            return [m.name, m.width, m.height, pins]
+                pins.append(records.rec(("name", p.name), ("direction", p.direction), ("use", p.use), ("layer", r0[0] if r0 else None),
+                                        ("bbox", [[r0[1], r0[2]], [r0[3], r0[4]]] if r0 else None),
+                                        ("center", [round((r0[1] + r0[3]) / 2, 4), round((r0[2] + r0[4]) / 2, 4)] if r0 else None)))
+            return records.rec(("name", m.name), ("library", ln), ("width", m.width), ("height", m.height), ("pins", pins or None))
         return None
 
     F["vvCellInfo"] = cell_info
+
+    def v_pin(cell, pin, lib=None):
+        info = cell_info(cell, lib)
+        if info is None:
+            raise SkillError(f"*Error* vvPin: no PDK cell {cell}. Search with vvCells(lib \"part-of-name\")")
+        for p in records.get(info, "pins") or []:
+            if records.get(p, "name") == str(pin):
+                return p
+        raise SkillError(f"*Error* vvPin: cell {cell} has no pin {pin}. Pins: " + " ".join(records.get(q, "name") for q in records.get(info, "pins") or []))
+
+    F["vvPin"] = v_pin
+
+    # discovery: what exists, how to call it, how to read results
+    def v_help(name):
+        r = api_registry.help_record(str(name))
+        if r is None:
+            near = [n for n in api_registry.names() if str(name).lower() in n.lower()][:8]
+            raise SkillError(f"*Error* vvHelp: no vv* function named {name}." + (f" Similar: {' '.join(near)}" if near else " Call vvApi() for the list."))
+        return r
+
+    F["vvApi"] = lambda *a: api_registry.summary_rows()
+    F["vvHelp"] = v_help
+    F["vvGet"] = lambda rec_, *path: records.get(rec_, *path)

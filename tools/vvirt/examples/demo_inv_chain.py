@@ -24,16 +24,15 @@ c = VirtuosoClient.from_env()
 
 def pins(cell: str) -> dict[str, tuple[float, float]]:
     """Centre of each signal pin's first rectangle, read through SKILL (vvCellInfo)."""
-    out = c.execute_skill(f'vvCellInfo("{STD}__{cell}")').output or ""
     res = {}
-    for m in re.finditer(r'\("(\w+)" "(?:INPUT|OUTPUT)" "SIGNAL" "li1" \(\(([\d.]+) ([\d.]+)\) \(([\d.]+) ([\d.]+)\)\)\)', out):
-        n, x0, y0, x1, y1 = m.group(1), *map(float, m.groups()[1:])
-        res[n] = ((x0 + x1) / 2, (y0 + y1) / 2)
+    for n in ("A", "Y"):
+        x, y = map(float, re.findall(r"-?\d+\.?\d*", c.execute_skill(f'vvGet(vvPin("{STD}__{cell}" "{n}") "center")').output))
+        res[n] = (x, y)
     return res
 
 
 def width(cell: str) -> float:
-    return float(re.search(r'\("[^"]+" ([\d.]+) ([\d.]+)', c.execute_skill(f'vvCellInfo("{STD}__{cell}")').output).group(1))
+    return float(c.execute_skill(f'vvGet(vvCellInfo("{STD}__{cell}") "width")').output)
 
 
 def wires(cells: list[str]) -> list[str]:

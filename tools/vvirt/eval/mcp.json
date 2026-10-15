@@ -1,0 +1,1 @@
+{"mcpServers":{"vvirt":{"command":"wsl.exe","args":["-d","Ubuntu","-e","bash","/mnt/d/MyWork/Veriolg_MA/tools/vvirt/scripts/mcp.sh"]}}}

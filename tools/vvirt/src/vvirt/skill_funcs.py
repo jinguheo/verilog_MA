@@ -26,6 +26,10 @@ READONLY_STD = "*Error* the standard-cell library %s is read-only; create your o
 
 def install(interp: Interp, db: Database, out_dir: str) -> None:
     F = interp.funcs
+    # extra core language builtins (setq, comparison, lists, properties, strings, regexp, workspace-confined file I/O)
+    from . import skill_core_ext
+
+    skill_core_ext.install(interp, os.path.dirname(os.path.abspath(out_dir)))
     state = {"cwin": None}
 
     def need_cv(cv: Any, fn: str) -> CellView:
@@ -433,11 +437,20 @@ def install(interp: Interp, db: Database, out_dir: str) -> None:
         render_svg(db, cv, p)
         return p
 
-    def vv_layers():
-        return [[n, sorted(ps)] for n, ps in layers.LPP.items()]
+    def vv_layers(**kw):
+        if kw.get("positional"):
+            return [[n, sorted(ps)] for n, ps in layers.LPP.items()]
+        from .records import rec
 
-    def vv_viadefs():
-        return [[n, v["bot"], v["cut"], v["top"], v["cut_size"]] for n, v in sorted(db.viadefs.items())]
+        return [rec(("layer", n), ("purposes", sorted(ps))) for n, ps in layers.LPP.items()]
+
+    def vv_viadefs(**kw):
+        if kw.get("positional"):
+            return [[n, v.spec["bot"], v.spec["cut"], v.spec["top"], v.spec["cut_size"]] for n, v in sorted(db.viadefs.items())]
+        from .records import rec
+
+        return [rec(("name", n), ("bottom", v.spec["bot"]), ("cut", v.spec["cut"]), ("top", v.spec["top"]), ("cutSize", v.spec["cut_size"]))
+                for n, v in sorted(db.viadefs.items())]
 
     F["vvLibraries"] = vv_libs
     F["vvCells"] = vv_cells

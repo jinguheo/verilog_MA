@@ -33,7 +33,7 @@ class Scenario:
         self.last_svg: str | None = None
         self.n = 0
 
-    def step(self, kind: str, note: str, skill: str) -> str:
+    def step(self, kind: str, note: str, skill: str, expect_error: bool = False) -> str:
         """Send one SKILL command, record reply and (if the layout changed) a snapshot. Returns the reply text."""
         t0 = time.time()
         res = client.execute_skill(skill, timeout=60)
@@ -44,7 +44,7 @@ class Scenario:
         self.n += 1
         svg_name = self._snapshot()
         self.d["steps"].append({"kind": kind, "note": note, "skill": skill.strip(), "ok": ok,
-                                "output": out[:700], "error": err[:500], "ms": ms, "svg": svg_name})
+                                "output": out[:700], "error": err[:500], "ms": ms, "svg": svg_name, "expectError": expect_error})
         return out if ok else ""
 
     def _snapshot(self) -> str | None:
@@ -72,15 +72,11 @@ def nums(text: str) -> list[float]:
     return [float(x) for x in re.findall(r"-?\d+\.?\d*", text)]
 
 
-def pin(info: str, name: str) -> tuple[float, float]:
-    m = re.search(r'\("%s" "(?:INPUT|OUTPUT)" "SIGNAL" "li1" \(\(([\d.]+) ([\d.]+)\) \(([\d.]+) ([\d.]+)\)\)\)' % name, info)
-    x0, y0, x1, y1 = map(float, m.groups())
-    return round((x0 + x1) / 2, 3), round((y0 + y1) / 2, 3)
-
-
-def cell_size(info: str) -> tuple[float, float]:
-    m = re.search(r'\("[^"]+" ([\d.]+) ([\d.]+)', info)
-    return float(m.group(1)), float(m.group(2))
+def probe(cell: str, pins: tuple[str, ...] = ()) -> str:
+    """SKILL returning (width height (cx cy)...) of a PDK cell through the named-field API (vvGet / vvPin)."""
+    parts = [f'vvGet(vvCellInfo("{STD}__{cell}") "width")', f'vvGet(vvCellInfo("{STD}__{cell}") "height")']
+    parts += [f'vvGet(vvPin("{STD}__{cell}" "{p}") "center")' for p in pins]
+    return "list(" + " ".join(parts) + ")"
 
 
 def reset(cell: str) -> None:
@@ -102,9 +98,9 @@ S = Scenario("place", "① 두 셀 나란히 배치", "sky130_fd_sc_hd 라이브
              "scen_place", "라이브러리 조회 → 폭에 맞춰 좌표 계산 → 배치(MX 반전 포함) → 읽어서 확인")
 reset(S.cell)
 S.step("query", "셀 이름 확인 (정확한 이름을 모르므로 검색)", f'vvCells("{STD}" "dfxtp_1")')
-i1 = S.step("query", "두 셀의 폭·높이 조회", f'list(vvCellInfo("{STD}__nand2_1") vvCellInfo("{STD}__dfxtp_1"))')
-w1, h = cell_size(i1)
-w2 = float(re.findall(r'\("sky130_fd_sc_hd__dfxtp_1" ([\d.]+)', i1)[0])
+i1 = S.step("query", "두 셀의 폭·높이 조회 (이름 있는 필드: vvGet(vvCellInfo(셀) \"width\"))",
+            f'list(vvGet(vvCellInfo("{STD}__nand2_1") "width") vvGet(vvCellInfo("{STD}__nand2_1") "height") vvGet(vvCellInfo("{STD}__dfxtp_1") "width"))')
+w1, h, w2 = nums(i1)[:3]
 S.step("edit", "새 레이아웃 셀뷰 열기(w)", OPEN_W(S.cell))
 S.step("edit", f"nand2_1은 (0,0), dfxtp_1은 x={w1:g}에 붙여 놓고 2번째 행은 MX로 뒤집어 y={2*h:g}에", "\n".join([
     inst_line("nand2_1", "U_nand", 0, 0), inst_line("dfxtp_1", "U_dff", w1, 0), inst_line("nand2_1", "U_nand_flip", 0, 2 * h, "MX")]))
@@ -120,10 +116,8 @@ print("S2 chain create")
 S = Scenario("chain", "② 인버터 체인 생성 + 배선", "인버터 4개를 한 줄로 붙여 놓고 각 출력을 다음 입력에 li1로 연결해줘. 입력 핀 IN, 마지막 출력 핀 OUT 라벨도 달아줘.",
              "scen_chain", "핀 좌표 조회 → SKILL for 루프로 배치·배선 → 라벨 → 저장 → 닫기")
 reset(S.cell)
-info = S.step("query", "inv_1 의 크기와 핀(li1) 좌표 조회", f'vvCellInfo("{STD}__inv_1")')
-w, h = cell_size(info)
-ax, ay = pin(info, "A")
-yx, yy = pin(info, "Y")
+info = S.step("query", "inv_1 의 폭·높이와 핀 A, Y 의 중심 좌표 조회 (vvPin 의 center 필드)", probe("inv_1", ("A", "Y")))
+w, h, ax, ay, yx, yy = nums(info)[:6]
 S.step("edit", "새 셀뷰 열기(w)", OPEN_W(S.cell))
 S.step("edit", f"for 루프로 inv_1 4개를 {w:g} 간격으로 배치", f'''for(i 0 3
   dbCreateParamInstByMasterName(cv "{STD}" "{STD}__inv_1" "layout" sprintf(nil "U%d" i) list(i*{w:g} 0.0) "R0"))''')
@@ -148,11 +142,8 @@ S = Scenario("modify", "③ 기존 레이아웃 수정", "방금 만든 체인�
 S.last_hash = None
 S.step("edit", "저장돼 있던 셀을 편집용(a)으로 다시 열기", OPEN_A(S.cell))
 S.step("query", "현재 인스턴스 확인", READ_INSTS)
-i4 = client.execute_skill(f'vvCellInfo("{STD}__inv_4")').output
-w4, _ = cell_size(i4)
-yx4, yy4 = pin(i4, "Y")
-ax4, ay4 = pin(i4, "A")
-S.step("query", "inv_4 의 폭과 핀 좌표 조회", f'vvCellInfo("{STD}__inv_4")')
+i4 = S.step("query", "inv_4 의 폭·높이와 핀 A, Y 의 중심 좌표 조회", probe("inv_4", ("A", "Y")))
+w4, _h4, ax4, ay4, yx4, yy4 = nums(i4)[:6]
 S.step("edit", "기존 li1 배선 경로 전부와 U2 삭제", '''foreach(s cv~>shapes when(s~>objType == "path" dbDeleteObject(s)))
 foreach(i cv~>instances when(i~>name == "U2" dbDeleteObject(i)))''')
 dx = round(w4 - w, 3)
@@ -180,8 +171,8 @@ print("S4 array")
 S = Scenario("array", "④ 배열(mosaic) + 경계", "buf_1 을 2행×4열로 배열해줘. 위 행은 뒤집고, 전체를 감싸는 prBoundary 사각형과 ARRAY 라벨을 넣어줘.",
              "scen_array", "mosaic 2개(R0 / MX) → 전체 bbox 로 경계 사각형 → 라벨")
 reset(S.cell)
-info = S.step("query", "buf_1 크기 조회", f'vvCellInfo("{STD}__buf_1")')
-w, h = cell_size(info)
+info = S.step("query", "buf_1 크기 조회", probe("buf_1"))
+w, h = nums(info)[:2]
 S.step("edit", "새 셀뷰 열기(w)", OPEN_W(S.cell))
 S.step("edit", f"마스터 buf_1 을 열고 1행 4열 mosaic 두 줄 (아래 R0 / 위 MX 반전, 피치 {w:g}×{h:g})", f'''master = dbOpenCellViewByType("{STD}" "{STD}__buf_1" "layout" "maskLayout" "r")
 dbCreateSimpleMosaic(cv master "ROW0" 0:0 "R0" 1 4 {h:g} {w:g})
@@ -222,13 +213,13 @@ S = Scenario("recover", "⑥ 오류를 읽고 스스로 고치기", "Metal6 층�
              "scen_recover", "없는 층/셀/함수로 시도 → *Error* 메시지를 읽고 → 유효한 이름으로 재시도")
 reset(S.cell)
 S.step("edit", "새 셀뷰 열기(w)", OPEN_W(S.cell))
-S.step("edit", "1차 시도: Metal6 층 (sky130에 없음)", 'dbCreateRect(cv list("Metal6" "drawing") list(list(0 0) list(1 1)))')
+S.step("edit", "1차 시도: Metal6 층 (sky130에 없음)", 'dbCreateRect(cv list("Metal6" "drawing") list(list(0 0) list(1 1)))', expect_error=True)
 S.step("query", "오류가 알려준 유효 층 목록 확인 → 최상위는 met5", "vvLayers()")
 S.step("edit", "met5 로 재시도", 'dbCreateRect(cv list("met5" "drawing") list(list(0 0) list(1 1)))')
-S.step("edit", "1차 시도: 셀 이름 sky130_fd_sc_hd__nand2 (구동력 접미사 없음)", f'dbCreateParamInstByMasterName(cv "{STD}" "{STD}__nand2" "layout" "U0" list(3.0 0.0) "R0")')
+S.step("edit", "1차 시도: 셀 이름 sky130_fd_sc_hd__nand2 (구동력 접미사 없음)", f'dbCreateParamInstByMasterName(cv "{STD}" "{STD}__nand2" "layout" "U0" list(3.0 0.0) "R0")', expect_error=True)
 S.step("query", "nand2 로 검색해 실제 이름 확인", f'vvCells("{STD}" "nand2_")')
 S.step("edit", "nand2_1 로 재시도", inst_line("nand2_1", "U0", 3.0, 0.0))
-S.step("edit", "1차 시도: dbCreateEllipse (이 환경/레이아웃 API에 없음)", 'dbCreateEllipse(cv list("met4" "drawing") list(list(5.0 1.0) list(6.0 2.0)))')
+S.step("edit", "1차 시도: dbCreateEllipse (이 환경/레이아웃 API에 없음)", 'dbCreateEllipse(cv list("met4" "drawing") list(list(5.0 1.0) list(6.0 2.0)))', expect_error=True)
 S.step("edit", "다각형 16각형으로 원 근사: SKILL 루프로 점 계산 후 dbCreatePolygon", '''pts = nil
 for(k 0 15
   pts = cons(list(5.5 + 0.5*cos(k*3.14159265/8) 1.5 + 0.5*sin(k*3.14159265/8)) pts))
@@ -290,12 +281,16 @@ S.step("edit", "잘못된 손배선 삭제 후, 룰 기반 라우터로 위쪽 �
 vvRoute(cv "met2" list(0.0 1.6) list(3.0 1.6))''')
 c3 = S.step("verify", "내 검사기 재검사", "vvCheckRules(cv)")
 o3 = S.step("verify", "공식 덱 재검사", "vvOfficialDrc(cv)")
+rep = S.step("verify", "'위반 없음'이 무엇을 뜻하는지: 검사 범위 보고서 (검사한 층·룰, 검사하지 않은 것, 룰 출처)", "vvCheckReport(cv)")
+orep = S.step("verify", "공식 덱도 어느 그룹을 돌렸는지 보고서", "vvOfficialDrcReport(cv)")
 S.step("edit", "저장", "dbSave(cv)")
 S.check("라우터가 직선이 아닌 우회 경로를 선택(장애물 회피)", "straight" not in rr, rr[:90])
 S.check("룰대로 배선한 결과: 내 검사기 위반 0", c1.strip() == "nil", c1)
 S.check("일부러 어긴 배선: 내 검사기가 minSpace 위반 검출", "minSpace" in c2, c2[:100])
 S.check("공식 덱도 같은 간격 룰(m2.2) 위반 검출", "m2.2" in o2, o2)
 S.check("수정 후 내 검사기·공식 덱 모두 위반 0", c3.strip() == "nil" and o3.strip() == "nil", f"{c3} / {o3}")
+S.check("보고서가 'clean_in_scope' + 미검사 항목을 함께 알려줌 (그냥 clean 아님)", '"clean_in_scope"' in rep and "notChecked" in rep and "wide-wire" in rep, rep[:90])
+S.check("공식 덱 보고서가 돌린/안 돌린 그룹을 명시 (FEOL 미실행)", "groupsRun" in orep and "feol" in orep and "notRun" in orep, orep[:90])
 all_scen.append(S.done())
 
 # ---------------------------------------------------------------------------------------------------------------- 9
@@ -306,7 +301,7 @@ reset(S.cell)
 S.step("query", "PDK 기본 met3 룰", 'vvRules("met3")')
 S.step("edit", "내 노하우 입력: met3 간격을 0.6 으로 (PDK 룰을 덮어씀)", 'vvSetRule("met3" "minSpace" 0.6)')
 S.step("edit", "새 셀뷰 열기(w) 후 선 A (y=0, 폭 0.3)", OPEN_W(S.cell) + '\ndbCreatePath(cv list("met3" "drawing") list(list(0.0 0.0) list(4.0 0.0)) 0.3)')
-S.step("edit", "선 B 를 y=0.5 에 연결 시도 — 간격(0.5-0.3=0.2)이 내 룰(0.6)보다 작음", 'vvRoute(cv "met3" list(0.0 0.5) list(4.0 0.5))')
+S.step("edit", "선 B 를 y=0.5 에 연결 시도 — 간격(0.5-0.3=0.2)이 내 룰(0.6)보다 작음", 'vvRoute(cv "met3" list(0.0 0.5) list(4.0 0.5))', expect_error=True)
 S.step("edit", "라우터가 거절했으므로 y=1.5 로 옮겨 다시 (간격 1.2)", 'vvRoute(cv "met3" list(0.0 1.5) list(4.0 1.5))')
 u1 = S.step("verify", "내 룰(0.6)로 검사", "vvCheckRules(cv)")
 S.step("edit", "손으로 y=0.7 에 선 C 추가 (A 와 간격 0.4, B 와 간격 0.5: PDK 0.3 은 만족, 내 룰 0.6 은 위반)", 'dbCreatePath(cv list("met3" "drawing") list(list(0.0 0.7) list(4.0 0.7)) 0.3)')
@@ -331,15 +326,15 @@ def habit_scenario(profile: str, sid: str, title: str) -> dict:
     S.step("edit", "새 셀뷰 열기(w)", OPEN_W(cellname))
     r0 = S.step("edit", "1행: inv_1 nand2_1 (습관에 따라 탭/간격이 자동 적용)", 'vvPlaceRow(cv "A" list("inv_1" "nand2_1") list(0.0 0.0) 0)')
     r1 = S.step("edit", "2행: buf_1 inv_2 (습관이 '행 뒤집기'면 MX 로)", 'vvPlaceRow(cv "B" list("buf_1" "inv_2") list(0.0 2.72) 1)')
-    last_a = re.findall(r'\("(\w+)" "nand2_1"', r0)[0]
-    first_b = re.findall(r'\("(\w+)" "buf_1"', r1)[0]
+    last_a = re.findall(r'\("name" "(\w+)"\) \("cell" "nand2_1"\)', r0)[0]
+    first_b = re.findall(r'\("name" "(\w+)"\) \("cell" "buf_1"\)', r1)[0]
     pa = S.step("query", f"출력 핀 {last_a}/Y 와 입력 핀 {first_b}/A 의 실제 좌표(방향·반전 반영)", f'list(vvPinXY(cv "{last_a}" "Y") vvPinXY(cv "{first_b}" "A"))')
     xy = [float(x) for x in re.findall(r"-?\d+\.\d+|-?\d+", pa)]
     p0, p1 = (xy[0], xy[1]), (xy[2], xy[3])
     S.step("edit", "두 핀 위치에 li1 → met2 비아 스택 (비아 개수는 습관: 1개 또는 2개)", f'''vvViaStack(cv list({p0[0]:g} {p0[1]:g}) "li1" "met2")
 vvViaStack(cv list({p1[0]:g} {p1[1]:g}) "li1" "met2")''')
     rr = S.step("edit", "met2 로 라우팅 (폭 = 최소폭×습관 배수, 간격 = 룰×습관 배수, 장애물 회피)", f'vvRoute(cv "met2" list({p0[0]:g} {p0[1]:g}) list({p1[0]:g} {p1[1]:g}))')
-    ck = S.step("verify", "DRC (met1/met2/비아 층, 위반 없으면 nil)", 'vvCheckRules(cv list("met1" "met2" "via" "mcon"))')
+    ck = S.step("verify", "DRC 보고서 (met1/met2/비아 층): 상태 + 검사 범위", 'vvCheckReport(cv list("met1" "met2" "via" "mcon"))')
     S.step("edit", "저장", "dbSave(cv)")
     sh = S.step("verify", "결과 요약: 인스턴스 수 / 비아 컷 총수 / 전체 bbox / 배선 폭", 'let((n) n = 0 foreach(v cv~>vias n = n + v~>cutColumns) list(length(cv~>instances) n cv~>bBox mapcar(lambda((s) s~>width) setof(s cv~>shapes s~>objType == "path"))))')
     S.d["summary"] = sh
@@ -354,8 +349,8 @@ Sa.check("프로필 없음: 탭 셀 없음, 인스턴스 4개", "TAP" not in a0 
 Sb.check("습관 프로필: 양 끝 탭 셀(행당 +2) + 2행 MX 반전 → 인스턴스 8개", "TAP" in b0 and "MX" in b1 and bsh.startswith("(8 "), b0[:120])
 Sa.check("프로필 없음: 배선 폭 최소(0.14), 비아 컷 4개", "0.14" in ash and ash.startswith("(4 4 "), ash[-70:])
 Sb.check("습관 프로필: 배선 폭 2배(0.28), 비아 컷 8개(핀당 2개)", "0.28" in bsh and bsh.startswith("(8 8 "), bsh[-70:])
-Sa.check("DRC 결과 기록", True, f"default: {ack[:90]}")
-Sb.check("DRC 결과 기록", True, f"analog: {bck[:90]}")
+Sa.check("DRC 보고: 검사 범위 안에서 위반 없음(clean_in_scope)", '"clean_in_scope"' in ack and "notChecked" in ack, f"default: {ack[:80]}")
+Sb.check("DRC 보고: 검사 범위 안에서 위반 없음(clean_in_scope)", '"clean_in_scope"' in bck and "notChecked" in bck, f"analog: {bck[:80]}")
 all_scen.append(Sa.done())
 all_scen.append(Sb.done())
 client.execute_skill('vvLoadProfile("default")')  # leave the server in a neutral state
@@ -363,6 +358,9 @@ client.execute_skill('vvLoadProfile("default")')  # leave the server in a neutra
 os.makedirs(os.path.dirname(OUT_JSON), exist_ok=True)
 with open(OUT_JSON, "w", encoding="utf-8") as fh:
     json.dump({"generated": time.strftime("%Y-%m-%d %H:%M"), "scenarios": all_scen}, fh, ensure_ascii=False, indent=1)
-bad = sum(1 for s in all_scen for c in s["checks"] if not c["ok"])
+unexpected = [(s["id"], i + 1, st["skill"].splitlines()[0][:60], st["error"][:90]) for s in all_scen for i, st in enumerate(s["steps"]) if not st["ok"] and not st.get("expectError")]
+for u in unexpected:
+    print("  UNEXPECTED ERROR STEP", u)
+bad = sum(1 for s in all_scen for c in s["checks"] if not c["ok"]) + len(unexpected)
 print(f"\n{sum(len(s['checks']) for s in all_scen)} checks, {bad} failed -> {OUT_JSON}")
 raise SystemExit(1 if bad else 0)

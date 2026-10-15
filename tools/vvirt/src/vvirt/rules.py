@@ -48,6 +48,7 @@ class RuleSet:
         self.directions: dict[str, str] = {}
         self.pitches: dict[str, float] = {}
         self.cut_enc: dict[str, tuple[float, float, float, float]] = {}  # cut -> (below max, above max, cutWidth, cutSpace)
+        self.overrides: dict[str, float] = {}  # "layer.kind" -> value set by vvSetRule / a profile (provenance for reports)
         self.source = "built-in defaults (PDK tech LEF not found)"
         p = tlef_path or techlef.find_tlef()
         if p and os.path.isfile(p):
@@ -95,6 +96,7 @@ class RuleSet:
         if kind not in ("minWidth", "minSpace", "minArea"):
             raise ValueError(f"unknown rule kind {kind} (minWidth|minSpace|minArea)")
         self.rules.setdefault(layer, {})[kind] = float(value)
+        self.overrides[f"{layer}.{kind}"] = float(value)
 
     def get(self, layer: str, kind: str) -> float | None:
         return self.rules.get(layer, {}).get(kind)
@@ -265,3 +267,18 @@ def official_drc(gds_path: str, top: str, deck: str, beol: bool = True, feol: bo
     for m in re.finditer(r"<category>'?([^<']*)'?</category>", items):
         counts[m.group(1)] = counts.get(m.group(1), 0) + 1
     return counts
+
+
+def deck_release(deck: str) -> str | None:
+    """Release string of the official deck (e.g. 2024.2.11_01.09), read from its header."""
+    import re
+
+    try:
+        with open(deck, encoding="utf-8", errors="replace") as fh:
+            for _ in range(60):
+                m = re.match(r'\s*release\s*=\s*"([^"]+)"', fh.readline())
+                if m:
+                    return m.group(1)
+    except OSError:
+        pass
+    return None

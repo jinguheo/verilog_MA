@@ -1,0 +1,596 @@
+{
+ "ppa3_antfix4": {
+  "def": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_antfix4_signoff/final/def/ppa3_adc_capture_top.def",
+  "seconds": {
+   "read": 0.48,
+   "estimate": 1.89
+  },
+  "stats": {
+   "components": 24732,
+   "unknown_masters": {},
+   "overlaps": 0,
+   "off_grid": 0,
+   "die_area": 750000.0,
+   "std_cell_area": 57360.01279999512,
+   "macro_area": 579698.7353499809,
+   "utilization": 0.33681495506139614,
+   "max_bin_density": 1.0000000000000246,
+   "hpwl_um": 81387.62000000001,
+   "nets": 1235,
+   "routed_um": 56288.12999999995,
+   "routed_over_hpwl": 0.6916055537684962,
+   "vias": 11650,
+   "rudy_mean": 0.8985363823359899,
+   "rudy_max": 12.924563373667459,
+   "rudy_hot_bins": 12,
+   "taps": 3160,
+   "tap_far_rows": 112
+  },
+  "findings": [
+   {
+    "kind": "tap_far",
+    "severity": "error",
+    "bbox": [
+     20.24,
+     144.16,
+     20.24,
+     146.88
+    ],
+    "msg": "1 row(s) with points > 15 um from any tap (latch-up / floating nwell risk)"
+   },
+   {
+    "kind": "tap_far",
+    "severity": "error",
+    "bbox": [
+     20.24,
+     446.08,
+     20.24,
+     448.8
+    ],
+    "msg": "1 row(s) with points > 15 um from any tap (latch-up / floating nwell risk)"
+   },
+   {
+    "kind": "tap_far",
+    "severity": "error",
+    "bbox": [
+     20.24,
+     146.88,
+     22.24,
+     149.6
+    ],
+    "msg": "1 row(s) with points > 15 um from any tap (latch-up / floating nwell risk)"
+   },
+   {
+    "kind": "tap_far",
+    "severity": "error",
+    "bbox": [
+     20.24,
+     443.36,
+     22.24,
+     446.08000000000004
+    ],
+    "msg": "1 row(s) with points > 15 um from any tap (latch-up / floating nwell risk)"
+   },
+   {
+    "kind": "tap_far",
+    "severity": "error",
+    "bbox": [
+     20.24,
+     149.6,
+     26.24,
+     152.32
+    ],
+    "msg": "1 row(s) with points > 15 um from any tap (latch-up / floating nwell risk)"
+   },
+   {
+    "kind": "tap_far",
+    "severity": "error",
+    "bbox": [
+     20.24,
+     440.64,
+     26.24,
+     443.36
+    ],
+    "msg": "1 row(s) with points > 15 um from any tap (latch-up / floating nwell risk)"
+   },
+   {
+    "kind": "tap_far",
+    "severity": "error",
+    "bbox": [
+     20.24,
+     152.32,
+     28.24,
+     440.64000000000004
+    ],
+    "msg": "106 row(s) with points > 15 um from any tap (latch-up / floating nwell risk)"
+   }
+  ],
+  "congestion": [
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     620.0,
+     50.0,
+     630.0,
+     60.0
+    ],
+    "msg": "RUDY 12.925 (mean 0.899, +6.8 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     630.0,
+     50.0,
+     640.0,
+     60.0
+    ],
+    "msg": "RUDY 11.889 (mean 0.899, +6.2 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     680.0,
+     50.0,
+     690.0,
+     60.0
+    ],
+    "msg": "RUDY 11.858 (mean 0.899, +6.2 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     640.0,
+     50.0,
+     650.0,
+     60.0
+    ],
+    "msg": "RUDY 11.644 (mean 0.899, +6.1 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     670.0,
+     50.0,
+     680.0,
+     60.0
+    ],
+    "msg": "RUDY 11.515 (mean 0.899, +6.0 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     610.0,
+     50.0,
+     620.0,
+     60.0
+    ],
+    "msg": "RUDY 11.484 (mean 0.899, +6.0 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     650.0,
+     50.0,
+     660.0,
+     60.0
+    ],
+    "msg": "RUDY 11.451 (mean 0.899, +6.0 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     600.0,
+     50.0,
+     610.0,
+     60.0
+    ],
+    "msg": "RUDY 11.319 (mean 0.899, +5.9 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     590.0,
+     50.0,
+     600.0,
+     60.0
+    ],
+    "msg": "RUDY 11.250 (mean 0.899, +5.8 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     660.0,
+     50.0,
+     670.0,
+     60.0
+    ],
+    "msg": "RUDY 11.207 (mean 0.899, +5.8 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     580.0,
+     50.0,
+     590.0,
+     60.0
+    ],
+    "msg": "RUDY 11.048 (mean 0.899, +5.7 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     690.0,
+     50.0,
+     700.0,
+     60.0
+    ],
+    "msg": "RUDY 10.618 (mean 0.899, +5.5 sigma)"
+   }
+  ],
+  "eco": [
+   {
+    "op": "move_macro",
+    "name": "u_adc",
+    "master": "sky130_ef_ip__adc3v_12bit",
+    "dx": -9.76,
+    "dy": 0.0,
+    "from": [
+     40.0,
+     150.0
+    ],
+    "to": [
+     30.24,
+     150.0
+    ],
+    "why": "removes the tap-less row sliver left of it (106 row(s) with points > 15 um from any tap (latch-up / floating nwell risk)); keeps a 10 um halo from the core edge",
+    "alt": "or insert tap cells along the sliver (many cells)"
+   }
+  ],
+  "rules": {
+   "site_um": 0.46,
+   "row_um": 2.72,
+   "lu_um": 15.0,
+   "tap_dist_um": 13.0,
+   "source": {
+    "site_um": "libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom.tlef",
+    "row_um": "libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom.tlef",
+    "lu_um": "libs.tech/magic/sky130A.tech (LU.2/LU.3)",
+    "tap_dist_um": "run resolved.json FP_TAPCELL_DIST"
+   }
+  },
+  "route_check": {
+   "counts": {
+    "short": 0,
+    "spacing": 0
+   },
+   "layers_checked": {
+    "met1": 19075,
+    "met2": 9615,
+    "li1": 5704,
+    "met3": 309,
+    "met4": 17,
+    "met5": 3
+   },
+   "tech_lef": "sky130_fd_sc_hd__nom.tlef"
+  },
+  "longest_nets": [
+   {
+    "net": "u_capture_path.u_capture.capture_commit_word",
+    "hpwl": 634.0,
+    "routed": 425.0
+   },
+   {
+    "net": "net68",
+    "hpwl": 602.8,
+    "routed": 11.9
+   },
+   {
+    "net": "net67",
+    "hpwl": 592.2,
+    "routed": 12.2
+   },
+   {
+    "net": "u_capture_path.u_capture.mem_rdata\\[30\\]",
+    "hpwl": 587.3,
+    "routed": 49.8
+   },
+   {
+    "net": "u_capture_path.u_capture.mem_rdata\\[31\\]",
+    "hpwl": 584.2,
+    "routed": 52.3
+   }
+  ],
+  "die": [
+   0.0,
+   0.0,
+   1250.0,
+   600.0
+  ],
+  "export": {
+   "instances": 13920,
+   "wires": 11386,
+   "vias": 11650,
+   "patches": 37,
+   "statements": 60293,
+   "chunks": 31,
+   "masters_without_size": {
+    "sky130_ef_sc_hd__decap_12": 10810,
+    "sky130_ef_ip__adc3v_12bit": 1,
+    "sram22_1024x32m8w8": 1
+   },
+   "unknown_vias_or_layers": {},
+   "unverified_orientations": [],
+   "window": null,
+   "verify": {
+    "instances_compared": 13920,
+    "boxes_differ": 0,
+    "shapes_in_cellview": 46373
+   },
+   "lib": "pnr_import",
+   "cell": "ppa3_antfix4",
+   "tech_lef": "sky130_fd_sc_hd__nom.tlef",
+   "verified": true
+  }
+ },
+ "ppa3_adcslew2": {
+  "def": "samples/sample_test_4/asic/ppa3_adc_capture/runs/ppa3_adcslew2_signoff/final/def/ppa3_adc_capture_top.def",
+  "seconds": {
+   "read": 0.35,
+   "estimate": 1.38
+  },
+  "stats": {
+   "components": 24685,
+   "unknown_masters": {},
+   "overlaps": 0,
+   "off_grid": 0,
+   "die_area": 750000.0,
+   "std_cell_area": 56964.63359999492,
+   "macro_area": 580239.2537499806,
+   "utilization": 0.33555833641364197,
+   "max_bin_density": 1.0000000000000246,
+   "hpwl_um": 82583.66999999995,
+   "nets": 1505,
+   "routed_um": 57589.46499999994,
+   "routed_over_hpwl": 0.6973468846807119,
+   "vias": 12669,
+   "rudy_mean": 1.1450960358649023,
+   "rudy_max": 20.240801378066916,
+   "rudy_hot_bins": 12,
+   "taps": 3160,
+   "tap_far_rows": 0
+  },
+  "findings": [],
+  "congestion": [
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     860.0,
+     50.0,
+     870.0,
+     60.0
+    ],
+    "msg": "RUDY 20.241 (mean 1.145, +8.2 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     980.0,
+     50.0,
+     990.0,
+     60.0
+    ],
+    "msg": "RUDY 18.987 (mean 1.145, +7.7 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     920.0,
+     50.0,
+     930.0,
+     60.0
+    ],
+    "msg": "RUDY 17.574 (mean 1.145, +7.0 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     880.0,
+     50.0,
+     890.0,
+     60.0
+    ],
+    "msg": "RUDY 17.316 (mean 1.145, +6.9 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     950.0,
+     50.0,
+     960.0,
+     60.0
+    ],
+    "msg": "RUDY 17.232 (mean 1.145, +6.9 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     910.0,
+     50.0,
+     920.0,
+     60.0
+    ],
+    "msg": "RUDY 16.931 (mean 1.145, +6.8 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     840.0,
+     50.0,
+     850.0,
+     60.0
+    ],
+    "msg": "RUDY 16.375 (mean 1.145, +6.5 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     890.0,
+     50.0,
+     900.0,
+     60.0
+    ],
+    "msg": "RUDY 15.830 (mean 1.145, +6.3 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     930.0,
+     50.0,
+     940.0,
+     60.0
+    ],
+    "msg": "RUDY 15.393 (mean 1.145, +6.1 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     940.0,
+     50.0,
+     950.0,
+     60.0
+    ],
+    "msg": "RUDY 15.069 (mean 1.145, +6.0 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     1150.0,
+     50.0,
+     1160.0,
+     60.0
+    ],
+    "msg": "RUDY 14.955 (mean 1.145, +5.9 sigma)"
+   },
+   {
+    "kind": "congestion",
+    "severity": "info",
+    "bbox": [
+     870.0,
+     50.0,
+     880.0,
+     60.0
+    ],
+    "msg": "RUDY 14.921 (mean 1.145, +5.9 sigma)"
+   }
+  ],
+  "eco": [],
+  "rules": {
+   "site_um": 0.46,
+   "row_um": 2.72,
+   "lu_um": 15.0,
+   "tap_dist_um": 13.0,
+   "source": {
+    "site_um": "libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom.tlef",
+    "row_um": "libs.ref/sky130_fd_sc_hd/techlef/sky130_fd_sc_hd__nom.tlef",
+    "lu_um": "libs.tech/magic/sky130A.tech (LU.2/LU.3)",
+    "tap_dist_um": "run resolved.json FP_TAPCELL_DIST"
+   }
+  },
+  "route_check": {
+   "counts": {
+    "short": 0,
+    "spacing": 0
+   },
+   "layers_checked": {
+    "met1": 20508,
+    "met2": 10362,
+    "li1": 6239,
+    "met3": 416,
+    "met4": 12,
+    "met5": 3
+   },
+   "tech_lef": "sky130_fd_sc_hd__nom.tlef"
+  },
+  "longest_nets": [
+   {
+    "net": "net255",
+    "hpwl": 605.5,
+    "routed": 14.0
+   },
+   {
+    "net": "u_capture_path.u_capture.mem_rdata\\[31\\]",
+    "hpwl": 603.7,
+    "routed": 12.4
+   },
+   {
+    "net": "net254",
+    "hpwl": 594.9,
+    "routed": 14.5
+   },
+   {
+    "net": "u_capture_path.u_capture.mem_rdata\\[30\\]",
+    "hpwl": 592.2,
+    "routed": 11.9
+   },
+   {
+    "net": "net253",
+    "hpwl": 583.9,
+    "routed": 14.1
+   }
+  ],
+  "die": [
+   0.0,
+   0.0,
+   1250.0,
+   600.0
+  ],
+  "export": {
+   "instances": 13837,
+   "wires": 12172,
+   "vias": 12669,
+   "patches": 30,
+   "statements": 64046,
+   "chunks": 33,
+   "masters_without_size": {
+    "sky130_ef_sc_hd__decap_12": 10846,
+    "sky130_ef_ip__adc3v_12bit": 1,
+    "sram22_1024x32m8w8": 1
+   },
+   "unknown_vias_or_layers": {},
+   "unverified_orientations": [],
+   "window": null,
+   "verify": {
+    "instances_compared": 13837,
+    "boxes_differ": 0,
+    "shapes_in_cellview": 50209
+   },
+   "lib": "pnr_import",
+   "cell": "ppa3_adcslew2",
+   "tech_lef": "sky130_fd_sc_hd__nom.tlef",
+   "verified": true
+  }
+ }
+}

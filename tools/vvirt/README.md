@@ -14,7 +14,8 @@ git -C tools/virtuoso-bridge-lite checkout e227f12b0a4db39844aebf86019b83264792a
 
 ## Run (WSL Ubuntu)
 ```
-bash tools/vvirt/scripts/setup_env.sh            # once: pip --target into tools/vvirt/vendor
+bash tools/vvirt/scripts/setup_env.sh            # prints the plan only; add --yes to pip --target into tools/vvirt/vendor (idempotent)
+bash tools/vvirt/scripts/doctor.sh               # read-only readiness check: what is wrong, the fix command, which capability it limits
 bash tools/vvirt/scripts/vb.sh start             # once: generates ~/.local/state/virtuoso_bridge/local/virtuoso_setup.il
 bash tools/vvirt/scripts/vserver.sh start        # fake Virtuoso + real daemon (stop / status / log)
 bash tools/vvirt/scripts/vb.sh eval '1+2'
@@ -39,7 +40,10 @@ From Windows PowerShell call `wsl.exe -d Ubuntu -e bash /mnt/d/MyWork/Veriolg_MA
   load any GDS: `vvImportGds("mylib" "/path/file.gds" [top])` (unmapped layers and AREFs are skipped and counted).
 * Rules come from the PDK tech LEF (`vvRuleSource()`, `vvRules`, `vvDirections`); override with `vvSetRule("met3" "minSpace" 0.6)`.
   Designer habits: `profiles/*.json` + `vvLoadProfile("habit_analog")`; habit-aware `vvPlaceRow`, `vvViaStack`, `vvRoute`, `vvPinXY`.
-  Check: `vvCheckRules(cv)` (nil = clean; width/space/area/enclosure) and `vvOfficialDrc(cv)` (official sky130A_mr.drc, BEOL only).
+  Check: `vvCheckReport(cv)` / `vvOfficialDrcReport(cv)` state their scope (`clean_in_scope`, never plain clean; what was and was not checked). The older
+  `vvCheckRules(cv)` / `vvOfficialDrc(cv)` return only the violations: **nil means none found in the rules that ran, not DRC-clean**.
+* Agent instructions: `skills/vvirt/SKILL.md` (+ references). Not installed anywhere automatically; copy it to your agent's skills folder if wanted.
+  `examples/check_skill_doc.py` verifies its links and that every recipe block runs.
 * Scenario traces for the dashboard: `bash scripts/pyrun.sh examples/make_scenarios.py` (31 checks).
 
 ## Layout

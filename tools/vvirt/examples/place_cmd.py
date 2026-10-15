@@ -7,9 +7,10 @@ from virtuoso_bridge.virtuoso.layout.ops import layout_create_param_inst as inst
 LIB, CELL, STD = "testlib", "place_cmd", "sky130_fd_sc_hd"
 c = VirtuosoClient.from_env()
 def info(cell):
-    o = c.execute_skill(f'vvCellInfo("{STD}__{cell}")').output
-    m = re.match(r'\("([^"]+)" ([\d.]+) ([\d.]+)', o)
-    return m.group(1), float(m.group(2)), float(m.group(3))
+    i = f'vvCellInfo("{STD}__{cell}")'
+    name = c.execute_skill(f'vvGet({i} "name")').output.strip('"')
+    w, h = map(float, re.findall(r"-?\d+\.?\d*", c.execute_skill(f'list(vvGet({i} "width") vvGet({i} "height"))').output))
+    return name, w, h
 print("libraries:", c.execute_skill('vvLibraries()').output)
 print("dfxtp matches:", c.execute_skill(f'vvCells("{STD}" "dfxtp")').output)
 (n1, w1, h1), (n2, w2, h2) = info("nand2_1"), info("dfxtp_1")

@@ -1,0 +1,1908 @@
+{
+ "core": {
+  "제어·함수": [
+   {
+    "name": "if",
+    "status": "supported"
+   },
+   {
+    "name": "when",
+    "status": "supported"
+   },
+   {
+    "name": "unless",
+    "status": "supported"
+   },
+   {
+    "name": "cond",
+    "status": "supported"
+   },
+   {
+    "name": "case",
+    "status": "supported"
+   },
+   {
+    "name": "caseq",
+    "status": "supported"
+   },
+   {
+    "name": "for",
+    "status": "supported"
+   },
+   {
+    "name": "foreach",
+    "status": "supported"
+   },
+   {
+    "name": "while",
+    "status": "supported"
+   },
+   {
+    "name": "prog",
+    "status": "supported"
+   },
+   {
+    "name": "return",
+    "status": "supported"
+   },
+   {
+    "name": "let",
+    "status": "supported"
+   },
+   {
+    "name": "progn",
+    "status": "supported"
+   },
+   {
+    "name": "lambda",
+    "status": "supported"
+   },
+   {
+    "name": "procedure",
+    "status": "supported"
+   },
+   {
+    "name": "defun",
+    "status": "supported"
+   },
+   {
+    "name": "unwindProtect",
+    "status": "supported"
+   },
+   {
+    "name": "errset",
+    "status": "supported"
+   },
+   {
+    "name": "error",
+    "status": "supported"
+   },
+   {
+    "name": "warn",
+    "status": "supported"
+   },
+   {
+    "name": "and",
+    "status": "supported"
+   },
+   {
+    "name": "or",
+    "status": "supported"
+   },
+   {
+    "name": "not",
+    "status": "supported"
+   },
+   {
+    "name": "setq",
+    "status": "supported"
+   }
+  ],
+  "리스트": [
+   {
+    "name": "car",
+    "status": "supported"
+   },
+   {
+    "name": "cdr",
+    "status": "supported"
+   },
+   {
+    "name": "cons",
+    "status": "supported"
+   },
+   {
+    "name": "list",
+    "status": "supported"
+   },
+   {
+    "name": "append",
+    "status": "supported"
+   },
+   {
+    "name": "reverse",
+    "status": "supported"
+   },
+   {
+    "name": "length",
+    "status": "supported"
+   },
+   {
+    "name": "nth",
+    "status": "supported"
+   },
+   {
+    "name": "nthcdr",
+    "status": "supported"
+   },
+   {
+    "name": "last",
+    "status": "supported"
+   },
+   {
+    "name": "member",
+    "status": "supported"
+   },
+   {
+    "name": "memq",
+    "status": "supported"
+   },
+   {
+    "name": "memv",
+    "status": "supported"
+   },
+   {
+    "name": "assoc",
+    "status": "supported"
+   },
+   {
+    "name": "assq",
+    "status": "supported"
+   },
+   {
+    "name": "assv",
+    "status": "supported"
+   },
+   {
+    "name": "remove",
+    "status": "supported"
+   },
+   {
+    "name": "remd",
+    "status": "supported"
+   },
+   {
+    "name": "remdq",
+    "status": "supported"
+   },
+   {
+    "name": "remdup",
+    "status": "supported"
+   },
+   {
+    "name": "mapcar",
+    "status": "supported"
+   },
+   {
+    "name": "mapc",
+    "status": "supported"
+   },
+   {
+    "name": "mapcan",
+    "status": "supported"
+   },
+   {
+    "name": "maplist",
+    "status": "supported"
+   },
+   {
+    "name": "mapcon",
+    "status": "supported"
+   },
+   {
+    "name": "sort",
+    "status": "supported"
+   },
+   {
+    "name": "sortcar",
+    "status": "supported"
+   },
+   {
+    "name": "exists",
+    "status": "supported"
+   },
+   {
+    "name": "forall",
+    "status": "supported"
+   },
+   {
+    "name": "setof",
+    "status": "supported"
+   },
+   {
+    "name": "nconc",
+    "status": "supported"
+   },
+   {
+    "name": "tconc",
+    "status": "supported"
+   },
+   {
+    "name": "lconc",
+    "status": "supported"
+   },
+   {
+    "name": "setcar",
+    "status": "supported"
+   },
+   {
+    "name": "setcdr",
+    "status": "supported"
+   },
+   {
+    "name": "copy",
+    "status": "supported"
+   },
+   {
+    "name": "subst",
+    "status": "supported"
+   },
+   {
+    "name": "lindex",
+    "status": "supported"
+   },
+   {
+    "name": "tailp",
+    "status": "supported"
+   },
+   {
+    "name": "xcons",
+    "status": "supported"
+   },
+   {
+    "name": "ncons",
+    "status": "supported"
+   },
+   {
+    "name": "nthelem",
+    "status": "supported"
+   },
+   {
+    "name": "cadr",
+    "status": "supported"
+   },
+   {
+    "name": "cddr",
+    "status": "supported"
+   },
+   {
+    "name": "caar",
+    "status": "supported"
+   },
+   {
+    "name": "cdar",
+    "status": "supported"
+   },
+   {
+    "name": "caddr",
+    "status": "supported"
+   },
+   {
+    "name": "cdddr",
+    "status": "supported"
+   },
+   {
+    "name": "cadddr",
+    "status": "supported"
+   }
+  ],
+  "수치·비트": [
+   {
+    "name": "plus",
+    "status": "supported"
+   },
+   {
+    "name": "difference",
+    "status": "supported"
+   },
+   {
+    "name": "times",
+    "status": "supported"
+   },
+   {
+    "name": "quotient",
+    "status": "supported"
+   },
+   {
+    "name": "add1",
+    "status": "supported"
+   },
+   {
+    "name": "sub1",
+    "status": "supported"
+   },
+   {
+    "name": "abs",
+    "status": "supported"
+   },
+   {
+    "name": "min",
+    "status": "supported"
+   },
+   {
+    "name": "max",
+    "status": "supported"
+   },
+   {
+    "name": "sqrt",
+    "status": "supported"
+   },
+   {
+    "name": "exp",
+    "status": "supported"
+   },
+   {
+    "name": "log",
+    "status": "supported"
+   },
+   {
+    "name": "log10",
+    "status": "supported"
+   },
+   {
+    "name": "sin",
+    "status": "supported"
+   },
+   {
+    "name": "cos",
+    "status": "supported"
+   },
+   {
+    "name": "tan",
+    "status": "supported"
+   },
+   {
+    "name": "asin",
+    "status": "supported"
+   },
+   {
+    "name": "acos",
+    "status": "supported"
+   },
+   {
+    "name": "atan",
+    "status": "supported"
+   },
+   {
+    "name": "atan2",
+    "status": "supported"
+   },
+   {
+    "name": "expt",
+    "status": "supported"
+   },
+   {
+    "name": "round",
+    "status": "supported"
+   },
+   {
+    "name": "fix",
+    "status": "supported"
+   },
+   {
+    "name": "float",
+    "status": "supported"
+   },
+   {
+    "name": "floor",
+    "status": "supported"
+   },
+   {
+    "name": "ceiling",
+    "status": "supported"
+   },
+   {
+    "name": "truncate",
+    "status": "supported"
+   },
+   {
+    "name": "mod",
+    "status": "supported"
+   },
+   {
+    "name": "zerop",
+    "status": "supported"
+   },
+   {
+    "name": "plusp",
+    "status": "supported"
+   },
+   {
+    "name": "minusp",
+    "status": "supported"
+   },
+   {
+    "name": "evenp",
+    "status": "supported"
+   },
+   {
+    "name": "oddp",
+    "status": "supported"
+   },
+   {
+    "name": "lessp",
+    "status": "supported"
+   },
+   {
+    "name": "greaterp",
+    "status": "supported"
+   },
+   {
+    "name": "leqp",
+    "status": "supported"
+   },
+   {
+    "name": "geqp",
+    "status": "supported"
+   },
+   {
+    "name": "equal",
+    "status": "supported"
+   },
+   {
+    "name": "neq",
+    "status": "supported"
+   },
+   {
+    "name": "eq",
+    "status": "supported"
+   },
+   {
+    "name": "random",
+    "status": "supported"
+   },
+   {
+    "name": "logand",
+    "status": "supported"
+   },
+   {
+    "name": "logior",
+    "status": "supported"
+   },
+   {
+    "name": "logxor",
+    "status": "supported"
+   },
+   {
+    "name": "lognot",
+    "status": "supported"
+   },
+   {
+    "name": "leftshift",
+    "status": "supported"
+   },
+   {
+    "name": "rightshift",
+    "status": "supported"
+   },
+   {
+    "name": "gcd",
+    "status": "supported"
+   }
+  ],
+  "문자열·심볼": [
+   {
+    "name": "sprintf",
+    "status": "supported"
+   },
+   {
+    "name": "strcat",
+    "status": "supported"
+   },
+   {
+    "name": "strlen",
+    "status": "supported"
+   },
+   {
+    "name": "substring",
+    "status": "supported"
+   },
+   {
+    "name": "index",
+    "status": "supported"
+   },
+   {
+    "name": "rindex",
+    "status": "supported"
+   },
+   {
+    "name": "nindex",
+    "status": "supported"
+   },
+   {
+    "name": "upperCase",
+    "status": "supported"
+   },
+   {
+    "name": "lowerCase",
+    "status": "supported"
+   },
+   {
+    "name": "parseString",
+    "status": "supported"
+   },
+   {
+    "name": "buildString",
+    "status": "supported"
+   },
+   {
+    "name": "stringp",
+    "status": "supported"
+   },
+   {
+    "name": "concat",
+    "status": "supported"
+   },
+   {
+    "name": "strcmp",
+    "status": "supported"
+   },
+   {
+    "name": "strncmp",
+    "status": "supported"
+   },
+   {
+    "name": "strcasecmp",
+    "status": "supported"
+   },
+   {
+    "name": "getchar",
+    "status": "supported"
+   },
+   {
+    "name": "symbolToString",
+    "status": "supported"
+   },
+   {
+    "name": "stringToSymbol",
+    "status": "supported"
+   },
+   {
+    "name": "atoi",
+    "status": "supported"
+   },
+   {
+    "name": "atof",
+    "status": "supported"
+   },
+   {
+    "name": "asciiToString",
+    "status": "supported"
+   },
+   {
+    "name": "symbolp",
+    "status": "supported"
+   },
+   {
+    "name": "numberp",
+    "status": "supported"
+   },
+   {
+    "name": "listp",
+    "status": "supported"
+   }
+  ],
+  "정규식": [
+   {
+    "name": "rexCompile",
+    "status": "supported"
+   },
+   {
+    "name": "rexExecute",
+    "status": "supported"
+   },
+   {
+    "name": "rexMatchp",
+    "status": "supported"
+   },
+   {
+    "name": "rexMatchList",
+    "status": "supported"
+   },
+   {
+    "name": "rexReplace",
+    "status": "unsupported",
+    "kind": "semantics",
+    "why": "Cadence 정규식 그룹 문법이 Python re와 달라 같은 의미로 재현하기 어려움"
+   }
+  ],
+  "속성·테이블·타입": [
+   {
+    "name": "putprop",
+    "status": "supported"
+   },
+   {
+    "name": "get",
+    "status": "supported"
+   },
+   {
+    "name": "getq",
+    "status": "supported"
+   },
+   {
+    "name": "putpropq",
+    "status": "supported"
+   },
+   {
+    "name": "makeTable",
+    "status": "supported"
+   },
+   {
+    "name": "tableGet",
+    "status": "supported"
+   },
+   {
+    "name": "tableSet",
+    "status": "supported"
+   },
+   {
+    "name": "tableKeys",
+    "status": "supported"
+   },
+   {
+    "name": "symeval",
+    "status": "supported"
+   },
+   {
+    "name": "boundp",
+    "status": "supported"
+   },
+   {
+    "name": "fboundp",
+    "status": "supported"
+   },
+   {
+    "name": "type",
+    "status": "supported"
+   },
+   {
+    "name": "typep",
+    "status": "supported"
+   }
+  ],
+  "입출력(workspace 안에서만)": [
+   {
+    "name": "printf",
+    "status": "supported"
+   },
+   {
+    "name": "println",
+    "status": "supported"
+   },
+   {
+    "name": "print",
+    "status": "supported"
+   },
+   {
+    "name": "fprintf",
+    "status": "supported"
+   },
+   {
+    "name": "fputs",
+    "status": "supported"
+   },
+   {
+    "name": "outfile",
+    "status": "supported"
+   },
+   {
+    "name": "infile",
+    "status": "supported"
+   },
+   {
+    "name": "close",
+    "status": "supported"
+   },
+   {
+    "name": "gets",
+    "status": "supported"
+   },
+   {
+    "name": "drain",
+    "status": "supported"
+   },
+   {
+    "name": "getDirFiles",
+    "status": "supported"
+   },
+   {
+    "name": "isFile",
+    "status": "supported"
+   },
+   {
+    "name": "isDir",
+    "status": "supported"
+   },
+   {
+    "name": "createDir",
+    "status": "supported"
+   },
+   {
+    "name": "load",
+    "status": "supported"
+   }
+  ],
+  "평가": [
+   {
+    "name": "eval",
+    "status": "supported"
+   },
+   {
+    "name": "evalstring",
+    "status": "supported"
+   },
+   {
+    "name": "funcall",
+    "status": "supported"
+   },
+   {
+    "name": "apply",
+    "status": "supported"
+   },
+   {
+    "name": "isCallable",
+    "status": "supported"
+   },
+   {
+    "name": "procedurep",
+    "status": "supported"
+   }
+  ],
+  "배열·매크로": [
+   {
+    "name": "makeVector",
+    "status": "unsupported",
+    "kind": "parser",
+    "why": "배열 자료형(vector)과 a[i] 인덱스 구문이 파서에 없음 — 구현하려면 파서와 값 타입을 함께 확장해야 함"
+   },
+   {
+    "name": "arrayref",
+    "status": "unsupported",
+    "kind": "parser",
+    "why": "a[i] 인덱스 구문이 파서에 없음"
+   },
+   {
+    "name": "setarray",
+    "status": "unsupported",
+    "kind": "parser",
+    "why": "a[i]=v 대입 구문이 파서에 없음"
+   },
+   {
+    "name": "vectorp",
+    "status": "unsupported",
+    "kind": "parser",
+    "why": "vector 타입이 없어 항상 nil로 응답함(오해 소지) — 미지원으로 취급"
+   },
+   {
+    "name": "declare",
+    "status": "unsupported",
+    "kind": "parser",
+    "why": "배열 선언 구문 없음"
+   },
+   {
+    "name": "defmacro",
+    "status": "unsupported",
+    "kind": "evaluator",
+    "why": "평가기에 매크로 확장 단계가 없음 — backquote(`) 파싱·치환이 필요해 구현하지 않음"
+   },
+   {
+    "name": "mprocedure",
+    "status": "unsupported",
+    "kind": "evaluator",
+    "why": "매크로 확장 단계 없음"
+   }
+  ],
+  "호스트 실행·파일 변경": [
+   {
+    "name": "system",
+    "status": "unsupported",
+    "kind": "safety",
+    "why": "호스트 명령 실행 — 안전을 위해 의도적으로 제외"
+   },
+   {
+    "name": "sh",
+    "status": "unsupported",
+    "kind": "safety",
+    "why": "호스트 명령 실행 — 의도적 제외"
+   },
+   {
+    "name": "unix",
+    "status": "unsupported",
+    "kind": "safety",
+    "why": "호스트 명령 실행 — 의도적 제외"
+   },
+   {
+    "name": "ipcBeginProcess",
+    "status": "unsupported",
+    "kind": "safety",
+    "why": "외부 프로세스 실행 — 의도적 제외"
+   },
+   {
+    "name": "deleteFile",
+    "status": "unsupported",
+    "kind": "safety",
+    "why": "파일 삭제 — 의도적 제외"
+   },
+   {
+    "name": "renameFile",
+    "status": "unsupported",
+    "kind": "safety",
+    "why": "파일 이동 — 의도적 제외"
+   },
+   {
+    "name": "copyFile",
+    "status": "unsupported",
+    "kind": "safety",
+    "why": "호스트 파일 복사 — 의도적 제외"
+   }
+  ]
+ },
+ "bridge": [
+  {
+   "name": "cdsGetInstPath",
+   "status": "supported"
+  },
+  {
+   "name": "dbClose",
+   "status": "supported"
+  },
+  {
+   "name": "dbCopyCellView",
+   "status": "supported"
+  },
+  {
+   "name": "dbCreateInst",
+   "status": "supported"
+  },
+  {
+   "name": "dbCreateLabel",
+   "status": "supported"
+  },
+  {
+   "name": "dbCreateRect",
+   "status": "supported"
+  },
+  {
+   "name": "dbDeleteObject",
+   "status": "supported"
+  },
+  {
+   "name": "dbGetCellViewDdId",
+   "status": "supported"
+  },
+  {
+   "name": "dbGetOpenCellViews",
+   "status": "supported"
+  },
+  {
+   "name": "dbIsCellViewModified",
+   "status": "supported"
+  },
+  {
+   "name": "dbOpenCellView",
+   "status": "supported"
+  },
+  {
+   "name": "dbOpenCellViewByType",
+   "status": "supported"
+  },
+  {
+   "name": "dbPurge",
+   "status": "supported"
+  },
+  {
+   "name": "dbSave",
+   "status": "supported"
+  },
+  {
+   "name": "dbTransformBBox",
+   "status": "supported"
+  },
+  {
+   "name": "dbTransformPoint",
+   "status": "supported"
+  },
+  {
+   "name": "dbValidP",
+   "status": "supported"
+  },
+  {
+   "name": "ddCreateLib",
+   "status": "supported"
+  },
+  {
+   "name": "ddDeleteObj",
+   "status": "supported"
+  },
+  {
+   "name": "ddGetLibList",
+   "status": "supported"
+  },
+  {
+   "name": "ddGetObj",
+   "status": "supported"
+  },
+  {
+   "name": "ddUpdateLibList",
+   "status": "supported"
+  },
+  {
+   "name": "geGetEditCellView",
+   "status": "supported"
+  },
+  {
+   "name": "geGetSelSet",
+   "status": "supported"
+  },
+  {
+   "name": "geGetSelSetCount",
+   "status": "supported"
+  },
+  {
+   "name": "geGetWindowCellView",
+   "status": "supported"
+  },
+  {
+   "name": "geOpen",
+   "status": "supported"
+  },
+  {
+   "name": "geSelectAllFig",
+   "status": "supported"
+  },
+  {
+   "name": "geSelectArea",
+   "status": "supported"
+  },
+  {
+   "name": "hiCloseWindow",
+   "status": "supported"
+  },
+  {
+   "name": "hiFlush",
+   "status": "supported"
+  },
+  {
+   "name": "hiGetCIWindow",
+   "status": "supported"
+  },
+  {
+   "name": "hiGetCurrentWindow",
+   "status": "supported"
+  },
+  {
+   "name": "hiGetWindowList",
+   "status": "supported"
+  },
+  {
+   "name": "hiGetWindowName",
+   "status": "supported"
+  },
+  {
+   "name": "leHiDelete",
+   "status": "supported"
+  },
+  {
+   "name": "rexMatchp",
+   "status": "supported"
+  },
+  {
+   "name": "techBindTechFile",
+   "status": "supported"
+  },
+  {
+   "name": "techFindViaDefByName",
+   "status": "supported"
+  },
+  {
+   "name": "techGetTechFile",
+   "status": "supported"
+  },
+  {
+   "name": "techGetTechLibName",
+   "status": "supported"
+  },
+  {
+   "name": "techSetTechLibName",
+   "status": "supported"
+  },
+  {
+   "name": "xstGetField",
+   "status": "supported"
+  },
+  {
+   "name": "xstOutDoTranslate",
+   "status": "supported"
+  },
+  {
+   "name": "xstSetField",
+   "status": "supported"
+  },
+  {
+   "name": "cdfUpdateInstParam",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "envGetVal",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "envSetVal",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "hiCreateAppForm",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "hiCreateBooleanButton",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "hiCreateButton",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "hiCreateIntField",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "hiCreateLabel",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "hiCreateMenuItem",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "hiCreatePulldownMenu",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "hiInsertBannerMenu",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "hiRaiseWindow",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "hiRedraw",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "hiRegTimer",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "hiZoomAbsoluteScale",
+   "status": "stub",
+   "kind": "stub",
+   "why": "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)"
+  },
+  {
+   "name": "asiCloseSession",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "asiGetAnalogRunDir",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "asiGetCurrentAnalysisForm",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "asiGetCurrentSession",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "asiGetDesignVarList",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "asiGetHighPerformanceOptionVal",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "asiGetSession",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "asiGetSessionList",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "asiGetStatus",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "asiOpenSetup",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "asiRunSimulation",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "asiSetAnalysisFieldVal",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "asiSetDesignVarValue",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "asiSetHighPerformanceOptionVal",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlGetActiveSetup",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlGetCorner",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlGetCurrentHistory",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlGetHistory",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlGetHistoryEntry",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlGetHistoryLock",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlGetMainSetupDB",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlGetRunOption",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlGetRunOptionValue",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlGetRunOptions",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlGetTest",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlGetVar",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlGetWindowSession",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlPutModel",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlPutRunOption",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlRemoveElement",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlSetModelFile",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlSetModelSection",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "axlSetRunOptionValue",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "cdfGetCellCDF",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "CDF(소자 파라미터 정의) — 범위 밖"
+  },
+  {
+   "name": "cdfGetInstCDF",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "CDF(소자 파라미터 정의) — 범위 밖"
+  },
+  {
+   "name": "cdsName",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "미구현(구현 가능) — 사용 빈도가 낮아 보류"
+  },
+  {
+   "name": "cdsParam",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "미구현(구현 가능) — 사용 빈도가 낮아 보류"
+  },
+  {
+   "name": "cdsTerm",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "미구현(구현 가능) — 사용 빈도가 낮아 보류"
+  },
+  {
+   "name": "dbAddFigToNet",
+   "status": "unsupported",
+   "kind": "model",
+   "why": "넷·단자·핀을 데이터 모델에 담지 않음 — 구현하려면 연결(connectivity) 모델 추가가 필요"
+  },
+  {
+   "name": "dbCreateInstTerm",
+   "status": "unsupported",
+   "kind": "model",
+   "why": "넷·단자·핀을 데이터 모델에 담지 않음 — 구현하려면 연결(connectivity) 모델 추가가 필요"
+  },
+  {
+   "name": "dbCreateLine",
+   "status": "unsupported",
+   "kind": "model",
+   "why": "선(line) 도형 종류가 없음(path만 있음)"
+  },
+  {
+   "name": "dbCreateNet",
+   "status": "unsupported",
+   "kind": "model",
+   "why": "넷·단자·핀을 데이터 모델에 담지 않음 — 구현하려면 연결(connectivity) 모델 추가가 필요"
+  },
+  {
+   "name": "dbCreatePin",
+   "status": "unsupported",
+   "kind": "model",
+   "why": "넷·단자·핀을 데이터 모델에 담지 않음 — 구현하려면 연결(connectivity) 모델 추가가 필요"
+  },
+  {
+   "name": "dbCreateTerm",
+   "status": "unsupported",
+   "kind": "model",
+   "why": "넷·단자·핀을 데이터 모델에 담지 않음 — 구현하려면 연결(connectivity) 모델 추가가 필요"
+  },
+  {
+   "name": "dbFindOpenCellViewByName",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "미구현(구현 가능) — 사용 빈도가 낮아 보류"
+  },
+  {
+   "name": "dbOpenBag",
+   "status": "unsupported",
+   "kind": "model",
+   "why": "bag/속성 직접 설정 모델이 없음"
+  },
+  {
+   "name": "dbSet",
+   "status": "unsupported",
+   "kind": "model",
+   "why": "bag/속성 직접 설정 모델이 없음"
+  },
+  {
+   "name": "ddCatAddItem",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "라이브러리 카테고리 관리 — 사용 빈도가 낮아 미구현(구현 가능)"
+  },
+  {
+   "name": "ddCatClose",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "라이브러리 카테고리 관리 — 사용 빈도가 낮아 미구현(구현 가능)"
+  },
+  {
+   "name": "ddCatGetCatMembers",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "라이브러리 카테고리 관리 — 사용 빈도가 낮아 미구현(구현 가능)"
+  },
+  {
+   "name": "ddCatGetLibCats",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "라이브러리 카테고리 관리 — 사용 빈도가 낮아 미구현(구현 가능)"
+  },
+  {
+   "name": "ddCatOpen",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "라이브러리 카테고리 관리 — 사용 빈도가 낮아 미구현(구현 가능)"
+  },
+  {
+   "name": "ddCatOpenEx",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "라이브러리 카테고리 관리 — 사용 빈도가 낮아 미구현(구현 가능)"
+  },
+  {
+   "name": "ddCatRemove",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "라이브러리 카테고리 관리 — 사용 빈도가 낮아 미구현(구현 가능)"
+  },
+  {
+   "name": "ddCatSave",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "라이브러리 카테고리 관리 — 사용 빈도가 낮아 미구현(구현 가능)"
+  },
+  {
+   "name": "ddGetObjDMSys",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "미구현(구현 가능) — 사용 빈도가 낮아 보류"
+  },
+  {
+   "name": "ddGetObjWritePath",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "미구현(구현 가능) — 사용 빈도가 낮아 보류"
+  },
+  {
+   "name": "ddMapGetFileViewType",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "미구현(구현 가능) — 사용 빈도가 낮아 보류"
+  },
+  {
+   "name": "ddReleaseObj",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "미구현(구현 가능) — 사용 빈도가 낮아 보류"
+  },
+  {
+   "name": "envIsVal",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "미구현(구현 가능) — 사용 빈도가 낮아 보류"
+  },
+  {
+   "name": "hiCreateMLTextField",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiFlushLogFile",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiFormApply",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiFormCancel",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiFormDone",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiFormList",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiGetCurrentForm",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiGetLogFileName",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiIsForm",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiIsFormDisplayed",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiReportDeselectAllItems",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiReportGetSelectedItems",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiReportSelectItem",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiSetCurrentForm",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiTreeTableDeselectAllItems",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiTreeTableGetItems",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "hiTreeTableSelectItem",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "GUI 폼·창 — 화면이 없음"
+  },
+  {
+   "name": "maeAddOutput",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeCloseResults",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeCloseSession",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeCreateNetlistForCorner",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeCreateTest",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeDeleteCorner",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeExportOutputView",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetAnalysis",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetCurrentRunMode",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetEnabledAnalysis",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetEnvOption",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetOutputValue",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetResultOutputs",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetResultTests",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetRunPlan",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetSessions",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetSetup",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetSimulationMessages",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetSpecStatus",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetTestOutputs",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetTestSession",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeGetVar",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeMakeEditable",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeMigrateADELStateToMaestro",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeMigrateADEXLToMaestro",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeOpenResults",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeOpenSetup",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeRunSimulation",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeSaveSetup",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeSetAnalysis",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeSetCorner",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeSetCurrentRunMode",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeSetEnvOption",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeSetHistoryLock",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeSetSpec",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeSetVar",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeWaitUntilDone",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "maeWriteScript",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+  },
+  {
+   "name": "ocnPrint",
+   "status": "unsupported",
+   "kind": "todo",
+   "why": "미구현"
+  },
+  {
+   "name": "schCheck",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+  },
+  {
+   "name": "schCreateNetExpression",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+  },
+  {
+   "name": "schCreatePin",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+  },
+  {
+   "name": "schCreateWire",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+  },
+  {
+   "name": "schCreateWireLabel",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+  },
+  {
+   "name": "schGetEnv",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+  },
+  {
+   "name": "schGetPinOrder",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+  },
+  {
+   "name": "schPinListToSymbol",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+  },
+  {
+   "name": "schSchemToPinList",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+  },
+  {
+   "name": "schSetEnv",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+  },
+  {
+   "name": "schSymbolToPinList",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+  },
+  {
+   "name": "sevRun",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  },
+  {
+   "name": "sevSession",
+   "status": "unsupported",
+   "kind": "scope",
+   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+  }
+ ],
+ "summary": {
+  "core_total": 199,
+  "core_supported": 184,
+  "bridge_total": 189,
+  "bridge": {
+   "supported": 45,
+   "stub": 15,
+   "unsupported": 129
+  },
+  "vvirt_functions": 317,
+  "special_forms": 27
+ }
+}

@@ -3,6 +3,8 @@
 // 아직 돌려 보지 않은 것은 "미검증"으로 따로 적는다.
 import './vb.css'
 import VbScenarioPlayer from './VbScenarioPlayer'
+import VbSupportMatrix from './VbSupportMatrix'
+import VbPnrEstimate from './VbPnrEstimate'
 
 const FLOW: { who: string; what: string; real: boolean; tag?: string }[] = [
   { who: 'LLM / 에이전트', what: 'SKILL 코드를 만들어 Python 클라이언트로 보냄 (skills/virtuoso 문서 사용)', real: true, tag: '사용자 쪽' },
@@ -19,7 +21,7 @@ const CHECKS: { name: string; result: string; how: string }[] = [
   { name: '수락 시험 accept_layout.py', result: '11/11 통과', how: '생성 · 읽기 · 추가 · 레이어 삭제 · 영역 선택 후 삭제 · mosaic · 내보내기' },
   { name: '배포 예제 01~15 + flower.py (사본, sky130 이름으로 치환)', result: '21회 실행 모두 종료코드 0 — 도형·비아·배선·읽기·삭제(dry/--yes)·선택삭제·mosaic·flower(다각형 11+경로 1+라벨 1), 15번 XStream Out 은 GDS+로그 생성 후 success', how: 'tools/vvirt/scripts/run_examples.sh, 원본은 수정하지 않음. 15번 GDS 는 KLayout 판독과 도형 수 일치, 맵 누락/셀 없음/빈 맵은 warning/failure 로 보고됨' },
   { name: '명령형 배치 place_cmd.py', result: 'nand2_1과 dfxtp_1을 폭에 맞춰 맞닿게 배치, 2행째는 MX 반전 (y=5.44)', how: '라이브러리 조회(vvCells/vvCellInfo) → 배치 → 읽기 확인' },
-  { name: '시나리오 11개 (아래 재생기)', result: '자동 점검 31개 모두 통과 — 배치·수정·배열·비아·오류 복구·PDK 셀 복사/수정·룰 배선·사용자 룰·습관 프로필', how: 'tools/vvirt/examples/make_scenarios.py (실제 실행 기록)' },
+  { name: '시나리오 11개 (아래 재생기)', result: '자동 점검 33개 모두 통과 — 배치·수정·배열·비아·오류 복구·PDK 셀 복사/수정·룰 배선·사용자 룰·습관 프로필', how: 'tools/vvirt/examples/make_scenarios.py (실제 실행 기록)' },
   { name: '룰 검사 교차 검증', result: '내 검사기와 PDK 공식 sky130A_mr.drc 가 같은 met2 간격 위반(m2.2) 2건을 검출, 수정 후 둘 다 0', how: 'vvCheckRules vs vvOfficialDrc (BEOL 룰만)' },
   { name: 'LLM식 시나리오 demo_inv_chain.py', result: '인버터 4개 체인 생성 → inv_4로 교체·재배선 (bbox 5.52 → 6.44 µm)', how: '표준셀 실제 핀 좌표(vvCellInfo)로 li1 배선' },
   { name: 'GDS 독립 검증', result: 'KLayout이 4개 셀·계층·레이어 면적을 정상 판독', how: 'klayout -b 로 읽어 flat 면적 확인' },
@@ -33,7 +35,8 @@ const FUNCS: { group: string; items: string }[] = [
   { group: '창·선택', items: 'geOpen · geGetEditCellView · hiGetWindowList · hiGetCurrentWindow · geGetSelSet · hiWindowSaveImage(SVG)' },
   { group: '라이브러리 관리', items: 'ddGetLibList · ddGetObj(~>readPath ~>cells ~>writable) · ddCreateLib(경로 제한) · ddDeleteObj · techBindTechFile/techGetTechLibName · isDir/isFile/isWritable(허용 폴더만)' },
   { group: '실제 PDK 라이브러리 로딩·편집', items: 'vvAttachPdkLib(예: sky130_fd_sc_hvl 69셀) · vvCopyCell/dbCopyCellView(읽기 전용 PDK 셀 → 내 라이브러리, 편집 가능) · vvImportGds(GDS → 라이브러리)' },
-  { group: '룰·습관·검사', items: 'vvRuleSource(PDK tech LEF) · vvRules · vvSetRule(내 룰) · vvLoadProfile/vvProfile(습관) · vvRoute(룰 기반 우회 배선) · vvViaStack · vvPlaceRow · vvPinXY · vvCheckRules · vvOfficialDrc' },
+  { group: '룰·습관·검사', items: 'vvRuleSource(PDK tech LEF) · vvRules · vvSetRule(내 룰) · vvLoadProfile/vvProfile(습관) · vvRoute(룰 기반 우회 배선, 한계 목록 동봉) · vvViaStack · vvPlaceRow · vvPinXY · vvCheckRules(위반 목록) · vvCheckReport(검사 범위 포함: clean_in_scope / violations / nothing_checked) · vvOfficialDrc · vvOfficialDrcReport(돌린/안 돌린 그룹)' },
+  { group: '준비도·설치', items: 'scripts/doctor.sh (읽기 전용 준비도 점검: 항목마다 고치는 명령과 영향받는 기능 표시) · scripts/setup_env.sh (계획만 출력, --yes 로 적용, 멱등) · skills/vvirt/SKILL.md (LLM용 사용 지침)' },
   { group: '테크·라이브러리', items: 'techGetTechFile(lps) · techFindViaDefByName · ddGetObj · ddDeleteObj · ddCreateLib' },
   { group: 'vvirt 전용(탐색·내보내기)', items: 'vvLibraries · vvCells · vvCellInfo(핀 좌표) · vvLayers · vvViaDefs · vvExportGds · vvExportSvg · vvBBox' },
   { group: '언어', items: 'if/when/unless/let/prog/foreach/for/while/case/cond/setof/lambda/procedure/errset/unwindProtect + 리스트·문자열·수치 함수, ~> 속성 접근' },
@@ -41,7 +44,8 @@ const FUNCS: { group: string; items: string }[] = [
 
 const LIMITS: string[] = [
   '실제 Cadence가 아니다: 확인한 것은 "브리지 프로토콜과 레이아웃 편집 SKILL이 동작한다"까지이며, Cadence의 정확한 동작(예: geSelectArea의 부분 겹침 선택)과 같다고 보장하지 않는다.',
-  'SKILL 인터프리터는 부분집합이다. 모르는 함수는 "undefined function" 오류로 드러나며 그때마다 추가한다(system/sh 등 호스트에 닿는 함수는 의도적으로 없다).',
+  'SKILL 인터프리터는 부분집합이다(위 "SKILL 명령을 어디까지 지원하나" 표 참고: 핵심 언어 고른 199개 중 184개, 브리지 참조 Cadence 함수 189개 중 45개 지원). 모르는 함수는 "undefined function" 오류로 드러나며 그때마다 추가한다(system/sh 등 호스트에 닿는 함수는 의도적으로 없다).',
+  '"위반 없음"은 "검사한 범위 안에서 없음"이다. vvCheckRules 의 nil 은 청결 판정이 아니므로 vvCheckReport 가 검사한 층·룰, 룰 없이 그려진 층, 검사하지 않은 항목(와이드 와이어 간격, 연결성, 밀도·안테나 등)과 룰 출처·내 룰 덮어쓰기를 함께 돌려준다.',
   'LVS·추출은 없다. 규칙 검사(vvCheckRules, 내부에서 klayout -b 호출)·공식 DRC(vvOfficialDrc)·자동 배선(vvRoute)·행 배치(vvPlaceRow)는 2026-10-13에 실행해 확인했다(시나리오 ⑧~⑪). 다만 DRC는 폭·간격·면적·enclosure 범위이므로 제출용 GDS는 KLayout/Magic/OpenLane으로 따로 검사해야 한다.',
   '층 이름은 sky130A(met1, li1, poly …)만 유효하다. 예제 02~15가 쓰는 tsmc식 이름(M1, edgeLayer 등)은 --layer-map 으로 바꿔야 한다.',
   '룰은 PDK tech LEF에서 읽는다(폭·간격·면적·방향·피치·비아 enclosure). 이는 라우팅용 룰이며 전체 signoff DRC가 아니다. 내 검사기는 폭/간격/면적/enclosure만 보고, 공식 덱 교차검증은 BEOL(금속·비아) 룰만 돌렸다. FEOL(poly/diff/well) 룰은 이 시나리오들에서 시험하지 않았다.',
@@ -107,6 +111,10 @@ export default function VirtuosoBridge() {
       <div className="data-table"><table><thead><tr><th>분류</th><th>함수</th></tr></thead>
         <tbody>{FUNCS.map(f => <tr key={f.group}><td><b>{f.group}</b></td><td>{f.items}</td></tr>)}</tbody></table></div>
     </section>
+
+    <VbPnrEstimate/>
+
+    <VbSupportMatrix/>
 
     <section className="card vb-card">
       <div className="card-title"><div><small className="kicker">LIMITS</small><h2>한계와 미검증 항목</h2></div></div>

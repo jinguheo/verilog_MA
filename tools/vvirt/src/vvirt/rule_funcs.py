@@ -7,6 +7,7 @@ import subprocess
 from typing import Any
 
 from . import layers, rules as R
+from .records import rec
 from .odb import CellView, Database, Instance, Shape, Via, _pt, transform_point
 from .skill_lang import Interp, SkillError
 
@@ -135,31 +136,73 @@ def install(interp: Interp, db: Database) -> dict:
         return w, round(rs.space_for(layer, w) * hb.space_multiple, 4)
 
     # ------------------------------------------------------------------ checking
-    def v_check(cv, *only):
-        if not isinstance(cv, CellView):
-            raise SkillError("*Error* vvCheckRules: argument #1 should be a cellview", cv)
-        want = {canon(x, "vvCheckRules") for x in (only[0] if only and isinstance(only[0], list) else only)} or None
+    def new_violations(cv: CellView, want: set[str] | None, name: str) -> tuple[list[dict], int]:
+        """Violations of the drawn geometry, minus those already present in the placed library cells alone."""
         try:
             now = R.check(flat_polys(cv), rs, want)
             base = R.check(flat_polys(cv, True), rs, want)
         except RuntimeError as exc:
-            raise SkillError(f"*Error* vvCheckRules: {exc}")
+            raise SkillError(f"*Error* {name}: {exc}")
         key = lambda v: (v["layer"], v["rule"], tuple(round(c, 3) for xy in v["bbox"] for c in xy))  # noqa: E731
         known = {key(v) for v in base}
         new = [v for v in now if key(v) not in known]
+        return new, len(now) - len(new)
+
+    def v_check(cv, *only):
+        if not isinstance(cv, CellView):
+            raise SkillError("*Error* vvCheckRules: argument #1 should be a cellview", cv)
+        want = {canon(x, "vvCheckRules") for x in (only[0] if only and isinstance(only[0], list) else only)} or None
+        new, _excluded = new_violations(cv, want, "vvCheckRules")
+        # nil means "no violation found in the covered rules" only; vvCheckReport states what was covered
         return [[v["layer"], v["rule"], v["required"], v["bbox"]] for v in new] or None
 
     F["vvCheckRules"] = v_check
 
+    # What no check here looks at. Reported with every result: "no violations" only ever means "none found in this scope".
+    NOT_CHECKED = [
+        "wide-wire spacing (SPACINGTABLE width>3um) and parallel-run-length / end-of-line spacing",
+        "layers without a rule in the tech LEF (nwell, pwell, diff, tap, implants, poly, licon): present but not checked",
+        "connectivity: shorts/opens between nets, same-net spacing exceptions (touching shapes are merged)",
+        "density, antenna, off-grid, seal ring, LVS, parasitic extraction",
+    ]
+
+    def rule_kinds(layer: str) -> list[str]:
+        return [k for k in ("minWidth", "minSpace", "minArea") if rs.get(layer, k) is not None]
+
+    def check_report(cv: CellView, want: set[str] | None) -> list:
+        """vvCheckRules with its scope stated: status is 'violations' or 'clean_in_scope' (never plain 'clean')."""
+        flat = flat_polys(cv)
+        order = {n: i for i, n in enumerate(layers.DRAW_ORDER)}
+        present = sorted({l for l, _ in flat if want is None or l in want}, key=lambda n: order.get(n, 99))
+        checked = [rec(("layer", l), ("rules", rule_kinds(l))) for l in present if rule_kinds(l)]
+        no_rule = [l for l in present if not rule_kinds(l)]
+        encl = [rec(("cut", c), ("metal", m)) for c, m, _e in rs.enclosures if c in present and m in present]
+        new, base_n = new_violations(cv, want, "vvCheckReport") if checked else ([], 0)
+        viol = [rec(("layer", v["layer"]), ("rule", v["rule"]), ("required", v["required"]), ("bbox", v["bbox"])) for v in new] or None
+        status = "nothing_checked" if not checked else ("violations" if viol else "clean_in_scope")
+        return [["status", status], ["checkedLayers", checked or None], ["enclosureChecks", encl or None],
+                ["presentWithoutRule", no_rule or None], ["notChecked", NOT_CHECKED],
+                ["excludedBecauseInPlacedCells", base_n], ["ruleSource", rs.source], ["profile", hb.name],
+                ["ruleOverrides", [rec(("rule", k), ("value", v)) for k, v in sorted(rs.overrides.items())] or None], ["violations", viol]]
+
+    def v_check_report(cv, *only):
+        if not isinstance(cv, CellView):
+            raise SkillError("*Error* vvCheckReport: argument #1 should be a cellview", cv)
+        want = {canon(x, "vvCheckReport") for x in (only[0] if only and isinstance(only[0], list) else only)} or None
+        return check_report(cv, want)
+
+    F["vvCheckReport"] = v_check_report
+
     # ------------------------------------------------------------------ official sky130A DRC deck (independent signoff-style check)
-    def v_official(cv, *opts):
+    def official_new(cv, opts, name: str) -> tuple[list, str, bool, int]:
+        """(new violations as [rule, count], deck path, feol run?, count left out because they exist in the placed cells alone)"""
         from . import export as E
 
         if not isinstance(cv, CellView):
-            raise SkillError("*Error* vvOfficialDrc: argument #1 should be a cellview", cv)
+            raise SkillError(f"*Error* {name}: argument #1 should be a cellview", cv)
         deck = R.find_deck(db.stdlib.root)
         if deck is None:
-            raise SkillError("*Error* vvOfficialDrc: sky130A_mr.drc not found in the PDK")
+            raise SkillError(f"*Error* {name}: sky130A_mr.drc not found in the PDK")
         feol = any(str(o) == "feol" for o in opts)
         import tempfile
 
@@ -174,14 +217,32 @@ def install(interp: Interp, db: Database) -> dict:
                 now = R.official_drc(g1, cv.cell, deck, beol=True, feol=feol)
                 ref = R.official_drc(g0, "vv_instances_only", deck, beol=True, feol=feol)
             except (RuntimeError, subprocess.TimeoutExpired) as exc:
-                raise SkillError(f"*Error* vvOfficialDrc: {exc}")
+                raise SkillError(f"*Error* {name}: {exc}")
         new = [[k, n - ref.get(k, 0)] for k, n in sorted(now.items()) if n - ref.get(k, 0) > 0]
-        return new or None
+        return new, deck, feol, sum(min(n, ref.get(k, 0)) for k, n in now.items())
+
+    def v_official(cv, *opts):
+        new, _deck, _feol, _left_out = official_new(cv, opts, "vvOfficialDrc")
+        return new or None  # nil = no violation in the deck groups that ran; vvOfficialDrcReport names them
+
+    def v_official_report(cv, *opts):
+        new, deck, feol, left_out = official_new(cv, opts, "vvOfficialDrcReport")
+        ran = ["beol (met1-met5, li1, vias, mcon)"] + (["feol (poly, diff, wells, implants, licon)"] if feol else [])
+        not_ran = ([] if feol else ["feol (poly, diff, wells, implants, licon): pass 'feol' to run"]) + [
+            "offgrid, seal ring, floating-metal checks (deck groups left off)", "density rules", "LVS and extraction"]
+        return [["status", "violations" if new else "clean_in_scope"], ["deck", os.path.basename(deck)], ["deckRelease", R.deck_release(deck)],
+                ["groupsRun", ran], ["notRun", not_ran], ["excludedBecauseInPlacedCells", left_out],
+                ["violations", [rec(("rule", k), ("count", n)) for k, n in new] or None]]
 
     F["vvOfficialDrc"] = v_official
+    F["vvOfficialDrcReport"] = v_official_report
 
     # ------------------------------------------------------------------ rule-aware routing
-    def v_route(cv, layer, p0, p1, *rest):
+    ROUTE_LIMITS = ["checked only against shapes already in this cellview, as bounding boxes (conservative)",
+                    "single layer, no via insertion; no net/connectivity awareness",
+                    "result is legal for the width/space rules in force, not a DRC-clean guarantee: run vvCheckReport"]
+
+    def v_route(cv, layer, p0, p1, *rest, **kw):
         if not isinstance(cv, CellView) or cv.readonly:
             raise SkillError("*Error* vvRoute: argument #1 should be a cellview open for edit")
         layer = canon(layer, "vvRoute")
@@ -190,13 +251,17 @@ def install(interp: Interp, db: Database) -> dict:
         a, b = (snap(a[0]), snap(a[1])), (snap(b[0]), snap(b[1]))
         res = R.route(a, b, w, s, obstacles(cv, layer), prefer=hb.directions.get(layer), snap=hb.snap)
         if res is None:
-            raise SkillError(f"*Error* vvRoute: no legal {layer} route from {list(a)} to {list(b)} with width {w:g} and space {s:g}; "
-                             "try another layer or move the blocking shapes")
+            raise SkillError(f"*Error* vvRoute: no legal {layer} route found from {list(a)} to {list(b)} with width {w:g} and space {s:g} among "
+                             "straight/L/Z/S candidates. This is not proof that none exists (obstacles are judged by their bounding boxes, "
+                             "which is conservative for non-rectangular shapes); try another layer, move an endpoint, or move the blocking shapes")
         pts, how = res
         sh = Shape(cv, "path", layer, "drawing", [(x, y) for x, y in pts], w, style="truncateExtend")
         cv.shapes.append(sh)
         cv.dirty = True
-        return [how, w, s, [[x, y] for x, y in pts]]
+        points = [[x, y] for x, y in pts]
+        if kw.get("positional"):
+            return [how, w, s, points, ROUTE_LIMITS]
+        return rec(("how", how), ("width", w), ("space", s), ("points", points), ("limitations", ROUTE_LIMITS))
 
     F["vvRoute"] = v_route
 
@@ -224,7 +289,7 @@ def install(interp: Interp, db: Database) -> dict:
     F["vvViaStack"] = v_via_stack
 
     # ------------------------------------------------------------------ habit-aware row placement
-    def v_place_row(cv, prefix, cells, xy, row_index=0):
+    def v_place_row(cv, prefix, cells, xy, row_index=0, **kw):
         if not isinstance(cv, CellView) or cv.readonly:
             raise SkillError("*Error* vvPlaceRow: argument #1 should be a cellview open for edit")
         std = db.std_name
@@ -242,7 +307,8 @@ def install(interp: Interp, db: Database) -> dict:
             orient = "MX" if flip else "R0"
             inst = Instance(cv, master, nm, (snap(x), snap(y + (m.height if flip else 0.0))), orient)
             cv.instances.append(inst)
-            out.append([nm, cname.replace(std + "__", ""), snap(x), orient])
+            out.append([nm, cname.replace(std + "__", ""), snap(x), orient] if kw.get("positional")
+                       else rec(("name", nm), ("cell", cname.replace(std + "__", "")), ("x", snap(x)), ("orient", orient)))
             x += m.width + (hb.cell_gap if k < len(seq) - 1 else 0.0)
         cv.dirty = True
         return out
