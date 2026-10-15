@@ -85,6 +85,47 @@ API: dict[str, dict[str, Any]] = {
                         returns="the path", example='vvExportGds("mylib" "top" "/tmp/top.gds")'),
     "vvExportSvg": dict(group="export", summary="Render the cellview to an annotated SVG (legend, instance names, pins).", args=["lib: string", "cell: string", "?path: string", "?view: string"],
                         returns="the path", example='vvExportSvg("mylib" "top")'),
+    # ---- schematic (design source for Maestro tests)
+    "vvSchCreate": dict(group="schematic", summary="Create an empty netlist-level schematic (the design a Maestro test simulates).", args=["lib: string", "cell: string"], returns="\"lib/cell\"", example='vvSchCreate("mylib" "rc")'),
+    "vvSchAddInst": dict(group="schematic", summary="Add an instance of a device master (analogLib res/cap/vdc..., sky130 transistors) or of another schematic, with explicit pin-to-net connections.",
+                         args=["lib: string", "cell: string", "name: string - instance name", "masterLib: string", "masterCell: string", "?conn: list - ((\"PLUS\" \"in\") (\"MINUS\" \"gnd!\"))", "?params: list - ((\"r\" \"1k\"))"],
+                         returns="the instance name", example='vvSchAddInst("mylib" "rc" "R0" "analogLib" "res" ?conn \'(("PLUS" "in") ("MINUS" "out")) ?params \'(("r" "1k")))',
+                         notes="Parameter values are numbers (SI suffixes ok) or expressions over design variables, e.g. \"2*c_val\". Nets named 0 or gnd! are ground. Pins and parameters are checked against the master."),
+    "vvSchConnect": dict(group="schematic", summary="Connect one pin of an instance to a net.", args=["lib: string", "cell: string", "inst: string", "pin: string", "net: string"], returns="t", example='vvSchConnect("mylib" "rc" "R0" "MINUS" "out")'),
+    "vvSchSetParam": dict(group="schematic", summary="Set one parameter of an instance (a number or an expression over design variables).", args=["lib: string", "cell: string", "inst: string", "name: string", "value"], returns="t", example='vvSchSetParam("mylib" "rc" "C0" "c" "c_val")'),
+    "vvSchAddPin": dict(group="schematic", summary="Expose a net as a port of the schematic (needed when it is instantiated in another schematic).", args=["lib: string", "cell: string", "name: string", "?direction: input|output|inout"], returns="the pin name", example='vvSchAddPin("mylib" "rc" "OUT" ?direction "output")'),
+    "vvSchCheck": dict(group="schematic", summary="Problems that would break simulation: unconnected pins, single-connection nets, no ground.", args=["lib: string", "cell: string"], returns="list of strings, nil when none", example='vvSchCheck("mylib" "rc")'),
+    "vvSchList": dict(group="schematic", summary="Schematics that exist, as \"lib/cell\" strings.", args=["?lib: string"], returns="list of strings", example='vvSchList("mylib")'),
+    "vvSchDelete": dict(group="schematic", summary="Delete a schematic.", args=["lib: string", "cell: string"], returns="t, or nil if it did not exist", example='vvSchDelete("mylib" "rc")'),
+    "vvSchMasters": dict(group="schematic", summary="Device masters that can be instantiated: pins, parameters with defaults, SPICE prefix.", args=["?lib: string - analogLib or sky130_fd_pr"], returns="list of records: library cell pins parameters spice doc", example='vvSchMasters("analogLib")'),
+    "vvSchInfo": dict(group="schematic", summary="Instances, nets, ports and check problems of a schematic.", args=["lib: string", "cell: string"], returns="record: library cell kind pins nets instances problems", example='vvSchInfo("mylib" "rc")'),
+    "vvSchNetlist": dict(group="schematic", summary="The SPICE netlist (with an .op card) that the schematic produces.", args=["lib: string", "cell: string", "?variables: list - ((\"c_val\" \"1p\"))"], returns="string", example='vvSchNetlist("mylib" "rc")'),
+    "vvSchFromSpice": dict(group="schematic", summary="Use a SPICE netlist or subcircuit as a design (text or a file under the workspace, /tmp or the PDK).", args=["lib: string", "cell: string", "text: string - SPICE text or a path", "?top: string - subcircuit to use"],
+                           returns="record: library cell subckt pins", example='vvSchFromSpice("mylib" "amp" ".subckt amp in out\\nE1 out 0 in 0 2\\n.ends amp\\n")'),
+    "vvSchFromXschem": dict(group="schematic", summary="Import an xschem schematic: it is netlisted with xschem and used as a SPICE design.", args=["lib: string", "cell: string", "path: string - .sch file", "?top: string"],
+                            returns="record: library cell subckt pins source", example='vvSchFromXschem("mylib" "amp" "/tmp/amp.sch")', notes="Needs xschem; sky130 symbols' .include/.lib lines come from the xschem netlist."),
+    # ---- maestro (ngspice-backed)
+    "vvMaeDoctor": dict(group="maestro", summary="Is the Maestro backend usable: ngspice version, sky130 models, xschem, supported analyses and run modes.", args=[], returns="record: ngspice ngspicePath sky130Models xschem workspace supportedAnalyses supportedRunModes", example='vvMaeDoctor()'),
+    "vvMaeResults": dict(group="maestro", summary="Structured results of a run: overall status and yield, every point with variables, corner, outputs, spec status and errors.", args=["?history: string - default latest", "?session: string"],
+                         returns="record: history status simulator seconds overall points", example='vvMaeResults(?history "Interactive.1")', notes="Waveform outputs are not inlined (kind \"wave\"); read them with vvMaeWaveCsv or vvMaeEval."),
+    "vvMaeHistories": dict(group="maestro", summary="Runs of this maestro view with status, point count, overall result and lock.", args=["?session: string"], returns="list of records: history status points created locked overall", example='vvMaeHistories()'),
+    "vvMaeStatus": dict(group="maestro", summary="Progress of runs started in this server (done/total, failure text).", args=[], returns="list of records: history status done total error", example='vvMaeStatus()'),
+    "vvMaeDeleteHistory": dict(group="maestro", summary="Delete a run and its stored waveforms (refused when locked).", args=["history: string", "?session: string"], returns="t", example='vvMaeDeleteHistory("Interactive.1")'),
+    "vvMaeEval": dict(group="maestro", summary="Evaluate any calculator expression on the saved waveforms of one point, without re-simulating.", args=["expr: string", "?history: string", "?test: string", "?cornerName: string", "?pointIndex: integer", "?analysis: string"],
+                      returns="record: kind value (scalar) or kind points xname xmin xmax (wave)", example='vvMaeEval("dcGain(VF(\\"/OUT\\"))" ?pointIndex 1)',
+                      notes="Functions: v/VT/VF/VDC/i, mag phase db20 real imag, value cross delay riseTime fallTime overshoot settlingTime slewRate, ymax ymin average rms integ deriv clip, bandwidth unityGainFreq gainBwProd phaseMargin gainMargin, dft thd, onoise inoise. See SKILL.md."),
+    "vvMaeWaveCsv": dict(group="maestro", summary="Write a waveform (an output name or an expression) of one point as CSV (x,y or x,re,im).", args=["expr: string - output name or expression", "?path: string", "?history: string", "?test: string", "?pointIndex: integer"],
+                         returns="the path, or the CSV text when no path is given", example='vvMaeWaveCsv("Vout" "/tmp/vout.csv" ?pointIndex 1)'),
+    "vvMaeStats": dict(group="maestro", summary="Mean, standard deviation, min, max, median of a numeric output over all points of a test (use after Monte Carlo or a sweep).", args=["output: string", "test: string", "?history: string"],
+                       returns="record: n mean std min max median", example='vvMaeStats("BW" "AC")'),
+    "vvMaeDeck": dict(group="maestro", summary="The ngspice deck for one point of a test, before running it.", args=["test: string", "?corner: string", "?point: integer - 1 based within the test/corner"], returns="string", example='vvMaeDeck("AC")'),
+    "vvMaeReevaluate": dict(group="maestro", summary="Re-evaluate the current outputs and specs on a finished run's saved waveforms (new outputs, changed specs) without simulating.", args=["?history: string", "?session: string"],
+                            returns="record: history overall yield", example='vvMaeReevaluate(?history "Interactive.1")'),
+    "vvMaeSetModel": dict(group="maestro", summary="Give a corner a model file and section (.lib file section) for all tests or one test.", args=["corner: string", "path: string - under the workspace, /tmp or the PDK", "?section: string", "?test: string"], returns="t", example='vvMaeSetModel("ss" "/tmp/m.lib" "ss")'),
+    "vvMaeSky130Corner": dict(group="maestro", summary="Create or update a corner that uses the PDK's sky130 ngspice models at a process section and temperature.", args=["name: string", "?section: tt|ss|ff|sf|fs", "?temperature: number"], returns="the corner name", example='vvMaeSky130Corner("ss_125" "ss" 125)'),
+    "vvMaeMonteCarlo": dict(group="maestro", summary="Configure Monte Carlo sampling: number of points, seed, and per-variable distributions (set the run mode with maeSetCurrentRunMode).", args=["?points: integer", "?seed: integer", "?dists: list - ((\"r_val\" ((\"dist\" \"gaussian\") (\"sigma\" \"5%\"))))", "?clear: t"],
+                           returns="record: points seed variables", example='vvMaeMonteCarlo(?points 50 ?seed 3)', notes="Distributions: gaussian (sigma absolute or %, optional mean) and uniform (tol, or lo/hi). Variables are sampled; device mismatch models are not."),
+    "vvMaeReport": dict(group="maestro", summary="Self-contained HTML report of a run: setup, results table with spec colours, waveform plots, Monte Carlo histograms.", args=["?path: string - under the workspace or /tmp", "?history: string"], returns="the path, or the HTML text", example='vvMaeReport("/tmp/report.html")'),
 }
 
 
@@ -93,7 +134,7 @@ def names() -> list[str]:
 
 
 def summary_rows() -> list[list[str]]:
-    order = ["discover", "libraries", "technology", "placement", "routing", "rules", "check", "export"]
+    order = ["discover", "libraries", "technology", "placement", "routing", "rules", "check", "export", "schematic", "maestro"]
     return [[v["group"], k, v["summary"]] for g in order for k, v in sorted(API.items()) if v["group"] == g]
 
 

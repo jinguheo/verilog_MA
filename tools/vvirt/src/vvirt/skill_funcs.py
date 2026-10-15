@@ -496,3 +496,8 @@ def install(interp: Interp, db: Database, out_dir: str) -> None:
     from . import rule_funcs
 
     rule_funcs.install(interp, db)
+
+    # Maestro emulation (ngspice backend): mae* / asi* / axl* subset, vvSch* designs, vvMae* results
+    from .maestro import funcs as maestro_funcs
+
+    maestro_funcs.install(interp, db, out_dir)
