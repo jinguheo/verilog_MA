@@ -42,6 +42,9 @@ From Windows PowerShell call `wsl.exe -d Ubuntu -e bash /mnt/d/MyWork/Veriolg_MA
   Designer habits: `profiles/*.json` + `vvLoadProfile("habit_analog")`; habit-aware `vvPlaceRow`, `vvViaStack`, `vvRoute`, `vvPinXY`.
   Check: `vvCheckReport(cv)` / `vvOfficialDrcReport(cv)` state their scope (`clean_in_scope`, never plain clean; what was and was not checked). The older
   `vvCheckRules(cv)` / `vvOfficialDrc(cv)` return only the violations: **nil means none found in the rules that ran, not DRC-clean**.
+* GDS size and edit check: `vvGdsSummary(path ?top)` (structures, tops, per-layer shapes/area/bbox) and `vvGdsCompare(pathA pathB ?top ?limit)`
+  (added/removed shapes, moved references, changed text, structures only in one file). Per structure, not flattened; read `scope` in the result.
+  `identical` means the same shapes, not electrical equivalence.
 * Agent instructions: `skills/vvirt/SKILL.md` (+ references). Not installed anywhere automatically; copy it to your agent's skills folder if wanted.
   `examples/check_skill_doc.py` verifies its links and that every recipe block runs.
 * Scenario traces for the dashboard: `bash scripts/pyrun.sh examples/make_scenarios.py` (31 checks).

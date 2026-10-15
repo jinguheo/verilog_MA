@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from . import api_registry, gdsimport, records
+from . import api_registry, gds_report, gdsimport, records
 from .odb import CellView, Database, DdObj, TechFile
 from .skill_lang import Interp, SkillError
 
@@ -109,6 +109,24 @@ def install(interp: Interp, db: Database, out_dir: str) -> None:
                            ("skippedRefs", st.skipped_refs),
                            ("skippedLayers", [records.rec(("layer", a), ("datatype", b), ("count", n)) for (a, b), n in sorted(st.skipped_layers.items())] or None))
 
+    def _gds_path(fn, p):
+        p = str(p)
+        if not allowed(p) or not os.path.isfile(p):
+            raise SkillError(f"*Error* {fn}: cannot read {p} (allowed: workspace, /tmp, the PDK)")
+        return p
+
+    def v_gds_summary(path, top=None, **kw):
+        try:
+            return gds_report.summary(_gds_path("vvGdsSummary", path), str(top) if top else None)
+        except KeyError as e:
+            raise SkillError(f"*Error* vvGdsSummary: {e.args[0]}")
+
+    def v_gds_compare(path_a, path_b, top=None, limit=20, **kw):
+        try:
+            return gds_report.compare(_gds_path("vvGdsCompare", path_a), _gds_path("vvGdsCompare", path_b), str(top) if top else None, int(limit))
+        except KeyError as e:
+            raise SkillError(f"*Error* vvGdsCompare: {e.args[0]}")
+
     def v_copy(src_lib, src_cell, dst_lib, dst_cell=None):
         cv = gdsimport.copy_cell(db, libname(src_lib), str(src_cell), str(dst_lib), str(dst_cell or src_cell))
         return cv
@@ -120,6 +138,8 @@ def install(interp: Interp, db: Database, out_dir: str) -> None:
 
     F["vvAttachPdkLib"] = attach
     F["vvImportGds"] = v_import
+    F["vvGdsSummary"] = v_gds_summary
+    F["vvGdsCompare"] = v_gds_compare
     F["vvCopyCell"] = v_copy
     F["dbCopyCellView"] = cp_view
     F["vvPdkLibs"] = lambda: sorted(os.listdir(os.path.join(db.stdlib.root, "libs.ref"))) if db.stdlib.root else None

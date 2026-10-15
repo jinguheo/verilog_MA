@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-14 22:37",
+ "generated": "2026-10-15 21:21",
  "scenarios": [
   {
    "id": "place",
@@ -16,7 +16,7 @@
      "ok": true,
      "output": "(\"sky130_fd_sc_hd__dfxtp_1\" \"sky130_fd_sc_hd__edfxtp_1\" \"sky130_fd_sc_hd__sdfxtp_1\" \"sky130_fd_sc_hd__sedfxtp_1\")",
      "error": "",
-     "ms": 2,
+     "ms": 4,
      "svg": null,
      "expectError": false
     },
@@ -27,7 +27,7 @@
      "ok": true,
      "output": "(1.38 2.72 7.36)",
      "error": "",
-     "ms": 3,
+     "ms": 5,
      "svg": null,
      "expectError": false
     },
@@ -36,9 +36,9 @@
      "note": "새 레이아웃 셀뷰 열기(w)",
      "skill": "cv = dbOpenCellViewByType(\"testlib\" \"scen_place\" \"layout\" \"maskLayout\" \"w\")",
      "ok": true,
-     "output": "db:0xbf6dd0",
+     "output": "db:0x290670",
      "error": "",
-     "ms": 2,
+     "ms": 4,
      "svg": "/vb/scen/place_03.svg",
      "expectError": false
     },
@@ -47,9 +47,9 @@
      "note": "nand2_1은 (0,0), dfxtp_1은 x=1.38에 붙여 놓고 2번째 행은 MX로 뒤집어 y=5.44에",
      "skill": "dbCreateParamInstByMasterName(cv \"sky130_fd_sc_hd\" \"sky130_fd_sc_hd__nand2_1\" \"layout\" \"U_nand\" list(0 0) \"R0\")\ndbCreateParamInstByMasterName(cv \"sky130_fd_sc_hd\" \"sky130_fd_sc_hd__dfxtp_1\" \"layout\" \"U_dff\" list(1.38 0) \"R0\")\ndbCreateParamInstByMasterName(cv \"sky130_fd_sc_hd\" \"sky130_fd_sc_hd__nand2_1\" \"layout\" \"U_nand_flip\" list(0 5.44) \"MX\")",
      "ok": true,
-     "output": "db:0x48fe30",
+     "output": "db:0xd777f0",
      "error": "",
-     "ms": 9,
+     "ms": 12,
      "svg": "/vb/scen/place_04.svg",
      "expectError": false
     },
@@ -60,7 +60,7 @@
      "ok": true,
      "output": "t",
      "error": "",
-     "ms": 15,
+     "ms": 26,
      "svg": "/vb/scen/place_04.svg",
      "expectError": false
     },
@@ -110,7 +110,7 @@
      "ok": true,
      "output": "(1.38 2.72 (0.485 1.195) (0.885 1.975))",
      "error": "",
-     "ms": 4,
+     "ms": 6,
      "svg": null,
      "expectError": false
     },
@@ -119,7 +119,7 @@
      "note": "새 셀뷰 열기(w)",
      "skill": "cv = dbOpenCellViewByType(\"testlib\" \"scen_chain\" \"layout\" \"maskLayout\" \"w\")",
      "ok": true,
-     "output": "db:0xbf6f70",
+     "output": "db:0x53fad0",
      "error": "",
      "ms": 4,
      "svg": "/vb/scen/chain_02.svg",
@@ -132,7 +132,7 @@
      "ok": true,
      "output": "nil",
      "error": "",
-     "ms": 11,
+     "ms": 9,
      "svg": "/vb/scen/chain_03.svg",
      "expectError": false
     },
@@ -143,7 +143,7 @@
      "ok": true,
      "output": "nil",
      "error": "",
-     "ms": 9,
+     "ms": 11,
      "svg": "/vb/scen/chain_04.svg",
      "expectError": false
     },
@@ -152,9 +152,9 @@
      "note": "IN / OUT 핀 라벨",
      "skill": "dbCreateLabel(cv list(\"li1\" \"pin\") list(0.485 1.195) \"IN\" \"centerCenter\" \"R0\" \"roman\" 0.1)\ndbCreateLabel(cv list(\"li1\" \"pin\") list(5.025 1.975) \"OUT\" \"centerCenter\" \"R0\" \"roman\" 0.1)",
      "ok": true,
-     "output": "db:0x728310",
+     "output": "db:0x71910",
      "error": "",
-     "ms": 9,
+     "ms": 12,
      "svg": "/vb/scen/chain_05.svg",
      "expectError": false
     },
@@ -165,7 +165,7 @@
      "ok": true,
      "output": "t",
      "error": "",
-     "ms": 16,
+     "ms": 33,
      "svg": "/vb/scen/chain_05.svg",
      "expectError": false
     },
@@ -176,7 +176,7 @@
      "ok": true,
      "output": "(4 5 ((0.0 0.0) (5.52 2.72)))",
      "error": "",
-     "ms": 4,
+     "ms": 5,
      "svg": "/vb/scen/chain_05.svg",
      "expectError": false
     }
@@ -208,9 +208,9 @@
      "note": "저장돼 있던 셀을 편집용(a)으로 다시 열기",
      "skill": "cv = dbOpenCellViewByType(\"testlib\" \"scen_chain\" \"layout\" \"maskLayout\" \"a\")",
      "ok": true,
-     "output": "db:0xbf76c0",
+     "output": "db:0x53f790",
      "error": "",
-     "ms": 4,
+     "ms": 42,
      "svg": "/vb/scen/modify_01.svg",
      "expectError": false
     },
@@ -221,7 +221,7 @@
      "ok": true,
      "output": "((\"U0\" \"sky130_fd_sc_hd__inv_1\" (0.0 0.0) \"R0\" ((0.0 0.0) (1.38 2.72))) (\"U1\" \"sky130_fd_sc_hd__inv_1\" (1.38 0.0) \"R0\" ((1.38 0.0) (2.76 2.72))) (\"U2\" \"sky130_fd_sc_hd__inv_1\" (2.76 0.0) \"R0\" ((2.76 0.0) (4.14 2.72))) (\"U3\" \"sky130_fd_sc_hd__inv_1\" (4.14 0.0) \"R0\" ((4.14 0.0) (5.52 2.72))))",
      "error": "",
-     "ms": 2,
+     "ms": 14,
      "svg": "/vb/scen/modify_01.svg",
      "expectError": false
     },
@@ -232,7 +232,7 @@
      "ok": true,
      "output": "(2.3 2.72 (0.92 1.2) (0.73 2.065))",
      "error": "",
-     "ms": 4,
+     "ms": 19,
      "svg": "/vb/scen/modify_01.svg",
      "expectError": false
     },
@@ -241,9 +241,9 @@
      "note": "기존 li1 배선 경로 전부와 U2 삭제",
      "skill": "foreach(s cv~>shapes when(s~>objType == \"path\" dbDeleteObject(s)))\nforeach(i cv~>instances when(i~>name == \"U2\" dbDeleteObject(i)))",
      "ok": true,
-     "output": "(db:0x7302d0 db:0x730230 db:0x730370 db:0x730410)",
+     "output": "(db:0xd77ed0 db:0xd77e30 db:0xd77f70 db:0x84050)",
      "error": "",
-     "ms": 7,
+     "ms": 16,
      "svg": "/vb/scen/modify_04.svg",
      "expectError": false
     },
@@ -252,9 +252,9 @@
      "note": "같은 자리에 inv_4 배치, U3 와 OUT 라벨은 +0.92 µm 이동",
      "skill": "dbCreateParamInstByMasterName(cv \"sky130_fd_sc_hd\" \"sky130_fd_sc_hd__inv_4\" \"layout\" \"U2\" list(2.76 0) \"R0\")\ndbMoveFig(car(setof(i cv~>instances i~>name == \"U3\")) cv list(0.92:0 \"R0\"))\nforeach(s cv~>shapes when(s~>objType == \"label\" && s~>theLabel == \"OUT\" dbMoveFig(s cv list(0.92:0 \"R0\"))))",
      "ok": true,
-     "output": "(db:0x728940 db:0x7289f0)",
+     "output": "(db:0x71f40 db:0x71b20)",
      "error": "",
-     "ms": 7,
+     "ms": 19,
      "svg": "/vb/scen/modify_05.svg",
      "expectError": false
     },
@@ -263,9 +263,9 @@
      "note": "바뀐 핀 위치(inv_4)에 맞춰 li1 배선 3개 다시 그리기",
      "skill": "dbCreatePath(cv list(\"li1\" \"drawing\") list(list(0.885 1.975) list(1.815 1.975) list(1.815 1.195) list(1.865 1.195)) 0.17)\ndbCreatePath(cv list(\"li1\" \"drawing\") list(list(2.265 1.975) list(3.63 1.975) list(3.63 1.2) list(3.68 1.2)) 0.17)\ndbCreatePath(cv list(\"li1\" \"drawing\") list(list(3.49 2.065) list(5.495 2.065) list(5.495 1.195) list(5.545 1.195)) 0.17)",
      "ok": true,
-     "output": "db:0x729a70",
+     "output": "db:0x72a40",
      "error": "",
-     "ms": 6,
+     "ms": 14,
      "svg": "/vb/scen/modify_06.svg",
      "expectError": false
     },
@@ -276,7 +276,7 @@
      "ok": true,
      "output": "t",
      "error": "",
-     "ms": 13,
+     "ms": 41,
      "svg": "/vb/scen/modify_06.svg",
      "expectError": false
     },
@@ -287,7 +287,7 @@
      "ok": true,
      "output": "((\"U0\" \"sky130_fd_sc_hd__inv_1\" (0.0 0.0) \"R0\" ((0.0 0.0) (1.38 2.72))) (\"U1\" \"sky130_fd_sc_hd__inv_1\" (1.38 0.0) \"R0\" ((1.38 0.0) (2.76 2.72))) (\"U3\" \"sky130_fd_sc_hd__inv_1\" (5.06 0.0) \"R0\" ((5.06 0.0) (6.44 2.72))) (\"U2\" \"sky130_fd_sc_hd__inv_4\" (2.76 0.0) \"R0\" ((2.76 0.0) (5.06 2.72))))",
      "error": "",
-     "ms": 4,
+     "ms": 5,
      "svg": "/vb/scen/modify_06.svg",
      "expectError": false
     },
@@ -298,7 +298,7 @@
      "ok": true,
      "output": "((0.0 0.0) (6.44 2.72))",
      "error": "",
-     "ms": 4,
+     "ms": 11,
      "svg": "/vb/scen/modify_06.svg",
      "expectError": false
     }
@@ -337,7 +337,7 @@
      "ok": true,
      "output": "(1.38 2.72)",
      "error": "",
-     "ms": 3,
+     "ms": 19,
      "svg": null,
      "expectError": false
     },
@@ -346,9 +346,9 @@
      "note": "새 셀뷰 열기(w)",
      "skill": "cv = dbOpenCellViewByType(\"testlib\" \"scen_array\" \"layout\" \"maskLayout\" \"w\")",
      "ok": true,
-     "output": "db:0xbf72b0",
+     "output": "db:0x53f1e0",
      "error": "",
-     "ms": 4,
+     "ms": 8,
      "svg": "/vb/scen/array_02.svg",
      "expectError": false
     },
@@ -357,9 +357,9 @@
      "note": "마스터 buf_1 을 열고 1행 4열 mosaic 두 줄 (아래 R0 / 위 MX 반전, 피치 1.38×2.72)",
      "skill": "master = dbOpenCellViewByType(\"sky130_fd_sc_hd\" \"sky130_fd_sc_hd__buf_1\" \"layout\" \"maskLayout\" \"r\")\ndbCreateSimpleMosaic(cv master \"ROW0\" 0:0 \"R0\" 1 4 2.72 1.38)\ndbCreateSimpleMosaic(cv master \"ROW1\" 0:5.44 \"MX\" 1 4 2.72 1.38)",
      "ok": true,
-     "output": "db:0x7304b0",
+     "output": "db:0x840f0",
      "error": "",
-     "ms": 7,
+     "ms": 48,
      "svg": "/vb/scen/array_03.svg",
      "expectError": false
     },
@@ -368,9 +368,9 @@
      "note": "현재 bbox 로 prBoundary 사각형, 중앙 위에 라벨",
      "skill": "let((bb)\n  bb = cv~>bBox\n  dbCreateRect(cv list(\"prBoundary\" \"boundary\") bb)\n  dbCreateLabel(cv list(\"met1\" \"label\") list(xCoord(car(bb)) + 0.2 yCoord(cadr(bb)) + 0.3) \"ARRAY\" \"lowerLeft\" \"R0\" \"roman\" 0.3))",
      "ok": true,
-     "output": "db:0x7297b0",
+     "output": "db:0x72780",
      "error": "",
-     "ms": 9,
+     "ms": 17,
      "svg": "/vb/scen/array_04.svg",
      "expectError": false
     },
@@ -381,7 +381,7 @@
      "ok": true,
      "output": "t",
      "error": "",
-     "ms": 14,
+     "ms": 33,
      "svg": "/vb/scen/array_04.svg",
      "expectError": false
     },
@@ -392,7 +392,7 @@
      "ok": true,
      "output": "(((\"ROW0\" \"mosaic\" 1 4 \"R0\") (\"ROW1\" \"mosaic\" 1 4 \"MX\")) ((0.0 0.0) (5.52 5.44)))",
      "error": "",
-     "ms": 4,
+     "ms": 6,
      "svg": "/vb/scen/array_04.svg",
      "expectError": false
     }
@@ -426,7 +426,7 @@
      "ok": true,
      "output": "(((\"name\" \"L1M1_PR\") (\"bottom\" \"li1\") (\"cut\" \"mcon\") (\"top\" \"met1\") (\"cutSize\" 0.17)) ((\"name\" \"M1M2_PR\") (\"bottom\" \"met1\") (\"cut\" \"via\") (\"top\" \"met2\") (\"cutSize\" 0.15)) ((\"name\" \"M1_M2\") (\"bottom\" \"met1\") (\"cut\" \"via\") (\"top\" \"met2\") (\"cutSize\" 0.15)) ((\"name\" \"M2M3_PR\") (\"bottom\" \"met2\") (\"cut\" \"via2\") (\"top\" \"met3\") (\"cutSize\" 0.2)) ((\"name\" \"M2_M3\") (\"bottom\" \"met2\") (\"cut\" \"via2\") (\"top\" \"met3\") (\"cutSize\" 0.2)) ((\"name\" \"M3M4_PR\") (\"bottom\" \"met3\") (\"cut\" \"via3\") (\"top\" \"met4\") (\"cutSize\" 0.2)) ((\"name\" \"M3_M4\") (\"bottom\" \"met3\") (\"cut\" \"via3\") (\"top\" \"met4\") (\"cutSize\" 0.2)) ((\"name\" \"M4M5_PR\") (\"bottom\" \"met4\") (\"cut\" \"via4\") (\"top\" \"met5\") (\"cutSize\" 0.8)) ((\"name\" \"M4_M5\") (\"botto",
      "error": "",
-     "ms": 4,
+     "ms": 8,
      "svg": null,
      "expectError": false
     },
@@ -435,9 +435,9 @@
      "note": "새 셀뷰 열기(w)",
      "skill": "cv = dbOpenCellViewByType(\"testlib\" \"scen_via\" \"layout\" \"maskLayout\" \"w\")",
      "ok": true,
-     "output": "db:0xbf75f0",
+     "output": "db:0x53f6c0",
      "error": "",
-     "ms": 2,
+     "ms": 6,
      "svg": "/vb/scen/via_02.svg",
      "expectError": false
     },
@@ -446,9 +446,9 @@
      "note": "양쪽 끝 met1 패드와 met2 패드",
      "skill": "dbCreateRect(cv list(\"met1\" \"drawing\") list(list(0.0 0.0) list(0.5 0.5)))\ndbCreateRect(cv list(\"met1\" \"drawing\") list(list(4.0 0.0) list(4.5 0.5)))\ndbCreateRect(cv list(\"met2\" \"drawing\") list(list(0.0 0.0) list(0.5 0.5)))\ndbCreateRect(cv list(\"met2\" \"drawing\") list(list(4.0 0.0) list(4.5 0.5)))",
      "ok": true,
-     "output": "db:0x728d60",
+     "output": "db:0x71c80",
      "error": "",
-     "ms": 8,
+     "ms": 13,
      "svg": "/vb/scen/via_03.svg",
      "expectError": false
     },
@@ -459,7 +459,7 @@
      "ok": true,
      "output": "(0.25 4.25)",
      "error": "",
-     "ms": 6,
+     "ms": 14,
      "svg": "/vb/scen/via_04.svg",
      "expectError": false
     },
@@ -468,9 +468,9 @@
      "note": "met3 으로 두 비아 사이를 폭 0.3 선으로 연결",
      "skill": "dbCreatePath(cv list(\"met3\" \"drawing\") list(list(0.25 0.25) list(4.25 0.25)) 0.3)",
      "ok": true,
-     "output": "db:0x8e3d80",
+     "output": "db:0x6c050",
      "error": "",
-     "ms": 2,
+     "ms": 4,
      "svg": "/vb/scen/via_05.svg",
      "expectError": false
     },
@@ -481,7 +481,7 @@
      "ok": true,
      "output": "t",
      "error": "",
-     "ms": 12,
+     "ms": 26,
      "svg": "/vb/scen/via_05.svg",
      "expectError": false
     },
@@ -492,7 +492,7 @@
      "ok": true,
      "output": "(4 5 (\"M1M2_PR\" \"M2M3_PR\" \"M1M2_PR\" \"M2M3_PR\"))",
      "error": "",
-     "ms": 4,
+     "ms": 5,
      "svg": "/vb/scen/via_05.svg",
      "expectError": false
     }
@@ -519,9 +519,9 @@
      "note": "새 셀뷰 열기(w)",
      "skill": "cv = dbOpenCellViewByType(\"testlib\" \"scen_recover\" \"layout\" \"maskLayout\" \"w\")",
      "ok": true,
-     "output": "db:0xbf7860",
+     "output": "db:0x53f930",
      "error": "",
-     "ms": 2,
+     "ms": 4,
      "svg": "/vb/scen/recover_01.svg",
      "expectError": false
     },
@@ -532,7 +532,7 @@
      "ok": false,
      "output": "",
      "error": "dbCreateRect: layer Metal6 is not defined in the technology (sky130A). Valid layers: areaid diff dnwell hvi hvtp li1 licon1 lvtn mcon met1 met2 met3 met4 met5 npc nsdm nwell pad poly prBoundary psdm pwell tap text via via2 via3 via4",
-     "ms": 4,
+     "ms": 5,
      "svg": "/vb/scen/recover_01.svg",
      "expectError": true
     },
@@ -543,7 +543,7 @@
      "ok": true,
      "output": "(((\"layer\" \"nwell\") (\"purposes\" (\"drawing\" \"label\" \"net\" \"pin\"))) ((\"layer\" \"pwell\") (\"purposes\" (\"drawing\" \"label\" \"pin\"))) ((\"layer\" \"dnwell\") (\"purposes\" (\"drawing\"))) ((\"layer\" \"diff\") (\"purposes\" (\"boundary\" \"drawing\" \"label\" \"pin\"))) ((\"layer\" \"tap\") (\"purposes\" (\"drawing\" \"label\" \"pin\"))) ((\"layer\" \"psdm\") (\"purposes\" (\"drawing\"))) ((\"layer\" \"nsdm\") (\"purposes\" (\"drawing\"))) ((\"layer\" \"poly\") (\"purposes\" (\"drawing\" \"gate\" \"label\" \"pin\"))) ((\"layer\" \"lvtn\") (\"purposes\" (\"drawing\"))) ((\"layer\" \"hvtp\") (\"purposes\" (\"drawing\"))) ((\"layer\" \"hvi\") (\"purposes\" (\"drawing\"))) ((\"layer\" \"licon1\") (\"purposes\" (\"drawing\" \"pin\"))) ((\"layer\" \"npc\") (\"purposes\" (\"drawing\"))) ((\"layer\" \"li1\") (\"purpo",
      "error": "",
-     "ms": 6,
+     "ms": 5,
      "svg": "/vb/scen/recover_01.svg",
      "expectError": false
     },
@@ -552,9 +552,9 @@
      "note": "met5 로 재시도",
      "skill": "dbCreateRect(cv list(\"met5\" \"drawing\") list(list(0 0) list(1 1)))",
      "ok": true,
-     "output": "db:0x72a410",
+     "output": "db:0x733e0",
      "error": "",
-     "ms": 4,
+     "ms": 5,
      "svg": "/vb/scen/recover_04.svg",
      "expectError": false
     },
@@ -565,7 +565,7 @@
      "ok": false,
      "output": "",
      "error": "dbCreateParamInstByMasterName: cannot find master sky130_fd_sc_hd/sky130_fd_sc_hd__nand2/layout",
-     "ms": 3,
+     "ms": 6,
      "svg": "/vb/scen/recover_04.svg",
      "expectError": true
     },
@@ -576,7 +576,7 @@
      "ok": true,
      "output": "(\"sky130_fd_sc_hd__nand2_1\" \"sky130_fd_sc_hd__nand2_2\" \"sky130_fd_sc_hd__nand2_4\" \"sky130_fd_sc_hd__nand2_8\")",
      "error": "",
-     "ms": 5,
+     "ms": 4,
      "svg": "/vb/scen/recover_04.svg",
      "expectError": false
     },
@@ -585,7 +585,7 @@
      "note": "nand2_1 로 재시도",
      "skill": "dbCreateParamInstByMasterName(cv \"sky130_fd_sc_hd\" \"sky130_fd_sc_hd__nand2_1\" \"layout\" \"U0\" list(3 0) \"R0\")",
      "ok": true,
-     "output": "db:0x730730",
+     "output": "db:0x84370",
      "error": "",
      "ms": 4,
      "svg": "/vb/scen/recover_07.svg",
@@ -598,7 +598,7 @@
      "ok": false,
      "output": "",
      "error": "eval: undefined function - dbCreateEllipse",
-     "ms": 4,
+     "ms": 6,
      "svg": "/vb/scen/recover_07.svg",
      "expectError": true
     },
@@ -607,9 +607,9 @@
      "note": "다각형 16각형으로 원 근사: SKILL 루프로 점 계산 후 dbCreatePolygon",
      "skill": "pts = nil\nfor(k 0 15\n  pts = cons(list(5.5 + 0.5*cos(k*3.14159265/8) 1.5 + 0.5*sin(k*3.14159265/8)) pts))\ndbCreatePolygon(cv list(\"met4\" \"drawing\") reverse(pts))",
      "ok": true,
-     "output": "db:0x729440",
+     "output": "db:0x72410",
      "error": "",
-     "ms": 12,
+     "ms": 13,
      "svg": "/vb/scen/recover_09.svg",
      "expectError": false
     },
@@ -620,7 +620,7 @@
      "ok": true,
      "output": "t",
      "error": "",
-     "ms": 14,
+     "ms": 31,
      "svg": "/vb/scen/recover_09.svg",
      "expectError": false
     },
@@ -631,7 +631,7 @@
      "ok": true,
      "output": "(2 1 ((\"rect\" \"met5\") (\"polygon\" \"met4\")))",
      "error": "",
-     "ms": 4,
+     "ms": 6,
      "svg": "/vb/scen/recover_09.svg",
      "expectError": false
     }
@@ -665,7 +665,7 @@
      "ok": true,
      "output": "((\"sky130_fd_sc_hd\" nil) (\"sky130_fd_sc_hvl\" nil) (\"sky130_tech\" nil) (\"mylib\" t) (\"testlib\" t))",
      "error": "",
-     "ms": 4,
+     "ms": 11,
      "svg": null,
      "expectError": false
     },
@@ -676,7 +676,7 @@
      "ok": true,
      "output": "(\"designlib\" \"sky130_tech\" t)",
      "error": "",
-     "ms": 17,
+     "ms": 36,
      "svg": null,
      "expectError": false
     },
@@ -685,9 +685,9 @@
      "note": "PDK 읽기 전용 셀을 내 라이브러리로 복사 (실제 PDK GDS 도형이 편집 가능한 도형으로 변환됨)",
      "skill": "invEdit = vvCopyCell(\"sky130_fd_sc_hd\" \"sky130_fd_sc_hd__inv_1\" \"designlib\" \"inv_edit\")",
      "ok": true,
-     "output": "db:0xbf7ee0",
+     "output": "db:0x941f0",
      "error": "",
-     "ms": 57,
+     "ms": 47,
      "svg": null,
      "expectError": false
     },
@@ -698,7 +698,7 @@
      "ok": true,
      "output": "(53 ((-0.19 -0.24) (1.57 2.96)) (\"Y\" \"Y\" \"A\" \"VPB\" \"VNB\" \"VGND\" \"VPWR\" \"inv_1\"))",
      "error": "",
-     "ms": 7,
+     "ms": 5,
      "svg": null,
      "expectError": false
     },
@@ -709,7 +709,7 @@
      "ok": true,
      "output": "t",
      "error": "",
-     "ms": 17,
+     "ms": 33,
      "svg": null,
      "expectError": false
     },
@@ -720,7 +720,7 @@
      "ok": true,
      "output": "t",
      "error": "",
-     "ms": 15,
+     "ms": 26,
      "svg": "/vb/scen/pdklib_06.svg",
      "expectError": false
     },
@@ -731,7 +731,7 @@
      "ok": true,
      "output": "((\"I0\" \"designlib\" \"inv_edit\" (0.0 0.0)) (\"I1\" \"designlib\" \"inv_edit\" (1.38 0.0)))",
      "error": "",
-     "ms": 2,
+     "ms": 5,
      "svg": "/vb/scen/pdklib_06.svg",
      "expectError": false
     },
@@ -742,7 +742,7 @@
      "ok": true,
      "output": "((\"cells\" 1) (\"shapes\" 53) (\"instances\" 0) (\"skippedShapes\" 0) (\"skippedRefs\" 0) (\"skippedLayers\" nil))",
      "error": "",
-     "ms": 48,
+     "ms": 187,
      "svg": "/vb/scen/pdklib_06.svg",
      "expectError": false
     },
@@ -753,7 +753,7 @@
      "ok": true,
      "output": "53",
      "error": "",
-     "ms": 9,
+     "ms": 37,
      "svg": "/vb/scen/pdklib_06.svg",
      "expectError": false
     }
@@ -803,7 +803,7 @@
      "ok": true,
      "output": "(((\"met2\" \"minArea\" 0.0676) (\"met2\" \"minSpace\" 0.14) (\"met2\" \"minWidth\" 0.14)) ((\"li1\" \"V\") (\"met1\" \"H\") (\"met2\" \"V\") (\"met3\" \"H\") (\"met4\" \"V\") (\"met5\" \"H\")))",
      "error": "",
-     "ms": 2,
+     "ms": 7,
      "svg": null,
      "expectError": false
     },
@@ -812,9 +812,9 @@
      "note": "새 셀뷰 열기(w)",
      "skill": "cv = dbOpenCellViewByType(\"testlib\" \"scen_rules\" \"layout\" \"maskLayout\" \"w\")",
      "ok": true,
-     "output": "db:0xbf7c70",
+     "output": "db:0x53f450",
      "error": "",
-     "ms": 4,
+     "ms": 5,
      "svg": "/vb/scen/rules_03.svg",
      "expectError": false
     },
@@ -823,9 +823,9 @@
      "note": "양쪽 met2 패드(0.3×0.3)와 가운데 장애물(세로 벽)",
      "skill": "dbCreateRect(cv list(\"met2\" \"drawing\") list(list(-0.15 -0.15) list(0.15 0.15)))\ndbCreateRect(cv list(\"met2\" \"drawing\") list(list(2.85 -0.15) list(3.15 0.15)))\ndbCreateRect(cv list(\"met2\" \"drawing\") list(list(1.4 -1.0) list(1.6 1.0)))",
      "ok": true,
-     "output": "db:0x738d60",
+     "output": "db:0x9dd30",
      "error": "",
-     "ms": 7,
+     "ms": 16,
      "svg": "/vb/scen/rules_04.svg",
      "expectError": false
     },
@@ -836,7 +836,7 @@
      "ok": true,
      "output": "((\"how\" \"Z via y=-1.4\") (\"width\" 0.14) (\"space\" 0.14) (\"points\" ((0.0 0.0) (0.0 -1.4) (3.0 -1.4) (3.0 0.0))) (\"limitations\" (\"checked only against shapes already in this cellview, as bounding boxes (conservative)\" \"single layer, no via insertion; no net/connectivity awareness\" \"result is legal for the width/space rules in force, not a DRC-clean guarantee: run vvCheckReport\")))",
      "error": "",
-     "ms": 7,
+     "ms": 16,
      "svg": "/vb/scen/rules_05.svg",
      "expectError": false
     },
@@ -847,7 +847,7 @@
      "ok": true,
      "output": "nil",
      "error": "",
-     "ms": 4429,
+     "ms": 14940,
      "svg": "/vb/scen/rules_05.svg",
      "expectError": false
     },
@@ -856,9 +856,9 @@
      "note": "일부러 룰을 어긴 손배선: 패드 위 0.02 µm 간격",
      "skill": "dbCreatePath(cv list(\"met2\" \"drawing\") list(list(0.0 0.24) list(1.2 0.24)) 0.14)",
      "ok": true,
-     "output": "db:0x739440",
+     "output": "db:0x9e410",
      "error": "",
-     "ms": 4,
+     "ms": 9,
      "svg": "/vb/scen/rules_07.svg",
      "expectError": false
     },
@@ -869,7 +869,7 @@
      "ok": true,
      "output": "((\"met2\" \"minSpace\" 0.14 ((-0.15 0.15) (0.289 0.17))) (\"met2\" \"minSpace\" 0.14 ((1.27 0.118) (1.4 0.362))))",
      "error": "",
-     "ms": 4300,
+     "ms": 15213,
      "svg": "/vb/scen/rules_07.svg",
      "expectError": false
     },
@@ -880,7 +880,7 @@
      "ok": true,
      "output": "((\"m2.2\" 2))",
      "error": "",
-     "ms": 5466,
+     "ms": 20442,
      "svg": "/vb/scen/rules_07.svg",
      "expectError": false
     },
@@ -891,7 +891,7 @@
      "ok": true,
      "output": "((\"how\" \"straight\") (\"width\" 0.14) (\"space\" 0.14) (\"points\" ((0.0 1.6) (3.0 1.6))) (\"limitations\" (\"checked only against shapes already in this cellview, as bounding boxes (conservative)\" \"single layer, no via insertion; no net/connectivity awareness\" \"result is legal for the width/space rules in force, not a DRC-clean guarantee: run vvCheckReport\")))",
      "error": "",
-     "ms": 17,
+     "ms": 37,
      "svg": "/vb/scen/rules_10.svg",
      "expectError": false
     },
@@ -902,7 +902,7 @@
      "ok": true,
      "output": "nil",
      "error": "",
-     "ms": 4222,
+     "ms": 14584,
      "svg": "/vb/scen/rules_10.svg",
      "expectError": false
     },
@@ -913,7 +913,7 @@
      "ok": true,
      "output": "nil",
      "error": "",
-     "ms": 5627,
+     "ms": 22207,
      "svg": "/vb/scen/rules_10.svg",
      "expectError": false
     },
@@ -924,7 +924,7 @@
      "ok": true,
      "output": "((\"status\" \"clean_in_scope\") (\"checkedLayers\" (((\"layer\" \"met2\") (\"rules\" (\"minWidth\" \"minSpace\" \"minArea\"))))) (\"enclosureChecks\" nil) (\"presentWithoutRule\" nil) (\"notChecked\" (\"wide-wire spacing (SPACINGTABLE width>3um) and parallel-run-length / end-of-line spacing\" \"layers without a rule in the tech LEF (nwell, pwell, diff, tap, implants, poly, licon): present but not checked\" \"connectivity: shorts/opens between nets, same-net spacing exceptions (touching shapes are merged)\" \"density, antenna, off-grid, seal ring, LVS, parasitic extraction\")) (\"excludedBecauseInPlacedCells\" 0) (\"ruleSource\" \"PDK tech LEF: /home/oem/.volare/volare/sky130/versions/0fe599b2afb6708d281543108caf8310912f54af/sk",
      "error": "",
-     "ms": 4232,
+     "ms": 14652,
      "svg": "/vb/scen/rules_10.svg",
      "expectError": false
     },
@@ -935,7 +935,7 @@
      "ok": true,
      "output": "((\"status\" \"clean_in_scope\") (\"deck\" \"sky130A_mr.drc\") (\"deckRelease\" \"2024.2.11_01.09\") (\"groupsRun\" (\"beol (met1-met5, li1, vias, mcon)\")) (\"notRun\" (\"feol (poly, diff, wells, implants, licon): pass 'feol' to run\" \"offgrid, seal ring, floating-metal checks (deck groups left off)\" \"density rules\" \"LVS and extraction\")) (\"excludedBecauseInPlacedCells\" 0) (\"violations\" nil))",
      "error": "",
-     "ms": 5712,
+     "ms": 23180,
      "svg": "/vb/scen/rules_10.svg",
      "expectError": false
     },
@@ -946,7 +946,7 @@
      "ok": true,
      "output": "t",
      "error": "",
-     "ms": 14,
+     "ms": 212,
      "svg": "/vb/scen/rules_10.svg",
      "expectError": false
     }
@@ -1005,7 +1005,7 @@
      "ok": true,
      "output": "((\"met3\" \"minArea\" 0.24) (\"met3\" \"minSpace\" 0.3) (\"met3\" \"minWidth\" 0.3))",
      "error": "",
-     "ms": 4,
+     "ms": 117,
      "svg": null,
      "expectError": false
     },
@@ -1016,7 +1016,7 @@
      "ok": true,
      "output": "0.6",
      "error": "",
-     "ms": 2,
+     "ms": 91,
      "svg": null,
      "expectError": false
     },
@@ -1025,9 +1025,9 @@
      "note": "새 셀뷰 열기(w) 후 선 A (y=0, 폭 0.3)",
      "skill": "cv = dbOpenCellViewByType(\"testlib\" \"scen_userrule\" \"layout\" \"maskLayout\" \"w\")\ndbCreatePath(cv list(\"met3\" \"drawing\") list(list(0.0 0.0) list(4.0 0.0)) 0.3)",
      "ok": true,
-     "output": "db:0x70ce10",
+     "output": "db:0x931d0",
      "error": "",
-     "ms": 7,
+     "ms": 314,
      "svg": "/vb/scen/userrule_03.svg",
      "expectError": false
     },
@@ -1038,7 +1038,7 @@
      "ok": false,
      "output": "",
      "error": "vvRoute: no legal met3 route found from [0.0, 0.5] to [4.0, 0.5] with width 0.3 and space 0.6 among straight/L/Z/S candidates. This is not proof that none exists (obstacles are judged by their bounding boxes, which is conservative for non-rectangular shapes); try another layer, move an endpoint, or move the blocking shapes",
-     "ms": 13,
+     "ms": 113,
      "svg": "/vb/scen/userrule_03.svg",
      "expectError": true
     },
@@ -1049,7 +1049,7 @@
      "ok": true,
      "output": "((\"how\" \"straight\") (\"width\" 0.3) (\"space\" 0.6) (\"points\" ((0.0 1.5) (4.0 1.5))) (\"limitations\" (\"checked only against shapes already in this cellview, as bounding boxes (conservative)\" \"single layer, no via insertion; no net/connectivity awareness\" \"result is legal for the width/space rules in force, not a DRC-clean guarantee: run vvCheckReport\")))",
      "error": "",
-     "ms": 9,
+     "ms": 33,
      "svg": "/vb/scen/userrule_05.svg",
      "expectError": false
     },
@@ -1060,7 +1060,7 @@
      "ok": true,
      "output": "nil",
      "error": "",
-     "ms": 4269,
+     "ms": 18610,
      "svg": "/vb/scen/userrule_05.svg",
      "expectError": false
     },
@@ -1069,9 +1069,9 @@
      "note": "손으로 y=0.7 에 선 C 추가 (A 와 간격 0.4, B 와 간격 0.5: PDK 0.3 은 만족, 내 룰 0.6 은 위반)",
      "skill": "dbCreatePath(cv list(\"met3\" \"drawing\") list(list(0.0 0.7) list(4.0 0.7)) 0.3)",
      "ok": true,
-     "output": "db:0x70c890",
+     "output": "db:0x91390",
      "error": "",
-     "ms": 4,
+     "ms": 28,
      "svg": "/vb/scen/userrule_07.svg",
      "expectError": false
     },
@@ -1082,7 +1082,7 @@
      "ok": true,
      "output": "((\"met3\" \"minSpace\" 0.6 ((-0.15 0.15) (4.15 0.55))) (\"met3\" \"minSpace\" 0.6 ((-0.15 0.85) (4.15 1.35))))",
      "error": "",
-     "ms": 4341,
+     "ms": 14994,
      "svg": "/vb/scen/userrule_07.svg",
      "expectError": false
     },
@@ -1093,7 +1093,7 @@
      "ok": true,
      "output": "0.3",
      "error": "",
-     "ms": 4,
+     "ms": 5,
      "svg": "/vb/scen/userrule_07.svg",
      "expectError": false
     },
@@ -1104,7 +1104,7 @@
      "ok": true,
      "output": "nil",
      "error": "",
-     "ms": 4602,
+     "ms": 15011,
      "svg": "/vb/scen/userrule_07.svg",
      "expectError": false
     },
@@ -1115,7 +1115,7 @@
      "ok": true,
      "output": "t",
      "error": "",
-     "ms": 17,
+     "ms": 499,
      "svg": "/vb/scen/userrule_07.svg",
      "expectError": false
     }
@@ -1159,7 +1159,7 @@
      "ok": true,
      "output": "\"default: No habits: minimum rules, cells abutted, single via, no taps.\"",
      "error": "",
-     "ms": 10,
+     "ms": 69,
      "svg": null,
      "expectError": false
     },
@@ -1170,7 +1170,7 @@
      "ok": true,
      "output": "((\"name\" \"default\") (\"directions\" \"li1:V met1:H met2:V met3:H met4:V met5:H\") (\"widthMultiple\" \"all 1\") (\"spaceMultiple\" 1.0) (\"viasPerConnection\" 1) (\"snapGrid\" 0.005) (\"cellGap\" 0.0) (\"alternateRowFlip\" nil) (\"tapCell\" nil) (\"tapEnds\" nil))",
      "error": "",
-     "ms": 3,
+     "ms": 6,
      "svg": null,
      "expectError": false
     },
@@ -1179,9 +1179,9 @@
      "note": "새 셀뷰 열기(w)",
      "skill": "cv = dbOpenCellViewByType(\"testlib\" \"scen_habit_default\" \"layout\" \"maskLayout\" \"w\")",
      "ok": true,
-     "output": "db:0xbf6410",
+     "output": "db:0x53e680",
      "error": "",
-     "ms": 2,
+     "ms": 6,
      "svg": "/vb/scen/habit_default_03.svg",
      "expectError": false
     },
@@ -1192,7 +1192,7 @@
      "ok": true,
      "output": "(((\"name\" \"A0\") (\"cell\" \"inv_1\") (\"x\" 0.0) (\"orient\" \"R0\")) ((\"name\" \"A1\") (\"cell\" \"nand2_1\") (\"x\" 1.38) (\"orient\" \"R0\")))",
      "error": "",
-     "ms": 4,
+     "ms": 14,
      "svg": "/vb/scen/habit_default_04.svg",
      "expectError": false
     },
@@ -1214,7 +1214,7 @@
      "ok": true,
      "output": "((2.08 1.975) (0.275 3.89))",
      "error": "",
-     "ms": 4,
+     "ms": 11,
      "svg": "/vb/scen/habit_default_05.svg",
      "expectError": false
     },
@@ -1225,7 +1225,7 @@
      "ok": true,
      "output": "(\"mcon\" \"via\")",
      "error": "",
-     "ms": 12,
+     "ms": 16,
      "svg": "/vb/scen/habit_default_07.svg",
      "expectError": false
     },
@@ -1236,7 +1236,7 @@
      "ok": true,
      "output": "((\"how\" \"L horizontal-first\") (\"width\" 0.14) (\"space\" 0.14) (\"points\" ((2.08 1.975) (0.275 1.975) (0.275 3.89))) (\"limitations\" (\"checked only against shapes already in this cellview, as bounding boxes (conservative)\" \"single layer, no via insertion; no net/connectivity awareness\" \"result is legal for the width/space rules in force, not a DRC-clean guarantee: run vvCheckReport\")))",
      "error": "",
-     "ms": 11,
+     "ms": 26,
      "svg": "/vb/scen/habit_default_08.svg",
      "expectError": false
     },
@@ -1247,7 +1247,7 @@
      "ok": true,
      "output": "((\"status\" \"clean_in_scope\") (\"checkedLayers\" (((\"layer\" \"mcon\") (\"rules\" (\"minSpace\"))) ((\"layer\" \"met1\") (\"rules\" (\"minWidth\" \"minSpace\" \"minArea\"))) ((\"layer\" \"via\") (\"rules\" (\"minSpace\"))) ((\"layer\" \"met2\") (\"rules\" (\"minWidth\" \"minSpace\" \"minArea\"))))) (\"enclosureChecks\" (((\"cut\" \"mcon\") (\"metal\" \"met1\")) ((\"cut\" \"via\") (\"metal\" \"met1\")) ((\"cut\" \"via\") (\"metal\" \"met2\")))) (\"presentWithoutRule\" nil) (\"notChecked\" (\"wide-wire spacing (SPACINGTABLE width>3um) and parallel-run-length / end-of-line spacing\" \"layers without a rule in the tech LEF (nwell, pwell, diff, tap, implants, poly, licon): present but not checked\" \"connectivity: shorts/opens between nets, same-net spacing exceptions (to",
      "error": "",
-     "ms": 4353,
+     "ms": 12584,
      "svg": "/vb/scen/habit_default_08.svg",
      "expectError": false
     },
@@ -1258,7 +1258,7 @@
      "ok": true,
      "output": "t",
      "error": "",
-     "ms": 17,
+     "ms": 21,
      "svg": "/vb/scen/habit_default_08.svg",
      "expectError": false
     },
@@ -1269,7 +1269,7 @@
      "ok": true,
      "output": "(4 4 ((0.0 0.0) (2.76 5.44)) (0.14))",
      "error": "",
-     "ms": 4,
+     "ms": 5,
      "svg": "/vb/scen/habit_default_08.svg",
      "expectError": false
     }
@@ -1312,7 +1312,7 @@
      "ok": true,
      "output": "\"habit_analog: Conservative designer habits: 1.5x spacing margin, 2x wire width on met2/met3, 2 vias per connection, one-site gap between cells, tap cells at both row ends, alternate rows flipped (VPWR/VGND sharing), 0.01 um grid.\"",
      "error": "",
-     "ms": 8,
+     "ms": 31,
      "svg": null,
      "expectError": false
     },
@@ -1323,7 +1323,7 @@
      "ok": true,
      "output": "((\"name\" \"habit_analog\") (\"directions\" \"li1:V met1:H met2:V met3:H met4:V met5:H\") (\"widthMultiple\" \"met2:2 met3:2\") (\"spaceMultiple\" 1.5) (\"viasPerConnection\" 2) (\"snapGrid\" 0.01) (\"cellGap\" 0.46) (\"alternateRowFlip\" t) (\"tapCell\" \"sky130_fd_sc_hd__tapvpwrvgnd_1\") (\"tapEnds\" t))",
      "error": "",
-     "ms": 2,
+     "ms": 4,
      "svg": null,
      "expectError": false
     },
@@ -1332,9 +1332,9 @@
      "note": "새 셀뷰 열기(w)",
      "skill": "cv = dbOpenCellViewByType(\"testlib\" \"scen_habit_analog\" \"layout\" \"maskLayout\" \"w\")",
      "ok": true,
-     "output": "db:0xbf6f70",
+     "output": "db:0x53fc70",
      "error": "",
-     "ms": 2,
+     "ms": 4,
      "svg": "/vb/scen/habit_analog_03.svg",
      "expectError": false
     },
@@ -1367,7 +1367,7 @@
      "ok": true,
      "output": "((3.46 1.975) (1.195 4.27))",
      "error": "",
-     "ms": 4,
+     "ms": 5,
      "svg": "/vb/scen/habit_analog_05.svg",
      "expectError": false
     },
@@ -1378,7 +1378,7 @@
      "ok": true,
      "output": "(\"mcon\" \"via\")",
      "error": "",
-     "ms": 10,
+     "ms": 12,
      "svg": "/vb/scen/habit_analog_07.svg",
      "expectError": false
     },
@@ -1389,7 +1389,7 @@
      "ok": true,
      "output": "((\"how\" \"L horizontal-first\") (\"width\" 0.28) (\"space\" 0.3) (\"points\" ((3.46 1.98) (1.2 1.98) (1.2 4.27))) (\"limitations\" (\"checked only against shapes already in this cellview, as bounding boxes (conservative)\" \"single layer, no via insertion; no net/connectivity awareness\" \"result is legal for the width/space rules in force, not a DRC-clean guarantee: run vvCheckReport\")))",
      "error": "",
-     "ms": 9,
+     "ms": 25,
      "svg": "/vb/scen/habit_analog_08.svg",
      "expectError": false
     },
@@ -1400,7 +1400,7 @@
      "ok": true,
      "output": "((\"status\" \"clean_in_scope\") (\"checkedLayers\" (((\"layer\" \"mcon\") (\"rules\" (\"minSpace\"))) ((\"layer\" \"met1\") (\"rules\" (\"minWidth\" \"minSpace\" \"minArea\"))) ((\"layer\" \"via\") (\"rules\" (\"minSpace\"))) ((\"layer\" \"met2\") (\"rules\" (\"minWidth\" \"minSpace\" \"minArea\"))))) (\"enclosureChecks\" (((\"cut\" \"mcon\") (\"metal\" \"met1\")) ((\"cut\" \"via\") (\"metal\" \"met1\")) ((\"cut\" \"via\") (\"metal\" \"met2\")))) (\"presentWithoutRule\" nil) (\"notChecked\" (\"wide-wire spacing (SPACINGTABLE width>3um) and parallel-run-length / end-of-line spacing\" \"layers without a rule in the tech LEF (nwell, pwell, diff, tap, implants, poly, licon): present but not checked\" \"connectivity: shorts/opens between nets, same-net spacing exceptions (to",
      "error": "",
-     "ms": 4382,
+     "ms": 12430,
      "svg": "/vb/scen/habit_analog_08.svg",
      "expectError": false
     },
@@ -1411,7 +1411,7 @@
      "ok": true,
      "output": "t",
      "error": "",
-     "ms": 18,
+     "ms": 30,
      "svg": "/vb/scen/habit_analog_08.svg",
      "expectError": false
     },
@@ -1422,7 +1422,7 @@
      "ok": true,
      "output": "(8 8 ((0.0 0.0) (5.06 5.44)) (0.28))",
      "error": "",
-     "ms": 4,
+     "ms": 5,
      "svg": "/vb/scen/habit_analog_08.svg",
      "expectError": false
     }
