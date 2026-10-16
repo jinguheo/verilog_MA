@@ -1,0 +1,16 @@
+{
+  "name": "custom_dff_en",
+  "lib": "sky130_fd_sc_hd",
+  "instances": [
+    {"name": "u_mux", "master": "mux2_1"},
+    {"name": "u_dff", "master": "dfxtp_1"}
+  ],
+  "ports": {"D": "input", "EN": "input", "CLK": "input", "Q": "output"},
+  "nets": {
+    "D":   ["port:D", "u_mux.A1"],
+    "EN":  ["port:EN", "u_mux.S"],
+    "CLK": ["port:CLK", "u_dff.CLK"],
+    "Q":   ["port:Q", "u_dff.Q", "u_mux.A0"],
+    "d_in": ["u_mux.X", "u_dff.D"]
+  }
+}
