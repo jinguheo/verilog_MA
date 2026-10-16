@@ -35,6 +35,8 @@ export const PAGES: PageMeta[] = [
     subtitle: 'sky130A 표준셀 라이브러리와 PDK 변경·복잡한 표준셀 실험을 정리합니다.' },
   { id: 'vb', label: 'VB (Virtuoso Bridge)', icon: 'V', section: 'experiments', title: 'VB — Virtuoso Bridge + 가상 Virtuoso',
     subtitle: 'virtuoso-bridge와 가상 Virtuoso(vvirt)로 LLM이 SKILL로 sky130 표준셀 레이아웃을 만들고 수정하는 구현·결과·한계를 정리합니다.' },
+  { id: 'harness', label: '하네스 평가', icon: 'H', section: 'experiments', title: '하네스 평가 — 모델 고정 vs 하네스 고정',
+    subtitle: '같은 과제와 채점기로 하네스(Claude Code, Codex, Hermes, pi)와 모델을 바꿔 가며 비교하는 방법과 현황을 정리합니다.' },
   { id: 'knowledge', label: 'Knowledge DB', icon: 'K', section: 'knowledge', title: 'Knowledge DB Overview',
     subtitle: '설계 지식 소스(스펙, 코드, 도구 문서)의 연결 상태를 확인합니다.' },
   { id: 'tools', label: 'Tool Comparison', icon: 'T', section: 'knowledge', title: 'EDA Tool Comparison',
