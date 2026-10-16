@@ -7,6 +7,7 @@ import VbSupportMatrix from './VbSupportMatrix'
 import VbEval from './VbEval'
 import VbPnrEstimate from './VbPnrEstimate'
 import VbSkillInfo from './VbSkillInfo'
+import VbImportRisks from './VbImportRisks'
 
 const FLOW: { who: string; what: string; real: boolean; tag?: string }[] = [
   { who: 'LLM / 에이전트', what: 'SKILL 코드를 만들어 Python 클라이언트로 보냄 (skills/virtuoso 문서 사용)', real: true, tag: '사용자 쪽' },
@@ -115,6 +116,8 @@ export default function VirtuosoBridge() {
     </section>
 
     <VbSkillInfo/>
+
+    <VbImportRisks/>
 
     <VbPnrEstimate/>
 
