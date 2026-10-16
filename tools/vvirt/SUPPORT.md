@@ -4,8 +4,8 @@
 
 ## 요약
 - 핵심 SKILL 언어(고른 199개): 지원 184개, 미지원 15개
-- virtuoso-bridge 문서·예제가 LLM에게 쓰라고 하는 Cadence 함수 189개: 지원 45, 빈 껍데기 15, 미지원 129
-- vvirt 정의 함수 325개 + 특수 형식 27개
+- virtuoso-bridge 문서·예제가 LLM에게 쓰라고 하는 Cadence 함수 189개: 지원 93, 빈 껍데기 15, 미지원 81
+- vvirt 정의 함수 416개 + 특수 형식 27개
 
 ## 핵심 언어 — 미지원과 사유
 ### 제어·함수: 24/24 지원
@@ -35,16 +35,16 @@
 - `copyFile` — [safety] 호스트 파일 복사 — 의도적 제외
 
 ## 브리지가 참조하는 Cadence 함수 — 지원 안 되는 것과 사유
-- **38개** [scope] Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음: `maeAddOutput`, `maeCloseResults`, `maeCloseSession`, `maeCreateNetlistForCorner`, `maeCreateTest`, `maeDeleteCorner`, `maeExportOutputView`, `maeGetAnalysis`, `maeGetCurrentRunMode`, `maeGetEnabledAnalysis`, `maeGetEnvOption`, `maeGetOutputValue`, `maeGetResultOutputs`, `maeGetResultTests` …
-- **35개** [scope] ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖: `asiCloseSession`, `asiGetAnalogRunDir`, `asiGetCurrentAnalysisForm`, `asiGetCurrentSession`, `asiGetDesignVarList`, `asiGetHighPerformanceOptionVal`, `asiGetSession`, `asiGetSessionList`, `asiGetStatus`, `asiOpenSetup`, `asiRunSimulation`, `asiSetAnalysisFieldVal`, `asiSetDesignVarValue`, `asiSetHighPerformanceOptionVal` …
+- **23개** [todo] Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능: `asiGetAnalogRunDir`, `asiGetCurrentAnalysisForm`, `asiGetHighPerformanceOptionVal`, `asiGetSession`, `asiGetStatus`, `asiOpenSetup`, `asiRunSimulation`, `asiSetAnalysisFieldVal`, `asiSetDesignVarValue`, `asiSetHighPerformanceOptionVal`, `axlGetActiveSetup`, `axlGetHistory`, `axlGetHistoryEntry`, `axlGetHistoryLock` …
 - **17개** [scope] GUI 폼·창 — 화면이 없음: `hiCreateMLTextField`, `hiFlushLogFile`, `hiFormApply`, `hiFormCancel`, `hiFormDone`, `hiFormList`, `hiGetCurrentForm`, `hiGetLogFileName`, `hiIsForm`, `hiIsFormDisplayed`, `hiReportDeselectAllItems`, `hiReportGetSelectedItems`, `hiReportSelectItem`, `hiSetCurrentForm` …
 - **15개** [stub] 호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수): `cdfUpdateInstParam`, `envGetVal`, `envSetVal`, `hiCreateAppForm`, `hiCreateBooleanButton`, `hiCreateButton`, `hiCreateIntField`, `hiCreateLabel`, `hiCreateMenuItem`, `hiCreatePulldownMenu`, `hiInsertBannerMenu`, `hiRaiseWindow`, `hiRedraw`, `hiRegTimer` …
-- **11개** [scope] 스키매틱 편집 — 범위 밖(레이아웃 전용): `schCheck`, `schCreateNetExpression`, `schCreatePin`, `schCreateWire`, `schCreateWireLabel`, `schGetEnv`, `schGetPinOrder`, `schPinListToSymbol`, `schSchemToPinList`, `schSetEnv`, `schSymbolToPinList`
+- **11개** [model] 그림 스키매틱 편집 — 스키매틱은 넷리스트 수준만 있음(vvSch*로 인스턴스·연결 편집): `schCheck`, `schCreateNetExpression`, `schCreatePin`, `schCreateWire`, `schCreateWireLabel`, `schGetEnv`, `schGetPinOrder`, `schPinListToSymbol`, `schSchemToPinList`, `schSetEnv`, `schSymbolToPinList`
 - **9개** [todo] 미구현(구현 가능) — 사용 빈도가 낮아 보류: `cdsName`, `cdsParam`, `cdsTerm`, `dbFindOpenCellViewByName`, `ddGetObjDMSys`, `ddGetObjWritePath`, `ddMapGetFileViewType`, `ddReleaseObj`, `envIsVal`
 - **8개** [todo] 라이브러리 카테고리 관리 — 사용 빈도가 낮아 미구현(구현 가능): `ddCatAddItem`, `ddCatClose`, `ddCatGetCatMembers`, `ddCatGetLibCats`, `ddCatOpen`, `ddCatOpenEx`, `ddCatRemove`, `ddCatSave`
 - **5개** [model] 넷·단자·핀을 데이터 모델에 담지 않음 — 구현하려면 연결(connectivity) 모델 추가가 필요: `dbAddFigToNet`, `dbCreateInstTerm`, `dbCreateNet`, `dbCreatePin`, `dbCreateTerm`
 - **2개** [scope] CDF(소자 파라미터 정의) — 범위 밖: `cdfGetCellCDF`, `cdfGetInstCDF`
 - **2개** [model] bag/속성 직접 설정 모델이 없음: `dbOpenBag`, `dbSet`
+- **2개** [scope] ADE Explorer 세션 창 — 화면이 없음: `sevRun`, `sevSession`
 - **1개** [model] 선(line) 도형 종류가 없음(path만 있음): `dbCreateLine`
 - **1개** [todo] 미구현: `ocnPrint`
 

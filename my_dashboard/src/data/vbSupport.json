@@ -1120,201 +1120,175 @@
   },
   {
    "name": "asiCloseSession",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "status": "supported"
   },
   {
    "name": "asiGetAnalogRunDir",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "asiGetCurrentAnalysisForm",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "asiGetCurrentSession",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "status": "supported"
   },
   {
    "name": "asiGetDesignVarList",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "status": "supported"
   },
   {
    "name": "asiGetHighPerformanceOptionVal",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "asiGetSession",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "asiGetSessionList",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "status": "supported"
   },
   {
    "name": "asiGetStatus",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "asiOpenSetup",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "asiRunSimulation",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "asiSetAnalysisFieldVal",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "asiSetDesignVarValue",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "asiSetHighPerformanceOptionVal",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "axlGetActiveSetup",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "axlGetCorner",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "status": "supported"
   },
   {
    "name": "axlGetCurrentHistory",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "status": "supported"
   },
   {
    "name": "axlGetHistory",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "axlGetHistoryEntry",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "axlGetHistoryLock",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "axlGetMainSetupDB",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "status": "supported"
   },
   {
    "name": "axlGetRunOption",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "axlGetRunOptionValue",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "axlGetRunOptions",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "axlGetTest",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "status": "supported"
   },
   {
    "name": "axlGetVar",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "status": "supported"
   },
   {
    "name": "axlGetWindowSession",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "axlPutModel",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "status": "supported"
   },
   {
    "name": "axlPutRunOption",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "axlRemoveElement",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "status": "supported"
   },
   {
    "name": "axlSetModelFile",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "status": "supported"
   },
   {
    "name": "axlSetModelSection",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "status": "supported"
   },
   {
    "name": "axlSetRunOptionValue",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "cdfGetCellCDF",
@@ -1582,231 +1556,161 @@
   },
   {
    "name": "maeAddOutput",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeCloseResults",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeCloseSession",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeCreateNetlistForCorner",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeCreateTest",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeDeleteCorner",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeExportOutputView",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeGetAnalysis",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeGetCurrentRunMode",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeGetEnabledAnalysis",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeGetEnvOption",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeGetOutputValue",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeGetResultOutputs",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeGetResultTests",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeGetRunPlan",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "maeGetSessions",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeGetSetup",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeGetSimulationMessages",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "maeGetSpecStatus",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeGetTestOutputs",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeGetTestSession",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "kind": "todo",
+   "why": "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능"
   },
   {
    "name": "maeGetVar",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeMakeEditable",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeMigrateADELStateToMaestro",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeMigrateADEXLToMaestro",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeOpenResults",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeOpenSetup",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeRunSimulation",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeSaveSetup",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeSetAnalysis",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeSetCorner",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeSetCurrentRunMode",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeSetEnvOption",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeSetHistoryLock",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeSetSpec",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeSetVar",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeWaitUntilDone",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "maeWriteScript",
-   "status": "unsupported",
-   "kind": "scope",
-   "why": "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음"
+   "status": "supported"
   },
   {
    "name": "ocnPrint",
@@ -1817,80 +1721,80 @@
   {
    "name": "schCheck",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+   "kind": "model",
+   "why": "그림 스키매틱 편집 — 스키매틱은 넷리스트 수준만 있음(vvSch*로 인스턴스·연결 편집)"
   },
   {
    "name": "schCreateNetExpression",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+   "kind": "model",
+   "why": "그림 스키매틱 편집 — 스키매틱은 넷리스트 수준만 있음(vvSch*로 인스턴스·연결 편집)"
   },
   {
    "name": "schCreatePin",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+   "kind": "model",
+   "why": "그림 스키매틱 편집 — 스키매틱은 넷리스트 수준만 있음(vvSch*로 인스턴스·연결 편집)"
   },
   {
    "name": "schCreateWire",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+   "kind": "model",
+   "why": "그림 스키매틱 편집 — 스키매틱은 넷리스트 수준만 있음(vvSch*로 인스턴스·연결 편집)"
   },
   {
    "name": "schCreateWireLabel",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+   "kind": "model",
+   "why": "그림 스키매틱 편집 — 스키매틱은 넷리스트 수준만 있음(vvSch*로 인스턴스·연결 편집)"
   },
   {
    "name": "schGetEnv",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+   "kind": "model",
+   "why": "그림 스키매틱 편집 — 스키매틱은 넷리스트 수준만 있음(vvSch*로 인스턴스·연결 편집)"
   },
   {
    "name": "schGetPinOrder",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+   "kind": "model",
+   "why": "그림 스키매틱 편집 — 스키매틱은 넷리스트 수준만 있음(vvSch*로 인스턴스·연결 편집)"
   },
   {
    "name": "schPinListToSymbol",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+   "kind": "model",
+   "why": "그림 스키매틱 편집 — 스키매틱은 넷리스트 수준만 있음(vvSch*로 인스턴스·연결 편집)"
   },
   {
    "name": "schSchemToPinList",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+   "kind": "model",
+   "why": "그림 스키매틱 편집 — 스키매틱은 넷리스트 수준만 있음(vvSch*로 인스턴스·연결 편집)"
   },
   {
    "name": "schSetEnv",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+   "kind": "model",
+   "why": "그림 스키매틱 편집 — 스키매틱은 넷리스트 수준만 있음(vvSch*로 인스턴스·연결 편집)"
   },
   {
    "name": "schSymbolToPinList",
    "status": "unsupported",
-   "kind": "scope",
-   "why": "스키매틱 편집 — 범위 밖(레이아웃 전용)"
+   "kind": "model",
+   "why": "그림 스키매틱 편집 — 스키매틱은 넷리스트 수준만 있음(vvSch*로 인스턴스·연결 편집)"
   },
   {
    "name": "sevRun",
    "status": "unsupported",
    "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "why": "ADE Explorer 세션 창 — 화면이 없음"
   },
   {
    "name": "sevSession",
    "status": "unsupported",
    "kind": "scope",
-   "why": "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖"
+   "why": "ADE Explorer 세션 창 — 화면이 없음"
   }
  ],
  "summary": {
@@ -1898,11 +1802,11 @@
   "core_supported": 184,
   "bridge_total": 189,
   "bridge": {
-   "supported": 45,
+   "supported": 93,
    "stub": 15,
-   "unsupported": 129
+   "unsupported": 81
   },
-  "vvirt_functions": 325,
+  "vvirt_functions": 416,
   "special_forms": 27
  }
 }

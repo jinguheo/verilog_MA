@@ -1,6 +1,6 @@
 ---
 name: vvirt
-description: Create and modify sky130 IC layouts with Virtuoso SKILL through virtuoso-bridge, against vvirt, a virtual Virtuoso (no Cadence). Use to place PDK standard cells, draw shapes/vias/wires, edit a copy of a PDK cell, route and check against PDK design rules, and export GDS/SVG. Skip when a real Virtuoso session is available and its exact behaviour matters, or when the task needs LVS, extraction, schematics, Maestro or signoff DRC.
+description: Create and modify sky130 IC layouts with Virtuoso SKILL through virtuoso-bridge, against vvirt, a virtual Virtuoso (no Cadence). Use to place PDK standard cells, draw shapes/vias/wires, edit a copy of a PDK cell, route and check against PDK design rules, and export GDS/SVG. Skip when a real Virtuoso session is available and its exact behaviour matters, or when the task needs LVS, extraction, drawn schematics, Spectre-exact simulation or signoff DRC.
 metadata:
   version: "1"
 ---
@@ -69,6 +69,7 @@ shapes remain available per call with `?positional t`; do not rely on them in ne
 | `no legal … route found` | see "Reading results correctly" |
 
 ## Limits
-No LVS, extraction, schematics, Maestro, CDF or GUI forms (form/menu calls return nil). Host access is deliberately absent
+No LVS, extraction, CDF or GUI forms (form/menu calls return nil). Maestro is a subset (`mae*`/`asi*`/`axl*` plus
+`vvSch*`/`vvMae*`; see `vvHelp`): it runs ngspice, not Spectre, and schematics are netlist-level only (no drawn wires/symbols). Host access is deliberately absent
 (`system`, `sh`, env writes); `load` reads only /tmp and the workspace. Libraries and cells persist as JSON under the
 workspace. Results from this simulation do not establish how a real Virtuoso session or Cadence PDK behaves.

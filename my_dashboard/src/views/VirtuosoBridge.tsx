@@ -47,14 +47,15 @@ const FUNCS: { group: string; items: string }[] = [
 
 const LIMITS: string[] = [
   '실제 Cadence가 아니다: 확인한 것은 "브리지 프로토콜과 레이아웃 편집 SKILL이 동작한다"까지이며, Cadence의 정확한 동작(예: geSelectArea의 부분 겹침 선택)과 같다고 보장하지 않는다.',
-  'SKILL 인터프리터는 부분집합이다(위 "SKILL 명령을 어디까지 지원하나" 표 참고: 핵심 언어 고른 199개 중 184개, 브리지 참조 Cadence 함수 189개 중 45개 지원). 모르는 함수는 "undefined function" 오류로 드러나며 그때마다 추가한다(system/sh 등 호스트에 닿는 함수는 의도적으로 없다).',
+  'SKILL 인터프리터는 부분집합이다(위 "SKILL 명령을 어디까지 지원하나" 표 참고: 핵심 언어 고른 199개 중 184개, 브리지 참조 Cadence 함수 189개 중 93개 지원, Maestro 포함). 모르는 함수는 "undefined function" 오류로 드러나며 그때마다 추가한다(system/sh 등 호스트에 닿는 함수는 의도적으로 없다).',
   '"위반 없음"은 "검사한 범위 안에서 없음"이다. vvCheckRules 의 nil 은 청결 판정이 아니므로 vvCheckReport 가 검사한 층·룰, 룰 없이 그려진 층, 검사하지 않은 항목(와이드 와이어 간격, 연결성, 밀도·안테나 등)과 룰 출처·내 룰 덮어쓰기를 함께 돌려준다.',
   'LVS·추출은 없다. 규칙 검사(vvCheckRules, 내부에서 klayout -b 호출)·공식 DRC(vvOfficialDrc)·자동 배선(vvRoute)·행 배치(vvPlaceRow)는 2026-10-13에 실행해 확인했다(시나리오 ⑧~⑪). 다만 DRC는 폭·간격·면적·enclosure 범위이므로 제출용 GDS는 KLayout/Magic/OpenLane으로 따로 검사해야 한다.',
   '층 이름은 sky130A(met1, li1, poly …)만 유효하다. 예제 02~15가 쓰는 tsmc식 이름(M1, edgeLayer 등)은 --layer-map 으로 바꿔야 한다.',
   '룰은 PDK tech LEF에서 읽는다(폭·간격·면적·방향·피치·비아 enclosure). 이는 라우팅용 룰이며 전체 signoff DRC가 아니다. 내 검사기는 폭/간격/면적/enclosure만 보고, 공식 덱 교차검증은 BEOL(금속·비아) 룰만 돌렸다. FEOL(poly/diff/well) 룰은 이 시나리오들에서 시험하지 않았다.',
   'vvRoute 는 같은 층에서의 단일 넷 Manhattan 라우터다: 직선/L/Z/S 후보 중 룰을 지키는 가장 짧은 것을 고르며(장애물은 도형의 bbox로 보수적으로 판단), 여러 넷의 동시 최적화·층 전환 자동 선택은 하지 않는다. 막히면 오류로 알려 주고 사람이/LLM이 좌표를 바꾼다.',
   '습관 프로필은 기능을 호출할 때만 적용된다(vvPlaceRow, vvRoute, vvViaStack). 직접 쓴 dbCreate* 는 룰을 강제하지 않으며 vvCheckRules 로 검사해야 한다.',
-  '스키매틱·Maestro·CDF·GUI 폼은 구현하지 않았다(폼/메뉴 함수는 아무 일도 안 하고 nil 반환).',
+  'Maestro는 일부만 있다(2026-10-15): mae*/asi*/axl* 의 작업용 부분집합과 vvSch*/vvMae* 추가 함수. 시뮬레이터는 Spectre가 아니라 ngspice이고(없으면 실행 부분은 건너뜀), 스키매틱은 그림이 아니라 인스턴스와 핀→넷 연결만 있는 넷리스트 수준이다(SPICE·xschem 넷리스트 가져오기 가능). 결과가 Spectre와 같다는 보장은 없다.',
+  'CDF·GUI 폼은 구현하지 않았다(폼/메뉴 함수는 아무 일도 안 하고 nil 반환).',
   'XStream Out 은 에뮬레이션이다: xstSetField/xstOutDoTranslate 를 받아 스트림 맵을 읽어 GDS와 XStream 형식 로그를 만들지만 실제 Cadence 변환기가 아니며, PDK 표준셀 내부 도형은 맵을 거치지 않고 PDK GDS 번호 그대로 나간다.',
   '배포 예제는 층·비아·셀 이름을 sky130으로 바꾼 사본으로 전부 종료코드 0이다. 단 12(레이어 표시/숨김)는 화면이 없어 동작이 없고, 14의 넷 하이라이트는 넷을 모델링하지 않아 "net not found"를 돌려준다.',
   '미검증: sky130_fd_sc_hvl 은 붙여서 셀 목록(69개)과 이름 검색만 확인했고 셀 배치는 시험하지 않았다. sram_macros·fd_io·fd_pr 등 다른 PDK 라이브러리는 등록·시험하지 않았다.',

@@ -63,12 +63,12 @@ WHY_CORE = {
 def fam_reason(n):
     if n in STUB:
         return ("stub", "호출은 받지만 아무 일도 하지 않고 nil을 돌려줌(화면·GUI·환경 설정 함수)")
-    if n.startswith("mae"):
-        return ("scope", "Maestro(시뮬레이션 설정·실행) — 레이아웃 도구 범위 밖이라 구현하지 않음")
-    if n.startswith(("axl", "asi", "sev")):
-        return ("scope", "ADE Assembler/Explorer 시뮬레이션 세션 — 범위 밖")
+    if n.startswith(("mae", "axl", "asi")):
+        return ("todo", "Maestro 부분집합(src/vvirt/maestro, ngspice)에 아직 없는 함수 — 필요하면 추가 가능")
+    if n.startswith("sev"):
+        return ("scope", "ADE Explorer 세션 창 — 화면이 없음")
     if n.startswith("sch"):
-        return ("scope", "스키매틱 편집 — 범위 밖(레이아웃 전용)")
+        return ("model", "그림 스키매틱 편집 — 스키매틱은 넷리스트 수준만 있음(vvSch*로 인스턴스·연결 편집)")
     if n.startswith("cdf"):
         return ("scope", "CDF(소자 파라미터 정의) — 범위 밖")
     if n.startswith("hi"):

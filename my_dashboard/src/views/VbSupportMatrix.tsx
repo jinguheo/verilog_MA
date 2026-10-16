@@ -11,7 +11,7 @@ const KIND: Record<string, { label: string; note: string }> = {
   parser: { label: '파서 한계', note: '배열 a[i] 같은 구문을 파서가 모름 — 구현하려면 파서와 값 타입을 함께 고쳐야 함' },
   evaluator: { label: '평가기 한계', note: '매크로 확장 단계가 없음' },
   semantics: { label: '의미 재현 어려움', note: 'Cadence와 같은 결과를 보장하기 어려움' },
-  scope: { label: '범위 밖', note: 'Maestro·스키매틱·GUI 등 레이아웃 도구가 다루지 않는 영역' },
+  scope: { label: '범위 밖', note: 'ADE 세션 창·CDF·GUI 등 vvirt가 다루지 않는 영역' },
   model: { label: '데이터 모델 없음', note: '넷·핀·선 같은 개념을 저장하지 않음' },
   stub: { label: '빈 껍데기', note: '호출은 받지만 아무 일도 하지 않고 nil 반환' },
   todo: { label: '미구현(가능)', note: '구현은 가능하나 사용 빈도가 낮아 보류' },

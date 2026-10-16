@@ -54,5 +54,7 @@ From Windows PowerShell call `wsl.exe -d Ubuntu -e bash /mnt/d/MyWork/Veriolg_MA
 `stdcell` (LEF/GDS) · `gdsio` · `layers` · `server` · `lib_funcs` · `gdsimport` · `techlef` · `rules` · `rule_funcs`. Tests: `tests/test_skill.py`.
 
 ## Limits
-Not Cadence: no DRC/LVS/extraction, partial SKILL, no schematic/Maestro/CDF/GUI; xstream GDS flow not emulated
-(use `vvExportGds`). Host-reaching SKILL (`system`, `sh`, env writes) is intentionally absent; `load` only reads /tmp, workspace.
+Not Cadence: no DRC/LVS/extraction, partial SKILL, no CDF/GUI; xstream GDS flow not emulated (use `vvExportGds`).
+Maestro is a working subset (`mae*`/`asi*`/`axl*` plus `vvSch*`/`vvMae*`, package `src/vvirt/maestro/`): it simulates with
+ngspice, not Spectre (runs are skipped when ngspice is absent), and schematics are netlist-level (instances and pin->net
+connections, or imported SPICE/xschem netlists; no drawn wires or symbols). Results are not evidence of Spectre behaviour. Host-reaching SKILL (`system`, `sh`, env writes) is intentionally absent; `load` only reads /tmp, workspace.
