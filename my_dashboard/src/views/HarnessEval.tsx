@@ -1,11 +1,18 @@
 // 하네스 평가 탭: "모델 고정/하네스 변경"과 "하네스 고정/모델 변경" 두 평가 방식, 비교 대상, vvirt 과제로의 적용 계획.
-// 실제 LLM 시험 결과는 아직 없다. 표의 칸은 "미실행"이며, 값은 run_trials.py 가 결과를 쓰기 시작하면 채운다.
+// 격자는 vbEval.json 의 grid(run_trials.py + eval/stats.py 가 (harness, model)마다 1칸씩 씀)를 읽는다. 아직 비어 있으면 "미실행".
 // 대조군(reference/null/sloppy)으로 채점기가 구분하는지까지는 VB 탭의 AGENT EVAL 카드에서 확인됨.
 import raw from '../data/vbEval.json'
 
 type Task = { id: string; category: string; prompt: string }
-const tasks = (raw as unknown as { tasks: Task[]; llm: { status: string; reason?: string; howToRun?: string } | null })
+type Cell = { harness: string; model: string; generated: string; tasks: number; trials: number; repeat_min: number
+  passed_tasks_all_trials: number; pass_at_k: Record<string, number>; pass_hat_k: Record<string, number>
+  tool_calls: number; errors: number; cost_usd: number | null; duration_s: number | null; api_errors: number }
+const tasks = (raw as unknown as { tasks: Task[]; llm: { status: string; reason?: string; howToRun?: string } | null; grid?: Cell[] })
 const llm = tasks.llm
+const grid: Cell[] = tasks.grid ?? []
+// 결과 파일의 harness 값 ↔ 표의 하네스 이름
+const HARNESS_ID: Record<string, string> = { 'Claude Code': 'claude-code', Codex: 'codex', Hermes: 'hermes', pi: 'pi' }
+const pct = (v: number | undefined) => v === undefined ? '-' : `${Math.round(v * 100)}%`
 
 const MODES: { name: string; fixed: string; varies: string; asks: string; example: string; caution: string }[] = [
   { name: 'A. 모델 고정 · 하네스 변경', fixed: '모델, 과제, MCP 서버, 채점기', varies: '하네스(도구 구성, 프롬프트, 컨텍스트 처리, 권한)',
@@ -23,13 +30,22 @@ const HARNESSES: { name: string; philosophy: string; pros: string; cons: string;
   { name: 'pi', philosophy: '최소주의 (도구 4개 + 짧은 프롬프트)', pros: '컨텍스트 통제, TypeScript 확장, 가볍고 해킹하기 쉬움', cons: '샌드박스·권한 없음, 서브에이전트·플랜·MCP를 기본으로 넣지 않음', mcp: '기본 미지원 (어댑터/확장 필요)' },
 ]
 
-const MODELS = ['모델 1', '모델 2', '모델 3']
+const MODELS = grid.length ? [...new Set(grid.map(g => g.model))] : ['(모델 미정)']
+
+function GridCell({ c }: { c: Cell | undefined }) {
+  if (!c) return <span style={{ color: 'var(--text-muted)' }}>미실행</span>
+  const k = String(c.repeat_min)
+  return <span title={`${c.generated} · 시도 ${c.trials}회 · 도구 호출 ${c.tool_calls} · 오류 ${c.errors}${c.api_errors ? ` · API 오류 ${c.api_errors}` : ''}`}>
+    <b>{c.passed_tasks_all_trials}/{c.tasks}</b> 과제 매번 통과<br/>
+    <small>pass@1 {pct(c.pass_at_k['1'])} · pass^{k} {pct(c.pass_hat_k[k])} (n={c.repeat_min}){c.cost_usd != null ? ` · $${c.cost_usd}` : ''}{c.duration_s != null ? ` · ${c.duration_s}s` : ''}</small>
+  </span>
+}
 
 const PLAN: string[] = [
   '고정: tools/vvirt/eval/tasks.py 의 과제 8개, vvirt MCP 서버(mcp_server.py), 채점기(저장된 레이아웃 + 최종 답변만 봄). 채점기는 하네스에 독립적이다.',
   '바꿈: run_trials.py 의 에이전트 실행부만. 하네스마다 같은 MCP 서버를 연결하는 어댑터를 둔다.',
-  '결과 스키마에 harness 와 model 필드를 추가해 한 칸 = (하네스, 모델) 으로 저장한다.',
-  'LLM 결과는 매번 달라서 과제당 3회 이상 반복하고, 통과율과 도구 호출 수·오류·재시도·토큰·비용을 함께 기록한다.',
+  '구현됨(2026-10-16): 결과 행마다 harness · model · trial 을 기록하고, (하네스, 모델)마다 1칸을 vbEval.json 의 grid 에 쓴다(eval/stats.py, tests/test_eval_stats.py 16/16).',
+  'LLM 결과는 매번 달라서 과제당 3회 이상 반복한다(--repeat n, 구현됨: pass@k · pass^k 계산). 도구 호출 수·오류·비용·시간은 함께 기록되며, 재시도·토큰 세부는 아직 집계하지 않는다.',
   '대조군(기준·아무것도 안 함·과장)은 매 실행 전에 돌려 채점기가 아직 구분하는지 먼저 확인한다.',
 ]
 
@@ -84,14 +100,16 @@ export default function HarnessEval() {
     </section>
 
     <section className="card vb-card">
-      <div className="card-title"><div><small className="kicker">GRID</small><h2>모델 × 하네스 결과 격자 (vvirt 과제 {tasks.tasks.length}개 통과 수)</h2></div><span className="connection">전부 미실행</span></div>
+      <div className="card-title"><div><small className="kicker">GRID</small><h2>모델 × 하네스 결과 격자 (vvirt 과제 {tasks.tasks.length}개)</h2></div><span className="connection">{grid.length ? `측정 ${grid.length}칸` : '전부 미실행'}</span></div>
       <div className="data-table"><table>
         <thead><tr><th>하네스 \ 모델</th>{MODELS.map(m => <th key={m}>{m}</th>)}</tr></thead>
-        <tbody>{HARNESSES.map(h => <tr key={h.name}><td><b>{h.name}</b></td>{MODELS.map(m => <td key={m}>-</td>)}</tr>)}</tbody>
+        <tbody>{HARNESSES.map(h => <tr key={h.name}><td><b>{h.name}</b></td>{MODELS.map(m => <td key={m}><GridCell c={grid.find(g => g.harness === HARNESS_ID[h.name] && g.model === m)}/></td>)}</tr>)}</tbody>
       </table></div>
-      <div className="pev-ctxwarn"><b>아직 측정값이 없습니다.</b> 모델 칸은 자리 표시이며 실제 모델 이름은 실행할 때 채웁니다.
+      <p className="vb-note">한 칸 = (하네스, 모델) 한 쌍의 모든 시도. "매번 통과"는 반복한 모든 시도에서 통과한 과제 수, pass@1은 첫 시도 통과율, pass^k는 k번 모두 성공할 확률(과제 평균, 불편 추정 C(c,k)/C(n,k)).
+        반복: <code>run_trials.py --agent claude --model sonnet --repeat 3</code>. 지금 어댑터는 Claude Code 하나뿐이라 나머지 하네스 행은 어댑터가 생겨야 채워집니다.</p>
+      {!grid.length && <div className="pev-ctxwarn"><b>아직 측정값이 없습니다.</b> 모델 열은 첫 실행 때 결과 파일의 모델 이름으로 채워집니다.
         {llm?.reason && <> 막힌 이유: {llm.reason}.</>}
-        {llm?.howToRun && <> 실행: <code>{llm.howToRun}</code></>}</div>
+        {llm?.howToRun && <> 실행: <code>{llm.howToRun}</code></>}</div>}
     </section>
 
     <section className="card vb-card">
