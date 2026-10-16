@@ -54,3 +54,5 @@
 /* the rendered SVG carries its own legend and small text: keep it readable by scrolling sideways on narrow screens */
 .vb-figs figure, .vb-canvas { overflow-x: auto; }
 .vb-figs img, .vb-canvas img { min-width: 880px; }
+
+.vb-sub { font-size: 14px; font-weight: 500; margin: 18px 0 6px; }

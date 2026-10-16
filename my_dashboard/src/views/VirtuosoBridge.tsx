@@ -4,7 +4,9 @@
 import './vb.css'
 import VbScenarioPlayer from './VbScenarioPlayer'
 import VbSupportMatrix from './VbSupportMatrix'
+import VbEval from './VbEval'
 import VbPnrEstimate from './VbPnrEstimate'
+import VbSkillInfo from './VbSkillInfo'
 
 const FLOW: { who: string; what: string; real: boolean; tag?: string }[] = [
   { who: 'LLM / 에이전트', what: 'SKILL 코드를 만들어 Python 클라이언트로 보냄 (skills/virtuoso 문서 사용)', real: true, tag: '사용자 쪽' },
@@ -112,9 +114,12 @@ export default function VirtuosoBridge() {
         <tbody>{FUNCS.map(f => <tr key={f.group}><td><b>{f.group}</b></td><td>{f.items}</td></tr>)}</tbody></table></div>
     </section>
 
+    <VbSkillInfo/>
+
     <VbPnrEstimate/>
 
     <VbSupportMatrix/>
+    <VbEval/>
 
     <section className="card vb-card">
       <div className="card-title"><div><small className="kicker">LIMITS</small><h2>한계와 미검증 항목</h2></div></div>
