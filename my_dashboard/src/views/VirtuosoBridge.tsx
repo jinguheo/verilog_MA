@@ -9,6 +9,7 @@ import VbPnrEstimate from './VbPnrEstimate'
 import VbSkillInfo from './VbSkillInfo'
 import VbImportRisks from './VbImportRisks'
 import VbCompose from './VbCompose'
+import VbFlowGuide from './VbFlowGuide'
 
 const FLOW: { who: string; what: string; real: boolean; tag?: string }[] = [
   { who: 'LLM / 에이전트', what: 'SKILL 코드를 만들어 Python 클라이언트로 보냄 (skills/virtuoso 문서 사용)', real: true, tag: '사용자 쪽' },
@@ -88,6 +89,8 @@ export default function VirtuosoBridge() {
         {FLOW.map((s, i) => <li key={i} className={s.real ? 'real' : 'virtual'}><b>{s.who}</b><span>{s.what}</span><em>{s.tag ?? (s.real ? '원본 그대로' : '이번에 구현')}</em></li>)}
       </ol>
     </section>
+
+    <VbFlowGuide/>
 
     <VbScenarioPlayer/>
 
