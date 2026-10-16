@@ -1,0 +1,63 @@
+{
+ "generated": "2026-10-16T22:12",
+ "spec": "tools/vvirt/examples/specs/dff_en.json",
+ "cell": "custom_dff_en",
+ "size_um": [
+  11.5,
+  2.72
+ ],
+ "instances": [
+  [
+   "u_mux",
+   "sky130_fd_sc_hd__mux2_1",
+   0.0
+  ],
+  [
+   "u_dff",
+   "sky130_fd_sc_hd__dfxtp_1",
+   4.14
+  ]
+ ],
+ "nets": {
+  "D": [
+   "port:D",
+   "u_mux.A1"
+  ],
+  "EN": [
+   "port:EN",
+   "u_mux.S"
+  ],
+  "CLK": [
+   "port:CLK",
+   "u_dff.CLK"
+  ],
+  "Q": [
+   "port:Q",
+   "u_dff.Q",
+   "u_mux.A0"
+  ],
+  "d_in": [
+   "u_mux.X",
+   "u_dff.D"
+  ]
+ },
+ "ports": {
+  "D": "input",
+  "EN": "input",
+  "CLK": "input",
+  "Q": "output"
+ },
+ "stats": {
+  "nets_connected_ok": 5
+ },
+ "items": [],
+ "wire_shapes": 61,
+ "drc": {
+  "ran": true,
+  "scope": "sky130A_mr.drc BEOL only (feol=false)",
+  "items": 0
+ },
+ "verilog": "module custom_dff_en (D, EN, CLK, Q);\n  input D;\n  input EN;\n  input CLK;\n  output Q;\n  wire d_in;\n  sky130_fd_sc_hd__mux2_1 u_mux (.A0(Q), .A1(D), .S(EN), .X(d_in));\n  sky130_fd_sc_hd__dfxtp_1 u_dff (.CLK(CLK), .D(d_in), .Q(Q));\nendmodule\n",
+ "svg": "vb/compose/custom_dff_en.svg",
+ "test": "tests/test_compose.py 14/14 (drc=False)"
+}
