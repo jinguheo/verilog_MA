@@ -111,7 +111,8 @@ class McpSession:
         return json.loads(self.p.stdout.readline())
 
     def call(self, tool: str, args: dict[str, Any]) -> Call:
-        r = self._rpc("tools/call", {"name": tool, "arguments": args})["result"]
+        # Claude Code namespaces MCP tools as mcp__<server>__<tool>; the server itself only knows <tool>
+        r = self._rpc("tools/call", {"name": tool.split("__")[-1], "arguments": args})["result"]
         return Call(tool, args, r["content"][0]["text"], bool(r.get("isError")))
 
     def close(self) -> None:
