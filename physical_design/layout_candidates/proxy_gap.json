@@ -1,0 +1,301 @@
+{
+  "our_data": {
+    "records": [
+      {
+        "id": "daq-grid-baseline-20260924",
+        "status": "completed_flow",
+        "usable_as_label": true,
+        "last_stage": "77-misc-reportmanufacturability",
+        "error_codes": [],
+        "stage_outcomes": {
+          "openroad-resizertimingpostcts": "pass",
+          "openroad-globalrouting": "pass"
+        },
+        "indicators": {
+          "mean_pairwise_manhattan_um": 1914.3,
+          "macro_bbox_um": [
+            3500.0,
+            1900.0
+          ],
+          "row_channel_um": 300.0,
+          "topology": "grid"
+        },
+        "notes_only": []
+      },
+      {
+        "id": "daq-grid-baseline-20260925-interrupted",
+        "status": "incomplete_no_error",
+        "usable_as_label": false,
+        "last_stage": "36-openroad-resizertimingpostcts",
+        "error_codes": [],
+        "stage_outcomes": {
+          "openroad-resizertimingpostcts": "interrupted",
+          "openroad-globalrouting": "not_reached"
+        },
+        "indicators": {
+          "mean_pairwise_manhattan_um": 1914.3,
+          "macro_bbox_um": [
+            3500.0,
+            1900.0
+          ],
+          "row_channel_um": 300.0,
+          "topology": "grid"
+        },
+        "notes_only": []
+      },
+      {
+        "id": "daq-macrotetris-v1-20260925",
+        "status": "failed",
+        "usable_as_label": true,
+        "last_stage": "38-openroad-resizertimingpostcts",
+        "error_codes": [
+          "DPL-0036"
+        ],
+        "stage_outcomes": {
+          "openroad-resizertimingpostcts": "fail",
+          "openroad-globalrouting": "not_reached"
+        },
+        "indicators": {
+          "mean_pairwise_manhattan_um": 1800.0,
+          "macro_bbox_um": [
+            3500.0,
+            1700.0
+          ],
+          "row_channel_um": 100.0,
+          "topology": "grid"
+        },
+        "notes_only": [
+          "ResizerTimingPostCTS hold repair: 6301 hold violations, 300 hold buffers could not be legally placed ([DPL-0034]/[DPL-0036])",
+          "the run was resumed twice by different sessions after the host slept; it failed identically both times",
+          "the earlier usableLeftoverPct metric (42%, 154 cells) was identical for this candidate and the baseline, so it could not tell them apart"
+        ]
+      },
+      {
+        "id": "daq-macrotetris-v1-20260926-interrupted",
+        "status": "incomplete_no_error",
+        "usable_as_label": false,
+        "last_stage": "12-openroad-staprepnr",
+        "error_codes": [],
+        "stage_outcomes": {
+          "openroad-resizertimingpostcts": "not_reached",
+          "openroad-globalrouting": "not_reached"
+        },
+        "indicators": {
+          "mean_pairwise_manhattan_um": 1800.0,
+          "macro_bbox_um": [
+            3500.0,
+            1700.0
+          ],
+          "row_channel_um": 100.0,
+          "topology": "grid"
+        },
+        "notes_only": []
+      },
+      {
+        "id": "daq-macrotetris-v2-20260926",
+        "status": "failed",
+        "usable_as_label": true,
+        "last_stage": "38-openroad-globalrouting",
+        "error_codes": [
+          "GRT-0118"
+        ],
+        "stage_outcomes": {
+          "openroad-resizertimingpostcts": "pass",
+          "openroad-globalrouting": "fail"
+        },
+        "indicators": {
+          "mean_pairwise_manhattan_um": 1878.6,
+          "macro_bbox_um": [
+            3533.0,
+            1940.0
+          ],
+          "row_channel_um": null,
+          "topology": "scattered"
+        },
+        "notes_only": [
+          "model weighted wirelength 55,752 vs 59,600 for the grid baseline (lower on paper)",
+          "the model's congestion heuristic (congestionCells/routabilityRisk) flagged both this candidate and the passing grid baseline as HIGH"
+        ]
+      }
+    ],
+    "hold_repair_stage": {
+      "labels": [
+        [
+          "pass",
+          "daq-grid-baseline-20260924"
+        ],
+        [
+          "fail",
+          "daq-macrotetris-v1-20260925"
+        ],
+        [
+          "pass",
+          "daq-macrotetris-v2-20260926"
+        ]
+      ],
+      "n": 3
+    },
+    "global_route_stage": {
+      "labels": [
+        [
+          "pass",
+          "daq-grid-baseline-20260924"
+        ],
+        [
+          "fail",
+          "daq-macrotetris-v2-20260926"
+        ]
+      ],
+      "n": 2
+    }
+  },
+  "candidate_history": {
+    "candidates_ever_recorded": 25,
+    "distinct_exact_placements": 25,
+    "distinct_relative_arrangements_exact_mm": 3,
+    "distinct_estimate_values": 3,
+    "physically_verified": 0,
+    "kept_after_dedup": 2
+  },
+  "paper_derived": {
+    "iccad_early_global_route": [
+      {
+        "proxy": "rWL",
+        "real": "TNS",
+        "mean_spearman": 0.81,
+        "per_design": [
+          0.9,
+          1.0,
+          0.9,
+          0.9,
+          0.5,
+          0.7,
+          0.8,
+          0.8
+        ],
+        "same_winner_designs": "6/8",
+        "methods": 5,
+        "designs": 8
+      },
+      {
+        "proxy": "rWL",
+        "real": "WNS",
+        "mean_spearman": 0.6,
+        "per_design": [
+          0.9,
+          0.7,
+          0.9,
+          0.3,
+          0.3,
+          0.0,
+          1.0,
+          0.7
+        ],
+        "same_winner_designs": "4/8",
+        "methods": 5,
+        "designs": 8
+      },
+      {
+        "proxy": "WNS",
+        "real": "TNS",
+        "mean_spearman": 0.69,
+        "per_design": [
+          0.7,
+          0.7,
+          1.0,
+          0.4,
+          0.9,
+          0.3,
+          0.8,
+          0.7
+        ],
+        "same_winner_designs": "5/8",
+        "methods": 5,
+        "designs": 8
+      }
+    ],
+    "openroad_full_flow": [
+      {
+        "proxy": "rWL",
+        "real": "WNS",
+        "mean_spearman": -0.08,
+        "per_design": [
+          -0.94,
+          -0.43,
+          0.29,
+          0.6,
+          -0.26,
+          0.26
+        ],
+        "same_winner_designs": "1/6",
+        "methods": 6,
+        "designs": 6
+      },
+      {
+        "proxy": "rWL",
+        "real": "TNS",
+        "mean_spearman": 0.21,
+        "per_design": [
+          -0.71,
+          -0.43,
+          0.49,
+          0.6,
+          0.71,
+          0.6
+        ],
+        "same_winner_designs": "3/6",
+        "methods": 6,
+        "designs": 6
+      },
+      {
+        "proxy": "rWL",
+        "real": "DRC",
+        "mean_spearman": 0.48,
+        "per_design": [
+          -0.03,
+          -0.03,
+          0.83,
+          0.89,
+          0.77,
+          0.43
+        ],
+        "same_winner_designs": "3/6",
+        "methods": 6,
+        "designs": 6
+      },
+      {
+        "proxy": "WNS",
+        "real": "TNS",
+        "mean_spearman": 0.55,
+        "per_design": [
+          0.77,
+          1.0,
+          -0.17,
+          0.89,
+          0.0,
+          0.83
+        ],
+        "same_winner_designs": "3/6",
+        "methods": 6,
+        "designs": 6
+      },
+      {
+        "proxy": "TNS",
+        "real": "DRC",
+        "mean_spearman": 0.47,
+        "per_design": [
+          0.2,
+          0.66,
+          0.77,
+          0.66,
+          0.6,
+          -0.09
+        ],
+        "same_winner_designs": "3/6",
+        "methods": 6,
+        "designs": 6
+      }
+    ]
+  },
+  "source_note": "paper_derived is computed from numeric tables of the EXPlace paper (ICLR 2026); our_data from failure_knowledge.json and optimization_history*.json"
+}
