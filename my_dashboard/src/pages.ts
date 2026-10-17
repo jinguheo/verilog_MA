@@ -39,6 +39,8 @@ export const PAGES: PageMeta[] = [
     subtitle: '같은 과제와 채점기로 하네스(Claude Code, Codex, Hermes, pi)와 모델을 바꿔 가며 비교하는 방법과 현황을 정리합니다.' },
   { id: 'knowledge', label: 'Knowledge DB', icon: 'K', section: 'knowledge', title: 'Knowledge DB Overview',
     subtitle: '설계 지식 소스(스펙, 코드, 도구 문서)의 연결 상태를 확인합니다.' },
+  { id: 'trends', label: '연구 동향', icon: 'R', section: 'knowledge', title: '연구 동향 — placement · routing',
+    subtitle: 'placement·routing 최신 논문(2026)의 방법론과 실제 활용을 정리하고, EXPlace(ICLR 2026)를 원문 기준으로 상세 분석합니다.' },
   { id: 'tools', label: 'Tool Comparison', icon: 'T', section: 'knowledge', title: 'EDA Tool Comparison',
     subtitle: 'EDA 도구별 역할과 장단점을 비교합니다.' },
 ]
