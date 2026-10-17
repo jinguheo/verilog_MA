@@ -2,6 +2,9 @@
 // 격자는 vbEval.json 의 grid(run_trials.py + eval/stats.py 가 (harness, model)마다 1칸씩 씀)를 읽는다. 아직 비어 있으면 "미실행".
 // 대조군(reference/null/sloppy)으로 채점기가 구분하는지까지는 VB 탭의 AGENT EVAL 카드에서 확인됨.
 import raw from '../data/vbEval.json'
+import HarnessCompare from './HarnessCompare'
+import PublicBenchmarks from './PublicBenchmarks'
+import HarnessFit from './HarnessFit'
 
 type Task = { id: string; category: string; prompt: string }
 type Cell = { harness: string; model: string; generated: string; tasks: number; trials: number; repeat_min: number
@@ -111,6 +114,12 @@ export default function HarnessEval() {
         {llm?.reason && <> 막힌 이유: {llm.reason}.</>}
         {llm?.howToRun && <> 실행: <code>{llm.howToRun}</code></>}</div>}
     </section>
+
+    <HarnessCompare/>
+
+    <PublicBenchmarks/>
+
+    <HarnessFit/>
 
     <section className="card vb-card">
       <div className="card-title"><div><small className="kicker">HOW TO</small><h2>구체적으로 어떻게 평가하나 (조사 요약)</h2></div><span className="connection">2차 자료 요약</span></div>
