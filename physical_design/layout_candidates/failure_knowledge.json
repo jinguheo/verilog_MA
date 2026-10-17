@@ -1,0 +1,588 @@
+{
+  "schema_version": 1,
+  "design": "daq_subsystem",
+  "description": "Real OpenLane outcomes for daq_subsystem macro placements and the rules derived from them. See failure_knowledge.py.",
+  "records": [
+    {
+      "id": "daq-grid-baseline-20260924",
+      "design": "daq_subsystem",
+      "flow": "OpenLane 2.3.10 hierarchical P&R, 8 hardened chan_top macros",
+      "run_tag": "hierarchical_auto_20260924_142552",
+      "run_dir": "samples/sample_test_4/asic/daq_subsystem/runs/hierarchical_auto_20260924_142552",
+      "config": "config_hierarchical.json",
+      "description": "grid baseline (rows y=100/1200, channel 300 um)",
+      "die_um": [
+        0,
+        0,
+        3700,
+        2100
+      ],
+      "placement": [
+        {
+          "instance": "gen_chan[0].u_chan_top",
+          "x": 100.0,
+          "y": 100.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[1].u_chan_top",
+          "x": 1000.0,
+          "y": 100.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[2].u_chan_top",
+          "x": 1900.0,
+          "y": 100.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[3].u_chan_top",
+          "x": 2800.0,
+          "y": 100.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[4].u_chan_top",
+          "x": 100.0,
+          "y": 1200.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[5].u_chan_top",
+          "x": 1000.0,
+          "y": 1200.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[6].u_chan_top",
+          "x": 1900.0,
+          "y": 1200.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[7].u_chan_top",
+          "x": 2800.0,
+          "y": 1200.0,
+          "orientation": "N"
+        }
+      ],
+      "features": {
+        "row_channel_um": 300.0,
+        "channel_axis": "y",
+        "band_counts": {
+          "x": 4,
+          "y": 2
+        },
+        "topology": "grid"
+      },
+      "status": "completed_flow",
+      "last_stage": "77-misc-reportmanufacturability",
+      "stages_present": 77,
+      "error_log": null,
+      "error_codes": [],
+      "stage_outcomes": {
+        "openroad-resizertimingpostcts": "pass",
+        "openroad-globalrouting": "pass"
+      },
+      "metrics": {
+        "setup_ws_ns": -6.444430949066408,
+        "setup_tns_ns": -387.8367177187936,
+        "setup_violations": 249,
+        "hold_ws_ns": -0.15133139614213031,
+        "hold_violations": 6,
+        "route_drc_errors": 0,
+        "antenna_violating_nets": 121,
+        "lvs_error_count": 0,
+        "stdcell_area_um2": 460614,
+        "route_wirelength_um": 2578312
+      },
+      "evidence": {
+        "verified": [
+          "resolved.json placements",
+          "stage directory listing",
+          "error.log",
+          "final/metrics.json"
+        ],
+        "notes_only": []
+      },
+      "usable_as_label": true
+    },
+    {
+      "id": "daq-grid-baseline-20260925-interrupted",
+      "design": "daq_subsystem",
+      "flow": "OpenLane 2.3.10 hierarchical P&R, 8 hardened chan_top macros",
+      "run_tag": "hierarchical_auto_20260925_193305",
+      "run_dir": "samples/sample_test_4/asic/daq_subsystem/runs/hierarchical_auto_20260925_193305",
+      "config": "config_hierarchical.json",
+      "description": "same grid placement, rerun that stopped at stage 36 with no error",
+      "die_um": [
+        0,
+        0,
+        3700,
+        2100
+      ],
+      "placement": [
+        {
+          "instance": "gen_chan[0].u_chan_top",
+          "x": 100.0,
+          "y": 100.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[1].u_chan_top",
+          "x": 1000.0,
+          "y": 100.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[2].u_chan_top",
+          "x": 1900.0,
+          "y": 100.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[3].u_chan_top",
+          "x": 2800.0,
+          "y": 100.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[4].u_chan_top",
+          "x": 100.0,
+          "y": 1200.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[5].u_chan_top",
+          "x": 1000.0,
+          "y": 1200.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[6].u_chan_top",
+          "x": 1900.0,
+          "y": 1200.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[7].u_chan_top",
+          "x": 2800.0,
+          "y": 1200.0,
+          "orientation": "N"
+        }
+      ],
+      "features": {
+        "row_channel_um": 300.0,
+        "channel_axis": "y",
+        "band_counts": {
+          "x": 4,
+          "y": 2
+        },
+        "topology": "grid"
+      },
+      "status": "incomplete_no_error",
+      "last_stage": "36-openroad-resizertimingpostcts",
+      "stages_present": 36,
+      "error_log": null,
+      "error_codes": [],
+      "stage_outcomes": {
+        "openroad-resizertimingpostcts": "interrupted",
+        "openroad-globalrouting": "not_reached"
+      },
+      "metrics": null,
+      "evidence": {
+        "verified": [
+          "resolved.json placements",
+          "stage directory listing",
+          "error.log"
+        ],
+        "notes_only": []
+      },
+      "usable_as_label": false
+    },
+    {
+      "id": "daq-macrotetris-v1-20260925",
+      "design": "daq_subsystem",
+      "flow": "OpenLane 2.3.10 hierarchical P&R, 8 hardened chan_top macros",
+      "run_tag": "macrotetris_20260925_203844",
+      "run_dir": "samples/sample_test_4/asic/daq_subsystem/runs/macrotetris_20260925_203844",
+      "config": "config_hierarchical_macrotetris.json",
+      "description": "bottom row moved up 200 um: channel 300 -> 100 um",
+      "die_um": [
+        0,
+        0,
+        3700,
+        2100
+      ],
+      "placement": [
+        {
+          "instance": "gen_chan[0].u_chan_top",
+          "x": 100.0,
+          "y": 300.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[1].u_chan_top",
+          "x": 1000.0,
+          "y": 300.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[2].u_chan_top",
+          "x": 1900.0,
+          "y": 300.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[3].u_chan_top",
+          "x": 2800.0,
+          "y": 300.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[4].u_chan_top",
+          "x": 100.0,
+          "y": 1200.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[5].u_chan_top",
+          "x": 1000.0,
+          "y": 1200.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[6].u_chan_top",
+          "x": 1900.0,
+          "y": 1200.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[7].u_chan_top",
+          "x": 2800.0,
+          "y": 1200.0,
+          "orientation": "N"
+        }
+      ],
+      "features": {
+        "row_channel_um": 100.0,
+        "channel_axis": "y",
+        "band_counts": {
+          "x": 4,
+          "y": 2
+        },
+        "topology": "grid"
+      },
+      "status": "failed",
+      "last_stage": "38-openroad-resizertimingpostcts",
+      "stages_present": 38,
+      "error_log": "[DPL-0036] Detailed placement failed.",
+      "error_codes": [
+        "DPL-0036"
+      ],
+      "stage_outcomes": {
+        "openroad-resizertimingpostcts": "fail",
+        "openroad-globalrouting": "not_reached"
+      },
+      "metrics": null,
+      "evidence": {
+        "verified": [
+          "resolved.json placements",
+          "stage directory listing",
+          "error.log"
+        ],
+        "notes_only": [
+          "ResizerTimingPostCTS hold repair: 6301 hold violations, 300 hold buffers could not be legally placed ([DPL-0034]/[DPL-0036])",
+          "the run was resumed twice by different sessions after the host slept; it failed identically both times",
+          "the earlier usableLeftoverPct metric (42%, 154 cells) was identical for this candidate and the baseline, so it could not tell them apart"
+        ]
+      },
+      "usable_as_label": true
+    },
+    {
+      "id": "daq-macrotetris-v1-20260926-interrupted",
+      "design": "daq_subsystem",
+      "flow": "OpenLane 2.3.10 hierarchical P&R, 8 hardened chan_top macros",
+      "run_tag": "macrotetris_20260926_124029",
+      "run_dir": "samples/sample_test_4/asic/daq_subsystem/runs/macrotetris_20260926_124029",
+      "config": "config_hierarchical_macrotetris.json",
+      "description": "same as v1, rerun that stopped at stage 12 with no error",
+      "die_um": [
+        0,
+        0,
+        3700,
+        2100
+      ],
+      "placement": [
+        {
+          "instance": "gen_chan[0].u_chan_top",
+          "x": 100.0,
+          "y": 300.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[1].u_chan_top",
+          "x": 1000.0,
+          "y": 300.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[2].u_chan_top",
+          "x": 1900.0,
+          "y": 300.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[3].u_chan_top",
+          "x": 2800.0,
+          "y": 300.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[4].u_chan_top",
+          "x": 100.0,
+          "y": 1200.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[5].u_chan_top",
+          "x": 1000.0,
+          "y": 1200.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[6].u_chan_top",
+          "x": 1900.0,
+          "y": 1200.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[7].u_chan_top",
+          "x": 2800.0,
+          "y": 1200.0,
+          "orientation": "N"
+        }
+      ],
+      "features": {
+        "row_channel_um": 100.0,
+        "channel_axis": "y",
+        "band_counts": {
+          "x": 4,
+          "y": 2
+        },
+        "topology": "grid"
+      },
+      "status": "incomplete_no_error",
+      "last_stage": "12-openroad-staprepnr",
+      "stages_present": 12,
+      "error_log": null,
+      "error_codes": [],
+      "stage_outcomes": {
+        "openroad-resizertimingpostcts": "not_reached",
+        "openroad-globalrouting": "not_reached"
+      },
+      "metrics": null,
+      "evidence": {
+        "verified": [
+          "resolved.json placements",
+          "stage directory listing",
+          "error.log"
+        ],
+        "notes_only": []
+      },
+      "usable_as_label": false
+    },
+    {
+      "id": "daq-macrotetris-v2-20260926",
+      "design": "daq_subsystem",
+      "flow": "OpenLane 2.3.10 hierarchical P&R, 8 hardened chan_top macros",
+      "run_tag": "macrotetris_v2_20260926_133315",
+      "run_dir": "samples/sample_test_4/asic/daq_subsystem/runs/macrotetris_v2_20260926_133315",
+      "config": "config_hierarchical_macrotetris_v2.json",
+      "description": "scattered non-grid 8-macro candidate from the parallel search",
+      "die_um": [
+        0,
+        0,
+        3700,
+        2100
+      ],
+      "placement": [
+        {
+          "instance": "gen_chan[0].u_chan_top",
+          "x": 94.0,
+          "y": 1221.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[1].u_chan_top",
+          "x": 1899.0,
+          "y": 984.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[2].u_chan_top",
+          "x": 998.0,
+          "y": 992.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[3].u_chan_top",
+          "x": 1888.0,
+          "y": 81.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[4].u_chan_top",
+          "x": 985.0,
+          "y": 91.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[5].u_chan_top",
+          "x": 2809.0,
+          "y": 1207.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[6].u_chan_top",
+          "x": 2799.0,
+          "y": 301.0,
+          "orientation": "N"
+        },
+        {
+          "instance": "gen_chan[7].u_chan_top",
+          "x": 76.0,
+          "y": 305.0,
+          "orientation": "N"
+        }
+      ],
+      "features": {
+        "row_channel_um": null,
+        "channel_axis": "y",
+        "band_counts": {
+          "x": 4,
+          "y": 1
+        },
+        "topology": "scattered"
+      },
+      "status": "failed",
+      "last_stage": "38-openroad-globalrouting",
+      "stages_present": 38,
+      "error_log": "[GRT-0118] Routing congestion too high. Check the congestion heatmap in the GUI.",
+      "error_codes": [
+        "GRT-0118"
+      ],
+      "stage_outcomes": {
+        "openroad-resizertimingpostcts": "pass",
+        "openroad-globalrouting": "fail"
+      },
+      "metrics": null,
+      "evidence": {
+        "verified": [
+          "resolved.json placements",
+          "stage directory listing",
+          "error.log"
+        ],
+        "notes_only": [
+          "model weighted wirelength 55,752 vs 59,600 for the grid baseline (lower on paper)",
+          "the model's congestion heuristic (congestionCells/routabilityRisk) flagged both this candidate and the passing grid baseline as HIGH"
+        ]
+      },
+      "usable_as_label": true
+    }
+  ],
+  "nogoods": [
+    {
+      "id": "daq-row-channel-min-300",
+      "design": "daq_subsystem",
+      "condition": {
+        "feature": "row_channel_um",
+        "op": "<",
+        "value": 300.0
+      },
+      "enforce": "reject",
+      "effect": "Hold-repair buffers cannot be legalized in the narrowed channel: [DPL-0036] Detailed placement failed at ResizerTimingPostCTS",
+      "contrast": "clean_pair_two_points",
+      "evidence": {
+        "pass": [
+          {
+            "record": "daq-grid-baseline-20260924",
+            "row_channel_um": 300.0
+          }
+        ],
+        "fail": [
+          {
+            "record": "daq-macrotetris-v1-20260925",
+            "row_channel_um": 100.0,
+            "error_codes": [
+              "DPL-0036"
+            ]
+          }
+        ]
+      },
+      "unresolved": "The pass/fail boundary lies somewhere between 100 and 300 um. 300 is only the smallest value seen to pass; the rule may be stricter than needed.",
+      "mirrors": "CHANNEL_SAFE_MARGIN = 300 in my_dashboard/src/game/macroTetrisModel.ts"
+    },
+    {
+      "id": "daq-scattered-global-route-congestion",
+      "design": "daq_subsystem",
+      "condition": {
+        "feature": "topology",
+        "op": "==",
+        "value": "scattered"
+      },
+      "enforce": "record_only",
+      "effect": "Global routing failed with [GRT-0118] Routing congestion too high / [GRT-0097] at OpenROAD.GlobalRouting",
+      "contrast": "single_failure",
+      "evidence": {
+        "pass": [],
+        "fail": [
+          {
+            "record": "daq-macrotetris-v2-20260926",
+            "topology": "scattered",
+            "error_codes": [
+              "GRT-0118"
+            ]
+          }
+        ]
+      },
+      "unresolved": "Only one scattered candidate was run and it failed. Nothing separates it from the passing grid baseline except the layout itself; the model's congestion heuristic rated both HIGH, so it cannot be used as a gate yet. Needs a pass/fail pair along a single changed factor."
+    }
+  ],
+  "next_experiments": [
+    {
+      "id": "bisect-row-channel",
+      "design": "daq_subsystem",
+      "purpose": "locate the hold-repair legalization boundary between 100 and 300 um",
+      "vary": "row_channel_um",
+      "keep_fixed": "grid topology, macro order, die",
+      "suggested_values_um": [
+        200
+      ],
+      "then": [
+        150,
+        250
+      ],
+      "stop_after_stage": "openroad-resizertimingpostcts",
+      "why_this_one": "uses the only clean pass/fail contrast we have; 3-4 runs instead of a random search"
+    },
+    {
+      "id": "interpolate-grid-to-v2",
+      "design": "daq_subsystem",
+      "purpose": "find where congestion starts when moving from the passing grid to the failing scattered candidate",
+      "vary": "fraction of macros displaced toward the v2 positions",
+      "keep_fixed": "channel >= 300 um",
+      "suggested_values": [
+        0.25,
+        0.5,
+        0.75
+      ],
+      "stop_after_stage": "openroad-globalrouting",
+      "why_this_one": "creates the missing pass/fail pair for the congestion rule"
+    }
+  ],
+  "related": {
+    "ppa3_adc_capture_top": "physical_design/layout_candidates/drc_knowledge.json (avoid_patterns, read by failure_knowledge.py)"
+  }
+}

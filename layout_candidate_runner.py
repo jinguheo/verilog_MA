@@ -12,6 +12,9 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+import candidate_dedup
+import failure_knowledge
+
 ROOT = Path(__file__).resolve().parent
 DESIGN_DIR = ROOT / "samples" / "sample_test_4" / "asic" / "ppa3_adc_capture"
 SOURCE_CONFIG = DESIGN_DIR / "config.json"
@@ -242,6 +245,16 @@ def _record_optimization_improvement(placements, baseline, search=None):
                 existing["search"] = search
                 _write(OPTIMIZATION_HISTORY, history)
             return existing, comparison
+        # Same relative arrangement (translation) or within a few um of a stored candidate: count it on the stored one instead of
+        # adding a row that would look like new evidence. The first recorded entry stays the representative.
+        equivalent, reason = candidate_dedup.find_equivalent(placements, history)
+        if equivalent:
+            equivalent["equivalent_count"] = int(equivalent.get("equivalent_count", 0)) + 1
+            seen = equivalent.setdefault("equivalents", [])
+            if len(seen) < 20:
+                seen.append({"signature": signature, "reason": reason, "seen_at": _now()})
+            _write(OPTIMIZATION_HISTORY, history)
+            return equivalent, comparison
         entry = {
             "id": _new_id(),
             "created_at": _now(),
@@ -321,12 +334,25 @@ def optimize_candidate(body):
     adc_ys = range(adc_y_min, adc_y_max + 1, step)
     sram_xs = range(sram_x_min, sram_x_max + 1, step)
     sram_ys = range(sram_y_min, sram_y_max + 1, step)
+    # Real failures recorded in drc_knowledge.json / failure_knowledge.json are applied as hard rules (enforce="reject" only: a rule needs a
+    # bracketing pass/fail pair before it may remove candidates). Today's only rule for this design depends on the ADC x, so one lookup per x.
+    failure_rules = failure_knowledge.all_rules()
+    _blocked_x: dict[float, list[dict]] = {}
+
+    def ax_blocked(ax):
+        if ax not in _blocked_x:
+            features = failure_knowledge.ppa3_features([{"instance": adc["instance"], "x": ax, "y": 0.0}])
+            _blocked_x[ax] = failure_knowledge.rejecting(failure_knowledge.hits(baseline["design"], features, rules=failure_rules))
+        return bool(_blocked_x[ax])
+
     evaluated = 0
     legal = []
     adc_x_values = list(adc_xs)
     for ax_index, ax in enumerate(adc_x_values):
         _optimization_checkpoint(task_id)
         _optimization_update(task_id, stage="Legal 격자 후보 탐색", progress=5 + round((ax_index + 1) / max(1, len(adc_x_values)) * 40), current=ax_index + 1, total=len(adc_x_values), evaluated=evaluated)
+        if ax_blocked(ax):
+            continue
         for ay in adc_ys:
             acx, acy = ax + adc["width"] / 2, ay + adc["height"] / 2
             for sx in sram_xs:
@@ -362,6 +388,8 @@ def optimize_candidate(body):
         if sx < sram_x_min or sx > sram_x_max or sy < sram_y_min or sy > sram_y_max:
             return None
         if ax + adc["width"] + halo > sx:
+            return None
+        if ax_blocked(ax):
             return None
         acx, acy = ax + adc["width"] / 2, ay + adc["height"] / 2
         scx, scy = sx + sram["width"] / 2, sy + sram["height"] / 2
@@ -447,15 +475,36 @@ def optimize_candidate(body):
         selected = [(item, "macro-replace+sa") for item in unique_sa]
     else:
         selected = [(item, "constrained-grid") for item in grid_candidates[:5]] + [(item, "macro-replace+sa") for item in unique_sa[:5]]
-    selected_positions = {(item[1], item[2], item[3], item[4]) for item, _ in selected}
-    for item in legal:
-        position = (item[1], item[2], item[3], item[4])
-        if len(selected) >= 10:
-            break
-        if position not in selected_positions:
-            selected.append((item, "constrained-grid"))
-            selected_positions.add(position)
     selected.sort(key=lambda value: value[0][0])
+
+    def pair_placements(item):
+        return [{"instance": adc["instance"], "x": float(item[1]), "y": float(item[2]), "orientation": adc.get("orientation", "N")},
+                {"instance": sram["instance"], "x": float(item[3]), "y": float(item[4]), "orientation": sram.get("orientation", "N")}]
+
+    # Keep one candidate per relative arrangement: translations of the same ADC-SRAM arrangement and 1-5 um SA jitter carry the same
+    # information for the recorded estimate, so they do not get a slot in the pool (see candidate_dedup.py).
+    distinct_pool: list = []
+    pool_placements: list = []
+    equivalent_dropped = 0
+
+    def add_if_distinct(item, method):
+        nonlocal equivalent_dropped
+        pl = pair_placements(item)
+        if any(candidate_dedup.classify(existing, pl) != "distinct" for existing in pool_placements):
+            equivalent_dropped += 1
+            return False
+        distinct_pool.append((item, method))
+        pool_placements.append(pl)
+        return True
+
+    for item, method in selected:
+        add_if_distinct(item, method)
+    if mode != "sa":  # sa mode is meant to contain only annealed candidates, so it may be smaller than 10
+        for item in legal:
+            if len(distinct_pool) >= 10:
+                break
+            add_if_distinct(item, "constrained-grid")
+    selected = sorted(distinct_pool, key=lambda value: value[0][0])
 
     def placements_for(candidate):
         _, ax, ay, sx, sy, _, _ = candidate
@@ -495,6 +544,9 @@ def optimize_candidate(body):
             "halo_um": halo,
             "cost": winner["cost"],
             "hard_constraints": ["DIE/CORE boundary", "pairwise overlap", "40um ADC-SRAM keep-out"],
+            "equivalent_candidates_dropped": equivalent_dropped,
+            "failure_rules_applied": sorted({r["id"] for r in failure_rules if r.get("design") == baseline["design"] and r.get("enforce") == "reject"}),
+            "adc_x_rejected_by_failure_rules": sorted(x for x, h in _blocked_x.items() if h),
         },
     }
     history_entry = None
