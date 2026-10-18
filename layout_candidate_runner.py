@@ -409,7 +409,7 @@ def optimize_candidate(body):
             selected = min(same_adc, key=lambda item: item[0], default=selected)
         return selected
 
-    def anneal(seed, start, iterations=240, seed_index=0):
+    def anneal(seed, start, iterations=240, seed_index=0, harvest=None):
         rng = random.Random(seed)
         state = re_place(start)
         best = state
@@ -445,30 +445,62 @@ def optimize_candidate(body):
             delta = candidate[0] - state[0]
             if delta <= 0 or rng.random() < math.exp(-delta / temperature):
                 state = candidate
+                if harvest is not None:
+                    harvest.append(state)
                 if state[0] < best[0]:
                     best = state
         return best, state
 
     grid_candidates = legal[:10]
     sa_candidates = []
+    harvest: list = []
     for seed in range(32):
         _optimization_checkpoint(task_id)
         rng = random.Random(0x5A17 + seed)
         start = legal[rng.randrange(len(legal))]
-        best_sa, final_sa = anneal(seed + 1, start, seed_index=seed)
+        best_sa, final_sa = anneal(seed + 1, start, seed_index=seed, harvest=harvest)
         sa_candidates.extend((best_sa, final_sa))
     reserved_grid = grid_candidates[:5] if mode == "hybrid" else []
     unique_grid = {(item[1], item[2], item[3], item[4]) for item in reserved_grid}
-    unique_sa = []
-    seen_sa = set()
-    for item in sorted(sa_candidates, key=lambda value: value[0]):
+
+    def _pair(item):
+        return [{"instance": adc["instance"], "x": float(item[1]), "y": float(item[2]), "orientation": adc.get("orientation", "N")},
+                {"instance": sram["instance"], "x": float(item[3]), "y": float(item[4]), "orientation": sram.get("orientation", "N")}]
+
+    # The cost has one basin, so every seed ends at the same arrangement (the old top-10-by-cost left 1 distinct SA candidate). Instead pick
+    # from every state SA accepted: the best one first, then repeatedly the state farthest (normalized L1 over ADC/SRAM x,y) from those
+    # already picked, among states within `tol` of the best cost and distinct per candidate_dedup. Spread is inside the cost tolerance;
+    # it does not create different topologies, and a looser tol trades cost for spread.
+    tol = float(body.get("diversity_cost_tolerance", 1.12))
+    span = (max(1, adc_x_max - adc_x_min), max(1, adc_y_max - adc_y_min), max(1, sram_x_max - sram_x_min), max(1, sram_y_max - sram_y_min))
+    pool_by_position: dict = {}
+    for item in [*sa_candidates, *harvest]:
         position = (item[1], item[2], item[3], item[4])
-        if position in unique_grid or position in seen_sa:
-            continue
-        seen_sa.add(position)
-        unique_sa.append(item)
-        if len(unique_sa) == 10:
-            break
+        if position not in unique_grid and (position not in pool_by_position or item[0] < pool_by_position[position][0]):
+            pool_by_position[position] = item
+    ranked = sorted(pool_by_position.values(), key=lambda value: value[0])
+    unique_sa = []
+    if ranked:
+        limit_cost = ranked[0][0] * tol
+        eligible = [item for item in ranked if item[0] <= limit_cost][:600]
+        unique_sa.append(eligible[0])
+        picked_pl = [_pair(eligible[0])]
+        remaining = eligible[1:]
+        while remaining and len(unique_sa) < 10:
+            def spread(item):
+                return min(sum(abs(item[i + 1] - chosen[i + 1]) / span[i] for i in range(4)) for chosen in unique_sa)
+            remaining.sort(key=spread, reverse=True)
+            taken = None
+            for index, item in enumerate(remaining):
+                pl = _pair(item)
+                if all(candidate_dedup.classify(existing, pl) == "distinct" for existing in picked_pl):
+                    taken = index
+                    break
+            if taken is None:
+                break
+            item = remaining.pop(taken)
+            unique_sa.append(item)
+            picked_pl.append(_pair(item))
     if mode == "constrained":
         selected = [(item, "constrained-grid") for item in grid_candidates]
     elif mode == "sa":

@@ -45,6 +45,15 @@ class LayoutCandidateRunnerTest(unittest.TestCase):
         self.assertTrue(all(item["method"] == "macro-replace+sa" for item in annealed["candidate_pool"]))
         self.assertGreater(len(annealed["candidate_pool"]), 0)
 
+    def test_sa_pool_is_spread_not_one_arrangement(self):
+        """Plan item 12: all 32 seeds used to collapse to 1 relative arrangement; the pool now picks spread states within a cost tolerance."""
+        pool = runner.optimize_candidate({"mode": "sa"})["candidate_pool"]
+        self.assertGreaterEqual(len(pool), 2)
+        costs = [item["cost"] for item in pool]
+        self.assertLessEqual(max(costs), min(costs) * 1.12 + 1e-6)  # spread stays inside the default cost tolerance
+        adc_x = {next(p["x"] for p in item["placements"] if p["instance"] == "u_adc") for item in pool}
+        self.assertGreaterEqual(len(adc_x), 2)
+
     def test_overlap_is_rejected_before_openlane(self):
         baseline = runner._baseline()
         placements = [{**item, "x": 100, "y": 100} for item in baseline["macros"]]

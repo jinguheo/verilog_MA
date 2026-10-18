@@ -1,4 +1,5 @@
 import json
+import re
 import unittest
 from pathlib import Path
 
@@ -64,6 +65,18 @@ class FailureKnowledgeTest(unittest.TestCase):
         # interrupted reruns (host sleep) are not evidence about the geometry
         interrupted = [r for r in db["records"] if r["status"] == "incomplete_no_error"]
         self.assertTrue(interrupted and not any(r["usable_as_label"] for r in interrupted))
+
+    def test_ts_channel_margin_matches_the_reject_rule(self):
+        """CHANNEL_SAFE_MARGIN in macroTetrisModel.ts is typed by hand; it must equal the channel reject rule (plan item 8)."""
+        ts = (Path(__file__).resolve().parents[1] / "my_dashboard" / "src" / "game" / "macroTetrisModel.ts").read_text(encoding="utf-8")
+        m = re.search(r"export\s+const\s+CHANNEL_SAFE_MARGIN\s*=\s*([0-9.]+)", ts)
+        self.assertIsNotNone(m, "CHANNEL_SAFE_MARGIN not found in macroTetrisModel.ts")
+        rules = [r for r in fk.load_db()["nogoods"]
+                 if r["design"] == "daq_subsystem" and r["enforce"] == "reject"
+                 and r["condition"]["feature"] == "row_channel_um" and r["condition"]["op"] == "<"]
+        self.assertEqual(len(rules), 1, "expected exactly one row_channel_um reject rule")
+        self.assertEqual(float(m.group(1)), float(rules[0]["condition"]["value"]),
+                         "TS CHANNEL_SAFE_MARGIN and failure_knowledge.json differ: update both, then tools/build_failure_knowledge.py")
 
 
 if __name__ == "__main__":
