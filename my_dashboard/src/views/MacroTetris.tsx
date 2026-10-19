@@ -1135,6 +1135,18 @@ export default function MacroTetris() {
         </ol>
       </article>
 
+      <article className="chip-card" style={{ gridColumn: 'span 2' }}>
+        <div className="chip-card-title"><div><small>MODEL ↔ REAL FLOW · UPDATED 2026-10-18</small><h3>최신 배치 개선 계획과 실제 실행 상태</h3></div><span>근거 기반 · 실행 전/후 분리</span></div>
+        <div className="data-table"><table><thead><tr><th>항목</th><th>현재 상태</th><th>대시보드에서의 의미</th></tr></thead><tbody>
+          <tr><td><b>후보 중복 제거</b></td><td><span className="ok-badge">완료</span> 상대 배치 기준으로 이력을 정리</td><td>평행이동·미세 흔들림은 같은 후보로 취급하고, 서로 다른 후보만 비싼 물리 실행으로 올립니다.</td></tr>
+          <tr><td><b>실패 DB</b></td><td><span className="ok-badge">완료</span> 실제 daq 실행 5건을 통과·실패·중단으로 분류</td><td>300µm 채널은 대조 실행에 근거한 reject 규칙이며, 단독 실패는 기록만 합니다.</td></tr>
+          <tr><td><b>channel 200µm 이분 탐색</b></td><td><span className="warning-badge">설정 준비 · 결과 대기</span></td><td><code>config_hierarchical_ch200.json</code>은 300과 100µm 사이의 경계 확인용입니다. 아직 결과가 없어 통과/실패 근거로 쓰지 않습니다.</td></tr>
+          <tr><td><b>E0→E4 조기 평가</b></td><td><span className="warning-badge">계획</span> E1 STA≈0.24h, E2 GRT≈1.14h, E4≈4.2h</td><td>proxy 점수로 최종 순위를 단정하지 않고, E2까지 통과한 서로 다른 후보만 상세 배선·DRC/LVS로 승격합니다.</td></tr>
+          <tr><td><b>TS 게임 규칙 동기화</b></td><td><span className="warning-badge">남은 일</span></td><td>현재 300µm 값은 실제 실패 DB와 같은 근거지만 코드 상수로 유지됩니다. DB와 자동 동기화 전에는 수동 검토가 필요합니다.</td></tr>
+        </tbody></table></div>
+        <p className="rule-disclaimer">이 게임의 proxy는 후보를 빠르게 <b>탈락</b>시키는 용도입니다. WNS·혼잡·상세 DRC/LVS의 최종 우열은 실제 OpenLane 단계 실행으로만 확정합니다.</p>
+      </article>
+
       <article className="chip-card">
         <div className="chip-card-title"><div><small>PRE-SIGNOFF PROXY</small><h3>후보 사전 검사</h3></div><span>{proxy.confidence}% confidence</span></div>
         <div className="precheck-gates">

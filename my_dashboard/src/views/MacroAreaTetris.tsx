@@ -969,6 +969,7 @@ export default function MacroAreaTetris() {
         <article><header><b>후보 저장 강화</b><em>P2 · QUALITY</em></header><p>작업 중 Reset 시 Worker를 terminate/restart하는 실제 취소는 완료됐습니다. 남은 일은 최대 800개 후보와 단계 기록을 localStorage 대신 IndexedDB 또는 파일 registry로 옮기는 것입니다.</p><small>완료: Worker 취소·기본 회귀 테스트 · 남음: 영속 저장소</small></article>
       </div>
       <div className="flow-implementation-status"><span className="done"><b>현재 구현</b> 면적 축소 사다리 · 형상/행 수 후보(3행 legal) · random seed 12개 · 물리 gate · 진짜 여유 공간 표시 · chan_top 재성형 4개 전체 flow(DRC/LVS 0 · 타이밍 미달) · Worker 취소 · 회귀 테스트</span><span className="next"><b>추후 우선순위</b> 실제 net 비용 → 온도 기반 SA → 4행 legalize → 재성형 hold repair 튜닝(타이밍 closure) → 10개 GRT/STA → Top 3 signoff → PASS-only best</span></div>
+      <p className="chip-note"><b>Macro Tetris와의 최신 상태 동기화(2026-10-18):</b> 후보 이력은 상대 배치 기준으로 중복 제거됐고, 실제 daq 실행의 통과·실패·중단 기록은 별도 실패 DB로 관리됩니다. 200µm channel-bisect 설정은 준비됐지만 아직 OpenLane 결과가 없으므로, 이 화면의 300µm 채널 gate를 완화하거나 새로운 “통과” 근거로 표시하지 않습니다. 후보 proxy는 필터일 뿐 순위 확정은 E0→E4 실제 평가 사다리와 DRC/LVS 결과를 따릅니다.</p>
     </section>
 
     <section className="chip-analysis-grid">
